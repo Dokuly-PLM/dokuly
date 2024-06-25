@@ -26,6 +26,47 @@ Valid Syntax:
 
 All .doc* files found will be marked and processed as documents. Other files like .step, .png, .zip, .pdf, etc. will be added to the parts as attachments (part files).
 
+## Running the batch processing script
+
+To run the batch processing script:
+
+1. Make sure python 3 is installed, if not install python 3:
+```bash
+choco install python --version=3.11.0
+```
+
+2. Clone or copy the example
+```bash
+git clone https://github.com/Dokuly-PLM/dokuly.git
+```
+
+Or copy everything from the migration folder (/DokulyAPI/migration) to your local machine.
+
+3. Install the dependencies
+```bash
+pip install -r requirements.txt
+```
+
+4. (Optional) Run the script for getting customer and project ids
+```bash
+python get_project_and_customer_ids.py
+```
+
+5. Replace the values at the top at the example script to match your needs
+```python
+API_KEY = "your_api_key"  # Update with your actual API key
+DOKULY_TENANT = "test2"  # Update with your actual tenant name
+
+PROJECT_ID = "7"  # Update with actual project ID
+CUSTOMER_ID = "2"  # Update with actual customer ID
+
+```
+
+6. Run the processing script
+```bash
+python batch_process_parts.py --upload
+```
+
 The resulting parts format after running batch process parts on Part Migration Example.zip:
 
 ```JSON

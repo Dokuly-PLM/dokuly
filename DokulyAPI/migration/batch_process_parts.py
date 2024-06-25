@@ -1,26 +1,35 @@
-import shutil
+# Standard library imports
 import argparse
-import logging
-import re
-import os
 import json
-import requests
-from pyunpack import Archive
-from prompt_toolkit import prompt
-from prompt_toolkit.completion import PathCompleter
-from requests_toolbelt import MultipartEncoder
-import mimetypes
+import logging
+import os
+import re
+import shutil
+import sys
 import time
 from contextlib import ExitStack
-import sys
 from itertools import cycle
+import requests
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import PathCompleter
+from pyunpack import Archive
+from requests_toolbelt import MultipartEncoder
+import mimetypes
 
+# --------------------------------------------------------------------
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+API_KEY = "your_api_key"  # Update with your actual API key
+DOKULY_TENANT = "test2"  # Update with your actual tenant name
+
+# Use the "get_project_and_customer_ids.py" script to get the actual project and customer IDs
+PROJECT_ID = "7"  # Update with actual project ID
+CUSTOMER_ID = "2"  # Update with actual customer ID
+
+# --------------------------------------------------------------------
 
 # Example for extracting parts and documents from a ZIP file
 # This example assumes that the ZIP file contains a directory structure like:
-# - Part1 Test Part/
+# - {Part_prefix}{part_number} {part_display_name}/
 #   - Document 1.doc
 #   - Document 2.doc
 # - Part2 Test Part/
@@ -30,23 +39,15 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 #   - Document 4.doc
 
 # Where the numeric part of "Part3" is the part number and the documents are .doc files.
-# Se the readme.md file for more information.
+# Se the PartsMigration.md file for more information.
 
-API_KEY = "your_api_key"  # Update with your actual API key
-DOKULY_TENANT = "test2"  # Update with your actual tenant name
-
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 PROTOCOL = "https"  # DO NOT CHANGE
 # PROTOCOL = "http" # Only used for localhost
-
 BASE_URL = f"{PROTOCOL}://{DOKULY_TENANT}.dokuly.com"  # DO NOT CHANGE
 # BASE_URL = f"{PROTOCOL}://localhost:8000" # Only used for localhost
-
 PARTS_API_URL = f"{BASE_URL}/api/v1/migrate/parts/"  # DO NOT CHANGE
 DOCUMENTS_API_URL = f"{BASE_URL}/api/v1/migrate/documents/"  # DO NOT CHANGE
-
-PROJECT_ID = "7"  # Update with actual project ID
-CUSTOMER_ID = "2"  # Update with actual customer ID
-
 MB_LIMIT = 100  # Maximum size of each batch in MB, DO NOT CHANGE
 
 
@@ -384,7 +385,7 @@ if __name__ == "__main__":
         else:
             logging.info("\n\nDATA NOT UPLOADED. Use --upload flag to upload data;\npython batch_process_parts.py --upload\n\n")
 
-        time.sleep(10)  # Wait for upload to be completely done
+        time.sleep(3)  # Wait for upload to be completely done
         # remove the temporary directory
         shutil.rmtree(extracted_dir)
         logging.info(f"Removed temporary directory: {extracted_dir}")
