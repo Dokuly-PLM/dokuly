@@ -5,7 +5,8 @@ Built to be easy to use, and easy to maintain, for teams that move fast.
 
 This is a tool for designing and managing products and systems of all sizes.
 
-Dokuly is free to use and simple to set up.
+Dokuly is free to use and simple to set up. See the [getting started guide](https://github.com/Dokuly-PLM/dokuly/blob/master/getting_started.md)
+
 If you don't want to deal with hosting, check out [dokuly.com](https://dokuly.com/).
 
 ## Features
