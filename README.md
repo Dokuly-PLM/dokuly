@@ -10,25 +10,47 @@ If you don't want to deal with hosting, check out [dokuly.com](https://dokuly.co
 
 ## Features
 
-- Parts PCB Assemblies and Assemblies
+-  Product Data
+  - Part numbering
   - BOM management
-  - Change history with BOM comparison
   - Revision control
+  - Alternate parts
+  - Issues
+  - Change history with BOM comparison
   - Release management
   - Part-related files and documentation
-- Document management
+  - Vendor pricing with price breaks
+  - Inventory
+- Documents
+  - Document numbering
   - Automatic front page generation
   - Built-in viewer
-- Project-based development
+  - Custom document types, width document number prefixes
+  - Issues
+- Projects
   - Project-based access control
   - Time tracking with custom tasks
+  - Time estimation
+  - Access control
+  - Gantt
 - Purchasing
-- PO generation
+  - Manage vendors and suppliers
+  - Add suppliers for parts
+  - Inventory forecasting
+  - PO generation
+  - Automatical PO creation from BoM, selecting the cheapest vendor at each quantity
+- Requirements
+  - Track requirements in a model-based environment
+- API
+  - Support for multiple API keys
+  - Project-based access control per API key
+  - API-key expiry date
+  - [Docs](https://dokuly.com/#/api)
 
 ## Corntibutions
 
 Dokuly was originally developed as an internal tool by [Norsk Datateknikk](https://norskdatateknikk.no/) and has since been released as an open-source project.
-The project relies on your contributions to stay up to date with the latest features.
+The project relies on your contributions to stay updated with the latest features.
 
 Please submit issues and feature requests. This helps us see the needs of the users, and make a smooth experience.
 Bug fixes and PRs are highly appreciated.
