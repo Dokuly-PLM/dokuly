@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   class="icon icon-tabler icon-tabler-clock"
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   stroke-width="2"
+   stroke="currentColor"
+   fill="none"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   version="1.1"
+   id="svg138"
+   sodipodi:docname="clock_stop.svg"
+   inkscape:version="1.2.2 (b0a84865, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs142" />
+  <sodipodi:namedview
+     id="namedview140"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="true"
+     inkscape:zoom="23.012952"
+     inkscape:cx="3.9325681"
+     inkscape:cy="12.188789"
+     inkscape:window-width="1800"
+     inkscape:window-height="1021"
+     inkscape:window-x="0"
+     inkscape:window-y="44"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg138">
+    <inkscape:grid
+       type="xygrid"
+       id="grid365" />
+  </sodipodi:namedview>
+  <rect
+     x="0"
+     y="0"
+     width="24"
+     height="24"
+     stroke="none"
+     id="rect132" />
+  <path
+     id="circle134"
+     sodipodi:type="arc"
+     sodipodi:cx="12"
+     sodipodi:cy="12"
+     sodipodi:rx="9"
+     sodipodi:ry="9"
+     sodipodi:start="2.9851486"
+     sodipodi:end="1.7960683"
+     sodipodi:arc-type="arc"
+     d="M 3.1099119,13.40226 A 9,9 0 0 1 8.0552379,3.9105716 9,9 0 0 1 18.579159,5.858773 9,9 0 0 1 19.79898,16.491761 9,9 0 0 1 9.9896568,20.772601"
+     sodipodi:open="true" />
+  <polyline
+     points="12 7 12 12 9 15"
+     id="polyline136" />
+  <rect
+     style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:1.46294;stroke-dasharray:none;stroke-opacity:1"
+     id="rect5568"
+     width="3.1444471"
+     height="3.3338716"
+     x="3.9525838"
+     y="16.590033"
+     ry="0" />
+</svg>

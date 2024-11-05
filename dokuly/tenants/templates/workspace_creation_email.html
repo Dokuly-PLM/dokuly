@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Workspace Creation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .content {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Workspace Creation</div>
+        <div class="content">
+            <p>Your workspace is now ready! Click the button below to start using it:</p>
+            <p>Workspace name: <strong>{{ domain_name }}</strong> </p>
+            <p>Username: <strong>{{ username }}</strong> </p>
+            <p>
+                <a href="{{ resetLink }}" style="background-color: #165216ff; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; border-radius: 12px;">
+                    Start Workspace
+                </a>
+            </p>
+            <p>Best Regards,</p>
+            <p>Dokuly Team</p>
+        </div>
+    </div>
+</body>
+</html>

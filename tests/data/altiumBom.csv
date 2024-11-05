@@ -1,0 +1,7 @@
+Reference,Part,DNM,NOBOM,Footprint,Supplier,Digi-Key,Farnell,Partnumber,Manufacturer
+A1,ANT160,,NOBOM,ANT160,,,,,
+C1,8p2,,,0805C,,399-9278-1-ND,,C0805C829D2GACTU,Multicomp
+C2,DNM,DNM,,0805C,,,,,
+C3,2p7,,,0805C,,,1582714,08051A2R7CAT2A,AVX
+J1,U.FL-R-SMT(01),,,U.FL-R-SMT(01),,,3908021,U.FL-R-SMT(01),Hirose
+L1,744918249,,,2929SQ,,,2286974RL,744918249,Coilcraft or Würth

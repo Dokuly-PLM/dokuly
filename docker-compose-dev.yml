@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    build:
+      context: .
+      dockerfile: ./Dockerfile.db
+    container_name: sdp_db_OSS
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      PG_DATA: /data/db:/var/lib/postgresql/data/db_data/
+      POSTGRES_USER: postgres
+      POSTGRES_DB: DokulyOSS
+      POSTGRES_PASSWORD: AAAAmeaIE1elf213fe_fseof302fldAADokulySelfhost
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 50
+  pgadminDokulyOSS:
+    container_name: pgadmin4_container_dokuly_oss
+    image: dpage/pgadmin4
+    restart: always
+    logging:
+        driver: none 
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+      CONSOLE_LOG_LEVEL: 0  
+      FILE_LOG_LEVEL: 0
+    ports:
+      - "3030:80"
+  web:
+    build: .
+    container_name: sdp_web_OSS 
+    env_file:
+      - ./.env
+    environment:
+      DJANGO_LOCAL_SERVER: 1
+    image: sdp:django
+    volumes:
+      - .:/dokuly_image
+    command: python /dokuly_image/dokuly/manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+  nginx:
+    image: nginx:latest
+    container_name: sdp_nginx_OSS
+    ports:
+      - "80:80" # This will make Nginx accessible on port 80 of the host machine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro # Mount the Nginx configuration file
+    depends_on:
+      - web

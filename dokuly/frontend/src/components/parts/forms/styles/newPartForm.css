@@ -1,0 +1,13 @@
+.list-group-item {
+  cursor: pointer; /* Makes the mouse turn into a pointer when hovering over the list item */
+  transition: background 0.15s ease; /* Smooth transition for hover effect */
+}
+
+.list-group-item:hover {
+  background: #d7d7d7; /* Light grey background when hovering */
+}
+
+.scrollable-list {
+  max-height: 30.5rem; 
+  overflow-y: scroll;
+}
