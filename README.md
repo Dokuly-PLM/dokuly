@@ -1,63 +1,34 @@
-# Dokuly Cloud PLM System Documentation
+# Dokuly PLM System
 
-Welcome to the official documentation repository for Dokuly, a powerful cloud-based Product Lifecycle Management (PLM) system designed to streamline your product development processes.
+Dokuly is an open-source Product Lifecycle Management system.
+Built to be easy to use, and easy to maintain, for teams that move fast.
 
-## Table of Contents
+This is a tool for designing and managing products and systems of all sizes.
 
-- [Introduction](#introduction)
-- [Getting Started](#getting-started)
-- [System Usage](#system-usage)
-- [API Documentation](#api-documentation)
-- [License](#license)
+Dokuly is free to use and simple to set up.
+If you don't want to deal with hosting, check out [dokuly.com](https://dokuly.com/).
 
-## Introduction
+## Features
 
-Dokuly is a comprehensive cloud-based PLM system that helps organizations manage the entire lifecycle of their products, from conception and design to manufacturing and disposal. This repository serves as the central hub for all documentation related to Dokuly's usage and API integration.
+- Parts PCB Assemblies and Assemblies
+  - BOM management
+  - Change history with BOM comparison
+  - Revision control
+  - Release management
+  - Part-related files and documentation
+- Document management
+  - Automatic front page generation
+  - Built-in viewer
+- Project-based development
+  - Project-based access control
+  - Time tracking with custom tasks
+- Purchasing
+- PO generation
 
-### Key Features
+## Corntibutions
 
-- Centralized product data management
-- Collaborative design and engineering tools
-- Version control and change management
-- Workflow automation
-- Reporting and analytics
-- RESTful API for seamless integration
-- Cloud-based architecture for accessibility and scalability
+Dokuly was originally developed as an internal tool by [Norsk Datateknikk](https://norskdatateknikk.no/) and has since been released as an open-source project.
+The project relies on your contributions to stay up to date with the latest features.
 
-## Getting Started
-
-To begin using Dokuly, follow these steps:
-
-1. [Sign up for a Dokuly account](https://dokuly.com/#/sign-up)
-2. Sign in to your created tenant
-3. Enjoy optimizing your PLM workflow!
-
-## System Usage
-
-Learn how to effectively use Dokuly's features:
-
-- [Migrating your data to Dokuly](DokulyAPI/migration/README.md)
-
-For a complete list of features and their usage, visit our [System Usage Guide](docs/system-usage.md) (WIP).
-
-## API Documentation
-
-Dokuly provides a powerful RESTful API that allows you to integrate our cloud-based PLM system with your existing tools and workflows. For comprehensive API documentation, including authentication, endpoints, and usage examples, please visit our dedicated API page:
-
-[Dokuly API Documentation](https://dokuly.com/#/api)
-
-This page covers:
-- Authentication methods
-- Detailed API reference
-- Available endpoints and their usage
-- Request and response formats
-- Error handling
-
-
-## License
-
-This Dokuly Documentation Repo is licensed under the [GNU General Public License v3.0 (GPL-3.0)](LICENSE). This strong copyleft license ensures that derivatives of this software must be distributed under the same license. For more details, see the [full text of the GPL-3.0 license](https://www.gnu.org/licenses/gpl-3.0.en.html).
-
----
-
-© 2024 Dokuly. All rights reserved.
+Please submit issues and feature requests. This helps us see the needs of the users, and make a smooth experience.
+Bug fixes and PRs are highly appreciated.

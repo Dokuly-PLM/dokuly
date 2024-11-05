@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   sodipodi:docname="currency-krone.svg"
+   id="svg6"
+   version="1.1"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   fill="none"
+   stroke="currentColor"
+   stroke-width="2"
+   viewBox="0 0 24 24"
+   height="24"
+   width="24"
+   class="icon icon-tabler icon-tabler-activity">
+  <metadata
+     id="metadata12">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs10" />
+  <sodipodi:namedview
+     inkscape:current-layer="svg6"
+     inkscape:window-maximized="1"
+     inkscape:window-y="-8"
+     inkscape:window-x="-8"
+     inkscape:cy="18.190917"
+     inkscape:cx="6.912105"
+     inkscape:zoom="17.708333"
+     showgrid="false"
+     id="namedview8"
+     inkscape:window-height="1017"
+     inkscape:window-width="1920"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10"
+     gridtolerance="10"
+     objecttolerance="10"
+     borderopacity="1"
+     bordercolor="#666666"
+     pagecolor="#ffffff" />
+  <g
+     inkscape:export-ydpi="300"
+     inkscape:export-xdpi="300"
+     inkscape:export-filename="C:\ND\git\100-111-ND-Systems-Development-Platform\dokuly\frontend\static\icons\icons-png/currency-krone.png"
+     id="g847">
+    <rect
+       x="0"
+       y="0"
+       width="24"
+       height="24"
+       stroke="none"
+       id="rect2" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:16.0033px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.43945;stroke-miterlimit:4;stroke-dasharray:none"
+       x="3.7422113"
+       y="18.079378"
+       id="text839"><tspan
+         sodipodi:role="line"
+         id="tspan837"
+         x="3.7422113"
+         y="18.079378"
+         style="stroke-width:1.43945;stroke-miterlimit:4;stroke-dasharray:none">kr</tspan></text>
+    <circle
+       style="fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none"
+       id="path841"
+       cx="12"
+       cy="12"
+       r="10.581509" />
+  </g>
+</svg>

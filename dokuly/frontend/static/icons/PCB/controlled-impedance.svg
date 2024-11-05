@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   class="icon icon-tabler icon-tabler-photo"
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   stroke-width="2"
+   stroke="currentColor"
+   fill="none"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   version="1.1"
+   id="svg142"
+   sodipodi:docname="controlled-impedance.svg"
+   inkscape:version="1.2.1 (9c6d41e, 2022-07-14)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs146" />
+  <sodipodi:namedview
+     id="namedview144"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="true"
+     inkscape:zoom="22.627417"
+     inkscape:cx="8.5515726"
+     inkscape:cy="14.56198"
+     inkscape:window-width="1512"
+     inkscape:window-height="855"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg142">
+    <inkscape:grid
+       type="xygrid"
+       id="grid369" />
+  </sodipodi:namedview>
+  <rect
+     x="0"
+     y="0"
+     width="24"
+     height="24"
+     stroke="none"
+     id="rect132" />
+  <text
+     xml:space="preserve"
+     style="font-size:32px;line-height:0.7;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:3.77953"
+     x="10.175979"
+     y="17.872"
+     id="text1268"><tspan
+       sodipodi:role="line"
+       id="tspan1266"
+       x="10.175979"
+       y="17.872"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:Athelas;-inkscape-font-specification:Athelas">z</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:11.3333px;line-height:0.7;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:3.77953"
+     x="19.629316"
+     y="21.394651"
+     id="text1268-2"><tspan
+       sodipodi:role="line"
+       id="tspan1266-6"
+       x="19.629316"
+       y="21.394651"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.3333px;font-family:Athelas;-inkscape-font-specification:Athelas">0</tspan></text>
+</svg>

@@ -1,0 +1,67 @@
+ #switchButton {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+
+#sliderSwitch {
+  position: absolute;
+  cursor: pointer;
+  -webkit-transition: .4s;
+  transition: .4s;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+}
+
+#switchButton input {
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+#sliderSwitch:before {
+  left: 2.5px;
+  bottom: 2.5px;
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + #sliderSwitch {
+  background-color: #165216ff;
+}
+
+input:focus + #sliderSwitch {
+  box-shadow: 0 0 1px #165216ff;
+}
+
+input:checked + #sliderSwitch:before {
+  -ms-transform: translateX(17px);
+  transform: translateX(17px);
+  -webkit-transform: translateX(17px);
+}
+
+#sliderSwitch.round:before {
+  border-radius: 50%;
+} 
+
+
+#sliderSwitch.round {
+  border-radius: 34px;
+}
+
+/* This is the class for the tooltip tasks in gantt */
+._3T42e { 
+    display:block;
+    position:fixed;
+    right: 2rem;
+    top: 5rem;
+}

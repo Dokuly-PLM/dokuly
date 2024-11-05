@@ -1,0 +1,22 @@
+# Git
+.github
+.gitignore
+
+# Python
+app/__pycache__/
+app/*/__pycache__/
+app/*/*/__pycache__/
+app/*/*/*/__pycache__/
+.env/
+.venv/
+venv/
+
+# Local PostgreSQL data
+data/
+
+.env
+.docker-compose-dev.yml
+#.database_backup.sql
+#database_backup.sql
+gs_temp.json
+rome.json

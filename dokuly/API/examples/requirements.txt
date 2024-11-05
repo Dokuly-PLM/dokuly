@@ -1,0 +1,4 @@
+prompt-toolkit
+pyunpack
+urllib3
+mimetypes

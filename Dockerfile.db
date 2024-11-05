@@ -1,0 +1,5 @@
+FROM postgres:15
+
+ADD default_schema.sql /docker-entrypoint-initdb.d
+
+ 

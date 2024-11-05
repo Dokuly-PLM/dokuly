@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Confirmation</title>
+    <style>
+        /* Add your CSS styling here */
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .content {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Email Confirmation</div>
+        <div class="content">
+          <p>Thank you for registering on our website. Please click on the button below to confirm your email address:</p>
+          <p>
+              <a href="{{ confirmation_link }}" style="background-color: #165216ff; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; border-radius: 12px;">
+                  Confirm Email
+              </a>
+          </p>
+          <p>If you did not request this registration, please ignore this email.</p>
+          <p>Best Regards,</p>
+          <p>Dokuly Team</p>
+      </div>
+      
+      
+    </div>
+</body>
+</html>
