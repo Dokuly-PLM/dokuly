@@ -42,34 +42,41 @@ Make sure docker and other dependencies are installed. Then follow these steps:
 
 Then set a value within the string quotes.
 
-### Build the project. This can be done using:
+### Build the project. This can be done using
+
 ```bash
 docker compose -f docker-compose-dev.yml build
 ```
+
 or for mac / linux:
+
 ```bash
 docker compose -f docker-compose-dev-mac.yml build
 ```
 
-### Build frontend using npm:
+### Build frontend using npm
+
 ```bash
 npm i
 ```
+
 ```bash
 npm run build
 ```
 
-### Run the project:
+### Run the project
+
 ```bash
 docker compose -f docker-compose-dev.yml up
 ```
 
-### Access dokuly:
-In your web browser, dokuly can be accessed at 
-**http://oss.dokuly.localhost:8000**.   
+### Access dokuly
 
+In your web browser, dokuly can be accessed at
 
-### Logging in for the first time on localhost:
+[http://oss.dokuly.localhost:8000](http://oss.dokuly.localhost:8000).
+
+### Logging in for the first time on localhost
 
 The PLM comes with some default data. A user is created with the username "ossuser" and password: "oss_password".
 This can be used to login with for the first time to start using and configuring dokuly for your use-case.
@@ -82,8 +89,8 @@ To start hosting the service on your own machine you have to have all dependenci
 <a name="nginx_proxy" />
 
 ### Nginx proxy
-## Local Hosting Setup Guide
 
+## Local Hosting Setup Guide
 
 To enable access to your locally hosted project on your local network or VPN, follow these steps to configure an NGINX proxy. Directly using your machine's local IP address might not suffice, hence the need for these adjustments:
 
