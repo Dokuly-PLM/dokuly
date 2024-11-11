@@ -134,6 +134,8 @@ const EditPartForm = (props) => {
       value: exportControlClassificationNumber,
       onChange: setExportControlClassificationNumber,
       key: "exportControlClassificationNumber",
+      showToolTip: true,
+      tooltipText: "ECCN: An Export Control Classification Number used to identify items for export control purposes under U.S. Export Administration Regulations (EAR)."
     },
     {
       label: "Country of Origin",
@@ -142,12 +144,16 @@ const EditPartForm = (props) => {
       as: "select",
       key: "countryOfOrigin",
       options: countries,
+      showToolTip: true,
+      tooltipText: "Country of Origin (COO): Indicates the country where a product was manufactured, affecting duties, tariffs, and trade compliance."
     },
     {
       label: "Harmonized System Code",
       value: harmonizedSystemCode,
       onChange: setHarmonizedSystemCode,
       key: "harmonizedSystemCode",
+      showToolTip: true,
+      tooltipText: "HS Code: A standardized 6-digit numerical code used globally to classify traded goods, created by the World Customs Organization (WCO).",
     },
   ];
 
