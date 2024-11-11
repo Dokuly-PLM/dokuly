@@ -66,6 +66,12 @@ npm run build
 
 ### Run the project
 
+Run migrations
+
+```bash
+docker compose -f docker-compose-dev.yml run web python /dokuly_image/dokuly/manage.py migrate
+```
+
 ```bash
 docker compose -f docker-compose-dev.yml up
 ```
