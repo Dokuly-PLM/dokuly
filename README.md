@@ -9,6 +9,8 @@ Dokuly is free to use and simple to set up. See the [getting started guide](http
 
 If you don't want to deal with hosting, check out [dokuly.com](https://dokuly.com/).
 
+Community forum can be found at [dokuly.forum](https://dokuly.forum/)
+
 ## Features
 
 -  Product Data
