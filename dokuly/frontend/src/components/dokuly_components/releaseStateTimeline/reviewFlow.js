@@ -17,7 +17,7 @@ const ReviewFlow = ({
         alignItems: "center",
       }}
     >
-      <h6>Review Flow</h6>
+      <h6>Quality Assurance</h6>
       <InputGroup>
         <Form.Check
           className="dokuly-checkbox mr-3"

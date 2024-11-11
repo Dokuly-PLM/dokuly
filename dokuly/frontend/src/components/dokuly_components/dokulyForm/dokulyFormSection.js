@@ -20,17 +20,21 @@ const DokulyFormSection = ({
   onKeyDown = () => {},
   customSelectChildren = () => {},
 }) => {
+  // Render the label with tooltip for alignment consistency across all input types
   const renderLabel = () => {
-    return showToolTip ? (
-      <Row className="align-items-center">
-        <Form.Label>{label}</Form.Label>
-        <QuestionToolTip optionalHelpText={tooltipText} placement="right" />
-      </Row>
-    ) : (
-      <Form.Label>{label}</Form.Label>
+    return (
+      <Form.Group className="d-flex align-items-center mb-1">
+        <Form.Label className="mb-0" style={{ marginRight: "5px" }}>
+          {label}
+        </Form.Label>
+        {showToolTip && (
+          <QuestionToolTip optionalHelpText={tooltipText} placement="right" />
+        )}
+      </Form.Group>
     );
   };
 
+  // Render the appropriate control based on the "as" prop
   const renderControl = () => {
     if (as === "select") {
       return (
@@ -40,16 +44,14 @@ const DokulyFormSection = ({
           value={value}
         >
           {options.map((option) => (
-            <>
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            </>
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
           ))}
         </Form.Control>
       );
     } else if (as === "check") {
-      // Here we assume value is a boolean, and onChange expects a boolean
+      // Checkbox control with tooltip alignment handled directly in this block
       return (
         <Row className="align-items-center mb-3 mx-3">
           <Form.Group className="d-flex align-items-center" style={{ flex: 1 }}>
@@ -71,6 +73,7 @@ const DokulyFormSection = ({
         </Row>
       );
     } else {
+      // Default text field or other control
       return (
         <Form.Control
           as={as}
@@ -86,13 +89,14 @@ const DokulyFormSection = ({
     }
   };
 
+  // Render custom select if specified
   if (useCustomSelect) {
     return <>{customSelectChildren()}</>;
   }
 
   return (
     <Form.Group key={id} className={className}>
-      {as !== "check" && renderLabel()}
+      {as !== "check" && renderLabel()} {/* Render label for non-checkbox fields */}
       {renderControl()}
     </Form.Group>
   );
