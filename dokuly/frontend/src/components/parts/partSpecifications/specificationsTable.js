@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Row } from "react-bootstrap";
+
 import { editPartInformation } from "../functions/queries";
+import DokulyCard from "../../dokuly_components/dokulyCard";
+import CardTitle from "../../dokuly_components/cardTitle";
 
 const SpecificationsTable = (props) => {
   const [editingValue, setEditingValue] = useState("");
@@ -110,12 +114,12 @@ const SpecificationsTable = (props) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData("text");
     const lines = pastedText.split("\n");
-
+  
     if (lines.length > 1) {
       // Handle multi-line paste
       const newEntries = {};
       let currentKey = "";
-
+  
       for (const line of lines) {
         const trimmedLine = line.trim();
         if (trimmedLine) {
@@ -123,11 +127,11 @@ const SpecificationsTable = (props) => {
             // Handle tab-separated format
             const [key, value] = line.split("\t");
             if (key && value) {
-              newEntries[key.trim()] = value.trim();
+              newEntries[key.trim().replace(/:$/, "")] = value.trim();
             }
           } else if (!line.startsWith(" ") && !line.startsWith("\t")) {
             // This is a key
-            currentKey = trimmedLine.replace(":", "").trim();
+            currentKey = trimmedLine.replace(/:$/, "").trim();
           } else if (currentKey) {
             // This is a value for the current key
             newEntries[currentKey] = trimmedLine;
@@ -135,7 +139,7 @@ const SpecificationsTable = (props) => {
           }
         }
       }
-
+  
       if (Object.keys(newEntries).length > 0) {
         try {
           await editPartInformation(props.part.id, {
@@ -150,9 +154,9 @@ const SpecificationsTable = (props) => {
     } else {
       // Handle single-line paste
       if (field === "key") {
-        setNewKey(pastedText.trim());
+        setNewKey(pastedText.trim().replace(/:$/, ""));
       } else {
-        setNewValue(pastedText.trim());
+        setNewValue(pastedText.trim().replace(/:$/, ""));
       }
     }
   };
@@ -207,96 +211,106 @@ const SpecificationsTable = (props) => {
   );
 
   return (
-    <div className="col-md-auto mb-2">
-      <h5>
-        <b>Technical specifications</b>
-      </h5>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Attribute</th>
-            <th>Value</th>
-            {isEditable && <th> </th>} {/* Conditional third column header */}
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(filteredPartInformation).map(
-            ([key, value], rowIndex) => (
-              <tr key={key}>
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                <td onClick={() => handleEdit(rowIndex, 0, key)}>
-                  {inputVisible &&
-                  inputPosition.row === rowIndex &&
-                  inputPosition.col === 0
-                    ? renderEditableCell(key)
-                    : key}
-                </td>
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                <td onClick={() => handleEdit(rowIndex, 1, value)}>
-                  {inputVisible &&
-                  inputPosition.row === rowIndex &&
-                  inputPosition.col === 1
-                    ? renderEditableCell(value)
-                    : value}
-                </td>
-                {isEditable && ( // Conditional delete icon rendering
-                  <td>
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                    <img
-                      src={".../../static/icons/trash.svg"}
-                      alt="Delete"
-                      style={{
-                        cursor: "pointer",
-                        width: "20px",
-                        height: "20px",
-                      }}
-                      onClick={() => handleDelete(key)}
-                    />
-                  </td>
-                )}
-              </tr>
-            )
-          )}
+    <DokulyCard
+        isCollapsed={false}
+        expandText={""}
+      >
+        <CardTitle
+            titleText={"Technical specifications"}
+            optionalHelpText={
+              `Part specifications.
+              The table supports pasting from web tables. Simply copy the contents from web tables and paste into the key field.`
+            }
+          />
 
-          {isEditable && (
+      <Row className="mt-1 ml-1 mr-1 align-items-center">
+        <table className="table">
+          <thead>
             <tr>
-              <td>
-                <input
-                  type="text"
-                  placeholder="Attribute"
-                  ref={newKeyInputRef}
-                  value={newKey}
-                  onPaste={(e) => handlePaste(e, "key")}
-                  onChange={(e) => setNewKey(e.target.value)}
-                  onBlur={handleAddNew}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newKey.trim() !== "") {
-                      handleAddNew();
-                    }
-                  }}
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  placeholder="Value"
-                  value={newValue}
-                  onChange={(e) => setNewValue(e.target.value)}
-                  onBlur={handleAddNew}
-                  onPaste={(e) => handlePaste(e, "value")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newKey.trim() !== "") {
-                      handleAddNew();
-                    }
-                  }}
-                />
-              </td>
-              <td> </td> {/* Empty cell for alignment */}
+              <th>Attribute</th>
+              <th>Value</th>
+              {isEditable && <th> </th>} {/* Conditional third column header */}
             </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {Object.entries(filteredPartInformation).map(
+              ([key, value], rowIndex) => (
+                <tr key={key}>
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                  <td onClick={() => handleEdit(rowIndex, 0, key)}>
+                    {inputVisible &&
+                    inputPosition.row === rowIndex &&
+                    inputPosition.col === 0
+                      ? renderEditableCell(key)
+                      : key}
+                  </td>
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                  <td onClick={() => handleEdit(rowIndex, 1, value)}>
+                    {inputVisible &&
+                    inputPosition.row === rowIndex &&
+                    inputPosition.col === 1
+                      ? renderEditableCell(value)
+                      : value}
+                  </td>
+                  {isEditable && ( // Conditional delete icon rendering
+                    <td>
+                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                      <img
+                        src={".../../static/icons/trash.svg"}
+                        alt="Delete"
+                        style={{
+                          cursor: "pointer",
+                          width: "20px",
+                          height: "20px",
+                        }}
+                        onClick={() => handleDelete(key)}
+                      />
+                    </td>
+                  )}
+                </tr>
+              )
+            )}
+
+            {isEditable && (
+              <tr>
+                <td>
+                  <input
+                    type="text"
+                    placeholder="Attribute"
+                    ref={newKeyInputRef}
+                    value={newKey}
+                    onPaste={(e) => handlePaste(e, "key")}
+                    onChange={(e) => setNewKey(e.target.value)}
+                    onBlur={handleAddNew}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newKey.trim() !== "") {
+                        handleAddNew();
+                      }
+                    }}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    value={newValue}
+                    onChange={(e) => setNewValue(e.target.value)}
+                    onBlur={handleAddNew}
+                    onPaste={(e) => handlePaste(e, "value")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newKey.trim() !== "") {
+                        handleAddNew();
+                      }
+                    }}
+                  />
+                </td>
+                <td> </td> {/* Empty cell for alignment */}
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </Row>
+    </DokulyCard>
   );
 };
 
