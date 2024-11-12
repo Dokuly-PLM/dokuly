@@ -87,7 +87,7 @@ export const getLotSerialNumbers = (lotId) => {
 
 export const getConnectedLotPos = (lotId) => {
   const promise = axios.get(
-    `/api/lots/fetchConnectedPo/${lotId}/`,
+    `/api/lots/getConnectedPo/${lotId}/`,
     tokenConfig()
   );
   const dataPromise = promise.then((res) => res);

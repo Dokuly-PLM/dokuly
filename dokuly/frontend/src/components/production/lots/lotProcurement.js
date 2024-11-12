@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { Col, Row } from "react-bootstrap";
+
 import DokulyCard from "../../dokuly_components/dokulyCard";
 import CardTitle from "../../dokuly_components/cardTitle";
-import { Col, Row } from "react-bootstrap";
 import DokulyTable from "../../dokuly_components/dokulyTable/dokulyTable";
 import DokulyPriceFormatter from "../../dokuly_components/formatters/priceFormatter";
 import { releaseStateFormatterNoObject } from "../../dokuly_components/formatters/releaseStateFormatter";
 import useOrganization from "../../common/hooks/useOrganization";
 import { ThumbnailFormatter } from "../../dokuly_components/dokulyTable/functions/formatters";
-import { useNavigate } from "react-router";
+
 
 const LotProcurement = ({ lot, poData = [] }) => {
   const [organization, refreshOrganization, loadingOrganization] =
     useOrganization();
 
-  const [showCompletedPurchaseOrders, setShowCompletedPurchaseOrders] =
-    useState(false);
-  const [showDiscardedPurchaseOrders, setShowDiscardedPurchaseOrders] =
-    useState(false);
+  const [showCompletedPurchaseOrders, setShowCompletedPurchaseOrders] = useState(false);
+  const [showDiscardedPurchaseOrders, setShowDiscardedPurchaseOrders] = useState(false);
   const [filteredPurchaseOrders, setFilteredPurchaseOrders] = useState([]);
 
   const navigate = useNavigate();
