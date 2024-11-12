@@ -228,14 +228,14 @@ const LotBom = ({
       header: "State",
       formatter: (row, cell) => {
         const rowPart = row?.part || row?.assembly || row?.pcba;
-        return releaseStateFormatter(rowPart);
+        return rowPart ? releaseStateFormatter(rowPart) : ""; // Handle null or undefined rowPart
       },
       csvFormatter: (row) => {
         const releaseState =
           row?.part?.release_state ||
           row?.assembly?.release_state ||
           row?.pcba?.release_state ||
-          "";
+          ""; // Handle null or undefined release_state in each part
         return releaseState;
       },
       includeInCsv: true,
