@@ -352,7 +352,13 @@ const LotBom = ({
           </Row>
         );
       },
-
+      csvFormatter: (row) => {
+        const rowPricing = row?.part?.prices;
+        if (rowPricing && rowPricing.length > 0) {
+          return rowPricing[0]?.supplier?.name || "";
+        }
+        return ""; // Return an empty string if no supplier info is available
+      },
       sort: true,
     },
     {

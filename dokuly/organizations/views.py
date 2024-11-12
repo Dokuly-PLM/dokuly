@@ -440,7 +440,7 @@ def update_currency_pairs():
     from_currency = Organization.objects.get(id=1).currency
     # TODO: Incorporate basic currency based on organization
     if settings.CURRENCY_API == None or settings.CURRENCY_API == "":
-        data = {"USD/NOK": 10.5, "USD/EUR": 0.93, "USD/GBP": 0.79}
+        data = {"USD": 1}
         return data
     url = f"{settings.CURRENCY_API}{from_currency}"
     response = requests.get(url)
