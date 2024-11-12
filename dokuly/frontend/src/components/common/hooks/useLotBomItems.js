@@ -12,7 +12,6 @@ import { getLotBomItems } from "../queries";
  * - {Function} refreshLotBomItems - Function to refresh the lot bom items data.
  * - {boolean} loadingLotBomItems - Indicates if the lot bom items data is currently being loaded.
  */
-
 const useLotBomItems = ({ lotId }) => {
   const [loadingLotBomItems, setLoading] = useState(true);
   const [lotBomItems, setLotBomItems] = useState([]);
@@ -28,7 +27,9 @@ const useLotBomItems = ({ lotId }) => {
         if (res.status === 204) {
           setLotBomItems([]);
         } else if (res.status === 200) {
-          setLotBomItems(res.data.bom);
+          // Exclude items where is_mounted is explicitly false
+          const filteredItems = res.data.bom.filter(item => item.is_mounted !== false);
+          setLotBomItems(filteredItems);
           setApp(res.data.app);
         }
       })
