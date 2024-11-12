@@ -540,7 +540,8 @@ def upload_thumbnail(request, **kwargs):
         except ModelClass.DoesNotExist:
             return Response("Item not found", status=status.HTTP_404_NOT_FOUND)
 
-        if item.release_state == "Released":
+        # Refuse upload if the item is released (only for items with release_state field)
+        if getattr(item, "release_state", None) == "Released":
             return Response(
                 f"Can't edit a released {str(ModelClass)}!", status=status.HTTP_400_BAD_REQUEST
             )
