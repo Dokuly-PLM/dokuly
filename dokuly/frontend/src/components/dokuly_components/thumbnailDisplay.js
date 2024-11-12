@@ -125,14 +125,14 @@ const ThumbnailDisplay = ({
         </div>
       )}
       {/* Edit thumbnail modal */}
-      <Modal show={showModal} onHide={handleModalClose} size="lg">
+      <Modal show={showModal} onHide={handleModalClose} size="xl">
         <Modal.Header closeButton>
           <Modal.Title>Edit Thumbnail</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Row>
             {imageUrl && (
-              <Col xs={12} md={4} className="text-center">
+              <Col xs={12} md={8} className="text-center">
                 <h5>Current Thumbnail</h5>
                 <DokulyImage src={imageUrl} />
                 <div className="d-flex justify-content-center">
@@ -140,8 +140,8 @@ const ThumbnailDisplay = ({
                 </div>
               </Col>
             )}
-            <Col xs={12} md={imageUrl ? 8 : 12}>
-              <h5>Upload Thumbnail</h5>
+            <Col xs={12} md={imageUrl ? 4 : 12}>
+              <h5>Replace Thumbnail</h5>
               <div className="form-group">
                 <label>Display name</label>
                 <input
