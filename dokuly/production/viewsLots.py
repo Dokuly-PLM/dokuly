@@ -205,64 +205,33 @@ def update_serial_number(request, id):
 @renderer_classes([JSONRenderer])
 @permission_classes([IsAuthenticated])
 def fetch_connected_po(request, id):
-    """Fetch the connected PO for a lot"""
+    """Fetch the connected Purchase Orders for a given lot."""
     try:
-        lot = Lot.objects.get(id=id)
-
-        # Determine the related object and its BOM
-        model_object = None
-        bom = None
-        app = None
-
-        if lot.pcba:
-            model_object = lot.pcba
-            bom = Assembly_bom.objects.filter(pcba=model_object).first()
-            app = "pcbas"
-        elif lot.assembly:
-            model_object = lot.assembly
-            bom = Assembly_bom.objects.filter(assembly_id=model_object.pk).first()
-            app = "assemblies"
-        else:  # Handle part lots (no bom)
-            po_items = PoItem.objects.filter(part=lot.part).select_related('po').prefetch_related(
-                Prefetch('po', queryset=PurchaseOrder.objects.filter(status='Sent', is_completed=False))
-            )
-
-            # Extract connected POs without duplicates
-            connected_pos = {item.po for item in po_items if item.po and item.po.status == 'Sent'}
-
-            # Serialize and return the data
-            serializer = PurchaseOrderTableSerializer(list(connected_pos), many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        if not bom:
-            return Response([], status=status.HTTP_204_NO_CONTENT)
-
-        # Fetch BOM items related to the found BOM
-        bom_items = Bom_item.objects.filter(bom=bom).prefetch_related('part', 'pcba', 'assembly')
-
-        # Extract parts, pcbas, and assemblies IDs from BOM items
-        part_ids = [item.part.id for item in bom_items if item.part]
-        pcba_ids = [item.pcba.id for item in bom_items if item.pcba]
-        assembly_ids = [item.assembly.id for item in bom_items if item.assembly]
-
-        # Use these IDs to filter PoItems
-        po_items = PoItem.objects.filter(
-            Q(pcba_id__in=pcba_ids) |
-            Q(assembly_id__in=assembly_ids) |
-            Q(part_id__in=part_ids)
-        ).select_related('po').prefetch_related(
-            Prefetch('po', queryset=PurchaseOrder.objects.filter(status='Sent', is_completed=False))
+        # Fetch Purchase Orders directly using lot_id
+        purchase_orders = PurchaseOrder.objects.filter(lot_id=id).only(
+            'id',
+            'supplier',
+            'estimated_delivery_date',
+            'actual_delivery_date',
+            'order_date',
+            'status',
+            'is_completed',
+            'total_price',
+            'purchase_order_number',
         )
 
-        # Extract connected POs without duplicates
-        connected_pos = {item.po for item in po_items if item.po and item.po.status == 'Sent'}
-
-        # Serialize and return the data
-        serializer = PurchaseOrderTableSerializer(list(connected_pos), many=True)
+        # Serialize the result and skip unused fields
+        serializer = PurchaseOrderTableSerializer(
+            purchase_orders,
+            many=True
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    except Lot.DoesNotExist:
+        return Response({"error": "Lot not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['DELETE'])
