@@ -484,8 +484,8 @@ const OrderItemsTable = ({
         if (!row.price) {
           return "-";
         }
-        const price = row.price;
-        return `${price.toFixed(2)}`;
+        const price = parseFloat(row?.price) || 0;
+        return price.toFixed(2);
       },
       includeInCsv: true,
       defaultShowColumn: true,
