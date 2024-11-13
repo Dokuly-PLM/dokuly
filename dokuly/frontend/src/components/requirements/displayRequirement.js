@@ -214,7 +214,7 @@ const DisplayRequirement = (props) => {
               initialMarkdown={requirement?.rationale || ""}
               onSubmit={handleRationaleSubmit}
               showEmptyBorder={true}
-              readOnly={readOnly}
+              readOnly={readOnly || requirement?.state === "Approved" || requirement?.state === "Rejected" }
             />
           </DokulyCard>
 
@@ -227,7 +227,7 @@ const DisplayRequirement = (props) => {
               initialMarkdown={requirement?.statement || ""}
               onSubmit={handleStatementSubmit}
               showEmptyBorder={true}
-              readOnly={readOnly}
+              readOnly={readOnly || requirement?.state === "Approved" || requirement?.state === "Rejected" }
             />
           </DokulyCard>
 
