@@ -40,6 +40,7 @@ const PoImportButton = ({
   const [mpn, setMpn] = useState("");
   const [manufacturer, setManufacturer] = useState("");
   const [poIgnoreColumn, setPoIgnoreColumn] = useState("");
+  const [designator, setDesignator] = useState("");
 
   const [file, setFile] = useState(null);
   const [csvData, setCsvData] = useState([]);
@@ -106,6 +107,9 @@ const PoImportButton = ({
       if (showPoIgnoreDropdown) {
         setPoIgnoreColumn(findFirstMatch(extractedHeaders, ["Ignore", "NOPO"]));
       }
+      setDesignator(
+        findFirstMatch(extractedHeaders, ["Designator", "Reference"]),
+      );
 
       toast.info("CSV file processed successfully.");
     } else {
@@ -152,6 +156,7 @@ const PoImportButton = ({
     setUnitPrice("");
     setMpn("");
     setManufacturer("");
+    setDesignator("");
     setPoIgnoreColumn("");
   };
 
@@ -175,31 +180,32 @@ const PoImportButton = ({
 
   const handleSubmit = () => {
     const toastId = toast.loading("Uploading Items...");
-
+  
     const promises = filteredCsvData.map((item) => {
-      console.log(item);
       const itemQuantity = item[quantity]
         ? Number.parseFloat(item[quantity].replace(",", "."))
         : 1;
       const itemPrice = item[unit_price]
         ? Number.parseFloat(
-            item[unit_price].replace(/[^0-9,\.]/g, "").replace(",", "."),
+            item[unit_price].replace(/[^0-9,\.]/g, "").replace(",", ".")
           ).toFixed(4)
         : "0.0000";
       const itemMpn = item[mpn] || "N/A";
       const itemManufacturer = item[manufacturer] || "N/A";
-
+      const itemDesignator = item[designator] || "";
+  
       return addPoItemWithContents(
         po_id,
         itemQuantity,
         itemPrice,
         itemMpn,
         itemManufacturer,
+        itemDesignator // Pass the designator here
       ).catch((error) => {
         toast.error("An error occurred while processing an item:", error);
       });
     });
-
+  
     Promise.all(promises)
       .then(() => {
         return matchPoItemsWithParts(po_id);
@@ -207,7 +213,7 @@ const PoImportButton = ({
       .then(() => {
         toast.dismiss(toastId);
         toast.success("PO uploaded successfully!");
-
+  
         setRefreshPo(true);
         handleClose();
       })
@@ -221,6 +227,7 @@ const PoImportButton = ({
     { key: "quantity", header: "Quantity" },
     { key: "unit_price", header: "Price" },
     { key: "manufacturer", header: "Manufacturer" },
+    { key: "designator", header: "Designator" },
   ];
 
   return (
@@ -338,6 +345,22 @@ const PoImportButton = ({
                       </Form.Control>
                     </Form.Group>
 
+                    <Form.Group controlId="manufacturerSelect">
+                      <Form.Label>Designator Column</Form.Label>
+                      <Form.Control
+                        as="select"
+                        value={designator}
+                        onChange={(e) => setDesignator(e.target.value)}
+                      >
+                        <option value="">None</option>
+                        {headers.map((header, index) => (
+                          <option key={index} value={header}>
+                            {header}
+                          </option>
+                        ))}
+                      </Form.Control>
+                    </Form.Group>
+
                     {showPoIgnoreDropdown && (
                       <Form.Group controlId="poIgnoreSelect">
                         <Form.Label>PO Ignore Column</Form.Label>
@@ -366,6 +389,7 @@ const PoImportButton = ({
                       quantity: row[quantity] || "N/A",
                       unit_price: row[unit_price] || "N/A",
                       manufacturer: row[manufacturer] || "N/A",
+                      designator: row[designator] || "N/A",
                     }))}
                     columns={previewColumns}
                     showCsvDownload={false}

@@ -189,6 +189,7 @@ def add_po_item_with_contents(request, poId):
         # Parse the updated data from the request
         data = request.data
 
+
         # Create a new PoItem instance with the provided details
         new_po_item = PoItem.objects.create(
             po_id=poId,
@@ -196,6 +197,7 @@ def add_po_item_with_contents(request, poId):
             price=Decimal(get_data(data, "price", 0.0)),
             temporary_mpn=get_data(data, "temporary_mpn", None),
             comment=get_data(data, "comment", ""),
+            designator=get_data(data, "designator", None),
         )
 
         po = new_po_item.po

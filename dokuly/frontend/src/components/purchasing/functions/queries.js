@@ -70,7 +70,8 @@ export const addPoItemWithContents = (
   quantity,
   price,
   temporary_mpn,
-  temporary_manufacturer
+  temporary_manufacturer,
+  designator = undefined
 ) => {
   const data = {
     quantity: quantity,
@@ -78,6 +79,12 @@ export const addPoItemWithContents = (
     temporary_mpn: temporary_mpn,
     temporary_manufacturer: temporary_manufacturer,
   };
+
+  // Add designator to data only if it is provided
+  if (designator !== undefined) {
+    data.designator = designator;
+  }
+
   const url = `/api/purchase_order/${poId}/addItemWithContents/`;
   return axios
     .put(url, data, tokenConfig())
