@@ -30,6 +30,7 @@ import TextFieldEditor from "../../dokuly_components/dokulyTable/components/text
 import ItemReceivedForm from "../forms/itemReceivedForm";
 import DokulyPriceFormatter from "../../dokuly_components/formatters/priceFormatter";
 import { loadingSpinner } from "../../admin/functions/helperFunctions";
+import { ClearOrderItemsButton } from "./clearOrderItemsButton";
 
 const OrderItemsTable = ({
   po_id,
@@ -643,6 +644,12 @@ const OrderItemsTable = ({
               {!readOnly && (
                 <AddButton buttonText="Add Item" onClick={handleAddItem} />
               )}
+              <ClearOrderItemsButton
+                po_id={po_id}
+                readOnly={readOnly}
+                setRefresh={setRefreshPo}
+              />
+
               {!readOnly &&
                 !matchedPoItems.find(
                   (row) => row.temporary_mpn === "Shipping Cost"

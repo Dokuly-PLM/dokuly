@@ -30,6 +30,7 @@ urlpatterns = [
         "api/purchase_order/<int:poId>/addItemWithContents/",
         poItemViews.add_po_item_with_contents,
     ),
+    path("api/purchase_order/<int:poId>/clearOrderItems/", poItemViews.clear_po_items),
     path("api/purchase_order/markItemAsReceived/<int:itemId>/", poItemViews.mark_item_as_received),
     # Supplier
     path("api/supplier/get/all/", supplierViews.get_all_suppliers),
