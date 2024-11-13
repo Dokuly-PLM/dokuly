@@ -54,7 +54,9 @@ const DisplayRequirementSet = (props) => {
     switch (filterType) {
       case "lowest":
         filtered = requirements.filter(
-          (req) => !requirements.some((r) => r.parent_requirement === req.id)
+          (req) => 
+            !requirements.some((r) => r.parent_requirement === req.id) &&  // Only lowest level requirements
+            !req.superseded_by  // Exclude superseded requirements
         );
         break;
       case "top":
