@@ -116,8 +116,8 @@ const DisplayRequirement = (props) => {
   );
 
   useEffect(() => {
-    if (requirement?.satisfied_by) {
-      setVerificationHiddenText("Requirement verified through relation");
+    if (requirement?.superseded_by) {
+      setVerificationHiddenText("Requirement superseded by another requirement");
     } else if (subRequirements?.length > 0) {
       setVerificationHiddenText(
         "Verification: Requirement superseded by its subrequirements"
@@ -234,8 +234,10 @@ const DisplayRequirement = (props) => {
           <DokulyCard
             isCollapsed={subRequirements.length === 0}
             expandText={"Add subrequirement"}
-            isHidden={subRequirements.length === 0 && readOnly}
-            hiddenText={"Requirement has no subrequirements"}
+            isHidden={(subRequirements.length === 0 && readOnly) ||
+              (subRequirements.length === 0 && requirement?.superseded_by)
+            }
+            hiddenText={requirement?.superseded_by? "Requirement superseded by another requirement" : "Requirement has no subrequirements"}
           >
             <CardTitle
               titleText={"Subrequirements"}
@@ -268,13 +270,10 @@ const DisplayRequirement = (props) => {
                 readOnly) ||
               (requirement?.verification_method === "" &&
                 requirement?.verification_results === "" &&
-                subRequirements?.length > 0)
-              /*
-                ||
-                (requirement?.verification_method === "" &&
+                subRequirements?.length > 0) ||
+              (requirement?.verification_method === "" &&
                   requirement?.verification_results === "" &&
-                  subRequirements?.superseded_by)
-                  */
+                  requirement?.superseded_by)   
             }
             hiddenText={verificationHiddenText}
           >
