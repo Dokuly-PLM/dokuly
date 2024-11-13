@@ -150,6 +150,8 @@ def check_permissions_alter_persmissions(user, target):
     targetRole = target_profile.role
     if not user.is_authenticated:
         return False
+    if user == target and role == "Owner":
+        return True
     if user == target:
         return False
     if targetRole == "Owner" and role == "Admin":
