@@ -492,16 +492,21 @@ const OrderItemsTable = ({
     },
     {
       key: "total_price",
-      header: `Total Price [${purchaseOrder?.po_currency}]`,
-      headerTooltip:
-        "The raw total price of the item in the supplier's currency.",
+      header: `Total Price [${purchaseOrder?.po_currency || "USD"}]`,
+      headerTooltip: "The total price of the item in the supplier's currency.",
       formatter: (row) => {
         const price = row?.price ?? 0;
         const quantity = row?.quantity ?? 1;
         const totalPrice = price * quantity;
+    
+        // Ensure valid currency code
+        const currencyCode = purchaseOrder?.po_currency && purchaseOrder.po_currency.includes("/")
+          ? "USD" // Fallback to USD if invalid currency code format
+          : purchaseOrder?.po_currency || "USD";
+    
         const formattedPrice = totalPrice.toLocaleString("en-US", {
           style: "currency",
-          currency: purchaseOrder?.po_currency || "USD",
+          currency: currencyCode,
         });
         return <span>{formattedPrice}</span>;
       },
@@ -509,15 +514,21 @@ const OrderItemsTable = ({
         const price = row?.price ?? 0;
         const quantity = row?.quantity ?? 1;
         const totalPrice = price * quantity;
+    
+        // Ensure valid currency code
+        const currencyCode = purchaseOrder?.po_currency && purchaseOrder.po_currency.includes("/")
+          ? "USD" // Fallback to USD if invalid currency code format
+          : purchaseOrder?.po_currency || "USD";
+    
         const formattedPrice = totalPrice.toLocaleString("en-US", {
           style: "currency",
-          currency: purchaseOrder?.po_currency || "USD",
+          currency: currencyCode,
         });
         return formattedPrice;
       },
       includeInCsv: true,
       defaultShowColumn: true,
-    },
+    }
   ];
 
   partInformationColumns.map((key) =>
