@@ -215,6 +215,21 @@ def add_po_item_with_contents(request, poId):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+@api_view(["PUT"])
+@renderer_classes([JSONRenderer])
+@login_required(login_url="/login")
+def clear_po_items(request, poId):
+    permission, response = check_user_auth_and_app_permission(request, "procurement")
+    if not permission:
+        return response
+        
+    try:
+        items = PoItem.objects.filter(po_id=poId)
+        items.delete()
+        return Response(status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(["PUT"])
 @renderer_classes([JSONRenderer])

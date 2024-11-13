@@ -110,3 +110,10 @@ export const markItemAsReceived = (itemId) => {
   const dataPromise = promise.then((res) => res.data);
   return dataPromise;
 };
+
+export const clearOrderItems = (poId) => {
+  const url = `/api/purchase_order/${poId}/clearOrderItems/`;
+
+  const promise = axios.put(url, {}, tokenConfig());
+  return promise.then((res) => res);
+};
