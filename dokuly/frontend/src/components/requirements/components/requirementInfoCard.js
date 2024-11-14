@@ -324,7 +324,8 @@ const RequirementInfoCard = ({
           )}
 
         {/* Cant be superseded with subrequirements. Cant be superseded if it is verified.*/}
-        {(number_of_subrequirements !== -1 && !item?.is_verified && !( !item?.superseded_by && (item?.state === "Approved") || (item?.state === "Rejected"))) && (
+        {((item?.superseded_by !== null) || 
+          (number_of_subrequirements !== -1 && !item?.is_verified && item?.state !== "Approved" && item?.state !== "Rejected")) && (
           <Row className="align-items-center">
             <Col
               className="col-lg-6 col-xl-6"
@@ -527,7 +528,7 @@ const RequirementInfoCard = ({
 
         {!readOnly && (
           <Row className="align-items-center">
-            {(item?.state === "Draft" || item?.state === "Rejected") && (
+            {(item?.state === "Draft") && (
               <DeleteButton
                 onDelete={handleDelete}
                 textSize={"10px"}
