@@ -186,7 +186,7 @@ const RequirementsTable = ({
             textSize={tableTextSize}
             placeholder="Select"
             borderIfPlaceholder={true}
-            readOnly={readOnly}
+            readOnly={readOnly || row?.state === "Rejected" || row?.state === "Approved"}
           />
         );
       },
@@ -211,7 +211,7 @@ const RequirementsTable = ({
             textSize={tableTextSize}
             placeholder="Select"
             borderIfPlaceholder={true}
-            readOnly={readOnly}
+            readOnly={readOnly || row?.state === "Rejected" || row?.state === "Approved"}
           />
         );
       },
@@ -261,7 +261,7 @@ const RequirementsTable = ({
           setText={(newText) => changeField(row.id, "rationale", newText)}
           multiline={true}
           searchString={searchString}
-          readOnly={readOnly}
+          readOnly={readOnly || row?.state === "Rejected" || row?.state === "Approved"}
         />
       ),
       csvFormatter: (row) => (row?.rationale ? `${row?.rationale}` : ""),
@@ -276,7 +276,7 @@ const RequirementsTable = ({
           setText={(newText) => changeField(row.id, "statement", newText)}
           multiline={true}
           searchString={searchString}
-          readOnly={readOnly}
+          readOnly={readOnly || row?.state === "Rejected" || row?.state === "Approved"}
         />
       ),
       csvFormatter: (row) => {
@@ -298,7 +298,7 @@ const RequirementsTable = ({
             textSize={tableTextSize}
             placeholder="Select"
             borderIfPlaceholder={true}
-            readOnly={readOnly}
+            readOnly={readOnly || row?.state === "Rejected" || row?.state === "Approved"}
           />
         );
       },
