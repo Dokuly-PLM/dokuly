@@ -14,7 +14,6 @@ import DokulyCard from "../dokuly_components/dokulyCard";
 import EditableMarkdown from "../dokuly_components/dokulyMarkdown/editableMarkdown";
 import RequirementsTable from "./requirementsTable";
 import CardTitle from "../dokuly_components/cardTitle";
-import RequirementsTree from "./components/requirementsTree";
 import RequirementInfoCard from "./components/requirementInfoCard";
 import Heading from "../dokuly_components/Heading";
 
@@ -176,14 +175,7 @@ const DisplayRequirement = (props) => {
       />
 
       <Row>
-        <Col md={3}>
-          <RequirementsTree
-            requirementId={id}
-            requirementSetId={requirementSet?.id}
-            refresh={refresh}
-          />
-        </Col>
-        <Col md={9}>
+        <Col>
           <RequirementInfoCard
             item={requirement}
             number_of_subrequirements={subRequirements.length}
