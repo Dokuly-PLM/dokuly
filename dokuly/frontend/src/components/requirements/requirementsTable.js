@@ -45,6 +45,13 @@ const RequirementsTable = ({
 
   const navigate = useNavigate();
 
+  function hide_verification_cells(requirement) {
+    return (requirement?.superseded_by !== null || 
+      requirement?.state === "Rejected"
+      // TODO hide for reqs. with subrequirements 
+    );
+  }
+
   const handleAddClick = () => {
     if (parent_requirement_id !== -1) {
       createSubRequirement(parent_requirement_id, set_id).then(
@@ -281,7 +288,7 @@ const RequirementsTable = ({
       header: "Verification",
       maxWidth: "70px",
       formatter: (row) => {
-        return (
+        return hide_verification_cells(row) ? null : (
           <GenericDropdownSelector
             state={row?.verification_class}
             setState={(newVal) =>
@@ -295,16 +302,19 @@ const RequirementsTable = ({
           />
         );
       },
-      csvFormatter: (row) =>
-        row?.verification_class ? `${row?.verification_class}` : "",
+      csvFormatter: (row) =>(
+        hide_verification_cells(row) 
+          ? "" 
+          : (row?.verification_class ? `${row?.verification_class}` : "")
+      ),
     },
     {
       key: "is_verified",
       header: "Verification Status",
       maxWidth: "70px",
       formatter: (row) => {
-        return (
-          <Col className="d-flex align-items-center justify-content-center">
+        return hide_verification_cells(row) ? null : (
+            <Col className="d-flex align-items-center justify-content-center">
             <Form.Group>
               <Form.Check
                 type="checkbox"
@@ -331,33 +341,42 @@ const RequirementsTable = ({
               />
             </Form.Group>
           </Col>
-        );
+        )
       },
-      csvFormatter: (row) => (row?.is_verified ? "Verified" : "Not Verified"),
+      csvFormatter: (row) => (
+        hide_verification_cells(row) 
+          ? "" 
+          : (row?.is_verified ? "Verified" : "Not Verified")
+      ),
     },
     {
       key: "verification_method",
       header: "Verification Method",
-      formatter: (row, column, searchString) => (
-        <TextFieldEditor
-          text={row?.verification_method}
-          setText={(newText) =>
-            changeField(row.id, "verification_method", newText)
-          }
-          multiline={true}
-          searchString={searchString}
-          readOnly={readOnly}
-        />
+      formatter: (row, column, searchString) => {
+        return hide_verification_cells(row) ? null : (
+          <TextFieldEditor
+            text={row?.verification_method}
+            setText={(newText) =>
+              changeField(row.id, "verification_method", newText)
+            }
+            multiline={true}
+            searchString={searchString}
+            readOnly={readOnly}
+          />
+        )
+      },
+      csvFormatter: (row) => (
+        hide_verification_cells(row) 
+          ? "" 
+          : (row?.verification_method ? `${row?.verification_method}` : "")
       ),
-      csvFormatter: (row) =>
-        row?.verification_method ? `${row?.verification_method}` : "",
       defaultShowColumn: false,
     },
     {
       key: "verification_results",
       header: "Verification Results",
       formatter: (row, column, searchString) => {
-        return (
+        return hide_verification_cells(row) ? null : (
           <TextFieldEditor
             text={row?.verification_results}
             setText={(newText) =>
@@ -369,8 +388,11 @@ const RequirementsTable = ({
           />
         );
       },
-      csvFormatter: (row) =>
-        row?.verification_results ? `${row?.verification_results}` : "",
+      csvFormatter: (row) =>(
+        hide_verification_cells(row)
+          ? "" 
+          : (row?.verification_results ? `${row?.verification_results}` : "")
+      ),
       defaultShowColumn: false,
     },
   ];
