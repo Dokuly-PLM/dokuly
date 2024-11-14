@@ -44,7 +44,7 @@ const getParentChain = (requirement, requirementSet) => {
 };
 
 const CustomNode = ({ data }) => {
-  const maxHeight = "140px";
+  const maxHeight = "800px";
 
   return (
     <div
@@ -53,14 +53,14 @@ const CustomNode = ({ data }) => {
         border: "1px solid #ddd",
         borderRadius: 5,
         background: "#fff",
-        maxWidth: "380px",
+        maxWidth: "500px", // Increase width
         maxHeight: maxHeight,
         overflow: "hidden",
       }}
     >
       <div
         style={{
-          padding: 10,
+          padding: 15, // Increase padding for better spacing
           backgroundColor: data.isCurrent ? "#155216" : "#f0f0f0",
           color: data.isCurrent ? "#ffffff" : "#000000",
           borderBottom: "1px solid #ddd",
@@ -69,7 +69,7 @@ const CustomNode = ({ data }) => {
       >
         <strong>ID:</strong> {data.id}
       </div>
-      <div style={{ padding: 10, overflow: "auto", maxHeight: maxHeight }}>
+      <div style={{ padding: 15, overflow: "auto", maxHeight: maxHeight }}>
         <div>
           <strong>Statement:</strong>
         </div>
@@ -141,8 +141,8 @@ const RequirementDependencyGraphContent = ({
       // Recursively add all parent requirements up to the root
       const parentChain = getParentChain(requirement, requirement_set);
       if (parentChain && Array.isArray(parentChain)) {
-        let yOffset = -150; // Positioning offset for each level up
-        let xOffset = -250; // Positioning offset for each parent node to the left
+        let yOffset = -200; // Positioning offset for each level up
+        let xOffset = -800; // Positioning offset for each parent node to the left
   
         parentChain.forEach((parentReq, index) => {
           if (parentReq && parentReq.id) {
@@ -182,8 +182,8 @@ const RequirementDependencyGraphContent = ({
               });
             }
   
-            yOffset -= 150; // Move up for the next parent
-            xOffset -= 250; // Move left for the next parent
+            yOffset -= 200; // Move up for the next parent
+            xOffset -= 800; // Move left for the next parent
           }
         });
       }
@@ -191,7 +191,7 @@ const RequirementDependencyGraphContent = ({
       // Add all subrequirements (existing code)
       if (requirement_set && requirement_set.length > 0) {
         let subYOffset = 100;
-        let subXOffset = 500;
+        let subXOffset = 800;
         for (const req of requirement_set) {
           if (req && req.parent_requirement === requirement.id) {
             if (visited.has(req.id)) {
