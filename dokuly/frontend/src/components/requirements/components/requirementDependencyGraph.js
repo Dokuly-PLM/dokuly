@@ -12,6 +12,37 @@ import CardTitle from "../../dokuly_components/cardTitle";
 import { Handle } from "react-flow-renderer";
 import DokulyMarkdown from "../../dokuly_components/dokulyMarkdown/dokulyMarkdown";
 
+const getParentChain = (requirement, requirementSet) => {
+  const chain = [];
+  const visited = new Set(); // Track visited requirements
+
+  let currentRequirement = requirement;
+
+  while (currentRequirement && currentRequirement.parent_requirement) {
+    // If we've already visited this requirement, break to avoid infinite loop
+    if (visited.has(currentRequirement.id)) {
+      console.warn(
+        `Circular dependency detected for requirement ID: ${currentRequirement.id}`
+      );
+      break;
+    }
+
+    visited.add(currentRequirement.id); // Mark this requirement as visited
+    const parent = requirementSet.find(
+      (req) => req.id === currentRequirement.parent_requirement
+    );
+
+    if (parent) {
+      chain.push(parent);
+      currentRequirement = parent;
+    } else {
+      break;
+    }
+  }
+
+  return chain;
+};
+
 const CustomNode = ({ data }) => {
   const maxHeight = "140px";
 
@@ -91,8 +122,11 @@ const RequirementDependencyGraphContent = ({
   useEffect(() => {
     const newNodes = [];
     const newEdges = [];
-
+  
     if (requirement) {
+      const visited = new Set(); // Track visited nodes to prevent circular loops
+  
+      // Add the current requirement node
       newNodes.push({
         id: requirement.id.toString(),
         type: "custom",
@@ -103,51 +137,76 @@ const RequirementDependencyGraphContent = ({
         },
         position: { x: 0, y: 0 },
       });
-
-      if (requirement.parent_requirement) {
-        let parentRequirement = null;
-        if (requirement_set && requirement_set.length > 0) {
-          for (const req of requirement_set) {
-            if (req.id === requirement.parent_requirement) {
-              parentRequirement = req;
-              break;
+  
+      // Recursively add all parent requirements up to the root
+      const parentChain = getParentChain(requirement, requirement_set);
+      if (parentChain && Array.isArray(parentChain)) {
+        let yOffset = -150; // Positioning offset for each level up
+        let xOffset = -250; // Positioning offset for each parent node to the left
+  
+        parentChain.forEach((parentReq, index) => {
+          if (parentReq && parentReq.id) {
+            if (visited.has(parentReq.id)) {
+              console.warn(`Circular dependency detected at requirement ID: ${parentReq.id}`);
+              return; // Skip adding this node if it creates a circular dependency
             }
-          }
-
-          if (parentRequirement) {
+            visited.add(parentReq.id);
+  
             newNodes.push({
-              id: parentRequirement.id.toString(),
+              id: parentReq.id.toString(),
               type: "custom",
               data: {
-                id: parentRequirement.id,
-                statement: parentRequirement.statement,
+                id: parentReq.id,
+                statement: parentReq.statement,
                 isCurrent: false,
               },
-              position: { x: -500, y: -100 },
+              position: { x: xOffset, y: yOffset },
             });
-
-            newEdges.push({
-              id: `e${parentRequirement.id}-${requirement.id}`,
-              source: parentRequirement.id.toString(),
-              target: requirement.id.toString(),
-              animated: true,
-              label: "subrequirement",
-            });
+  
+            // Connect each parent to its child
+            if (index === 0) {
+              newEdges.push({
+                id: `e${parentReq.id}-${requirement.id}`,
+                source: parentReq.id.toString(),
+                target: requirement.id.toString(),
+                animated: true,
+                label: "parent",
+              });
+            } else {
+              newEdges.push({
+                id: `e${parentReq.id}-${parentChain[index - 1].id}`,
+                source: parentReq.id.toString(),
+                target: parentChain[index - 1].id.toString(),
+                animated: true,
+                label: "parent",
+              });
+            }
+  
+            yOffset -= 150; // Move up for the next parent
+            xOffset -= 250; // Move left for the next parent
           }
-        }
+        });
       }
-
+  
+      // Add all subrequirements (existing code)
       if (requirement_set && requirement_set.length > 0) {
-        let yOffset = 100;
+        let subYOffset = 100;
+        let subXOffset = 500;
         for (const req of requirement_set) {
-          if (req.parent_requirement === requirement.id) {
+          if (req && req.parent_requirement === requirement.id) {
+            if (visited.has(req.id)) {
+              console.warn(`Circular dependency detected at requirement ID: ${req.id}`);
+              continue; // Skip adding this node if it creates a circular dependency
+            }
+            visited.add(req.id);
+  
             newNodes.push({
               id: req.id.toString(),
               type: "custom",
               data: { id: req.id, statement: req.statement, isCurrent: false },
-              position: { x: 500, y: yOffset },
+              position: { x: subXOffset, y: subYOffset },
             });
-
+  
             newEdges.push({
               id: `e${requirement.id}-${req.id}`,
               source: requirement.id.toString(),
@@ -155,16 +214,17 @@ const RequirementDependencyGraphContent = ({
               animated: true,
               label: "subrequirement",
             });
-
-            yOffset += 150;
+  
+            subYOffset += 150;
           }
         }
       }
-
+  
       setNodes(newNodes);
       setEdges(newEdges);
     }
   }, [requirement, requirement_set]);
+  
 
   useEffect(() => {
     if (nodes.length > 0) {
