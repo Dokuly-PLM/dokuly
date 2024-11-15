@@ -21,6 +21,7 @@ from profiles.serializers import ProfileSerializer
 from django.contrib.auth.models import User
 from accounts.serializers import UserSerializer
 from profiles.views import check_permissions_ownership, check_permissions_standard
+from decimal import Decimal, InvalidOperation
 
 
 @api_view(("GET",))
@@ -93,23 +94,36 @@ def get_price_history(request, app, id):
 @renderer_classes((JSONRenderer,))
 @login_required(login_url="/login")
 def add_new_price(request, app, id):
-    """Add a new price entry."""
-    user = request.user
-    if user == None:
-        return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
-    check = check_permissions_standard(user)
-    if not check:
-        return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
     try:
         data = request.data
+        print(data)
 
-        price = Price()
-        price.price = data["price"]
-        price.minimum_order_quantity = data["minimum_order_quantity"]
-        price.currency = data["currency"]
-        price.is_latest_price = True
-        price.created_by = request.user
+        # Validate and set the price value
+        price_value = data.get("price")
+        if not price_value:
+            return Response(
+                {"error": "Price is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            price_value = Decimal(str(price_value))  # Convert to string first, then Decimal
+        except (InvalidOperation, ValueError) as e:
+            return Response(
+                {"error": f"Invalid price value: {price_value}. Must be a decimal."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
+        # Create and save the Price object
+        price = Price(
+            price=price_value,
+            minimum_order_quantity=data.get("minimum_order_quantity", 1),
+            currency=data.get("currency", "USD"),
+            supplier_id=data.get("supplier_id"),
+            is_latest_price=True,
+            created_by=request.user,
+        )
+
+        # Assign app-specific foreign key
         if app == "parts":
             price.part_id = id
         elif app == "assemblies":
@@ -117,18 +131,19 @@ def add_new_price(request, app, id):
         elif app == "pcbas":
             price.pcba_id = id
         else:
-            return Response("Undefined App", status=status.HTTP_400_BAD_REQUEST)
-
-        if "supplier_id" in data and data["supplier_id"] != None:
-            price.supplier_id = data["supplier_id"]
+            return Response(
+                {"error": "Undefined app type. Must be 'parts', 'assemblies', or 'pcbas'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         price.save()
 
         serializer = PriceSerializer(price, many=False)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     except Exception as e:
         return Response(
-            f"create_new_supplier failed: {e}",
+            {"error": f"Failed to add price: {e}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
