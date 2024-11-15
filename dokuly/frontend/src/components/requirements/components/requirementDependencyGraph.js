@@ -51,7 +51,7 @@ const getParentChainWithDerived = (requirement, requirementSet) => {
 };
 
 const CustomNode = ({ data }) => {
-  const maxHeight = "800px";
+  const maxHeight = "780px";
 
   return (
     <div
@@ -60,7 +60,7 @@ const CustomNode = ({ data }) => {
         border: "1px solid #ddd",
         borderRadius: 5,
         background: "#fff",
-        maxWidth: "500px",
+        maxWidth: "680px",
         maxHeight: maxHeight,
         overflow: "hidden",
       }}
