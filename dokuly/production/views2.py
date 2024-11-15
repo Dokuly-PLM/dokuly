@@ -1,32 +1,39 @@
-from .models import Assembly, Part, Pcba, Production, Lot
-from .models import Production, Assembly, Part, Pcba
-from django.db import IntegrityError
-from rest_framework.decorators import api_view, permission_classes
+from django.db import IntegrityError, transaction
+from django.db.models import Q, Max
 from django.shortcuts import render
-from django.db import transaction
 from django.http import HttpResponse
-from production.models import Production, TestData
-from rest_framework import generics, permissions
+from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.decorators import login_required
+from django.db.utils import IntegrityError
+from rest_framework.decorators import api_view, permission_classes, renderer_classes
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, renderer_classes, permission_classes
 from rest_framework.renderers import JSONRenderer
-from rest_framework import status
-from .serializers import ProductionSerializer, TestDataSerializer
+from rest_framework import status, generics, permissions
+from rest_framework.permissions import IsAuthenticated
+from .models import (
+    Assembly,
+    Part,
+    Pcba,
+    Production,
+    Lot,
+    ScalarMeasurement,
+    VectorMeasurement
+)
+from .serializers import (
+    ProductionSerializer,
+    ScalarMeasurementSerializer,
+    VectorMeasurementSerializer,
+)
 from files.serializers import FileSerializer
 from files.models import File
 from parts.models import Part
 from assemblies.models import Assembly
-from django.db.models import Q, Max
-from django.contrib.auth.decorators import login_required
-from rest_framework.permissions import IsAuthenticated
 from organizations.permissions import APIAndProjectAccess
-import json
 from profiles.views import check_user_auth_and_app_permission
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.utils import IntegrityError
-from django.utils import timezone
-import re
 from documents.models import MarkdownText
+import json
+import re
 
 
 @api_view(['GET'])
@@ -389,109 +396,147 @@ def update_production(request, identifier, serial_number, **kwargs):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
-def get_test_data(request, identifier, serial_number, **kwargs):
-    """
-    Retrieves all test data for items identified by a full_part_number and revision (either assembly, part, or PCBA)
-    and a serial number.
-    """
+def get_measurements(request, identifier, serial_number, **kwargs):
     try:
-        # Extract full_part_number and revision
+        # Parse identifier
+        match = re.match(r"([A-Za-z0-9]+)([A-Za-z])$", identifier)
+        if not match:
+            return Response({'error': 'Invalid identifier format'}, status=400)
+        full_part_number = match.group(1)
+        revision = match.group(2)
+        item_query = Q(full_part_number=full_part_number, revision=revision)
+        production_query = Q(serial_number=serial_number)
+        product_item = None
+
+        # Find the production item
+        for Model, field_name in [(Assembly, 'assembly'), (Part, 'part'), (Pcba, 'pcba')]:
+            model_items = Model.objects.filter(item_query)
+            if model_items.exists():
+                product_item = Production.objects.filter(
+                    production_query & Q(**{field_name + "__in": model_items})
+                ).first()
+                if product_item:
+                    break
+        if not product_item:
+            return Response({'error': 'Production item not found'}, status=404)
+
+        # Fetch scalar and vector measurements
+        scalar_measurements = ScalarMeasurement.objects.filter(production_item=product_item)
+        vector_measurements = VectorMeasurement.objects.filter(production_item=product_item)
+
+        scalar_serializer = ScalarMeasurementSerializer(scalar_measurements, many=True)
+        vector_serializer = VectorMeasurementSerializer(vector_measurements, many=True)
+
+        response_data = {
+            'scalar_measurements': scalar_serializer.data,
+            'vector_measurements': vector_serializer.data
+        }
+        return Response(response_data, status=200)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated | APIAndProjectAccess])
+def post_scalar_measurement(request, identifier, serial_number, **kwargs):
+    try:
+        # Extract production item based on identifier and serial_number
+        print(identifier)
         match = re.match(r"(\D+\d+)(\D)", identifier)
         if not match:
             return Response({'error': 'Invalid identifier format'}, status=400)
-
         full_part_number = match.group(1)
         revision = match.group(2)
-
-        # Construct a query to look for an item with both full_part_number and revision
         item_query = Q(full_part_number=full_part_number, revision=revision)
         production_query = Q(serial_number=serial_number)
-        product_items = []
+        product_item = None
 
-        # Check each model to find the production items
+        # Find the production item
         for Model, field_name in [(Assembly, 'assembly'), (Part, 'part'), (Pcba, 'pcba')]:
-            items = Model.objects.filter(item_query)
-            if items.exists():
-                # Filter the production items using the specific model field and add to list
-                productions = Production.objects.filter(
-                    production_query & Q(**{field_name + "__in": items}))
-                if productions.exists():
-                    product_items.extend(productions)
+            model_items = Model.objects.filter(item_query)
+            if model_items.exists():
+                product_item = Production.objects.filter(
+                    production_query & Q(**{field_name + "__in": model_items})
+                ).first()
+                if product_item:
+                    break
+        if not product_item:
+            return Response({'error': 'Production item not found'}, status=404)
 
-        if not product_items:
-            return Response({'error': 'Production items not found'}, status=404)
-
-        # Get all test data linked to the found production items
-        test_data_items = TestData.objects.filter(
-            produced_item__in=product_items)
-        serializer = TestDataSerializer(test_data_items, many=True)
-        return Response(serializer.data)
-
+        # Deserialize the incoming data
+        serializer = ScalarMeasurementSerializer(data=request.data)
+        if serializer.is_valid():
+            # Save the scalar measurement with the linked production item
+            serializer.save(production_item=product_item)
+            return Response({'message': 'Scalar measurement added successfully'}, status=201)
+        else:
+            return Response(serializer.errors, status=400)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
-def post_test_data(request, identifier, serial_number, **kwargs):
-    """
-    Posts test data for an item identified by a full_part_number and revision (either assembly, part, or PCBA)
-    and a serial number.
-    """
+def post_vector_measurement(request, identifier, serial_number, **kwargs):
     try:
-        # Extract full_part_number and revision
+        # Extract production item based on identifier and serial_number
         match = re.match(r"(\D+\d+)(\D)", identifier)
         if not match:
             return Response({'error': 'Invalid identifier format'}, status=400)
-
         full_part_number = match.group(1)
         revision = match.group(2)
-
-        # Construct a query to look for an item with both full_part_number and revision
-        item_query = Q(full_part_number=full_part_number,
-                       revision=revision)
+        item_query = Q(full_part_number=full_part_number, revision=revision)
         production_query = Q(serial_number=serial_number)
-
-        # Initialize product_item
         product_item = None
 
-        # Check each model to find the production item
+        # Find the production item
         for Model, field_name in [(Assembly, 'assembly'), (Part, 'part'), (Pcba, 'pcba')]:
             model_items = Model.objects.filter(item_query)
             if model_items.exists():
-                # Get the first item matching the model and serial number
                 product_item = Production.objects.filter(
-                    production_query & Q(**{field_name + "__in": model_items})).first()
+                    production_query & Q(**{field_name + "__in": model_items})
+                ).first()
                 if product_item:
                     break
-
         if not product_item:
             return Response({'error': 'Production item not found'}, status=404)
 
         # Deserialize the incoming data
-        serializer = TestDataSerializer(data=request.data)
+        serializer = VectorMeasurementSerializer(data=request.data)
         if serializer.is_valid():
-            # Save the test data with the linked production item
-            test_data = serializer.save(produced_item=product_item)
-            return Response({'message': 'Test data added successfully'}, status=201)
+            # Save the vector measurement with the linked production item
+            serializer.save(production_item=product_item)
+            return Response({'message': 'Vector measurement added successfully'}, status=201)
         else:
             return Response(serializer.errors, status=400)
-
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
-def delete_test_data(request, id, **kwargs):
-    """
-    Deletes test data by ID.
-    """
+def delete_scalar_measurement(request, id, **kwargs):
     try:
-        test_data = TestData.objects.get(pk=id)
-        test_data.delete()
-        return Response({'message': 'Test data deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
-    except TestData.DoesNotExist:
-        return Response({'error': 'Test data not found'}, status=status.HTTP_404_NOT_FOUND)
+        measurement = ScalarMeasurement.objects.get(pk=id)
+        measurement.delete()
+        return Response({'message': 'Scalar measurement deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    except ScalarMeasurement.DoesNotExist:
+        return Response({'error': 'Scalar measurement not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated | APIAndProjectAccess])
+def delete_vector_measurement(request, id, **kwargs):
+    try:
+        measurement = VectorMeasurement.objects.get(pk=id)
+        measurement.delete()
+        return Response({'message': 'Vector measurement deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    except VectorMeasurement.DoesNotExist:
+        return Response({'error': 'Vector measurement not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

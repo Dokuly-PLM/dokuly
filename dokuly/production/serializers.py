@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from production.models import Production, TestData, Lot
+from production.models import Production, TestData, Lot, ScalarMeasurement, VectorMeasurement
 from parts.serializers import (GlobalSearchAssemblySerializer,
                                GlobalSearchPartSerializer,
                                GlobalSearchPcbaSerializer, PartThumbnailTitleSerializer)
@@ -32,10 +32,26 @@ class ProductionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class TestDataSerializer(serializers.ModelSerializer):
+class ScalarMeasurementSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TestData
+        model = ScalarMeasurement
         fields = '__all__'
+
+    def create(self, validated_data):
+        production_item = validated_data.pop('production_item', None)
+        instance = ScalarMeasurement.objects.create(production_item=production_item, **validated_data)
+        return instance
+
+
+class VectorMeasurementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VectorMeasurement
+        fields = '__all__'
+
+    def create(self, validated_data):
+        production_item = validated_data.pop('production_item', None)
+        instance = VectorMeasurement.objects.create(production_item=production_item, **validated_data)
+        return instance
 
 
 class LotSerializer(serializers.ModelSerializer):

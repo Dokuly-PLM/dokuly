@@ -27,8 +27,8 @@ urlpatterns = [
     path('api/productions/createNewProduction/', views2.create_new_production),
     path('api/productions/searchProductionItems/',
          views2.search_production_items),
-    path('api/production/test-data/get/<str:identifier>/<str:serial_number>/', views2.get_test_data,
-         name='get_test_data', kwargs={"model_type": "production"}),
+    path('api/production/test-data/get/<str:identifier>/<str:serial_number>/', views2.get_measurements),
+
 
 
     # Lots

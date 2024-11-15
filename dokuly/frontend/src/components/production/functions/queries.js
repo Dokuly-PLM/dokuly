@@ -77,3 +77,7 @@ export const deleteLot = (lotId) => {
     error: "Error deleting lot.",
   });
 };
+
+export const getProducedItemMeasurements = (identifier, serial_number) => {
+  return axios.get(`/api/production/test-data/get/${identifier}/${serial_number}/`, tokenConfig());
+};

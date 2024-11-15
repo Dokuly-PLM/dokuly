@@ -93,10 +93,44 @@ class TestData(models.Model):
         'Production', on_delete=models.SET_NULL, null=True, related_name='tests')
     files = models.ManyToManyField(
         File, related_name='test_data', blank=True, null=True)
+    status = models.CharField(max_length=50, blank=True, null=True)
+    ScalarMeasurement = models.ManyToManyField(
+        'ScalarMeasurement', related_name='tests', blank=True, null=True)
+    VectorMeasurement = models.ManyToManyField(
+        'VectorMeasurement', related_name='tests', blank=True, null=True)
+    # DEPRECATED
     step_title = models.CharField(max_length=500, blank=True)
     step_number = models.IntegerField(default=0)
     is_archived = models.BooleanField(default=False, blank=True)
-    status = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
         ordering = ['step_number']
+
+
+class ScalarMeasurement(models.Model):
+    """Scalar measurements for a produced item."""
+    production_item = models.ForeignKey(
+        'Production', on_delete=models.SET_NULL, null=True, related_name='scalar_measurements')
+    measurement = models.FloatField()
+    unit = models.CharField(max_length=50, blank=True)
+    upper_limit = models.FloatField(null=True, blank=True)
+    lower_limit = models.FloatField(null=True, blank=True)
+    creation_date = models.DateTimeField(auto_now_add=True, null=True)
+    step_title = models.CharField(max_length=500, blank=True)
+    step_group = models.CharField(max_length=500, blank=True)
+
+
+class VectorMeasurement(models.Model):
+    """Vector measurements for a produced item."""
+
+    production_item = models.ForeignKey(
+        'Production', on_delete=models.SET_NULL, null=True, related_name='vector_measurements')
+    measurements_x = ArrayField(models.FloatField(), blank=True, null=True)
+    measurements_y = ArrayField(models.FloatField(), blank=True, null=True)
+    x_unit = models.CharField(max_length=150, blank=True)
+    y_unit = models.CharField(max_length=150, blank=True)
+    upper_limit = models.FloatField(null=True, blank=True)
+    lower_limit = models.FloatField(null=True, blank=True)
+    creation_date = models.DateTimeField(auto_now_add=True, null=True)
+    step_title = models.CharField(max_length=500, blank=True)
+    step_group = models.CharField(max_length=500, blank=True)
