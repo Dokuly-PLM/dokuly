@@ -133,8 +133,8 @@ def edit_requirement(request, id):
         if "derived_from" in data:
             requirement.derived_from.set(data["derived_from"])
             requirement.parent_requirement = None  # Cant be both derived from and have a parent
-        if "satisfied_by" in data:
-            requirement.satisfied_by_id.set(data["satisfied_by"])
+        if "superseded_by" in data:
+            requirement.superseded_by_id = data["superseded_by"]
         if "statement" in data:
             requirement.statement = data["statement"]
         if "verification_class" in data:

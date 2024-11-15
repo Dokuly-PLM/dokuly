@@ -60,6 +60,7 @@ const RequirementInfoCard = ({
   const [quality_assurance, setQualityAssurance] = useState(null);
   const [requirements, setRequirements] = useState([]);
   const [parentRequirement, setParentRequirement] = useState(null);
+  const [superseedingRequirement, setSuperseedingRequirement] = useState(null);
   const [isTopLevelRequirement, setIsTopLevelRequiremnt] = useState(false);
 
   useEffect(() => {
@@ -106,6 +107,14 @@ const RequirementInfoCard = ({
     );
     const parentReq = filteredReqs.shift();
     setParentRequirement(parentReq);
+
+
+    const filteredReqs2 = requirements.filter(
+      (req) => req.id === item.superseded_by
+    );
+    const superseedingReq = filteredReqs2.shift();
+    setSuperseedingRequirement(superseedingReq);
+
   }, [item?.parent_requirement, requirements]);
 
   const getParentRequirementOptions = () => {
@@ -126,6 +135,27 @@ const RequirementInfoCard = ({
     return options;
   };
 
+  const getSuperseedingRequirementOptions = () => {
+    let options = [];
+    if (!requirements || requirements.length === 0) {
+      options.push({ value: null, label: "--" });
+      return options;
+    }
+    options = requirements
+      .filter((req) => req.id !== item.id)
+      .map((req) => ({
+        value: req.id,
+        label: `${req.id} - ${req.statement.substring(0, 100)}${
+          req.statement.length > 100 ? "..." : ""
+        }`,
+      }));
+    options.unshift({ value: null, label: "--" });
+    return options;
+  };
+
+  const handleSuperseedingRequirementChange = (newSuperseedingId) => {
+    changeField("superseded_by", newSuperseedingId);
+  };
   const handleParentRequirementChange = (newParentId) => {
     changeField("parent_requirement", newParentId);
   };
@@ -244,7 +274,9 @@ const RequirementInfoCard = ({
                     : "Select parent requirement"
                 }
                 borderIfPlaceholder={!isTopLevelRequirement}
-                readOnly={readOnly}
+                readOnly={readOnly || 
+                  ((item?.derived_from.length === 0 && item?.state === "Approved") || (item?.derived_from.length === 0 && item?.state === "Rejected"))
+                }
                 textSize="16px"
                 onHoverTooltip={true}
                 tooltipText={
@@ -291,12 +323,51 @@ const RequirementInfoCard = ({
             </Row>
           )}
 
+        {/* Cant be superseded with subrequirements. Cant be superseded if it is verified.*/}
+        {((item?.superseded_by !== null) || 
+          (number_of_subrequirements !== -1 && !item?.is_verified && item?.state !== "Approved" && item?.state !== "Rejected")) && (
+          <Row className="align-items-center">
+            <Col
+              className="col-lg-6 col-xl-6"
+              style={{ maxWidth: "260px", paddingTop: "10px" }}
+            >
+              <b>Superseded by:</b>
+            </Col>
+            <Col>
+              <GenericDropdownSelector
+                state={superseedingRequirement ? superseedingRequirement.id : ""}
+                setState={handleSuperseedingRequirementChange}
+                dropdownValues={getSuperseedingRequirementOptions()}
+                placeholder={"--"}
+                //borderIfPlaceholder={!isTopLevelRequirement}
+                readOnly={readOnly || 
+                  (item?.state === "Approved") || (item?.state === "Rejected")
+                }
+                textSize="16px"
+                onHoverTooltip={true}
+                tooltipText={
+                  superseedingRequirement
+                    ? `${superseedingRequirement?.id} - ${superseedingRequirement?.statement}`
+                    : ""
+                }
+              />
+            </Col>
+            {Number.isInteger(superseedingRequirement?.id) && (
+              <NavigateButton
+                onNavigateClick={() =>
+                  navigate(`/requirement/${superseedingRequirement?.id}`)
+                }
+              />
+            )}
+          </Row>
+        )}
+
         <Row className="align-items-center">
           <Col
             className="col-lg-6 col-xl-6"
             style={{ maxWidth: keyColumnMaxWidth, paddingTop: rowPadding }}
           >
-            <b>Obligation Level:</b>
+            <b>Obligation level:</b>
           </Col>
           <Col>
             <GenericDropdownSelector
@@ -307,7 +378,9 @@ const RequirementInfoCard = ({
               dropdownValues={OBLIGATION_LEVEL_OPTIONS}
               placeholder="Select Obligation Level"
               borderIfPlaceholder={true}
-              readOnly={readOnly}
+              readOnly={readOnly || 
+                ((item?.derived_from.length === 0 && item?.state === "Approved") || (item?.derived_from.length === 0 && item?.state === "Rejected"))
+              }
               textSize="16px"
             />
           </Col>
@@ -327,7 +400,9 @@ const RequirementInfoCard = ({
               dropdownValues={TYPE_OPTIONS}
               placeholder="Select Type"
               borderIfPlaceholder={true}
-              readOnly={readOnly}
+              readOnly={readOnly || 
+                ((item?.derived_from.length === 0 && item?.state === "Approved") || (item?.derived_from.length === 0 && item?.state === "Rejected"))
+              }
               textSize="16px"
             />
           </Col>
@@ -338,7 +413,7 @@ const RequirementInfoCard = ({
             className="col-lg-6 col-xl-6"
             style={{ maxWidth: keyColumnMaxWidth, paddingTop: rowPadding }}
           >
-            <b>Verification Class:</b>
+            <b>Verification class:</b>
           </Col>
           <Col>
             <GenericDropdownSelector
@@ -347,7 +422,9 @@ const RequirementInfoCard = ({
               dropdownValues={VERIFICATION_CLASS_OPTIONS}
               placeholder="Select Verification Class"
               borderIfPlaceholder={true}
-              readOnly={readOnly}
+              readOnly={readOnly || 
+                ((item?.derived_from.length === 0 && item?.state === "Approved") || (item?.derived_from.length === 0 && item?.state === "Rejected"))
+              }
               textSize="16px"
             />
           </Col>
@@ -451,7 +528,7 @@ const RequirementInfoCard = ({
 
         {!readOnly && (
           <Row className="align-items-center">
-            {(item?.state === "Draft" || item?.state === "Rejected") && (
+            {(item?.state === "Draft") && (
               <DeleteButton
                 onDelete={handleDelete}
                 textSize={"10px"}

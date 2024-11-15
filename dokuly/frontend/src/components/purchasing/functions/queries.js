@@ -70,7 +70,8 @@ export const addPoItemWithContents = (
   quantity,
   price,
   temporary_mpn,
-  temporary_manufacturer
+  temporary_manufacturer,
+  designator = undefined
 ) => {
   const data = {
     quantity: quantity,
@@ -78,6 +79,12 @@ export const addPoItemWithContents = (
     temporary_mpn: temporary_mpn,
     temporary_manufacturer: temporary_manufacturer,
   };
+
+  // Add designator to data only if it is provided
+  if (designator !== undefined) {
+    data.designator = designator;
+  }
+
   const url = `/api/purchase_order/${poId}/addItemWithContents/`;
   return axios
     .put(url, data, tokenConfig())
@@ -102,4 +109,11 @@ export const markItemAsReceived = (itemId) => {
   const promise = axios.put(url, {}, tokenConfig());
   const dataPromise = promise.then((res) => res.data);
   return dataPromise;
+};
+
+export const clearOrderItems = (poId) => {
+  const url = `/api/purchase_order/${poId}/clearOrderItems/`;
+
+  const promise = axios.put(url, {}, tokenConfig());
+  return promise.then((res) => res);
 };

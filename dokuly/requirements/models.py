@@ -40,12 +40,13 @@ class Requirement(models.Model):
         blank=True
     )
 
-    satisfied_by = models.ForeignKey(
+    # This relation is used to mark a requirement as superseded by another requirement.
+    superseded_by = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="satifies",
+        related_name="superseded_requirements",
     )
 
     state = models.CharField(max_length=100, default="", blank=True, null=True)
@@ -53,7 +54,7 @@ class Requirement(models.Model):
         Profile, on_delete=models.SET_NULL, null=True
     )  # The person that did the review.
 
-    # This field is fordocumentation of: Why is this requirement needed? Why is it derived etc.
+    # This field is for documentation of: Why is this requirement needed? Why is it derived etc.
     rationale = models.TextField(default="", blank=True, null=True)
 
     # This field has never been used.

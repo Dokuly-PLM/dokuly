@@ -189,6 +189,7 @@ def add_po_item_with_contents(request, poId):
         # Parse the updated data from the request
         data = request.data
 
+
         # Create a new PoItem instance with the provided details
         new_po_item = PoItem.objects.create(
             po_id=poId,
@@ -196,6 +197,7 @@ def add_po_item_with_contents(request, poId):
             price=Decimal(get_data(data, "price", 0.0)),
             temporary_mpn=get_data(data, "temporary_mpn", None),
             comment=get_data(data, "comment", ""),
+            designator=get_data(data, "designator", None),
         )
 
         po = new_po_item.po
@@ -212,6 +214,21 @@ def add_po_item_with_contents(request, poId):
             f"add_po_item_with_contents failed: {e}",
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+@api_view(["PUT"])
+@renderer_classes([JSONRenderer])
+@login_required(login_url="/login")
+def clear_po_items(request, poId):
+    permission, response = check_user_auth_and_app_permission(request, "procurement")
+    if not permission:
+        return response
+        
+    try:
+        items = PoItem.objects.filter(po_id=poId)
+        items.delete()
+        return Response(status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["PUT"])

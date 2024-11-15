@@ -14,7 +14,6 @@ import DokulyCard from "../dokuly_components/dokulyCard";
 import EditableMarkdown from "../dokuly_components/dokulyMarkdown/editableMarkdown";
 import RequirementsTable from "./requirementsTable";
 import CardTitle from "../dokuly_components/cardTitle";
-import RequirementsTree from "./components/requirementsTree";
 import RequirementInfoCard from "./components/requirementInfoCard";
 import Heading from "../dokuly_components/Heading";
 
@@ -116,8 +115,8 @@ const DisplayRequirement = (props) => {
   );
 
   useEffect(() => {
-    if (requirement?.satisfied_by) {
-      setVerificationHiddenText("Requirement verified through relation");
+    if (requirement?.superseded_by) {
+      setVerificationHiddenText("Requirement superseded by another requirement");
     } else if (subRequirements?.length > 0) {
       setVerificationHiddenText(
         "Verification: Requirement superseded by its subrequirements"
@@ -176,14 +175,7 @@ const DisplayRequirement = (props) => {
       />
 
       <Row>
-        <Col md={3}>
-          <RequirementsTree
-            requirementId={id}
-            requirementSetId={requirementSet?.id}
-            refresh={refresh}
-          />
-        </Col>
-        <Col md={9}>
+        <Col>
           <RequirementInfoCard
             item={requirement}
             number_of_subrequirements={subRequirements.length}
@@ -214,7 +206,7 @@ const DisplayRequirement = (props) => {
               initialMarkdown={requirement?.rationale || ""}
               onSubmit={handleRationaleSubmit}
               showEmptyBorder={true}
-              readOnly={readOnly}
+              readOnly={readOnly || requirement?.state === "Approved" || requirement?.state === "Rejected" }
             />
           </DokulyCard>
 
@@ -227,15 +219,17 @@ const DisplayRequirement = (props) => {
               initialMarkdown={requirement?.statement || ""}
               onSubmit={handleStatementSubmit}
               showEmptyBorder={true}
-              readOnly={readOnly}
+              readOnly={readOnly || requirement?.state === "Approved" || requirement?.state === "Rejected" }
             />
           </DokulyCard>
 
           <DokulyCard
             isCollapsed={subRequirements.length === 0}
             expandText={"Add subrequirement"}
-            isHidden={subRequirements.length === 0 && readOnly}
-            hiddenText={"Requirement has no subrequirements"}
+            isHidden={(subRequirements.length === 0 && readOnly) ||
+              (subRequirements.length === 0 && requirement?.superseded_by)
+            }
+            hiddenText={requirement?.superseded_by? "Requirement superseded by another requirement" : "Requirement has no subrequirements"}
           >
             <CardTitle
               titleText={"Subrequirements"}
@@ -268,13 +262,10 @@ const DisplayRequirement = (props) => {
                 readOnly) ||
               (requirement?.verification_method === "" &&
                 requirement?.verification_results === "" &&
-                subRequirements?.length > 0)
-              /*
-                ||
-                (requirement?.verification_method === "" &&
+                subRequirements?.length > 0) ||
+              (requirement?.verification_method === "" &&
                   requirement?.verification_results === "" &&
-                  subRequirements?.superseded_by)
-                  */
+                  requirement?.superseded_by)   
             }
             hiddenText={verificationHiddenText}
           >
