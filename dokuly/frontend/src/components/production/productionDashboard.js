@@ -47,10 +47,8 @@ export default function ProductionDashBoard() {
       className="container-fluid mt-2 mainContainerWidth"
       style={{ paddingBottom: "1rem" }}
     >
-      <NewProductionForm setRefresh={setRefresh} />
-      <Row>
-        <LotTable refresh={refresh} />
-      </Row>
+
+     
       {refresh ? (
         <Row className="justify-content-center mt-3">
           <Col />
@@ -72,6 +70,12 @@ export default function ProductionDashBoard() {
               </DokulyCard>
             </Col>{" "}
           </Row>
+          <Row>
+          <NewProductionForm setRefresh={setRefresh} />
+          </Row>
+          <Row>
+        <LotTable refresh={refresh} />
+      </Row>
           <Row className="justify-content-center mt-3">
             <Col>
               <DokulyCard isCollapsed={false} expandText="Latest Activity">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ApexCharts from "react-apexcharts";
-import { ButtonGroup, Button } from "react-bootstrap";
+import { ButtonGroup } from "react-bootstrap";
 
 const ItemsProducedChart = ({ data }) => {
   const [options, setOptions] = useState({
@@ -41,44 +41,69 @@ const ItemsProducedChart = ({ data }) => {
   });
 
   const [series, setSeries] = useState([]);
-  const [timeRange, setTimeRange] = useState("day");
+  const [timeRange, setTimeRange] = useState("month");
+
+  const generateRange = (startDate, endDate, interval = "day") => {
+    const range = [];
+    const current = new Date(startDate);
+    current.setHours(0, 0, 0, 0);
+
+    while (current <= endDate) {
+      range.push(new Date(current));
+      if (interval === "day") {
+        current.setDate(current.getDate() + 1);
+      } else if (interval === "month") {
+        current.setMonth(current.getMonth() + 1);
+      }
+    }
+    return range;
+  };
 
   const aggregateData = (data, range) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let startDate;
+    let interval = "day";
+
+    if (range === "week") {
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 6);
+    } else if (range === "month") {
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 29);
+    } else if (range === "year") {
+      startDate = new Date(today);
+      startDate.setFullYear(today.getFullYear() - 1);
+      interval = "month";
+    }
+
+    const fullRange = generateRange(startDate, today, interval);
+
     const counts = data.reduce((acc, item) => {
       const date = new Date(item.assembly_date);
-      let key;
-
-      if (range === "week") {
-        const { year, week } = getWeekNumber(date);
-        key = `Week ${week} '${year.toString().slice(-2)}`;
-      } else if (range === "month") {
-        key = `${date.getFullYear()}-${("0" + (date.getMonth() + 1)).slice(
-          -2,
-        )}-01`;
-      } else {
-        key = item.assembly_date;
-      }
+      const key =
+        interval === "day"
+          ? date.toISOString().split("T")[0]
+          : `${date.getFullYear()}-${("0" + (date.getMonth() + 1)).slice(-2)}`;
 
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
 
-    const seriesData = Object.entries(counts).map(([date, count]) => {
+    const seriesData = fullRange.map((date) => {
+      const key =
+        interval === "day"
+          ? date.toISOString().split("T")[0]
+          : `${date.getFullYear()}-${("0" + (date.getMonth() + 1)).slice(-2)}`;
+
       return {
-        x: date,
-        y: count,
+        x: key,
+        y: counts[key] || 0,
       };
     });
 
     return seriesData;
-  };
-
-  const getWeekNumber = (d) => {
-    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-    return { year: d.getUTCFullYear(), week: weekNo };
   };
 
   useEffect(() => {
@@ -89,19 +114,22 @@ const ItemsProducedChart = ({ data }) => {
 
     const newOptions = { ...options };
 
-    if (timeRange === "week") {
+    if (timeRange === "year") {
       newOptions.xaxis = {
         ...newOptions.xaxis,
         type: "category",
+        categories: aggregatedData.map((item) =>
+          new Date(item.x).toLocaleString("default", { month: "long" })
+        ),
         title: {
-          text: "Week number",
+          text: "Month",
         },
       };
       newOptions.tooltip = {
         ...newOptions.tooltip,
         x: {
-          formatter: function (val) {
-            return val;
+          formatter: function (val, opts) {
+            return opts.w.globals.labels[opts.dataPointIndex];
           },
         },
       };
@@ -129,24 +157,24 @@ const ItemsProducedChart = ({ data }) => {
       <ButtonGroup aria-label="Time range">
         <button
           className="btn btn-background-transparent"
-          disabled={timeRange === "day"}
-          onClick={() => setTimeRange("day")}
-        >
-          Day
-        </button>
-        <button
-          className="btn btn-background-transparent"
           disabled={timeRange === "week"}
           onClick={() => setTimeRange("week")}
         >
-          Week
+          Last 7 Days
         </button>
         <button
           className="btn btn-background-transparent"
           disabled={timeRange === "month"}
           onClick={() => setTimeRange("month")}
         >
-          Month
+          Last 30 Days
+        </button>
+        <button
+          className="btn btn-background-transparent"
+          disabled={timeRange === "year"}
+          onClick={() => setTimeRange("year")}
+        >
+          Last 365 Days
         </button>
       </ButtonGroup>
       <div id="chart">
