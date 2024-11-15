@@ -22,18 +22,17 @@ urlpatterns = [
     path('api/v1/production/get/', views2.get_all_production,
          name='get_all_production', kwargs={"model_type": "production"}),
 
-    path('api/v1/production/test-data/get/<str:identifier>/<str:serial_number>/', views2.get_test_data,
-         name='get_test_data', kwargs={"model_type": "production"}),
+
+    path('api/v1/production/measurements/<str:identifier>/<str:serial_number>/', views2.get_measurements, name='get_measurements', kwargs={"model_type": "production"}),
+
 
     ################### POST API ######################
 
     path('api/v1/production/', views2.create_single_production,
          name='create_single_production',  kwargs={"model_type": "production"}),
 
-    path('api/v1/production/test-data/<str:identifier>/<str:serial_number>/',
-         views2.post_test_data, name='post_test_data', kwargs={"model_type": "production"}),
-
-
+    path('api/v1/production/measurements/scalar/<str:identifier>/<str:serial_number>/', views2.post_scalar_measurement, name='post_scalar_measurement', kwargs={"model_type": "production"}),
+    path('api/v1/production/measurements/vector/<str:identifier>/<str:serial_number>/', views2.post_vector_measurement, name='post_vector_measurement', kwargs={"model_type": "production"}),
 
     ################### PUT API #######################
     # This is a PUT request, but its purpose is to get a production item by string search
@@ -47,8 +46,9 @@ urlpatterns = [
 
 
     ################### Delete API ###################
-    path('api/v1/production/test-data/delete/<int:id>/',
-         views2.delete_test_data, name='delete_test_data', kwargs={"model_type": "production"}),
+
+    path('api/v1/production/measurements/scalar/delete/<int:id>/', views2.delete_scalar_measurement, name='delete_scalar_measurement', kwargs={"model_type": "production"}),
+    path('api/v1/production/measurements/vector/delete/<int:id>/', views2.delete_vector_measurement, name='delete_vector_measurement', kwargs={"model_type": "production"}),
 
     ################### FILE API ######################
     # No current file requests for production

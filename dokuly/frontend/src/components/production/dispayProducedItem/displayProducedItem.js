@@ -65,10 +65,13 @@ const DisplayProducedItem = (props) => {
                 {/* Content for Overview tab */}
                 <ItemInformation producedItem={producedItem} />
               </Col>
-              <Col>
-                <TestData producedItem={producedItem} />
+      
+            </Row>
+            <Row>
+              <Col>   <TestData producedItem={producedItem} /> 
               </Col>
             </Row>
+
           </Container>
         </>
       ),
