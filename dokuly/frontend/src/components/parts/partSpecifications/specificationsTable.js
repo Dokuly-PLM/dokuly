@@ -113,31 +113,45 @@ const SpecificationsTable = (props) => {
   const handlePaste = async (e, field) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData("text");
-    const lines = pastedText.split("\n");
+    const lines = pastedText.split("\n").map((line) => line.trim()).filter((line) => line);
   
     if (lines.length > 1) {
       // Handle multi-line paste
       const newEntries = {};
       let currentKey = "";
+      let expectingValue = false;
   
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (trimmedLine) {
-          if (line.includes("\t")) {
-            // Handle tab-separated format
-            const [key, value] = line.split("\t");
-            if (key && value) {
-              newEntries[key.trim().replace(/:$/, "")] = value.trim();
-            }
-          } else if (!line.startsWith(" ") && !line.startsWith("\t")) {
-            // This is a key
-            currentKey = trimmedLine.replace(/:$/, "").trim();
-          } else if (currentKey) {
-            // This is a value for the current key
-            newEntries[currentKey] = trimmedLine;
-            currentKey = "";
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // Detect if the line contains a tab or colon for key-value separation
+        if (line.includes("\t")) {
+          // Handle tab-separated format
+          const [key, value] = line.split("\t");
+          if (key && value) {
+            newEntries[key.trim().replace(/:$/, "")] = value.trim();
           }
+        } else if (line.includes(":")) {
+          // Handle colon-separated format
+          const [key, value] = line.split(":");
+          if (key && value) {
+            newEntries[key.trim()] = value.trim();
+          }
+        } else if (!expectingValue) {
+          // This line is considered a key
+          currentKey = line;
+          expectingValue = true;
+        } else {
+          // This line is considered a value for the current key
+          newEntries[currentKey] = line;
+          expectingValue = false;
+          currentKey = "";
         }
+      }
+  
+      // If there's a key without a value (for lines count mismatch), add it with an empty value
+      if (expectingValue && currentKey) {
+        newEntries[currentKey] = "";
       }
   
       if (Object.keys(newEntries).length > 0) {
@@ -160,6 +174,7 @@ const SpecificationsTable = (props) => {
       }
     }
   };
+  
 
   const renderEditableCell = (value) => (
     <input
