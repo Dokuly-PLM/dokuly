@@ -223,7 +223,17 @@ const BomToPOForm = ({
                 columns={columns}
                 showColumnSelector={true}
                 itemsPerPage={100000} // No pagination
-                onRowClick={() => {}}
+                onRowClick={(rowID, row, event) => {
+                  if (event.ctrlKey || event.metaKey) {
+                    if (row.pcba) {
+                      window.open(`#/pcbas/${row.pcba}`, "_blank");
+                    } else if (row.assembly) {
+                      window.open(`#/assemblies/${row.assembly}`, "_blank");
+                    } else if (row.part) {
+                      window.open(`#/parts/${row.part}`, "_blank");
+                    }
+                  }
+                }}
                 navigateColumn={false}
                 onNavigate={() => {}}
                 textSize="16px"
