@@ -14,7 +14,7 @@ import BomCost from "../bom/bomCost/bomCost";
 import DokulyCard from "../../dokuly_components/dokulyCard";
 import CardTitle from "../../dokuly_components/cardTitle";
 import { loadingSpinner } from "../../admin/functions/helperFunctions";
-import BulkUploadPricesModal from "./BulkUploadPricesModal";
+import BulkUploadPricesModal from "./bulkUploadPricesModal";
 
 const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
   const [refreshPrices, setRefreshPrices] = useState(false);
@@ -37,7 +37,8 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
     error: errorCurrency,
   } = useCurrencyConversions(organizationCurrency);
 
-  const [suppliers, refreshSuppliers, loadingSuppliers, errorSuppliers] = useSuppliers();
+  const [suppliers, refreshSuppliers, loadingSuppliers, errorSuppliers] =
+    useSuppliers();
 
   // Fetching organization currency
   useEffect(() => {
@@ -109,7 +110,9 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
   const handleEditSave = async (id, payload) => {
     const data = { ...payload };
     if (payload?.supplier_id) {
-      const selectedSupplier = suppliers.find((s) => s.id === payload?.supplier_id);
+      const selectedSupplier = suppliers.find(
+        (s) => s.id === payload?.supplier_id
+      );
       data.currency = selectedSupplier
         ? selectedSupplier.default_currency || payload.currency
         : data.currency;
@@ -133,7 +136,9 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
       formatter: (row) => (
         <NumericFieldEditor
           number={row.minimum_order_quantity}
-          setNumber={(value) => handleEditSave(row.id, { minimum_order_quantity: value })}
+          setNumber={(value) =>
+            handleEditSave(row.id, { minimum_order_quantity: value })
+          }
         />
       ),
       maxWidth: "100px",
@@ -162,7 +167,9 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
         return (
           <GenericDropdownSelector
             state={stateValue?.value || null}
-            setState={(value) => handleEditSave(row.id, { supplier_id: value ? value : null })}
+            setState={(value) =>
+              handleEditSave(row.id, { supplier_id: value ? value : null })
+            }
             dropdownValues={supplierOptions}
             placeholder="Select supplier"
             borderIfPlaceholder={true}
@@ -196,7 +203,9 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
     {
       key: "delete",
       header: "",
-      formatter: (row) => <DeletePrice row={row} setRefresh={setRefreshPrices} />,
+      formatter: (row) => (
+        <DeletePrice row={row} setRefresh={setRefreshPrices} />
+      ),
       maxWidth: "25px",
     },
   ];
@@ -215,25 +224,25 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
           />
         </Col>
         <Col className="text-right">
-        <button
-      type="button"
-      className="btn dokuly-bg-transparent ml-4 mb-2"
-      data-toggle="tooltip"
-      data-placement="top"
-      title="Bulk Upload prices"
-      onClick={() => setShowBulkUploadModal(true)}
-      //disabled={} // TODO Implement logic for disabling the button
-    >
-      <div className="row align-items-center">
-        <img
-          className="icon-dark mr-2"
-          src="/static/icons/circle-plus.svg"
-          alt="Add Icon"
-          style={{ width: "24px", height: "24px" }}
-        />
-        <span style={{ fontSize: "12px" }}>Bulk Upload prices</span>
-      </div>
-    </button>
+          <button
+            type="button"
+            className="btn dokuly-bg-transparent ml-4 mb-2"
+            data-toggle="tooltip"
+            data-placement="top"
+            title="Bulk Upload prices"
+            onClick={() => setShowBulkUploadModal(true)}
+            //disabled={} // TODO Implement logic for disabling the button
+          >
+            <div className="row align-items-center">
+              <img
+                className="icon-dark mr-2"
+                src="/static/icons/circle-plus.svg"
+                alt="Add Icon"
+                style={{ width: "24px", height: "24px" }}
+              />
+              <span style={{ fontSize: "12px" }}>Bulk Upload prices</span>
+            </div>
+          </button>
         </Col>
       </Row>
 
@@ -292,7 +301,8 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
         </Row>
       )}
 
-      {(showBomCost || (prices.length === 0 && (app === "pcbas" || app === "assemblies"))) && (
+      {(showBomCost ||
+        (prices.length === 0 && (app === "pcbas" || app === "assemblies"))) && (
         <Row>
           <Col>
             <BomCost app={app} id={itemId} refresh={refresh} />
