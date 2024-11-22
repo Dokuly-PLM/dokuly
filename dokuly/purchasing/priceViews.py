@@ -96,17 +96,11 @@ def get_price_history(request, app, id):
 def add_new_price(request, app, id):
     try:
         data = request.data
-        print(data)
 
         # Validate and set the price value
-        price_value = data.get("price")
-        if not price_value:
-            return Response(
-                {"error": "Price is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        price_value = data.get("price", 0.0)
         try:
-            price_value = Decimal(str(price_value))  # Convert to string first, then Decimal
+            price_value = Decimal(str(price_value))
         except (InvalidOperation, ValueError) as e:
             return Response(
                 {"error": f"Invalid price value: {price_value}. Must be a decimal."},
