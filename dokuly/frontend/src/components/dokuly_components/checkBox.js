@@ -5,7 +5,7 @@ const CheckBox = ({
   checked,
   onChange,
   label,
-  className,
+  className = "dokuly-checkbox", // Default to dokuly-checkbox for styling
   divClassName,
   style,
   ...props
