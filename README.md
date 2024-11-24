@@ -9,7 +9,7 @@ Dokuly is free to use and simple to set up. See the [getting started guide](http
 
 If you don't want to deal with hosting, check out [dokuly.com](https://dokuly.com/).
 
-Community forum can be found at [dokuly.forum](https://dokuly.forum/)
+The community forum can be found at [dokuly.forum](https://dokuly.forum/)
 
 ## Features
 
@@ -44,13 +44,14 @@ Community forum can be found at [dokuly.forum](https://dokuly.forum/)
   - Automatical PO creation from BoM, selecting the cheapest vendor at each quantity
 - Requirements
   - Track requirements in a model-based environment
+  - Derived, hierarchical, and superseding relations
 - API
   - Support for multiple API keys
   - Project-based access control per API key
   - API-key expiry date
   - [Docs](https://dokuly.com/#/api)
 
-## Corntibutions
+## Contribution
 
 Dokuly was originally developed as an internal tool by [Norsk Datateknikk](https://norskdatateknikk.no/) and has since been released as an open-source project.
 The project relies on your contributions to stay updated with the latest features.
