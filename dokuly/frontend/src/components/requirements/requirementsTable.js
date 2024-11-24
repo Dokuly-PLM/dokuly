@@ -69,7 +69,10 @@ const RequirementsTable = ({
 
 
   const renderFilters = (
-    <div className="d-flex align-items-center gap-3">
+    <div 
+      className="d-flex align-items-center gap-3"
+      style={{ gap: "1.5rem" }}
+    >
       <CheckBox
         id="showRejected"
         checked={showRejected}
