@@ -55,13 +55,14 @@ const DisplayRequirementSet = (props) => {
       case "lowest":
         filtered = requirements.filter(
           (req) => 
-            !requirements.some((r) => r.parent_requirement === req.id) &&  // Only lowest level requirements
-            !req.superseded_by  // Exclude superseded requirements
+            !requirements.some((r) => r.parent_requirement === req.id)  // Only lowest level requirements
         );
         break;
       case "top":
         filtered = requirements.filter(
-          (req) => req.parent_requirement === null
+          (req) =>
+            req?.parent_requirement === null && // No parent requirement
+            (!req?.derived_from || req?.derived_from.length === 0) // No derived_from entries
         );
         break;
       case "all":

@@ -18,6 +18,7 @@ import {
 } from "./modelConstants";
 import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
 import AddButton from "../dokuly_components/AddButton";
+import CheckBox from "../dokuly_components/checkBox";
 
 const RequirementsTable = ({
   requirements = [],
@@ -51,6 +52,42 @@ const RequirementsTable = ({
       // TODO hide for reqs. with subrequirements 
     );
   }
+
+
+  const [showRejected, setShowRejected] = useState(false);
+  const [showSuperseded, setShowSuperseded] = useState(false);
+
+  const filteredRequirements = requirements.filter((req) => {
+    if (!showRejected && req.state === "Rejected") {
+      return false;
+    }
+    if (!showSuperseded && req.superseded_by !== null) {
+      return false;
+    }
+    return true;
+  });
+
+
+  const renderFilters = (
+    <div 
+      className="d-flex align-items-center gap-3"
+      style={{ gap: "1.5rem" }}
+    >
+      <CheckBox
+        id="showRejected"
+        checked={showRejected}
+        onChange={(e) => setShowRejected(e.target.checked)}
+        label="Show rejected requirements"
+        divClassName="me-3"
+      />
+      <CheckBox
+        id="showSuperseded"
+        checked={showSuperseded}
+        onChange={(e) => setShowSuperseded(e.target.checked)}
+        label="Show superseded requirements"
+      />
+    </div>
+  );
 
   const handleAddClick = () => {
     if (parent_requirement_id !== -1) {
@@ -414,12 +451,12 @@ const RequirementsTable = ({
         </Row>
       )}
 
-      {requirements.length > 0 && (
+      {filteredRequirements.length > 0 && (
         <Row>
           <DokulyTable
             key={`RequirementsTable-${readOnly}`} // Force rerender to ensure readOnly state is updated
             tableName="RequirementsTable"
-            data={requirements}
+            data={filteredRequirements}
             columns={columns}
             itemsPerPage={50}
             onRowClick={rowEvents}
@@ -427,6 +464,7 @@ const RequirementsTable = ({
             navigateColumn={true}
             onNavigate={onNavigate}
             showColumnSelector={true}
+            renderChildrenNextToSearch={renderFilters}
             textSize={tableTextSize}
           />
         </Row>
