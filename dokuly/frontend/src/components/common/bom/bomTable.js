@@ -56,6 +56,8 @@ const BomTable = ({
     errorCurrency,
   } = useCurrencyConversions("USD"); // Default currency can be set here
 
+  const [tableTextSize, setTableTextSize] = useState("14px");
+
   const [refresh_bom, setRefreshBom] = useState(true);
   const [database_bom, setDatatbaseBom] = useState(null);
   const [bom, setBom] = useState([]);
@@ -311,7 +313,9 @@ const BomTable = ({
                 onRowClick={(index) => handleRowClick(index)}
                 navigateColumn={true}
                 onNavigate={(row) => onNavigate(row)}
-                textSize="16px"
+                textSize={tableTextSize}
+                setTextSize={setTableTextSize}
+                showTableSettings={true}
               />
             </Row>
             {!is_locked_bom && (

@@ -48,6 +48,7 @@ import useTableSettings from "./components/useTableSettings";
  * @param {Boolean} props.treeData - Whether the data is tree data
  * @param {Array} props.contextMenuActions - The actions to be displayed in the context menu
  * @param {Boolean} props.useOnRightClick - Whether to use the on right click functionality
+ * @param {Boolean} props.showTableSettings - Whether to show the table settings button
  * @returns {JSX.Element}
  * @constructor
  * @example
@@ -99,6 +100,7 @@ function DokulyTableContents({
   treeData = false,
   contextMenuActions = [],
   useOnRightClick = false,
+  showTableSettings = false,
 }) {
 
   const [tableSettings, updateTableSetting] = useTableSettings(tableName);
@@ -559,10 +561,12 @@ function DokulyTableContents({
               {navigateColumn && (
                 <th style={{ width: "25px", textAlign: "center" }}> </th>
               )}
-              <DokulySettingsButton
-                textSize={textSize}
-                onTextSizeChange={(newSize) => handleTextSizeChange(newSize)}
-              />
+              {showTableSettings && (
+                <DokulySettingsButton
+                  textSize={textSize}
+                  onTextSizeChange={(newSize) => handleTextSizeChange(newSize)}
+                />
+              )}
             </tr>
           </thead>
           <tbody>

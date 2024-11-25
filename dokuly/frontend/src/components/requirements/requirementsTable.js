@@ -467,6 +467,7 @@ const RequirementsTable = ({
             renderChildrenNextToSearch={renderFilters}
             textSize={tableTextSize}
             setTextSize={setTableTextSize}
+            showTableSettings={true}
           />
         </Row>
       )}
