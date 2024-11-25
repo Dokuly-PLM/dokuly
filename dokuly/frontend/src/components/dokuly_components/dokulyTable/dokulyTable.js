@@ -17,6 +17,8 @@ import QuestionToolTip from "../questionToolTip";
 import { searchHelpText } from "./functions/textUtils";
 import HierarchicalCol from "./components/hierarchicalCol";
 import { useSpring, animated } from "react-spring";
+import DokulySettingsButton from "./components/editDropdown";
+import useTableSettings from "./components/useTableSettings";
 
 /**
  * DokulyTable is a table component that can be used to display data in a table format.
@@ -38,6 +40,7 @@ import { useSpring, animated } from "react-spring";
  * @param {Function} props.onNavigate - The function to be called when the navigate button is clicked
  * @param {Object} props.defaultSort - The default sort order
  * @param {String} props.textSize - The font size of the text in the table
+ * @param {Function} props.setTextSize - The function to set the font size of the text in the table
  * @param {Boolean} props.isMarkdownTable - Whether the table is a markdown table
  * @param {Element} props.renderChildrenNextToSearch - The children to be rendered next to the search bar
  * @param {String} props.idKey - The key to be used as the id
@@ -88,6 +91,7 @@ function DokulyTableContents({
   onNavigate,
   defaultSort = { columnNumber: 0, order: "asc" },
   textSize = "16px",
+  setTextSize = () => {},
   isMarkdownTable = false,
   renderChildrenNextToSearch = <></>,
   idKey = "id",
@@ -96,6 +100,21 @@ function DokulyTableContents({
   contextMenuActions = [],
   useOnRightClick = false,
 }) {
+
+  const [tableSettings, updateTableSetting] = useTableSettings(tableName);
+
+  useEffect(() => {
+    // Apply text size from settings if available
+    if (tableSettings.textSize) {
+      setTextSize(tableSettings.textSize);
+    }
+  }, [tableSettings.textSize]);
+
+  const handleTextSizeChange = (newSize) => {
+    setTextSize(newSize); // Update local state with full string
+    updateTableSetting("textSize", newSize); // Persist to localStorage
+  };
+
   const [selectedColumns, setSelectedColumns] = useState(
     columns.filter((col) => col.defaultShowColumn !== false)
   );
@@ -524,7 +543,7 @@ function DokulyTableContents({
 
       <div style={{ overflowX: "auto" }}>
         <Table hover className="w-100" style={{ fontSize: textSize }}>
-          <thead>
+        <thead>
             <tr>
               {selectedColumns.map((column, index) => (
                 <DraggableHeader
@@ -540,6 +559,10 @@ function DokulyTableContents({
               {navigateColumn && (
                 <th style={{ width: "25px", textAlign: "center" }}> </th>
               )}
+              <DokulySettingsButton
+                textSize={textSize}
+                onTextSizeChange={(newSize) => handleTextSizeChange(newSize)}
+              />
             </tr>
           </thead>
           <tbody>

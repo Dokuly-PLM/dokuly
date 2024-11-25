@@ -29,7 +29,7 @@ const RequirementsTable = ({
   refresh,
   profile,
 }) => {
-  const tableTextSize = "14px";
+  const [tableTextSize, setTableTextSize] = useState("14px");
 
   const TYPE_OPTIONS = REQUIREMENT_TYPES.map((type) => ({
     value: type,
@@ -466,6 +466,7 @@ const RequirementsTable = ({
             showColumnSelector={true}
             renderChildrenNextToSearch={renderFilters}
             textSize={tableTextSize}
+            setTextSize={setTableTextSize}
           />
         </Row>
       )}
