@@ -15,6 +15,7 @@ import { ThumbnailFormatterComponent } from "../../pcbas/functions/formatters";
 const RevisionsTable = ({ item, app, setRevisionListParent = () => {} }) => {
   const navigate = useNavigate();
   const [revisionList, setRevisionList] = useState([]);
+  const [tableTextSize, setTableTextSize] = useState("16px");
 
   useEffect(() => {
     if (item != null && item !== undefined) {
@@ -97,6 +98,7 @@ const RevisionsTable = ({ item, app, setRevisionListParent = () => {} }) => {
       />
       <Card.Body>
         <DokulyTable
+          tableName={"RevisionsTable"}
           data={revisionList}
           columns={columns}
           showCsvDownload={true}
@@ -105,6 +107,9 @@ const RevisionsTable = ({ item, app, setRevisionListParent = () => {} }) => {
           showPagination={true}
           showSearch={false}
           defaultSort={defaultSort}
+          textSize={tableTextSize}
+          setTextSize={setTableTextSize}
+          showTableSettings={true}
         />
       </Card.Body>
     </DokulyCard>

@@ -47,6 +47,8 @@ const ReferenceDocumentsTable = (props) => {
   // Const used to refresh the loaded data in the table after actions are performed.
   const [refresh, setRefresh] = useState(false);
 
+  const [tableTextSize, setTableTextSize] = useState("16px");
+
   const navigate = useNavigate();
 
   // Fetch the reference documents.
@@ -270,6 +272,7 @@ const ReferenceDocumentsTable = (props) => {
 
       <div style={{ leftMargin: "15px" }}>
         <DokulyTable
+          tableName={"ReferenceDocumentsTable"}
           data={documents}
           columns={columns}
           showCsvDownload={false}
@@ -277,6 +280,9 @@ const ReferenceDocumentsTable = (props) => {
           showSearch={false}
           onRowClick={handleOnClick}
           onRowDoubleClick={onDoubleClick}
+          textSize={tableTextSize}
+          setTextSize={setTableTextSize}
+          showTableSettings={true}
         />
       </div>
     </DokulyCard>

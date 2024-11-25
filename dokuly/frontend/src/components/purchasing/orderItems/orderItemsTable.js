@@ -54,6 +54,8 @@ const OrderItemsTable = ({
     loadingCurrency,
     errorCurrency,
   } = useCurrencyConversions("USD");
+  
+  const [tableTextSize, setTableTextSize] = useState("16px");
 
   const [refreshPo, setRefreshPo] = useState(false);
   const [poItems, setPoItems] = useState([]);
@@ -684,7 +686,9 @@ const OrderItemsTable = ({
                   onRowClick={(index) => handleRowClick(index)}
                   navigateColumn={!isPrintable}
                   onNavigate={(row) => onNavigate(row)}
-                  textSize="16px"
+                  textSize={tableTextSize}
+                  setTextSize={setTableTextSize}
+                  showTableSettings={true}
                   showCsvDownload={!isPrintable}
                   showPagination={false}
                   showSearch={!isPrintable}

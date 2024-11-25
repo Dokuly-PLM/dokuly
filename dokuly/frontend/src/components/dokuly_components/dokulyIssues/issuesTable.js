@@ -49,6 +49,8 @@ const IssuesTable = ({
   const [filteredIssues, setFilteredIssues] = useState([]);
   const [hideBomIssues, setHideBomIssues] = useState(false);
   const closedInFieldName = `closed_in_${appToModelName[app]}`;
+  const [tableTextSize, setTableTextSize] = useState("16px");
+
 
   const navigate = useNavigate();
 
@@ -546,7 +548,9 @@ const IssuesTable = ({
             navigateColumn={true}
             onNavigate={(row) => onNavigate(row)}
             defaultSort={{ columnNumber: 0, order: "desc" }}
-            textSize="16px"
+            textSize={tableTextSize}
+            setTextSize={setTableTextSize}
+            showTableSettings={true}
           />
           <small className="m-2 text-secondary">
             Click on a field to edit it. To submit your changes press{" "}

@@ -1178,6 +1178,64 @@ div.tooltip.bs-tooltip-end .tooltip-inner {
   filter: brightness(95%);
 }
 
+/* Table edit */
+
+.settings-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 38px; /* Increase width */
+  height: 38px; /* Increase height */
+  background: #165216; /* Dokuly-green color */
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.settings-icon {
+  width: 14px; /* Scale down the image */
+  height: 14px;
+  filter: invert(1); /* Invert SVG colors */
+  transform: translate(11px, -9px); /* Adjust for centering */
+}
+
+.input-display:focus,
+.input-display:hover {
+  border-color: #165216; /* Dokuly-green on focus or hover */
+  outline: none; /* Remove default outline */
+}
+
+
+.settings-dropdown {
+  position: absolute;
+  top: 40px; /* Below the button */
+  right: 0;
+  background: white;
+  border: 1px solid #165216; /* Dokuly-green border */
+  border-radius: 4px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  z-index: 1000; /* Ensure it appears above other elements */
+  width: 150px; /* Dropdown width */
+}
+
+.settings-dropdown input {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px;
+  font-size: 14px;
+  width: calc(100% - 12px); /* Adjust for padding */
+}
+
+.settings-dropdown input:focus {
+  border-color: #165216; /* Dokuly-green focus border */
+  outline: none;
+}
+
+/* ---- */
+
 .dokuly-checkbox {
   accent-color: #165216ff;
   cursor: pointer;
@@ -1377,7 +1435,6 @@ div.tooltip.bs-tooltip-end .tooltip-inner {
 /* _________________________________________________________________ */
 /* Input field */
 
-/* styles.css */
 .input-edit {
   padding: 8px;
   border: 1px solid #dae1e7;
@@ -1402,7 +1459,6 @@ div.tooltip.bs-tooltip-end .tooltip-inner {
   padding: 8px;
   border-radius: 4px;
 }
-
 
 /* _________________________________________________________________ */
 
