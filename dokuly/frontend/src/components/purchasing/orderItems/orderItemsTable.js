@@ -263,7 +263,6 @@ const OrderItemsTable = ({
   };
 
   const handleItemReceived = (row) => {
-    console.log("row", row);
     // Open received items modal
     setSelectedPoItem(row);
     if (row?.part) {

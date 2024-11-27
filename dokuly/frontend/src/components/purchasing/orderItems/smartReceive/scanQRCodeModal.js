@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect, useContext, useRef } from "react";
 import DokulyModal from "../../../dokuly_components/dokulyModal";
-import { Form, Button } from "react-bootstrap";
+import { Form } from "react-bootstrap";
 import { parseQRCodeData } from "./functions/parseQRCodeData";
 import { markItemAsReceived } from "../../functions/queries";
-import { adjustStock } from "../../../dokuly_components/dokulyInventory/functions/queries";
 import { toast } from "react-toastify";
 import GenericDropdownSelector from "../../../dokuly_components/dokulyTable/components/genericDropdownSelector";
 import useLocations from "../../../common/hooks/useLocations";
@@ -100,7 +99,6 @@ const ScanQRCodeModal = ({
 
           isProcessingRef.current = true; // Set processing flag
           const data = result.getText();
-          console.log("Scanned data:", data);
 
           handleScanResult(data);
 
@@ -194,7 +192,6 @@ const ScanQRCodeModal = ({
   };
 
   const handleDeleteStagedItem = (row) => {
-    console.log("Deleting row:", row);
     setStagedItems((prevItems) =>
       prevItems.filter((item) => item.id !== row.id)
     );

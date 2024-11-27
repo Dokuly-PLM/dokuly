@@ -32,6 +32,7 @@
     "@react-three/fiber": "^8.12.2",
     "@tanstack/react-table": "^8.8.5",
     "@use-it/event-listener": "^0.1.7",
+    "@zxing/browser": "^0.1.5",
     "apexcharts": "^3.44.0",
     "axios": "^1.2.2",
     "babel-loader": "^9.1.2",
