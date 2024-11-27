@@ -441,5 +441,73 @@ def get_total_on_order_for_object(model_object, model):
     return total_on_order, list(related_pos)
 
 
+@api_view(['POST'])
+@renderer_classes([JSONRenderer])
+@permission_classes([IsAuthenticated])
+def add_inventory_entry(request):
+    try:
+        data = request.data
+        if "location_id" not in data or data.get("location_id") is None:
+            return Response({"error": "Location ID not provided"}, status=status.HTTP_400_BAD_REQUEST)
+        if "quantity" not in data:
+            return Response({"error": "Quantity not provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        app, model, model_string, object_id, error_response = get_request_model_data(request)
+        if error_response:
+            return error_response
+
+        model_object = model.objects.get(pk=object_id)
+        fk_field_name = MODEL_TO_MODEL_STRING[model]
+        location = Location.objects.get(pk=data["location_id"])
+        quantity = data.get("quantity", 0)
+
+        # Create new inventory entry
+        inventory = Inventory.objects.create(
+            location=location,
+            quantity=quantity,
+            created_at=timezone.now(),
+            is_latest=True,
+        )
+        connect_part_object_to_inventory(inventory, fk_field_name, model_object)
+
+        # Set previous inventories for this item and location to is_latest=False
+        Inventory.objects.filter(
+            **{fk_field_name: model_object},
+            location=location,
+            is_latest=True
+        ).exclude(pk=inventory.pk).update(is_latest=False)
+
+        # Calculate current total stock for the location
+        last_inventory = Inventory.objects.filter(
+            **{fk_field_name: model_object},
+            location=location,
+            is_latest=False
+        ).order_by('-created_at').first()
+
+        last_total_stock = last_inventory.current_total_stock if last_inventory and last_inventory.current_total_stock else 0
+        total_stock = last_total_stock + quantity
+
+        inventory.current_total_stock = total_stock
+        inventory.save()
+
+        # Update model object's total stock
+        latest_inventories = Inventory.objects.filter(
+            **{fk_field_name: model_object},
+            is_latest=True
+        )
+
+        model_total_stock = latest_inventories.aggregate(
+            total=Coalesce(Sum('current_total_stock'), 0)
+        )['total']
+
+        model_object.current_total_stock = model_total_stock
+        model_object.save()
+
+        return Response({"success": "Inventory entry added", "inventory_id": inventory.pk}, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 def connect_part_object_to_inventory(new_inventory, fk_field_name, model_object):
     setattr(new_inventory, fk_field_name, model_object)
