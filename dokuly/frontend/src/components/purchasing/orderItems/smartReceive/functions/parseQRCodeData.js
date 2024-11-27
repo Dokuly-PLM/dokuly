@@ -3,8 +3,6 @@ export function parseQRCodeData(data, parsingConfig = defaultParsingConfig) {
   const separatorRegex = /[\u001d\u001e]/; // Matches GS (\u001d) or RS (\u001e)
   const fields = data.split(separatorRegex).filter(Boolean);
 
-  console.log("Fields:", fields);
-
   let mpn = null;
   let quantity = null;
 
@@ -28,7 +26,6 @@ export function parseQRCodeData(data, parsingConfig = defaultParsingConfig) {
     });
   });
 
-  console.log(`Extracted MPN: ${mpn}, Quantity: ${quantity}`);
   return { mpn, quantity };
 }
 
