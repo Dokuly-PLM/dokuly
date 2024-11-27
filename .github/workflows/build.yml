@@ -1,0 +1,86 @@
+name: Build
+on: pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.11]
+    services:
+      partsdb:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: AAAAmeaIE1elf213fe_fseof302fldAADokulySelfhost
+          POSTGRES_DB: DokulyOSS
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5 --mount type=tmpfs,destination=/var/lib/postgresql/data
+        ports:
+          - 5432:5432
+    steps:
+
+      # Setup Python
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Python Dependencies
+        run: |
+          pip3 install --upgrade pip
+          pip3 install --upgrade --use-pep517 -r requirements.txt
+          pip3 install --upgrade --use-pep517 phpserialize
+
+      - name: Run Django Migrations
+        env:
+          DB: ${{ matrix.db }}
+          DB_HOST: 127.0.0.1
+          DB_PORT: ${{ matrix.db_port }}
+          DB_PASSWORD: AAAAmeaIE1elf213fe_fseof302fldAADokulySelfhost
+          DJANGO_TESTING_SERVER: 1
+          d_s_k: "asdofnasdfnasdioufasdioufasdifujnsdfaiun"
+        run: python ./dokuly/manage.py migrate
+
+      - name: Run Django Tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_PASSWORD: AAAAmeaIE1elf213fe_fseof302fldAADokulySelfhost
+          DJANGO_TESTING_SERVER: 1
+          d_s_k: "asdofnasdfnasdioufasdioufasdifujnsdfaiun"
+        run: python ./dokuly/manage.py test profiles.tests
+
+      # Setup Node
+  build_node:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Cache node modules
+        id: cache-npm
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+  
+      - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
+        name: List the state of node modules
+        continue-on-error: true
+        run: npm list
+
+      - name: Install dependencies
+        run: npm install
+      - run: npm run build --if-present
