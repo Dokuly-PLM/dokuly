@@ -17,6 +17,16 @@ export const addNewLocationEntry = (data) => {
   return dataPromise;
 };
 
+export const addInventoryEntry = async (data) => {
+  const promise = axios.post(
+    "/api/location-entries/add_inventory_entry/",
+    data,
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
 export const updateLocationEntry = (data) => {
   const promise = axios.put(
     `/api/location-entries/updateLocation/`,

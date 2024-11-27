@@ -31,6 +31,8 @@ import ItemReceivedForm from "../forms/itemReceivedForm";
 import DokulyPriceFormatter from "../../dokuly_components/formatters/priceFormatter";
 import { loadingSpinner } from "../../admin/functions/helperFunctions";
 import { ClearOrderItemsButton } from "./clearOrderItemsButton";
+import ScanQRCodeModal from "./smartReceive/scanQRCodeModal";
+import TransparentButton from "../../dokuly_components/transparentButton";
 
 const OrderItemsTable = ({
   po_id,
@@ -54,7 +56,7 @@ const OrderItemsTable = ({
     loadingCurrency,
     errorCurrency,
   } = useCurrencyConversions("USD");
-  
+
   const [tableTextSize, setTableTextSize] = useState("16px");
 
   const [refreshPo, setRefreshPo] = useState(false);
@@ -70,6 +72,7 @@ const OrderItemsTable = ({
   const [selectedPoItem, setSelectedPoItem] = useState(null);
   const [selectedPoItemApp, setSelectedPoItemApp] = useState("parts");
   const previousPoState = useRef(null); // Ref to track previous poState value
+  const [showScanQRCodeModal, setShowScanQRCodeModal] = useState(false);
 
   const fetchPoData = useCallback(() => {
     if (po_id && refreshPo) {
@@ -501,12 +504,13 @@ const OrderItemsTable = ({
         const price = row?.price ?? 0;
         const quantity = row?.quantity ?? 1;
         const totalPrice = price * quantity;
-    
+
         // Ensure valid currency code
-        const currencyCode = purchaseOrder?.po_currency && purchaseOrder.po_currency.includes("/")
-          ? "USD" // Fallback to USD if invalid currency code format
-          : purchaseOrder?.po_currency || "USD";
-    
+        const currencyCode =
+          purchaseOrder?.po_currency && purchaseOrder.po_currency.includes("/")
+            ? "USD" // Fallback to USD if invalid currency code format
+            : purchaseOrder?.po_currency || "USD";
+
         const formattedPrice = totalPrice.toLocaleString("en-US", {
           style: "currency",
           currency: currencyCode,
@@ -517,12 +521,13 @@ const OrderItemsTable = ({
         const price = row?.price ?? 0;
         const quantity = row?.quantity ?? 1;
         const totalPrice = price * quantity;
-    
+
         // Ensure valid currency code
-        const currencyCode = purchaseOrder?.po_currency && purchaseOrder.po_currency.includes("/")
-          ? "USD" // Fallback to USD if invalid currency code format
-          : purchaseOrder?.po_currency || "USD";
-    
+        const currencyCode =
+          purchaseOrder?.po_currency && purchaseOrder.po_currency.includes("/")
+            ? "USD" // Fallback to USD if invalid currency code format
+            : purchaseOrder?.po_currency || "USD";
+
         const formattedPrice = totalPrice.toLocaleString("en-US", {
           style: "currency",
           currency: currencyCode,
@@ -531,7 +536,7 @@ const OrderItemsTable = ({
       },
       includeInCsv: true,
       defaultShowColumn: true,
-    }
+    },
   ];
 
   partInformationColumns.map((key) =>
@@ -669,6 +674,12 @@ const OrderItemsTable = ({
                 setRefreshPo={setRefreshPo}
                 showPoIgnoreDropdown={true}
               />
+              <TransparentButton
+                className="mx-2"
+                buttonText="Bulk receive"
+                imgSrc="../../static/icons/inbox.svg"
+                onClick={() => setShowScanQRCodeModal(true)}
+              />
             </Row>
             <Row>
               {!loadingPurchaseOrder ? (
@@ -728,6 +739,14 @@ const OrderItemsTable = ({
           selectedPoItem={selectedPoItem}
           app={selectedPoItemApp}
           markItemReceived={markItemReceived}
+        />
+        <ScanQRCodeModal
+          show={showScanQRCodeModal}
+          onHide={() => setShowScanQRCodeModal(false)}
+          poItems={matchedPoItems}
+          setRefreshPo={setRefreshPo}
+          po_id={po_id}
+          organization={organization}
         />
       </DokulyCard>
     )

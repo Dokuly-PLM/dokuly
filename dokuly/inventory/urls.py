@@ -33,12 +33,14 @@ urlpatterns = [
     path('api/location-entires/onOrderStock/<int:object_id>/<str:app>/', viewsLocationEntires.get_on_order_amount),
     path('api/location-entries/updateLocation/', viewsLocationEntires.update_location_entry),
     path('api/location-entries/adjustStock/', viewsLocationEntires.adjust_stock),
+    path('api/location-entries/add_inventory_entry/', viewsLocationEntires.add_inventory_entry),
     path('api/location-entries/delete/<int:inventory_id>/', viewsLocationEntires.delete_location_entry),
     path('api/location-entries/updateMinimumStockLevel/', viewsLocationEntires.update_minimum_stock_level),
     path('api/location-entries/stockHistory/<int:object_id>/<str:app>/<str:from_date>/<str:to_date>/',
          viewsLocationEntires.get_stock_history),
     path('api/location-entries/stockForecast/<int:object_id>/<str:app>/<str:to_date>/',
          viewsLocationEntires.get_stock_forecast),
+
 ]
 
 urlpatterns += router.urls
