@@ -4,18 +4,18 @@ In dokuly, most items are connected to a project, which in turn is connected to 
 
 ## Create a new **Customer**
 
-Click on **Customers** in the sidebar: &nbsp; ![](images/nav_customers.png) &nbsp; or go to /customers in your browser.
+<p style="max-height: 35px;">Click on **Customers** in the sidebar: &nbsp; <img src="../images/nav_customers.png" height="50"> &nbsp; or go to /customers in your browser.</p>
 
-Next click on **New customer** &nbsp; ![](images/new_customer.png)
+<p style="max-height: 35px;">Next click on <img src="../images/new_customer.png" height="45"></p>
 
-A modal dialog will open, enter your information about the new customer, then hit submit when you are done: &nbsp; ![](images/submit.png)
+<p style="max-height: 35px;">A modal dialog will open, enter your information about the new customer, then hit submit when you are done: &nbsp; <img src="../images/submit.png" height="50"></p>
 
 ---
 
 ## Create a new **Project**
 
-Click on **Projects** in the sidebar: &nbsp; ![](images/nav_projects.png) &nbsp; or go to /projects in your browser.
+<p style="max-height: 35px;">Click on **Projects** in the sidebar: &nbsp; <img src="../images/nav_projects.png" height="50"> &nbsp; or go to /projects in your browser.</p>
 
-Next click on **New project** &nbsp; ![](images/new_project.png)
+<p style="max-height: 35px;">Next click on **New project** &nbsp; <img src="../images/new_project.png" height="50"></p>
 
-A modal dialog will open, enter your information about the new project, then hit submit when you are done: &nbsp; ![](images/submit.png)
+<p style="max-height: 35px;">A modal dialog will open, enter your information about the new project, then hit submit when you are done: &nbsp; <img src="../images/submit.png" height="50"></p>

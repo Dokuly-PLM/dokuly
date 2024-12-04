@@ -42,9 +42,9 @@ services:
     image: sdp:django
     volumes:
       - .:/dokuly_image
-    command: python /dokuly_image/dokuly/manage.py runserver 0.0.0.0:8001
+    command: python /dokuly_image/dokuly/manage.py runserver 0.0.0.0:8000
     ports:
-      - "8001:8001"
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy

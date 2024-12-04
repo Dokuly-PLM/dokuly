@@ -1,17 +1,33 @@
-site_name: Dokuly
+site_name: Dokuly Docs
 
 nav:
-- quickstart.md
-- Getting Started: 
-  - Projects and Customers: projects_and_customers.md
-  - Creating your first Part: first_part.md
-  - From Parts to PCBA's: parts_to_pcbas.md
-  - BOM for PCBA's and Assemblies: bom_management.md
-  - Making Assemblies: assemblies.md
-  - Production control: production_control.md
-- Administration: 
-  - User Management: admin/user_management.md
-  - Roles and Permissions: admin/roles_and_permissions.md
-  - Settings: admin/settings.md
-  - API: admin/api.md
-- installation.md
+  - Getting Started: 
+    - Projects and Customers: projects_and_customers.md
+    - Creating your first Part: first_part.md
+    - From Parts to PCBA's: parts_to_pcbas.md
+    - PCBA's and Assemblies: pcbas_and_assemblies.md
+    - Issues: issues.md
+    - Notes and Markdown: notes_and_markdown.md
+    - Production control: production_control.md
+  - Self-hosting: quickstart.md
+  - Administration: admin/settings.md
+  - installation.md
+  - definitions.md
+
+# - Administration: 
+  #   - User Management: admin/user_management.md
+  #   - Roles and Permissions: admin/roles_and_permissions.md
+  #   - Settings: admin/settings.md
+  #   - API: admin/api.md
+
+color_mode: light
+user_color_mode_toggle: true
+
+extra_css:
+  - styles/index.css
+
+theme:
+  name: mkdocs
+  favicon: favicon.ico
+
+dev_addr: 127.0.0.1:8009
