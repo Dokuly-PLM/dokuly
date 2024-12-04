@@ -1,0 +1,17 @@
+site_name: Dokuly
+
+nav:
+- quickstart.md
+- Getting Started: 
+  - Projects and Customers: projects_and_customers.md
+  - Creating your first Part: first_part.md
+  - From Parts to PCBA's: parts_to_pcbas.md
+  - BOM for PCBA's and Assemblies: bom_management.md
+  - Making Assemblies: assemblies.md
+  - Production control: production_control.md
+- Administration: 
+  - User Management: admin/user_management.md
+  - Roles and Permissions: admin/roles_and_permissions.md
+  - Settings: admin/settings.md
+  - API: admin/api.md
+- installation.md
