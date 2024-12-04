@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Quickstart - Dokuly</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">Dokuly</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="./" class="nav-link active" aria-current="page">Quickstart</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../projects_and_customers/" class="dropdown-item">Projects and Customers</a>
+</li>
+                                    
+<li>
+    <a href="../first_part/" class="dropdown-item">Creating your first Part</a>
+</li>
+                                    
+<li>
+    <a href="../parts_to_pcbas/" class="dropdown-item">From Parts to PCBA's</a>
+</li>
+                                    
+<li>
+    <a href="../bom_management/" class="dropdown-item">BOM for PCBA's and Assemblies</a>
+</li>
+                                    
+<li>
+    <a href="../assemblies/" class="dropdown-item">Making Assemblies</a>
+</li>
+                                    
+<li>
+    <a href="../production_control/" class="dropdown-item">Production control</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Administration</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../admin/user_management/" class="dropdown-item">User Management</a>
+</li>
+                                    
+<li>
+    <a href="../admin/roles_and_permissions/" class="dropdown-item">Roles and Permissions</a>
+</li>
+                                    
+<li>
+    <a href="../admin/settings/" class="dropdown-item">Settings</a>
+</li>
+                                    
+<li>
+    <a href="../admin/api/" class="dropdown-item">API</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../installation/" class="nav-link">Installation guide</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" class="nav-link disabled">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../projects_and_customers/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#quickstart" class="nav-link">Quickstart</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#configure-self-hosting-of-dokuly" class="nav-link">Configure self hosting of Dokuly</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="quickstart">Quickstart</h1>
+<p>Make sure docker and other dependencies are installed.
+To find the dependencies take a look at the <strong>Installation</strong> tab in the top navbar.
+Then follow these steps:</p>
+<h4 id="create-a-env-file-it-can-be-left-empty">Create a .env file (it can be left empty)</h4>
+<p>Then set a value within the string quotes.
+Next; Build the project. This can be done using</p>
+<pre><code class="language-bash">docker compose -f docker-compose-dev.yml build
+</code></pre>
+<p>or for mac / linux:</p>
+<pre><code class="language-bash">docker compose -f docker-compose-dev-mac.yml build
+</code></pre>
+<h4 id="build-frontend-using-npm">Build frontend using npm</h4>
+<pre><code class="language-bash">npm i
+</code></pre>
+<pre><code class="language-bash">npm run build
+</code></pre>
+<h4 id="run-the-project">Run the project</h4>
+<p>Run migrations</p>
+<pre><code class="language-bash">docker compose -f docker-compose-dev.yml run web python /dokuly_image/dokuly/manage.py migrate
+</code></pre>
+<pre><code class="language-bash">docker compose -f docker-compose-dev.yml up
+</code></pre>
+<h4 id="access-dokuly">Access dokuly</h4>
+<p>In your web browser, dokuly can be accessed at</p>
+<p><a href="http://oss.dokuly.localhost:8000">http://oss.dokuly.localhost:8000</a>.</p>
+<h4 id="logging-in-for-the-first-time-on-localhost">Logging in for the first time on localhost</h4>
+<p>The PLM comes with some default data. A user is created with the username "ossuser" and password: "oss_password".
+This can be used to login with for the first time to start using and configuring dokuly for your use-case.</p>
+<p><a name="setup_selfhost" /></p>
+<h2 id="configure-self-hosting-of-dokuly">Configure self hosting of Dokuly</h2>
+<p>To start hosting the service on your own machine you have to have all dependencies installed. This includes docker and node. See the table of contents for more information on installing these dependencies. 
+<a name="nginx_proxy" /></p>
+<h3 id="nginx-proxy">Nginx proxy</h3>
+<h3 id="local-hosting-setup-guide">Local Hosting Setup Guide</h3>
+<p>To enable access to your locally hosted project on your local network or VPN, follow these steps to configure an NGINX proxy. Directly using your machine's local IP address might not suffice, hence the need for these adjustments:</p>
+<ol>
+<li><strong>Locate the NGINX Configuration</strong></li>
+<li>
+<p>Navigate to the <code>nginx</code> folder where crucial configuration files reside.</p>
+</li>
+<li>
+<p><strong>Edit the Configuration File</strong></p>
+</li>
+<li>
+<p>Within the <code>nginx</code> folder, find and open the <code>nginx.conf</code> file for editing.</p>
+<ul>
+<li><strong>Update IP Address</strong>: Search for a line starting with <code>server_name</code>, typically containing an IP like <code>10.0.0.21</code>. Replace it with your machine's local network IP. To find your IP address:</li>
+<li>On <strong>Linux/Mac</strong>: Open a terminal and enter <code>ifconfig</code>.</li>
+<li>On <strong>Windows</strong>: Open Command Prompt and type <code>ipconfig</code>.
+   Look for the IPv4 address under your network connection, usually formatted as <code>192.168.x.x</code>.</li>
+<li><strong>Set Project Name</strong>: Locate the line <code>proxy_set_header Host</code> and change the adjacent value to your project's name. If you haven't set up a project name, run the <code>self_host_create_new_tenant</code> script.</li>
+</ul>
+</li>
+<li>
+<p><strong>Save and Close</strong></p>
+</li>
+<li>
+<p>After making the necessary edits, save the changes and close the <code>nginx.conf</code> file.</p>
+</li>
+<li>
+<p><strong>Restart NGINX</strong></p>
+</li>
+<li>To apply your changes, execute the <code>self_host_restart.ps1</code> script located in the <code>self_hosting</code> folder.</li>
+</ol>
+<p>By following these steps, your locally hosted project should become accessible to others on the same network or VPN using your computer's local IP address.</p>
+<h3 id="smtp-email">SMTP Email</h3>
+<p>Dokuly has support for smtp email, and some basic functions via email like resetting your user's password. To setup the smtp you will need your own smtp server setup, and then in the .env file add the following fields:</p>
+<pre><code class="language-ini">EMAIL_HOST = &quot;your_smtp_provider_address&quot;
+EMAIL_PORT = your_port
+EMAIL_HOST_USER = &quot;your_smtp_username&quot;
+EMAIL_HOST_PASSWORD = &quot;your_smtp_password&quot;
+EMAIL_SENDER = 'your_smtp_sender_address'
+</code></pre>
+<p>Replace the values with your own information from your smtp provider.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
