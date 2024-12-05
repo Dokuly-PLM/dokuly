@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../img/favicon.ico">
-        <title>Quickstart - Dokuly</title>
+        <title>Self-hosting - Dokuly Docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/fontawesome.min.css" rel="stylesheet">
         <link href="../css/brands.min.css" rel="stylesheet">
@@ -17,6 +17,7 @@
         <link href="../css/base.css" rel="stylesheet">
         <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
         <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../styles/index.css" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script> 
     </head>
@@ -24,7 +25,7 @@
     <body>
         <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand" href="..">Dokuly</a>
+                <a class="navbar-brand" href="..">Dokuly Docs</a>
                 <!-- Expander button -->
                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -34,9 +35,6 @@
                 <div id="navbar-collapse" class="navbar-collapse collapse">
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
-                            <li class="nav-item">
-                                <a href="./" class="nav-link active" aria-current="page">Quickstart</a>
-                            </li>
                             <li class="nav-item dropdown">
                                 <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
                                 <ul class="dropdown-menu">
@@ -54,11 +52,15 @@
 </li>
                                     
 <li>
-    <a href="../bom_management/" class="dropdown-item">BOM for PCBA's and Assemblies</a>
+    <a href="../pcbas_and_assemblies/" class="dropdown-item">PCBA's and Assemblies</a>
 </li>
                                     
 <li>
-    <a href="../assemblies/" class="dropdown-item">Making Assemblies</a>
+    <a href="../issues/" class="dropdown-item">Issues</a>
+</li>
+                                    
+<li>
+    <a href="../notes_and_markdown/" class="dropdown-item">Notes and Markdown</a>
 </li>
                                     
 <li>
@@ -66,29 +68,17 @@
 </li>
                                 </ul>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Administration</a>
-                                <ul class="dropdown-menu">
-                                    
-<li>
-    <a href="../admin/user_management/" class="dropdown-item">User Management</a>
-</li>
-                                    
-<li>
-    <a href="../admin/roles_and_permissions/" class="dropdown-item">Roles and Permissions</a>
-</li>
-                                    
-<li>
-    <a href="../admin/settings/" class="dropdown-item">Settings</a>
-</li>
-                                    
-<li>
-    <a href="../admin/api/" class="dropdown-item">API</a>
-</li>
-                                </ul>
+                            <li class="nav-item">
+                                <a href="./" class="nav-link active" aria-current="page">Self-hosting</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../admin/settings/" class="nav-link">Administration</a>
                             </li>
                             <li class="nav-item">
                                 <a href="../installation/" class="nav-link">Installation guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../definitions/" class="nav-link">Definitions</a>
                             </li>
                         </ul>
 
@@ -99,12 +89,12 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" class="nav-link disabled">
+                                <a rel="prev" href="../production_control/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../projects_and_customers/" class="nav-link">
+                                <a rel="next" href="../admin/settings/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -141,33 +131,51 @@
 
 <h1 id="quickstart">Quickstart</h1>
 <p>Make sure docker and other dependencies are installed.
-To find the dependencies take a look at the <strong>Installation</strong> tab in the top navbar.
+To find the dependencies take a look at the <a href="/installation"><strong>Installation guide</strong></a> tab in the top navbar.
 Then follow these steps:</p>
-<h4 id="create-a-env-file-it-can-be-left-empty">Create a .env file (it can be left empty)</h4>
-<p>Then set a value within the string quotes.
-Next; Build the project. This can be done using</p>
-<pre><code class="language-bash">docker compose -f docker-compose-dev.yml build
-</code></pre>
-<p>or for mac / linux:</p>
-<pre><code class="language-bash">docker compose -f docker-compose-dev-mac.yml build
-</code></pre>
-<h4 id="build-frontend-using-npm">Build frontend using npm</h4>
-<pre><code class="language-bash">npm i
-</code></pre>
-<pre><code class="language-bash">npm run build
-</code></pre>
-<h4 id="run-the-project">Run the project</h4>
-<p>Run migrations</p>
-<pre><code class="language-bash">docker compose -f docker-compose-dev.yml run web python /dokuly_image/dokuly/manage.py migrate
-</code></pre>
-<pre><code class="language-bash">docker compose -f docker-compose-dev.yml up
-</code></pre>
-<h4 id="access-dokuly">Access dokuly</h4>
-<p>In your web browser, dokuly can be accessed at</p>
-<p><a href="http://oss.dokuly.localhost:8000">http://oss.dokuly.localhost:8000</a>.</p>
-<h4 id="logging-in-for-the-first-time-on-localhost">Logging in for the first time on localhost</h4>
-<p>The PLM comes with some default data. A user is created with the username "ossuser" and password: "oss_password".
-This can be used to login with for the first time to start using and configuring dokuly for your use-case.</p>
+<ol>
+  <li>
+    <strong>Create a .env file:</strong> 
+    <p>It can be left empty.</p>
+  </li>
+  <li>
+    <strong>Build the project:</strong>
+    <p>In the root of the project, run:</p>
+    <pre><code>docker compose -f docker-compose-dev.yml build</code></pre>
+    <p>Or for Mac/Linux, use:</p>
+    <pre><code>docker compose -f docker-compose-dev-mac.yml build</code></pre>
+  </li>
+  <li>
+    <strong>Build the frontend:</strong>
+    <p>Install dependencies and build:</p>
+    <pre><code>npm i</code></pre>
+    <pre><code>npm run build</code></pre>
+  </li>
+  <li>
+    <strong>Run the project:</strong>
+    <p>First, in the root of the project, run:</p>
+    <pre><code>docker compose -f docker-compose-dev.yml run web python /dokuly_image/dokuly/manage.py migrate</code></pre>
+    <p>Then, start the local server using:</p>
+    <pre><code>docker compose -f docker-compose-dev.yml up</code></pre>
+  </li>
+  <li>
+    <strong>Access Dokuly:</strong>
+    <p>In your web browser, access Dokuly at:
+      <a href="http://oss.dokuly.localhost:8000" target="_blank">http://oss.dokuly.localhost:8000</a>
+    </p>
+  </li>
+  <li>
+    <strong>Log in for the first time:</strong>
+    <p>Dokuly comes with default data. Use the following credentials to log in for the first time:</p>
+    <ul>
+      <li>Username: <code>ossuser</code></li>
+      <li>Password: <code>oss_password</code></li>
+    </ul>
+    <p>You can now start using and configuring Dokuly for your use case.</p>
+  </li>
+</ol>
+
+<hr />
 <p><a name="setup_selfhost" /></p>
 <h2 id="configure-self-hosting-of-dokuly">Configure self hosting of Dokuly</h2>
 <p>To start hosting the service on your own machine you have to have all dependencies installed. This includes docker and node. See the table of contents for more information on installing these dependencies. 
@@ -176,34 +184,45 @@ This can be used to login with for the first time to start using and configuring
 <h3 id="local-hosting-setup-guide">Local Hosting Setup Guide</h3>
 <p>To enable access to your locally hosted project on your local network or VPN, follow these steps to configure an NGINX proxy. Directly using your machine's local IP address might not suffice, hence the need for these adjustments:</p>
 <ol>
-<li><strong>Locate the NGINX Configuration</strong></li>
-<li>
-<p>Navigate to the <code>nginx</code> folder where crucial configuration files reside.</p>
-</li>
-<li>
-<p><strong>Edit the Configuration File</strong></p>
-</li>
-<li>
-<p>Within the <code>nginx</code> folder, find and open the <code>nginx.conf</code> file for editing.</p>
-<ul>
-<li><strong>Update IP Address</strong>: Search for a line starting with <code>server_name</code>, typically containing an IP like <code>10.0.0.21</code>. Replace it with your machine's local network IP. To find your IP address:</li>
-<li>On <strong>Linux/Mac</strong>: Open a terminal and enter <code>ifconfig</code>.</li>
-<li>On <strong>Windows</strong>: Open Command Prompt and type <code>ipconfig</code>.
-   Look for the IPv4 address under your network connection, usually formatted as <code>192.168.x.x</code>.</li>
-<li><strong>Set Project Name</strong>: Locate the line <code>proxy_set_header Host</code> and change the adjacent value to your project's name. If you haven't set up a project name, run the <code>self_host_create_new_tenant</code> script.</li>
-</ul>
-</li>
-<li>
-<p><strong>Save and Close</strong></p>
-</li>
-<li>
-<p>After making the necessary edits, save the changes and close the <code>nginx.conf</code> file.</p>
-</li>
-<li>
-<p><strong>Restart NGINX</strong></p>
-</li>
-<li>To apply your changes, execute the <code>self_host_restart.ps1</code> script located in the <code>self_hosting</code> folder.</li>
+  <li>
+    <strong>Locate the NGINX Configuration:</strong>
+    <p>Navigate to the <code>nginx</code> folder where crucial configuration files reside.</p>
+  </li>
+  <li>
+    <strong>Edit the Configuration File:</strong>
+    <p>Within the <code>nginx</code> folder, find and open the <code>nginx.conf</code> file for editing:</p>
+    <ul>
+      <li>
+        <strong>Update IP Address:</strong>
+        <p>Search for a line starting with <code>server_name</code>, typically containing an IP like <code>10.0.0.21</code>. Replace it with your machine's local network IP. To find your IP address:</p>
+        <ul>
+          <li>
+            <strong>On Linux/Mac:</strong> Open a terminal and enter:
+            <pre><code>ifconfig</code></pre>
+          </li>
+          <li>
+            <strong>On Windows:</strong> Open Command Prompt and type:
+            <pre><code>ipconfig</code></pre>
+          </li>
+        </ul>
+        <p>Look for the IPv4 address under your network connection, usually formatted as <code>192.168.x.x</code>.</p>
+      </li>
+      <li>
+        <strong>Set Project Name:</strong>
+        <p>Locate the line <code>proxy_set_header Host</code> and change the adjacent value to your project's name. If you haven't set up a project name, run the <code>self_host_create_new_tenant</code> script.</p>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <strong>Save and Close:</strong>
+    <p>After making the necessary edits, save the changes and close the <code>nginx.conf</code> file.</p>
+  </li>
+  <li>
+    <strong>Restart NGINX:</strong>
+    <p>To apply your changes, execute the <code>self_host_restart.ps1</code> script located in the <code>self_hosting</code> folder.</p>
+  </li>
 </ol>
+
 <p>By following these steps, your locally hosted project should become accessible to others on the same network or VPN using your computer's local IP address.</p>
 <h3 id="smtp-email">SMTP Email</h3>
 <p>Dokuly has support for smtp email, and some basic functions via email like resetting your user's password. To setup the smtp you will need your own smtp server setup, and then in the .env file add the following fields:</p>

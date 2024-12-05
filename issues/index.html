@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../img/favicon.ico">
-        <title>Tasks and timetracking - Dokuly Docs</title>
+        <title>Issues - Dokuly Docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/fontawesome.min.css" rel="stylesheet">
         <link href="../css/brands.min.css" rel="stylesheet">
@@ -36,7 +36,7 @@
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
                             <li class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
                                 <ul class="dropdown-menu">
                                     
 <li>
@@ -56,7 +56,7 @@
 </li>
                                     
 <li>
-    <a href="../issues/" class="dropdown-item">Issues</a>
+    <a href="./" class="dropdown-item active" aria-current="page">Issues</a>
 </li>
                                     
 <li>
@@ -88,6 +88,16 @@
                                 <i class="fa fa-search"></i> Search
                             </a>
                         </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../pcbas_and_assemblies/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../notes_and_markdown/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
                     </ul>
                 </div>
             </div>
@@ -105,12 +115,33 @@
     
     <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
         <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#issues" class="nav-link">Issues</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#issue-dashboard" class="nav-link">Issue dashboard</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
                     <div class="col-md-9" role="main">
 
-</div>
+<h1 id="issues">Issues</h1>
+<p><strong>Parts</strong>, <strong>PCBAs</strong>, <strong>Assemblies</strong>, and <strong>Documents</strong> all have the issues module. To create a new issue, go to the <strong>Issues</strong> tab on either of the dashboards for the items that have the issues module, and click on <strong>Create New Issue</strong>. All issues in your organization share a issue number counter, starting at #1. Issues have 3 levels of criticality:
+<b style="color: #54a4da;">Low</b>,
+<b style="color: #f6c208;">High</b>, and
+<b style="color: #ff0000;">Critical</b>. 
+To change the criticality of an issue, use the inline dropdown button. Or open the issue by using the navigation arrow or <strong>Ctrl</strong> + click, and edit it in its own dashboard.</p>
+<hr />
+<p>By default, issues are <em>open</em>, meaning they are current for the item you are managing. Issues can span over multiple revision of any part-item. Any issues that are open in revision A, when creating revision B they will be copied over. If the issue is closed in a later revision it will still be shown in the revision is was created, but with a note: <strong>Closed in: B</strong>. To close any issue, simply click the <strong>Close Issue</strong> button. When an issue is closed, notifications will be sent to the associated users, depending on the projects notification settings. (See <a href="/admin/settings/#projects">project administration</a> for more info)</p>
+<p>Issues flow upward through your connected items. This means that an issue on PRT42A will be visible in ASM36B if the part is being used in its BOM. use the filter options to toggle only viewing the current items issues, or including upwards flowing issues. This makes it practical to create issues on its related object, instead of creating many issues on the top level assembly, and gives you a solid overview of potentials blockers during development.</p>
+<hr />
+<h2 id="issue-dashboard">Issue dashboard</h2>
+<p>The issue dashboard contains an information card, and a markdown editor for the issue description. In the dashboard, the issue can be edited, closed, and tags can be added to the issue. In addition, you can see the objects this issue is linked to. Click on the object number (could be a part number, or a document number) to navigate to the item. From the dashboard, an issue can also be reopened, setting the issue from a <em>closed</em> state, back to <em>open</em>.</p>
+<p><small><b>Tip:</b> The title of the issue can be edited inline in the issue table.</small></p></div>
             </div>
         </div>
 

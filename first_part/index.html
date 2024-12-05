@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../img/favicon.ico">
-        <title>Creating your first Part - Dokuly</title>
+        <title>Creating your first Part - Dokuly Docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/fontawesome.min.css" rel="stylesheet">
         <link href="../css/brands.min.css" rel="stylesheet">
@@ -17,6 +17,7 @@
         <link href="../css/base.css" rel="stylesheet">
         <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
         <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../styles/index.css" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script> 
     </head>
@@ -24,7 +25,7 @@
     <body>
         <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand" href="..">Dokuly</a>
+                <a class="navbar-brand" href="..">Dokuly Docs</a>
                 <!-- Expander button -->
                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -34,9 +35,6 @@
                 <div id="navbar-collapse" class="navbar-collapse collapse">
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
-                            <li class="nav-item">
-                                <a href="../quickstart/" class="nav-link">Quickstart</a>
-                            </li>
                             <li class="nav-item dropdown">
                                 <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
                                 <ul class="dropdown-menu">
@@ -54,11 +52,15 @@
 </li>
                                     
 <li>
-    <a href="../bom_management/" class="dropdown-item">BOM for PCBA's and Assemblies</a>
+    <a href="../pcbas_and_assemblies/" class="dropdown-item">PCBA's and Assemblies</a>
 </li>
                                     
 <li>
-    <a href="../assemblies/" class="dropdown-item">Making Assemblies</a>
+    <a href="../issues/" class="dropdown-item">Issues</a>
+</li>
+                                    
+<li>
+    <a href="../notes_and_markdown/" class="dropdown-item">Notes and Markdown</a>
 </li>
                                     
 <li>
@@ -66,29 +68,17 @@
 </li>
                                 </ul>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Administration</a>
-                                <ul class="dropdown-menu">
-                                    
-<li>
-    <a href="../admin/user_management/" class="dropdown-item">User Management</a>
-</li>
-                                    
-<li>
-    <a href="../admin/roles_and_permissions/" class="dropdown-item">Roles and Permissions</a>
-</li>
-                                    
-<li>
-    <a href="../admin/settings/" class="dropdown-item">Settings</a>
-</li>
-                                    
-<li>
-    <a href="../admin/api/" class="dropdown-item">API</a>
-</li>
-                                </ul>
+                            <li class="nav-item">
+                                <a href="../quickstart/" class="nav-link">Self-hosting</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../admin/settings/" class="nav-link">Administration</a>
                             </li>
                             <li class="nav-item">
                                 <a href="../installation/" class="nav-link">Installation guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../definitions/" class="nav-link">Definitions</a>
                             </li>
                         </ul>
 
@@ -125,12 +115,45 @@
     
     <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
         <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#creating-your-first-part" class="nav-link">Creating your first Part</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#part-dashboard" class="nav-link">Part dashboard</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
                     <div class="col-md-9" role="main">
 
-</div>
+<h1 id="creating-your-first-part">Creating your first <strong>Part</strong></h1>
+<p style="max-height: 35px;">Click on **Parts** in the sidebar: &nbsp; <img src="../images/nav_parts.png" height="50"> &nbsp; or go to /parts in your browser.</p>
+<p style="max-height: 35px;">Next click on **New part** &nbsp; <img src="../images/new_part.png" height="50"></p>
+<p style="max-height: 75px;">A modal dialog will open, enter your information about the new part, then hit submit when you are done: &nbsp; <img src="../images/submit.png" height="50"></p>
+
+<hr />
+<h2 id="part-dashboard"><strong>Part</strong> dashboard</h2>
+<p>Navigate to the part by clicking on it in the table, or <em>open it in a new tab</em> by using <strong>ctrl</strong> + click.</p>
+<p><img alt="" src="../images/part_table_entry.png" /></p>
+<p>Now you can see your newly created part! On the top of the screen you have the <em>part number</em> and its <em>display name</em>.</p>
+<p><img alt="" src="../images/part_display_name.png" /></p>
+<p><small><b>Tip!</b> Click on this to copy the part number + display name to your clipboard.</small></p>
+<p>Use the navigation tab to manage different aspects of your part</p>
+<p><img alt="" src="../images/part_nav_tab.png" /></p>
+<p>Tabs tl;dr:</p>
+<ul>
+<li><strong>Overview</strong>: See the <em>MPN</em>, <em>Manufacturer</em>, edit your part's <em>tags</em>, view and edit pricing data, upload files, edit the <em>errata</em> or <em>revision notes</em>, and link <em>alternative parts</em>.</li>
+<li><strong>Issues</strong>: Create, edit and manage issues on your part.</li>
+<li><strong>Inventory</strong>: Take or remove stock from your <em>locations</em>, view forecast and history. </li>
+<li><strong>Notes</strong>: Inline markdown editor for easy and quick jotting.</li>
+<li><strong>Reference Documents</strong>: Link documents to your part for easy access and later reference.</li>
+<li><strong>Specifications</strong>: Define custom technical specifications for your part.</li>
+<li><strong>Revisions</strong>: View all the other versions of this part you've created.</li>
+</ul>
+<hr /></div>
             </div>
         </div>
 

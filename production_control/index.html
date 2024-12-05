@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../img/favicon.ico">
-        <title>Production control - Dokuly</title>
+        <title>Production control - Dokuly Docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/fontawesome.min.css" rel="stylesheet">
         <link href="../css/brands.min.css" rel="stylesheet">
@@ -17,6 +17,7 @@
         <link href="../css/base.css" rel="stylesheet">
         <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
         <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../styles/index.css" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script> 
     </head>
@@ -24,7 +25,7 @@
     <body>
         <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand" href="..">Dokuly</a>
+                <a class="navbar-brand" href="..">Dokuly Docs</a>
                 <!-- Expander button -->
                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -34,9 +35,6 @@
                 <div id="navbar-collapse" class="navbar-collapse collapse">
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
-                            <li class="nav-item">
-                                <a href="../quickstart/" class="nav-link">Quickstart</a>
-                            </li>
                             <li class="nav-item dropdown">
                                 <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
                                 <ul class="dropdown-menu">
@@ -54,11 +52,15 @@
 </li>
                                     
 <li>
-    <a href="../bom_management/" class="dropdown-item">BOM for PCBA's and Assemblies</a>
+    <a href="../pcbas_and_assemblies/" class="dropdown-item">PCBA's and Assemblies</a>
 </li>
                                     
 <li>
-    <a href="../assemblies/" class="dropdown-item">Making Assemblies</a>
+    <a href="../issues/" class="dropdown-item">Issues</a>
+</li>
+                                    
+<li>
+    <a href="../notes_and_markdown/" class="dropdown-item">Notes and Markdown</a>
 </li>
                                     
 <li>
@@ -66,29 +68,17 @@
 </li>
                                 </ul>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Administration</a>
-                                <ul class="dropdown-menu">
-                                    
-<li>
-    <a href="../admin/user_management/" class="dropdown-item">User Management</a>
-</li>
-                                    
-<li>
-    <a href="../admin/roles_and_permissions/" class="dropdown-item">Roles and Permissions</a>
-</li>
-                                    
-<li>
-    <a href="../admin/settings/" class="dropdown-item">Settings</a>
-</li>
-                                    
-<li>
-    <a href="../admin/api/" class="dropdown-item">API</a>
-</li>
-                                </ul>
+                            <li class="nav-item">
+                                <a href="../quickstart/" class="nav-link">Self-hosting</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../admin/settings/" class="nav-link">Administration</a>
                             </li>
                             <li class="nav-item">
                                 <a href="../installation/" class="nav-link">Installation guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../definitions/" class="nav-link">Definitions</a>
                             </li>
                         </ul>
 
@@ -99,12 +89,12 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../assemblies/" class="nav-link">
+                                <a rel="prev" href="../notes_and_markdown/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../admin/user_management/" class="nav-link">
+                                <a rel="next" href="../quickstart/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -125,12 +115,39 @@
     
     <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
         <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#production" class="nav-link">Production</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#lot-dashboard" class="nav-link">Lot dashboard</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#serial-numbers" class="nav-link">Serial numbers</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
                     <div class="col-md-9" role="main">
 
-</div>
+<h1 id="production">Production</h1>
+<p>On the production dashboard you can an overview of your production pipeline. On the top is a graph displaying the number you have assembled over time, per day / month. Below is a table of your production lots, which are collections of <strong>Parts</strong>, <strong>PCBAs</strong>, or <strong>Assemblies</strong> that are either scheduled for assembly or have already been assembled. On the bottom is the latest production activity, and a global production search for looking up serial numbers or part numbers. </p>
+<hr />
+<h2 id="lot-dashboard">Lot dashboard</h2>
+<p>Start using production by first creating a new lot. Click on <strong>New production lot</strong> to create a new lot. Here you need to use the global part search to find the item you will be assembling. Hit <strong>Submit</strong> to save your changes. To navigate to the lot click on it in the <strong>Production Lots</strong> table, or use the navigation arrow.</p>
+<p>In the lot dashboard, you have the tabs:</p>
+<ul>
+<li><strong>Overview</strong>: View lot information including the lot item, quantity, connected project and progress. Edit notes.</li>
+<li><strong>BOM items</strong>: (Only for <strong>PCBAs</strong> and <strong>Assemblies</strong>) See information about the BOM items, including their total and on-order stock.</li>
+<li><strong>Procurement</strong>: View the related POs to this lot, including their price and status.</li>
+<li><strong>Serial numbers</strong>: Create new serial numbers, here you manage the actual production part of your process.</li>
+</ul>
+<hr />
+<h2 id="serial-numbers">Serial numbers</h2>
+<p>To create a new item of the current lot, navigate to the <strong>Serial numbers</strong> tab.</p></div>
             </div>
         </div>
 

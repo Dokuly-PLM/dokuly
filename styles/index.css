@@ -1,0 +1,27 @@
+:root {
+    --dokuly-primary-color: #22655d;
+}
+
+.navbar{
+    background-color: var(--dokuly-primary-color) !important;
+}
+
+.navbar.bg-primary {
+    background-image: none !important;
+}
+
+ul.flex-column > li > ul > li > a {
+    color: var(--dokuly-primary-color) !important;
+}
+
+ul.flex-column > li > a {
+    color: var(--dokuly-primary-color) !important;
+}
+
+ul.show > li > a:hover {
+    background-color: var(--dokuly-primary-color) !important;
+}
+
+ul.show > li:nth-child(2) > a.active {
+    background-color: var(--dokuly-primary-color) !important;
+}

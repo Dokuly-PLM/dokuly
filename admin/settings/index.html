@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>Settings - Dokuly</title>
+        <title>Administration - Dokuly Docs</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/fontawesome.min.css" rel="stylesheet">
         <link href="../../css/brands.min.css" rel="stylesheet">
@@ -17,6 +17,7 @@
         <link href="../../css/base.css" rel="stylesheet">
         <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
         <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../../styles/index.css" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script> 
     </head>
@@ -24,7 +25,7 @@
     <body>
         <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand" href="../..">Dokuly</a>
+                <a class="navbar-brand" href="../..">Dokuly Docs</a>
                 <!-- Expander button -->
                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -34,9 +35,6 @@
                 <div id="navbar-collapse" class="navbar-collapse collapse">
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
-                            <li class="nav-item">
-                                <a href="../../quickstart/" class="nav-link">Quickstart</a>
-                            </li>
                             <li class="nav-item dropdown">
                                 <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
                                 <ul class="dropdown-menu">
@@ -54,11 +52,15 @@
 </li>
                                     
 <li>
-    <a href="../../bom_management/" class="dropdown-item">BOM for PCBA's and Assemblies</a>
+    <a href="../../pcbas_and_assemblies/" class="dropdown-item">PCBA's and Assemblies</a>
 </li>
                                     
 <li>
-    <a href="../../assemblies/" class="dropdown-item">Making Assemblies</a>
+    <a href="../../issues/" class="dropdown-item">Issues</a>
+</li>
+                                    
+<li>
+    <a href="../../notes_and_markdown/" class="dropdown-item">Notes and Markdown</a>
 </li>
                                     
 <li>
@@ -66,29 +68,17 @@
 </li>
                                 </ul>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Administration</a>
-                                <ul class="dropdown-menu">
-                                    
-<li>
-    <a href="../user_management/" class="dropdown-item">User Management</a>
-</li>
-                                    
-<li>
-    <a href="../roles_and_permissions/" class="dropdown-item">Roles and Permissions</a>
-</li>
-                                    
-<li>
-    <a href="./" class="dropdown-item active" aria-current="page">Settings</a>
-</li>
-                                    
-<li>
-    <a href="../api/" class="dropdown-item">API</a>
-</li>
-                                </ul>
+                            <li class="nav-item">
+                                <a href="../../quickstart/" class="nav-link">Self-hosting</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="./" class="nav-link active" aria-current="page">Administration</a>
                             </li>
                             <li class="nav-item">
                                 <a href="../../installation/" class="nav-link">Installation guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../../definitions/" class="nav-link">Definitions</a>
                             </li>
                         </ul>
 
@@ -99,12 +89,12 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../roles_and_permissions/" class="nav-link">
+                                <a rel="prev" href="../../quickstart/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../api/" class="nav-link">
+                                <a rel="next" href="../../installation/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -125,12 +115,107 @@
     
     <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
         <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#administration-dashboard" class="nav-link">Administration dashboard</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#general" class="nav-link">General</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#users" class="nav-link">Users</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#projects" class="nav-link">Projects</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#documents" class="nav-link">Documents</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#parts" class="nav-link">Parts</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#release-management" class="nav-link">Release Management</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#locations" class="nav-link">Locations</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#api-keys" class="nav-link">API keys</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
                     <div class="col-md-9" role="main">
 
-</div>
+<h1 id="administration-dashboard">Administration dashboard</h1>
+<p>The administration dashboard can be used to change your preferences, settings, permissions and roles, and edit data that normal users cannot access. It is comprised of these tabs:</p>
+<ul>
+<li><strong>General</strong>: Change basic settings including your organization, modules and logo.</li>
+<li><strong>Users</strong>: Manage your users, change permissions, create new users, and more. </li>
+<li><strong>Projects</strong>: Manage projects access for your users, and manage notification settings for the project.</li>
+<li><strong>Documents</strong>: Create document prefixes, edit faulty data in documents, archive management. </li>
+<li><strong>Parts</strong>: Create and edit part types, and part prefixes. </li>
+<li><strong>Release Management</strong>: Allows you to override a release state and fix possible mistakes.</li>
+<li><strong>Locations</strong>: Create and manage location types, and inventory locations.</li>
+<li><strong>API keys</strong>: Create and manage API keys to dokuly.</li>
+</ul>
+<hr />
+<h2 id="general">General</h2>
+<p>Tab for changing basic settings including your organization, modules and logo.</p>
+<h3 id="disabling-modules">Disabling modules</h3>
+<p>In the <strong>General</strong> tab on the administration dashboard, you can find organization settings. Here you can disable different modules by clicking the checkbox to turn them off or on for every user in your organization.  </p>
+<h3 id="organization-settings">Organization settings</h3>
+<p>In the information card you can see your storage usage. This is only relevant if using dokuly with <em>cloud hosting</em> provided by Norsk Datateknikk. If you are running dokuly yourself, its limited by your host system. </p>
+<p>Here you can also edit the organization information, including name, delivery address info, default currency and enabling two factor authentication (2FA).</p>
+<p>On the right hand side, you can upload a logo for your organization. This logo will be used on the generated front page for your PDFs.</p>
+<hr />
+<h2 id="users">Users</h2>
+<p>Tab where you mange your users, change permissions, create new and edit existing users, adding subscriptions.</p>
+<h3 id="manage-a-user-profile">Manage a user profile</h3>
+<p>To create a new user click on <strong>Add user</strong> and fill in the information you want. Remember to set the appropriate role for the user. Then click submit. An email will be sent to the email you filled in, containing a link to dokuly to set a new password for the user. </p>
+<p>For the permissions, there are 3 roles:</p>
+<ul>
+<li><strong>Viewer</strong>: Read-only user. Cannot edit data.</li>
+<li><strong>User</strong>: Can edit data it has access to, does <strong>NOT</strong> have access to the admin dashboard.</li>
+<li><strong>Admin</strong>: Can edit data it has access to, and have access to the admin dashboard.</li>
+</ul>
+<p>In addition, there is <em>one</em> user with the <strong>Owner</strong> role, assigned to the owner of the organization. This is the only user that can demote other admin users. The owner also have access to the admin dashboard, and is the only role that can delete the workspace and its data.</p>
+<h3 id="add-a-new-subscription">Add a new subscription</h3>
+<p>If using cloud hosting via Norsk Datateknikk, you will have some counters at in the <strong>Manage subscriptions</strong> card. <em>Active users</em> is the number of users you have currently activated, versus the total number of active users you can have at any time. In addition, there is a count for active viewer users versus the total number of active viewer users you can have.</p>
+<p>If you have the maximum number of active users compared to your total allowed, activating another user will cause a user of the lowest permission possible to be automatically deactivated. To avoid this, click on <em>Add subscription</em>, and select a new plan for the user you plan on creating. This will redirect you to the public page to complete the transaction. When completed, you will be redirected back to admin, and can now freely create a new user. </p>
+<hr />
+<h2 id="projects">Projects</h2>
+<p>This tab lets you update the project access settings, change project owners, and manage notification settings for your projects.</p>
+<h3 id="managing-a-project">Managing a project</h3>
+<p>Click on a project in the table. A modal will open, and here you can set the active state of the project, change the project owner, and set when and who gets notifications. To add a user to a project which gives them access to the items connected to the projects, click on the <em>Add</em> button next to the user's name under the <strong>Non-Project Users</strong>. To remove access click on the <em>Remove</em> button under the <strong>Project Users</strong>.</p>
+<hr />
+<h2 id="documents">Documents</h2>
+<p>The documents tab lets you edit mistakes in document data normal users cannot access, like the release state after a release, or the document type. Here you can also create and edit document prefixes. </p>
+<hr />
+<h2 id="parts">Parts</h2>
+<p>Create and edit <em>part types</em> in this tab. Click on the new part type to create a new part type. Give it a name and a prefix. The prefix will affect how the part number looks, e.g. the prefix <em>EL</em>, will make a part created with this part type have the part number ELXXXXA, where XXXX is the number part and A is the revision. Click submit to save your changes. </p>
+<hr />
+<h2 id="release-management">Release Management</h2>
+<p>Override the release state of all objects that have a release state. Here you can fix a mistake such as setting a part to being <em>Released</em> from its <em>Draft</em> state. When the part is released, it cannot be edited, a new revision must be created. However, on this tab you can override the state.</p>
+<hr />
+<h2 id="locations">Locations</h2>
+<p>Here you can create location types, and locations for inventory management. To create a location, you must first create at least one location type. Click on <strong>Add type</strong> to create a new location type, and hit submit to save your changes. Then to create a new location, click on <strong>Add location</strong> and select a appropriate location type for it. </p>
+<p><strong>NOTE:</strong> The location number is controlled manually by the user at this point.</p>
+<hr />
+<h2 id="api-keys">API keys</h2>
+<p>Dokuly has an API that its users can access. The API documentation can be found <a href="https://dokuly.com/#/api" target="_blank" rel="noreferrer">here.</a> On this tab you can create API keys, that also have project access built in to them.</p>
+<p>To create a new API key click on <strong>Generate new API Key</strong>. This will switch the card to show an <em>Expiry Date</em> and a table with your current active projects. To allow or disallow access to the project for the key you are creating, check or uncheck the allow access checkbox for that project. Click submit to generate the new API key.</p>
+<p>To copy the API for use, click on the copy icon in the table, under the column <strong>API Key</strong>.</p></div>
             </div>
         </div>
 

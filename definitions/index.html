@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../img/favicon.ico">
-        <title>Tasks and timetracking - Dokuly Docs</title>
+        <title>Definitions - Dokuly Docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/fontawesome.min.css" rel="stylesheet">
         <link href="../css/brands.min.css" rel="stylesheet">
@@ -78,7 +78,7 @@
                                 <a href="../installation/" class="nav-link">Installation guide</a>
                             </li>
                             <li class="nav-item">
-                                <a href="../definitions/" class="nav-link">Definitions</a>
+                                <a href="./" class="nav-link active" aria-current="page">Definitions</a>
                             </li>
                         </ul>
 
@@ -88,6 +88,16 @@
                                 <i class="fa fa-search"></i> Search
                             </a>
                         </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../installation/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" class="nav-link disabled">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
                     </ul>
                 </div>
             </div>
@@ -105,12 +115,26 @@
     
     <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
         <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#definitions" class="nav-link">Definitions</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
                     <div class="col-md-9" role="main">
 
-</div>
+<h1 id="definitions">Definitions</h1>
+<p>A simple list of definitions and lingo found in the docs, often marked in <em>italic</em> or <strong>bold</strong>.</p>
+<ul>
+<li><strong>PCBA</strong>: Printed Circuit Board Assembly</li>
+<li><strong>BOM</strong>: Bill or Materials, list of parts, pcbas and/or assemblies needed to create a PCBA or an assembly.</li>
+<li><strong>Ref.Des</strong>: Reference Designator, a number specifying the identity of a part used in a BOM. </li>
+<li><strong>MPN</strong>: Manufacturer Part Number, the unique part number given to an external part by its manufacturer.</li>
+<li><strong>DNM</strong>: Do-Not-Mount, used as an attribute in BOMs.</li>
+<li><strong>PO</strong>: Purchase-Order, used to describe a transaction, usually in the context of buying inventory.</li>
+</ul></div>
             </div>
         </div>
 

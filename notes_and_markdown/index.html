@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../img/favicon.ico">
-        <title>Notes and markdown - Dokuly</title>
+        <title>Notes and Markdown - Dokuly Docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/fontawesome.min.css" rel="stylesheet">
         <link href="../css/brands.min.css" rel="stylesheet">
@@ -17,6 +17,7 @@
         <link href="../css/base.css" rel="stylesheet">
         <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
         <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../styles/index.css" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script> 
     </head>
@@ -24,7 +25,7 @@
     <body>
         <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand" href="..">Dokuly</a>
+                <a class="navbar-brand" href="..">Dokuly Docs</a>
                 <!-- Expander button -->
                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -34,11 +35,8 @@
                 <div id="navbar-collapse" class="navbar-collapse collapse">
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
-                            <li class="nav-item">
-                                <a href="../quickstart/" class="nav-link">Quickstart</a>
-                            </li>
                             <li class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
                                 <ul class="dropdown-menu">
                                     
 <li>
@@ -54,11 +52,15 @@
 </li>
                                     
 <li>
-    <a href="../bom_management/" class="dropdown-item">BOM for PCBA's and Assemblies</a>
+    <a href="../pcbas_and_assemblies/" class="dropdown-item">PCBA's and Assemblies</a>
 </li>
                                     
 <li>
-    <a href="../assemblies/" class="dropdown-item">Making Assemblies</a>
+    <a href="../issues/" class="dropdown-item">Issues</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Notes and Markdown</a>
 </li>
                                     
 <li>
@@ -66,29 +68,17 @@
 </li>
                                 </ul>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Administration</a>
-                                <ul class="dropdown-menu">
-                                    
-<li>
-    <a href="../admin/user_management/" class="dropdown-item">User Management</a>
-</li>
-                                    
-<li>
-    <a href="../admin/roles_and_permissions/" class="dropdown-item">Roles and Permissions</a>
-</li>
-                                    
-<li>
-    <a href="../admin/settings/" class="dropdown-item">Settings</a>
-</li>
-                                    
-<li>
-    <a href="../admin/api/" class="dropdown-item">API</a>
-</li>
-                                </ul>
+                            <li class="nav-item">
+                                <a href="../quickstart/" class="nav-link">Self-hosting</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../admin/settings/" class="nav-link">Administration</a>
                             </li>
                             <li class="nav-item">
                                 <a href="../installation/" class="nav-link">Installation guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../definitions/" class="nav-link">Definitions</a>
                             </li>
                         </ul>
 
@@ -98,6 +88,16 @@
                                 <i class="fa fa-search"></i> Search
                             </a>
                         </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../issues/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../production_control/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
                     </ul>
                 </div>
             </div>
@@ -115,12 +115,28 @@
     
     <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
         <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#notes" class="nav-link">Notes</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#markdown" class="nav-link">Markdown</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
                     <div class="col-md-9" role="main">
 
-</div>
+<h1 id="notes">Notes</h1>
+<p>Most items in dokuly either have a <strong>Notes</strong> tab in its dashboard, or a similar <strong>Notes</strong> card for creating a description (e.g. <em>Revision notes</em> or <em>Errata</em> on part items). The main notes for an item, is found under the <strong>Notes</strong> tab. Here, you have a <em>Main notes</em> tab selected as default. </p>
+<p><small><b>Tip: </b>To create a new tab, click on the <strong>+</strong> sign. This lets you better structure your notes. </small></p>
+<p>When creating a new tab for notes, a default name will be generated. To edit it, either <em>double-click</em> on the title, or use <em>right-click</em> to open tab options menu. </p>
+<p><small><b>Tip: </b>To delete a tab use the right click. Deleting a tab will remove the notes on that tab!</small></p>
+<h2 id="markdown">Markdown</h2>
+<p>To start jotting notes, either click the edit button, or double click anywhere within the text-area. This editor supports markdown, <em>Github Flavored</em>. You also have options to add standard symbols and emojis from dropdown menus. Additionally, you can format text in a <em>blockquote</em>. This can either be done manually, or be marking an area of text, then select the type of quote you want by using the <strong>blockquote</strong> dropdown. To view how the markdown will be rendered, click on the <strong>Show Split View</strong> button. This shows you the preview of your markdown while editing.</p>
+<p>Most descriptions and titles in dokuly for items support markdown.</p></div>
             </div>
         </div>
 

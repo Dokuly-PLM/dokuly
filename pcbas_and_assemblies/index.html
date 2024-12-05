@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../img/favicon.ico">
-        <title>BOM for PCBA's and Assemblies - Dokuly</title>
+        <title>PCBA's and Assemblies - Dokuly Docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/fontawesome.min.css" rel="stylesheet">
         <link href="../css/brands.min.css" rel="stylesheet">
@@ -17,6 +17,7 @@
         <link href="../css/base.css" rel="stylesheet">
         <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
         <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../styles/index.css" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script> 
     </head>
@@ -24,7 +25,7 @@
     <body>
         <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand" href="..">Dokuly</a>
+                <a class="navbar-brand" href="..">Dokuly Docs</a>
                 <!-- Expander button -->
                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -34,9 +35,6 @@
                 <div id="navbar-collapse" class="navbar-collapse collapse">
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
-                            <li class="nav-item">
-                                <a href="../quickstart/" class="nav-link">Quickstart</a>
-                            </li>
                             <li class="nav-item dropdown">
                                 <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
                                 <ul class="dropdown-menu">
@@ -54,11 +52,15 @@
 </li>
                                     
 <li>
-    <a href="./" class="dropdown-item active" aria-current="page">BOM for PCBA's and Assemblies</a>
+    <a href="./" class="dropdown-item active" aria-current="page">PCBA's and Assemblies</a>
 </li>
                                     
 <li>
-    <a href="../assemblies/" class="dropdown-item">Making Assemblies</a>
+    <a href="../issues/" class="dropdown-item">Issues</a>
+</li>
+                                    
+<li>
+    <a href="../notes_and_markdown/" class="dropdown-item">Notes and Markdown</a>
 </li>
                                     
 <li>
@@ -66,29 +68,17 @@
 </li>
                                 </ul>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Administration</a>
-                                <ul class="dropdown-menu">
-                                    
-<li>
-    <a href="../admin/user_management/" class="dropdown-item">User Management</a>
-</li>
-                                    
-<li>
-    <a href="../admin/roles_and_permissions/" class="dropdown-item">Roles and Permissions</a>
-</li>
-                                    
-<li>
-    <a href="../admin/settings/" class="dropdown-item">Settings</a>
-</li>
-                                    
-<li>
-    <a href="../admin/api/" class="dropdown-item">API</a>
-</li>
-                                </ul>
+                            <li class="nav-item">
+                                <a href="../quickstart/" class="nav-link">Self-hosting</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../admin/settings/" class="nav-link">Administration</a>
                             </li>
                             <li class="nav-item">
                                 <a href="../installation/" class="nav-link">Installation guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../definitions/" class="nav-link">Definitions</a>
                             </li>
                         </ul>
 
@@ -104,7 +94,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../assemblies/" class="nav-link">
+                                <a rel="next" href="../issues/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -125,12 +115,60 @@
     
     <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
         <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#bom-for-pcbas-and-assemblies" class="nav-link">BOM for PCBAs and Assemblies</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#assemblies" class="nav-link">Assemblies</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#partitem-relations" class="nav-link">Part/item relations</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
                     <div class="col-md-9" role="main">
 
-</div>
+<h1 id="bom-for-pcbas-and-assemblies">BOM for PCBAs and Assemblies</h1>
+<p>To export your BOM, use the <strong>CSV</strong> table exporter in the left hand bottom corner of the table. If you want to import a different BOM, also using .csv click on the <strong>Import BOM</strong> button. After the .csv is processed you will get an overview of the MPNs, designators, quantity, and <em>DNM</em>. On the left side you can link the columns as you want from the csv to the processed data. Click submit to sync and upload the BOM.</p>
+<p>To remove a row from your BOM click on the trash icon. If you want to start over again, you can empty your BOM using the <strong>Clear BOM</strong> button. This will remove all current rows in the BOM. </p>
+<p>The pricing data of the BOM is based on the pricing data of the parts that make it up. To get an accurate price model for your BOMs, update and set the pricing data of the parts that you use in the BOM. The total price of a PCBA or an Assembly, can be viewed at the <strong>Overview</strong> tab, using the BOM as the baseline. A manual price point can also be added.</p>
+<p>A <strong>P.O</strong>, or <em>Purchase Order</em>, can be generated from your BOM. This will create a new PO with the parts in your BOM that has pricing data. To create a new PO from a BOM, click on the <strong>Create PO from BOM</strong> button. This will open a form including a new table displaying your BOM. Select the supplier you want for each part, and choose to ignore or include a part in the PO. By default, all parts are included, however, parts that do not have any pricing data, will not be included in the generation of the PO. Click <strong>Create PO</strong> to generate. </p>
+<hr />
+<h2 id="assemblies">Assemblies</h2>
+<p style="max-height: 0px;">  <!-- 0px? -->
+To create a new assembly:
+</p>
+
+<p style="max-height: 35px;">
+    Click on **Assemblies** in the sidebar: &nbsp; <img src="../images/nav_assembly.png" height="50"> &nbsp; or go to /assemblies in your browser.
+</p>
+
+<p style="max-height: 35px;">
+    Next click on **New assembly** &nbsp; <img src="../images/new_assembly.png" height="50">
+</p>
+
+<p style="max-height: 75px;">
+    A modal dialog will open, enter your information about the new assembly, then hit submit when you are done: &nbsp; <img src="../images/submit.png" height="50">
+</p>
+
+<p>Navigate to the assembly by clicking on it in the table, or <em>open it in a new tab</em> by using <strong>ctrl</strong> + click.</p>
+<p><img src="../images/assembly_table_entry.png"></p>
+<p>The dashboard for assemblies is similar to <a href="/first_part">PCBAs</a> and <a href="/parts_to_pcbas">parts</a> dashboard, so take a look at them for more information.</p>
+<hr />
+<h2 id="partitem-relations">Part/item relations</h2>
+<p>Assemblies are the top level of parts. The levels are defined based on the BOM relation of the part items.
+<strong>Note</strong>: The term part items here means everything that is either a part, pcba, or an assembly.</p>
+<ol>
+<li><strong>Assemblies</strong>: Top level, its BOM can contain Parts, PCBAs and other Assemblies.</li>
+<li><strong>PCBAs</strong>: Mid level, its BOM can contain Parts, and other PCBAs.</li>
+<li><strong>Parts:</strong>: The lowest level, they are standalone entities. </li>
+</ol>
+<p>Similar to the PCBA, an assembly's pricing data is either based on its BOM, or any manually set price. </p></div>
             </div>
         </div>
 

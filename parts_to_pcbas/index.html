@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../img/favicon.ico">
-        <title>From Parts to PCBA's - Dokuly</title>
+        <title>From Parts to PCBA's - Dokuly Docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/fontawesome.min.css" rel="stylesheet">
         <link href="../css/brands.min.css" rel="stylesheet">
@@ -17,6 +17,7 @@
         <link href="../css/base.css" rel="stylesheet">
         <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
         <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../styles/index.css" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script> 
     </head>
@@ -24,7 +25,7 @@
     <body>
         <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand" href="..">Dokuly</a>
+                <a class="navbar-brand" href="..">Dokuly Docs</a>
                 <!-- Expander button -->
                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -34,9 +35,6 @@
                 <div id="navbar-collapse" class="navbar-collapse collapse">
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
-                            <li class="nav-item">
-                                <a href="../quickstart/" class="nav-link">Quickstart</a>
-                            </li>
                             <li class="nav-item dropdown">
                                 <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
                                 <ul class="dropdown-menu">
@@ -54,11 +52,15 @@
 </li>
                                     
 <li>
-    <a href="../bom_management/" class="dropdown-item">BOM for PCBA's and Assemblies</a>
+    <a href="../pcbas_and_assemblies/" class="dropdown-item">PCBA's and Assemblies</a>
 </li>
                                     
 <li>
-    <a href="../assemblies/" class="dropdown-item">Making Assemblies</a>
+    <a href="../issues/" class="dropdown-item">Issues</a>
+</li>
+                                    
+<li>
+    <a href="../notes_and_markdown/" class="dropdown-item">Notes and Markdown</a>
 </li>
                                     
 <li>
@@ -66,29 +68,17 @@
 </li>
                                 </ul>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Administration</a>
-                                <ul class="dropdown-menu">
-                                    
-<li>
-    <a href="../admin/user_management/" class="dropdown-item">User Management</a>
-</li>
-                                    
-<li>
-    <a href="../admin/roles_and_permissions/" class="dropdown-item">Roles and Permissions</a>
-</li>
-                                    
-<li>
-    <a href="../admin/settings/" class="dropdown-item">Settings</a>
-</li>
-                                    
-<li>
-    <a href="../admin/api/" class="dropdown-item">API</a>
-</li>
-                                </ul>
+                            <li class="nav-item">
+                                <a href="../quickstart/" class="nav-link">Self-hosting</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../admin/settings/" class="nav-link">Administration</a>
                             </li>
                             <li class="nav-item">
                                 <a href="../installation/" class="nav-link">Installation guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../definitions/" class="nav-link">Definitions</a>
                             </li>
                         </ul>
 
@@ -104,7 +94,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../bom_management/" class="nav-link">
+                                <a rel="next" href="../pcbas_and_assemblies/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -125,12 +115,94 @@
     
     <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
         <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#from-parts-to-pcbas" class="nav-link">From Parts to PCBAs</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#create-a-new-pcba" class="nav-link">Create a new PCBA</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#pcba-dashboard" class="nav-link">PCBA dashboard</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#connecting-parts-to-your-pcba" class="nav-link">Connecting parts to your PCBA</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#next-step" class="nav-link">Next step</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
                     <div class="col-md-9" role="main">
 
-</div>
+<h1 id="from-parts-to-pcbas">From Parts to PCBAs</h1>
+<p><em>PCBAs</em> are connected to Parts via its <em>BOM</em>. PCBAs can be used in other PCBAs or in other Assemblies. To use your parts to create a PCBA start by creating a new PCBA in dokuly.</p>
+<p><small><b>Note!</b> Parts, PCBAs, and Assemblies share a counter for their part numbers.</small></p>
+<h2 id="create-a-new-pcba">Create a new PCBA</h2>
+<p style="max-height: 35px;">
+    Click on **PCBA** in the sidebar: &nbsp; <img src="../images/nav_pcba.png" height="50"> &nbsp; or go to /pcbas in your browser.
+</p>
+
+<p style="max-height: 35px;">
+    Next click on **New PCBA** &nbsp; <img src="../images/new_pcba.png" height="50">
+</p>
+
+<p style="max-height: 75px;">
+    A modal dialog will open, enter your information about the new PCBA, then hit submit when you are done: &nbsp; <img src="../images/submit.png" height="50">
+</p>
+
+<p>Navigate to the PCBA by clicking on it in the table, or <em>open it in a new tab</em> by using <strong>ctrl</strong> + click.</p>
+<p><img src="../images/pcba_table_entry.png"></p>
+<hr />
+<h2 id="pcba-dashboard"><strong>PCBA</strong> dashboard</h2>
+<p>The dashboard for your PCBAs is pretty similar to the <strong>Part</strong> dashboard. Edit the metadata for your PCBA, update pricing data, upload files, and write errata notes. In addition, you also have access to issues, inventory, notes, reference documents and revisions, the same as the part dashboard. </p>
+<hr />
+<h2 id="connecting-parts-to-your-pcba">Connecting parts to your PCBA</h2>
+<p>When on the PCBA dashboard, click on the tab named <strong>Bill of Materials</strong>. Here you can manage the list of parts that make up your PCBA. </p>
+<p>To add a new connection in your BOM:</p>
+<ol>
+  <li>
+    Click &nbsp; <img src="../images/bom_add_item.png" width="100">
+  </li>
+  <li>
+    Click on the "-" in the <strong>Part Number</strong> column, this will trigger the inline part search: 
+    <br>
+    <img src="../images/bom_search.png" width="200">
+  </li>
+  <li>
+    Enter part name or number, click search, then click on the part you want to add to the BOM:
+    <br>
+    <img src="../images/part_search.png" width="200">
+  </li>
+  <li>
+    The part is now added to your BOM!
+    <br>
+    <img src="../images/bom_entry.png">
+  </li>
+</ol>
+
+<p>The rows in the table can be updated with in-line edit to change quantity, <em>Ref.Des</em>, and more.
+To perform an inline edit:</p>
+<ol>
+<li>
+<p>Click on the value you want to edit.
+    <img src="../images/inline_edit.png" height="75"></p>
+</li>
+<li>
+<p>Update the value, then hit <strong>Tab</strong> or <strong>Enter</strong> to submit your change.</p>
+</li>
+</ol>
+<p><small><b>Tip!</b> You can navigate to a BOM item quickly by using <strong>Ctrl</strong> + click on the table row, or clicking on the right arrow (-&gt;) icon.</small>
+    <img src="../images/quick_navigation.png" height="75"></p>
+<hr />
+<h2 id="next-step">Next step</h2>
+<p><a href="/pcbas_and_assemblies">Further details on BOM for PCBAs and Assemblies</a></p></div>
             </div>
         </div>
 

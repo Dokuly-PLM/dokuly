@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../img/favicon.ico">
-        <title>Projects and Customers - Dokuly</title>
+        <title>Projects and Customers - Dokuly Docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/fontawesome.min.css" rel="stylesheet">
         <link href="../css/brands.min.css" rel="stylesheet">
@@ -17,6 +17,7 @@
         <link href="../css/base.css" rel="stylesheet">
         <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
         <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../styles/index.css" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script> 
     </head>
@@ -24,7 +25,7 @@
     <body>
         <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand" href="..">Dokuly</a>
+                <a class="navbar-brand" href="..">Dokuly Docs</a>
                 <!-- Expander button -->
                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -34,9 +35,6 @@
                 <div id="navbar-collapse" class="navbar-collapse collapse">
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
-                            <li class="nav-item">
-                                <a href="../quickstart/" class="nav-link">Quickstart</a>
-                            </li>
                             <li class="nav-item dropdown">
                                 <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Getting Started</a>
                                 <ul class="dropdown-menu">
@@ -54,11 +52,15 @@
 </li>
                                     
 <li>
-    <a href="../bom_management/" class="dropdown-item">BOM for PCBA's and Assemblies</a>
+    <a href="../pcbas_and_assemblies/" class="dropdown-item">PCBA's and Assemblies</a>
 </li>
                                     
 <li>
-    <a href="../assemblies/" class="dropdown-item">Making Assemblies</a>
+    <a href="../issues/" class="dropdown-item">Issues</a>
+</li>
+                                    
+<li>
+    <a href="../notes_and_markdown/" class="dropdown-item">Notes and Markdown</a>
 </li>
                                     
 <li>
@@ -66,29 +68,17 @@
 </li>
                                 </ul>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Administration</a>
-                                <ul class="dropdown-menu">
-                                    
-<li>
-    <a href="../admin/user_management/" class="dropdown-item">User Management</a>
-</li>
-                                    
-<li>
-    <a href="../admin/roles_and_permissions/" class="dropdown-item">Roles and Permissions</a>
-</li>
-                                    
-<li>
-    <a href="../admin/settings/" class="dropdown-item">Settings</a>
-</li>
-                                    
-<li>
-    <a href="../admin/api/" class="dropdown-item">API</a>
-</li>
-                                </ul>
+                            <li class="nav-item">
+                                <a href="../quickstart/" class="nav-link">Self-hosting</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../admin/settings/" class="nav-link">Administration</a>
                             </li>
                             <li class="nav-item">
                                 <a href="../installation/" class="nav-link">Installation guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../definitions/" class="nav-link">Definitions</a>
                             </li>
                         </ul>
 
@@ -99,7 +89,7 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../quickstart/" class="nav-link">
+                                <a rel="prev" class="nav-link disabled">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
@@ -146,14 +136,19 @@
 <h1 id="projects-and-customers">Projects and Customers</h1>
 <p>In dokuly, most items are connected to a project, which in turn is connected to a customer. For getting the best experience using dokuly, make sure you have created a suitable customer and project. A default one is usually provided to get you going.</p>
 <h2 id="create-a-new-customer">Create a new <strong>Customer</strong></h2>
-<p>Click on <strong>Customers</strong> in the sidebar: &nbsp; <img alt="" src="../images/nav_customers.png" /> &nbsp; or go to /customers in your browser.</p>
-<p>Next click on <strong>New customer</strong> &nbsp; <img alt="" src="../images/new_customer.png" /></p>
-<p>A modal dialog will open, enter your information about the new customer, then hit submit when you are done: &nbsp; <img alt="" src="../images/submit.png" /></p>
+<p style="max-height: 35px;">Click on **Customers** in the sidebar: &nbsp; <img src="../images/nav_customers.png" height="50"> &nbsp; or go to /customers in your browser.</p>
+
+<p style="max-height: 35px;">Next click on <img src="../images/new_customer.png" height="45"></p>
+
+<p style="max-height: 35px;">A modal dialog will open, enter your information about the new customer, then hit submit when you are done: &nbsp; <img src="../images/submit.png" height="50"></p>
+
 <hr />
 <h2 id="create-a-new-project">Create a new <strong>Project</strong></h2>
-<p>Click on <strong>Projects</strong> in the sidebar: &nbsp; <img alt="" src="../images/nav_projects.png" /> &nbsp; or go to /projects in your browser.</p>
-<p>Next click on <strong>New project</strong> &nbsp; <img alt="" src="../images/new_project.png" /></p>
-<p>A modal dialog will open, enter your information about the new project, then hit submit when you are done: &nbsp; <img alt="" src="../images/submit.png" /></p></div>
+<p style="max-height: 35px;">Click on **Projects** in the sidebar: &nbsp; <img src="../images/nav_projects.png" height="50"> &nbsp; or go to /projects in your browser.</p>
+
+<p style="max-height: 35px;">Next click on **New project** &nbsp; <img src="../images/new_project.png" height="50"></p>
+
+<p style="max-height: 35px;">A modal dialog will open, enter your information about the new project, then hit submit when you are done: &nbsp; <img src="../images/submit.png" height="50"></p></div>
             </div>
         </div>
 
