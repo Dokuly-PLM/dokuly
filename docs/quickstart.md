@@ -1,56 +1,52 @@
 # Quickstart
 
 Make sure docker and other dependencies are installed.
-To find the dependencies take a look at the **Installation** tab in the top navbar.
+To find the dependencies take a look at the <a href="/installation">**Installation guide**</a> tab in the top navbar.
 Then follow these steps:
 
-#### Create a .env file (it can be left empty)
+<ol>
+  <li>
+    <strong>Create a .env file:</strong> 
+    <p>It can be left empty.</p>
+  </li>
+  <li>
+    <strong>Build the project:</strong>
+    <p>In the root of the project, run:</p>
+    <pre><code>docker compose -f docker-compose-dev.yml build</code></pre>
+    <p>Or for Mac/Linux, use:</p>
+    <pre><code>docker compose -f docker-compose-dev-mac.yml build</code></pre>
+  </li>
+  <li>
+    <strong>Build the frontend:</strong>
+    <p>Install dependencies and build:</p>
+    <pre><code>npm i</code></pre>
+    <pre><code>npm run build</code></pre>
+  </li>
+  <li>
+    <strong>Run the project:</strong>
+    <p>First, in the root of the project, run:</p>
+    <pre><code>docker compose -f docker-compose-dev.yml run web python /dokuly_image/dokuly/manage.py migrate</code></pre>
+    <p>Then, start the local server using:</p>
+    <pre><code>docker compose -f docker-compose-dev.yml up</code></pre>
+  </li>
+  <li>
+    <strong>Access Dokuly:</strong>
+    <p>In your web browser, access Dokuly at:
+      <a href="http://oss.dokuly.localhost:8000" target="_blank">http://oss.dokuly.localhost:8000</a>
+    </p>
+  </li>
+  <li>
+    <strong>Log in for the first time:</strong>
+    <p>Dokuly comes with default data. Use the following credentials to log in for the first time:</p>
+    <ul>
+      <li>Username: <code>ossuser</code></li>
+      <li>Password: <code>oss_password</code></li>
+    </ul>
+    <p>You can now start using and configuring Dokuly for your use case.</p>
+  </li>
+</ol>
 
-Then set a value within the string quotes.
-Next; Build the project. This can be done using
-
-```bash
-docker compose -f docker-compose-dev.yml build
-```
-
-or for mac / linux:
-
-```bash
-docker compose -f docker-compose-dev-mac.yml build
-```
-
-#### Build frontend using npm
-
-```bash
-npm i
-```
-
-```bash
-npm run build
-```
-
-#### Run the project
-
-Run migrations
-
-```bash
-docker compose -f docker-compose-dev.yml run web python /dokuly_image/dokuly/manage.py migrate
-```
-
-```bash
-docker compose -f docker-compose-dev.yml up
-```
-
-#### Access dokuly
-
-In your web browser, dokuly can be accessed at
-
-[http://oss.dokuly.localhost:8000](http://oss.dokuly.localhost:8000).
-
-#### Logging in for the first time on localhost
-
-The PLM comes with some default data. A user is created with the username "ossuser" and password: "oss_password".
-This can be used to login with for the first time to start using and configuring dokuly for your use-case.
+---
 
 <a name="setup_selfhost" />
 
@@ -65,22 +61,46 @@ To start hosting the service on your own machine you have to have all dependenci
 
 To enable access to your locally hosted project on your local network or VPN, follow these steps to configure an NGINX proxy. Directly using your machine's local IP address might not suffice, hence the need for these adjustments:
 
-1. **Locate the NGINX Configuration**
-   - Navigate to the `nginx` folder where crucial configuration files reside.
+<ol>
+  <li>
+    <strong>Locate the NGINX Configuration:</strong>
+    <p>Navigate to the <code>nginx</code> folder where crucial configuration files reside.</p>
+  </li>
+  <li>
+    <strong>Edit the Configuration File:</strong>
+    <p>Within the <code>nginx</code> folder, find and open the <code>nginx.conf</code> file for editing:</p>
+    <ul>
+      <li>
+        <strong>Update IP Address:</strong>
+        <p>Search for a line starting with <code>server_name</code>, typically containing an IP like <code>10.0.0.21</code>. Replace it with your machine's local network IP. To find your IP address:</p>
+        <ul>
+          <li>
+            <strong>On Linux/Mac:</strong> Open a terminal and enter:
+            <pre><code>ifconfig</code></pre>
+          </li>
+          <li>
+            <strong>On Windows:</strong> Open Command Prompt and type:
+            <pre><code>ipconfig</code></pre>
+          </li>
+        </ul>
+        <p>Look for the IPv4 address under your network connection, usually formatted as <code>192.168.x.x</code>.</p>
+      </li>
+      <li>
+        <strong>Set Project Name:</strong>
+        <p>Locate the line <code>proxy_set_header Host</code> and change the adjacent value to your project's name. If you haven't set up a project name, run the <code>self_host_create_new_tenant</code> script.</p>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <strong>Save and Close:</strong>
+    <p>After making the necessary edits, save the changes and close the <code>nginx.conf</code> file.</p>
+  </li>
+  <li>
+    <strong>Restart NGINX:</strong>
+    <p>To apply your changes, execute the <code>self_host_restart.ps1</code> script located in the <code>self_hosting</code> folder.</p>
+  </li>
+</ol>
 
-2. **Edit the Configuration File**
-   - Within the `nginx` folder, find and open the `nginx.conf` file for editing.
-     - **Update IP Address**: Search for a line starting with `server_name`, typically containing an IP like `10.0.0.21`. Replace it with your machine's local network IP. To find your IP address:
-       - On **Linux/Mac**: Open a terminal and enter `ifconfig`.
-       - On **Windows**: Open Command Prompt and type `ipconfig`.
-       Look for the IPv4 address under your network connection, usually formatted as `192.168.x.x`.
-     - **Set Project Name**: Locate the line `proxy_set_header Host` and change the adjacent value to your project's name. If you haven't set up a project name, run the `self_host_create_new_tenant` script.
-
-3. **Save and Close**
-   - After making the necessary edits, save the changes and close the `nginx.conf` file.
-
-4. **Restart NGINX**
-   - To apply your changes, execute the `self_host_restart.ps1` script located in the `self_hosting` folder.
 
 By following these steps, your locally hosted project should become accessible to others on the same network or VPN using your computer's local IP address.
 
