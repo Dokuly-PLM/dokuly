@@ -181,6 +181,14 @@ const TaskManager = (props) => {
       computeSummedHours(task);
     });
 
+    tasksWithTime.sort((a, b) => {
+      const aIsNew = a?.title === "--";
+      const bIsNew = b?.title === "--";
+      if (aIsNew && !bIsNew) return -1;
+      if (bIsNew && !aIsNew) return 1;
+      return 0;
+    });
+
     setTasks(tasksWithTime);
   }, [tasksNoTime, projectHours]);
 

@@ -139,6 +139,19 @@ const BomTable = ({
         assemblies,
         partTypes
       );
+
+      // Make new rows with placeholder MPN ("-") appear at the top
+      mergedBom.sort((a, b) => {
+        const aIsNew =
+          a?.temporary_mpn === "-" || a?.mpn === undefined || a?.mpn === "";
+        const bIsNew =
+          b?.temporary_mpn === "-" || b?.mpn === undefined || b?.mpn === "";
+
+        if (aIsNew && !bIsNew) return -1; // a goes first
+        if (bIsNew && !aIsNew) return 1; // b goes first
+        return 0; // Otherwise, no change
+      });
+
       setBom(mergedBom);
     }
   }, [bom_items, pcbas, assemblies, parts, partTypes]);
