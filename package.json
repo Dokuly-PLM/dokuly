@@ -50,6 +50,7 @@
     "gantt-task-react": "^0.3.9",
     "html-webpack-plugin": "^5.5.0",
     "html2canvas": "^1.4.1",
+    "html5-qrcode": "^2.3.8",
     "jspdf": "^2.5.1",
     "moment": "^2.29.4",
     "node-polyfill-webpack-plugin": "^2.0.1",

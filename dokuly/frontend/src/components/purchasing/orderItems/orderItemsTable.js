@@ -579,11 +579,23 @@ const OrderItemsTable = ({
           <Row className="justify-content-center align-items-center">
             <Col className="col-auto">
               {!row?.item_received ? (
-                <AddButton
-                  imgSrc="../../../static/icons/boxes.svg"
-                  imgStyle={{ width: "25px" }}
-                  onClick={() => handleItemReceived(row)}
-                />
+                <div onClick={() => handleItemReceived(row)}>
+                  {row?.quantity_received === 0 ? (
+                    <AddButton
+                      imgSrc="../../../static/icons/boxes.svg"
+                      imgStyle={{ width: "25px" }}
+                    />
+                  ) : (
+                    <span
+                      className="badge badge-pill badge-warning"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title={`Partially received: ${row?.quantity_received} / ${row?.quantity}`}
+                    >
+                      Partially received
+                    </span>
+                  )}
+                </div>
               ) : (
                 <span
                   onClick={() => {

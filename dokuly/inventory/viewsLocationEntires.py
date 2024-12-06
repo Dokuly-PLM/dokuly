@@ -22,8 +22,8 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from projects.viewsIssues import APP_TO_MODEL, MODEL_TO_MODEL_STRING, get_request_model_data
 from purchasing.models import PoItem
-from django.db.models import Sum, Q, F, Count
-from django.db.models.functions import Coalesce
+from django.db.models import Sum, Q, F, Count, FloatField
+from django.db.models.functions import Coalesce, Greatest, Cast
 from production.models import Lot, Production
 from assembly_bom.models import Bom_item, Assembly_bom
 from pcbas.models import Pcba
@@ -407,34 +407,41 @@ def get_stock_for_other_revisions(model_object, model: models.Model):
 
 def get_total_on_order_for_object(model_object, model):
     model_name = model.__name__.lower()
-    # Fetch PoItem entries and the related PurchaseOrders
+
     po_items = PoItem.objects.filter(
         **{
             f"{model_name}": model_object,
             'po__status': 'Sent',
             'po__is_completed': False,
-            "item_received": False
+            'item_received': False
         }
     ).select_related('po')
 
-    # Annotate items with necessary additional fields
     annotated_po_items = po_items.annotate(
         purchase_order_number=F('po__purchase_order_number'),
         estimated_delivery_date=F('po__estimated_delivery_date'),
-        purchase_order_id=F('po__id')
+        purchase_order_id=F('po__id'),
+        quantity_received_float=Coalesce(Cast('quantity_received', FloatField()), 0.0, output_field=FloatField()),
+        quantity_float=Cast('quantity', FloatField()),
+    ).annotate(
+        quantity_remaining=Greatest(F('quantity_float') - F('quantity_received_float'), 0.0, output_field=FloatField())
     )
 
-    # Calculate the total quantity on order
-    total_on_order = annotated_po_items.aggregate(total_on_order=models.Sum('quantity'))['total_on_order'] or 0
+    total_on_order = annotated_po_items.aggregate(
+        total_on_order=Sum('quantity_remaining', output_field=FloatField())
+    )['total_on_order'] or 0.0
 
-    # Extract detailed information for each PoItem, including additional annotated fields
     detailed_po_items = annotated_po_items.values(
-        'purchase_order_id', 'purchase_order_number', 'estimated_delivery_date', 'quantity'
+        'purchase_order_id', 'purchase_order_number', 'estimated_delivery_date', 'quantity_remaining'
     )
 
-    # Prepare list of unique PurchaseOrders with additional details
     related_pos = {
-        (item['purchase_order_id'], item['purchase_order_number'], item['estimated_delivery_date'], item['quantity'])
+        (
+            item['purchase_order_id'],
+            item['purchase_order_number'],
+            item['estimated_delivery_date'],
+            item['quantity_remaining']
+        )
         for item in detailed_po_items
     }
 
