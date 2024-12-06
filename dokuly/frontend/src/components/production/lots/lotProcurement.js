@@ -9,14 +9,16 @@ import DokulyPriceFormatter from "../../dokuly_components/formatters/priceFormat
 import { releaseStateFormatterNoObject } from "../../dokuly_components/formatters/releaseStateFormatter";
 import useOrganization from "../../common/hooks/useOrganization";
 import { ThumbnailFormatter } from "../../dokuly_components/dokulyTable/functions/formatters";
-
+import NoDataFound from "../../dokuly_components/dokulyTable/components/noDataFound";
 
 const LotProcurement = ({ lot, poData = [] }) => {
   const [organization, refreshOrganization, loadingOrganization] =
     useOrganization();
 
-  const [showCompletedPurchaseOrders, setShowCompletedPurchaseOrders] = useState(false);
-  const [showDiscardedPurchaseOrders, setShowDiscardedPurchaseOrders] = useState(false);
+  const [showCompletedPurchaseOrders, setShowCompletedPurchaseOrders] =
+    useState(false);
+  const [showDiscardedPurchaseOrders, setShowDiscardedPurchaseOrders] =
+    useState(false);
   const [filteredPurchaseOrders, setFilteredPurchaseOrders] = useState([]);
 
   const navigate = useNavigate();
@@ -144,38 +146,43 @@ const LotProcurement = ({ lot, poData = [] }) => {
     <DokulyCard>
       <CardTitle titleText="Related purchase orders" />
       <Row>
-        <DokulyTable
-          key={filteredPurchaseOrders?.length ?? 0}
-          data={filteredPurchaseOrders}
-          columns={columns}
-          defaultSorted={defaultSorted}
-          onRowClick={handleOnRowClick}
-          navigateColumn={true}
-          onNavigate={(row) => onNavigate(row)}
-          renderChildrenNextToSearch={
-            <Row>
-              <Col className="p-2">
-                <div className="form-check mb-3">
-                  <input
-                    className="dokuly-checkbox"
-                    name="showCompletedPurchaseOrders"
-                    type="checkbox"
-                    onChange={() => {
-                      setShowCompletedPurchaseOrders((prevState) => !prevState);
-                    }}
-                    checked={showCompletedPurchaseOrders}
-                  />
-                  <label
-                    className="form-check-label ml-1"
-                    htmlFor="flexCheckDefault"
-                  >
-                    Show completed purchase orders
-                  </label>
-                </div>{" "}
-              </Col>
-            </Row>
-          }
-        />
+        {filteredPurchaseOrders.length === 0 ? (
+          <NoDataFound />
+        ) : (
+          <DokulyTable
+            data={filteredPurchaseOrders}
+            columns={columns}
+            defaultSorted={defaultSorted}
+            onRowClick={handleOnRowClick}
+            navigateColumn={true}
+            onNavigate={(row) => onNavigate(row)}
+            renderChildrenNextToSearch={
+              <Row>
+                <Col className="p-2">
+                  <div className="form-check mb-3">
+                    <input
+                      className="dokuly-checkbox"
+                      name="showCompletedPurchaseOrders"
+                      type="checkbox"
+                      onChange={() => {
+                        setShowCompletedPurchaseOrders(
+                          (prevState) => !prevState
+                        );
+                      }}
+                      checked={showCompletedPurchaseOrders}
+                    />
+                    <label
+                      className="form-check-label ml-1"
+                      htmlFor="flexCheckDefault"
+                    >
+                      Show completed purchase orders
+                    </label>
+                  </div>{" "}
+                </Col>
+              </Row>
+            }
+          />
+        )}
       </Row>
     </DokulyCard>
   );

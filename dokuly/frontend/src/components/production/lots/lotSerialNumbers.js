@@ -10,6 +10,7 @@ import CreateSerialNumbersForm from "../forms/createSerialNumbersForm";
 import { createNewProduction } from "../functions/queries";
 import { getNestedModelObject } from "./lotInfoCard";
 import moment from "moment";
+import NoDataFound from "../../dokuly_components/dokulyTable/components/noDataFound";
 
 const LotSerialNumbers = ({
   app,
@@ -133,28 +134,33 @@ const LotSerialNumbers = ({
         />
       </Row>
       <Row>
-        {serialNumbers ? (
-          <DokulyTable
-            tableName="serialNumbers"
-            key={refreshKey ? serialNumbers.length : serialNumbers.length + 1} // Force re-render
-            data={serialNumbers}
-            columns={columns}
-            showColumnSelector={true}
-            itemsPerPage={100000} // No pagination
-            onRowClick={(index) => handleRowClick(index)}
-            navigateColumn={true}
-            onNavigate={(row) => onNavigate(row)}
-            textSize="16px"
-            renderChildrenNextToSearch={
-              <Col sm={6} md={6} lg={4} xl={4} className="mt-1">
-                <ProductionProgress
-                  lot={lot}
-                  currentProducedCount={currentProducedCount ?? 0}
-                  firstColClassname="col-auto"
-                />
-              </Col>
-            }
-          />
+        {serialNumbers !== null && serialNumbers !== undefined ? (
+          <>
+            {serialNumbers?.length === 0 ? (
+              <NoDataFound />
+            ) : (
+              <DokulyTable
+                tableName="serialNumbers"
+                data={serialNumbers}
+                columns={columns}
+                showColumnSelector={true}
+                itemsPerPage={100000} // No pagination
+                onRowClick={(index) => handleRowClick(index)}
+                navigateColumn={true}
+                onNavigate={(row) => onNavigate(row)}
+                textSize="16px"
+                renderChildrenNextToSearch={
+                  <Col sm={6} md={6} lg={4} xl={4} className="mt-1">
+                    <ProductionProgress
+                      lot={lot}
+                      currentProducedCount={currentProducedCount ?? 0}
+                      firstColClassname="col-auto"
+                    />
+                  </Col>
+                }
+              />
+            )}
+          </>
         ) : (
           <div className="m-5">No Serial numbers for current production</div>
         )}

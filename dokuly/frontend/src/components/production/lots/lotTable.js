@@ -9,6 +9,7 @@ import CardTitle from "../../dokuly_components/cardTitle";
 import { dateFormatter } from "../../documents/functions/formatters";
 import { useNavigate } from "react-router";
 import DokulyDateFormat from "../../dokuly_components/formatters/dateFormatter";
+import NoDataFound from "../../dokuly_components/dokulyTable/components/noDataFound";
 
 const LotTable = ({ refresh }) => {
   const [lots, refreshLots, loadingLots] = useAllLots();
@@ -153,18 +154,21 @@ const LotTable = ({ refresh }) => {
             placement="right"
           />
         </Row>
-        <DokulyTable
-          columns={columns}
-          key={filteredLots?.length ?? 0}
-          data={filteredLots}
-          itemsPerPage={5}
-          onRowClick={(index) => onRowClick(index)}
-          onNavigate={(row) => onNavigate(row)}
-          navigateColumn={true}
-          showColumnSelector={true}
-          defaultSort={{ columnNumber: 0, direction: "asc" }}
-          textSize="16px"
-        />
+        {filteredLots.length === 0 ? (
+          <NoDataFound />
+        ) : (
+          <DokulyTable
+            columns={columns}
+            data={filteredLots}
+            itemsPerPage={5}
+            onRowClick={(index) => onRowClick(index)}
+            onNavigate={(row) => onNavigate(row)}
+            navigateColumn={true}
+            showColumnSelector={true}
+            defaultSort={{ columnNumber: 0, direction: "asc" }}
+            textSize="16px"
+          />
+        )}
       </DokulyCard>
     </div>
   );
