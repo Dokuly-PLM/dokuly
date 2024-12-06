@@ -1,20 +1,22 @@
 // components/ScanQRCodeModal.js
 
 import React, { useState, useEffect, useContext, useRef } from "react";
-import DokulyModal from "../../../dokuly_components/dokulyModal";
+import { toast } from "react-toastify";
 import { Form } from "react-bootstrap";
+
+import DokulyModal from "../../../dokuly_components/dokulyModal";
 import { parseQRCodeData } from "./functions/parseQRCodeData";
 import { markItemAsReceived } from "../../functions/queries";
-import { toast } from "react-toastify";
 import GenericDropdownSelector from "../../../dokuly_components/dokulyTable/components/genericDropdownSelector";
 import useLocations from "../../../common/hooks/useLocations";
 import { AuthContext } from "../../../App";
-import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
 import DokulyTable from "../../../dokuly_components/dokulyTable/dokulyTable";
 import NumericFieldEditor from "../../../dokuly_components/dokulyTable/components/numericFieldEditor";
 import DeleteButton from "../../../dokuly_components/deleteButton";
 import { addInventoryEntry } from "../../../dokuly_components/dokulyInventory/functions/queries";
 import SubmitButton from "../../../dokuly_components/submitButton";
+
+import { Html5QrcodeScanner } from "html5-qrcode";
 
 const ScanQRCodeModal = ({
   show,
@@ -27,16 +29,12 @@ const ScanQRCodeModal = ({
   const { setIsAuthenticated } = useContext(AuthContext);
   const [qrCodeData, setQrCodeData] = useState("");
   const [locationId, setLocationId] = useState(null);
-  const [locations, refreshLocations, loadingLocations] = useLocations({
-    setIsAuthenticated: setIsAuthenticated,
-  });
+  const [locations] = useLocations({ setIsAuthenticated: setIsAuthenticated });
   const [locationOptions, setLocationOptions] = useState([]);
   const [stagedItems, setStagedItems] = useState([]);
-  const videoRef = useRef(null);
-  const codeReaderRef = useRef(null);
-  const isMountedRef = useRef(false);
-  const isProcessingRef = useRef(false); // Flag to control processing
-  const [scannerStarted, setScannerStarted] = useState(false);
+
+  const scanningCooldownRef = useRef(false);
+
   const nextIdRef = useRef(1); // For unique IDs
 
   const defaultParsingConfig = {
@@ -58,74 +56,64 @@ const ScanQRCodeModal = ({
   }, [locations]);
 
   useEffect(() => {
-    isMountedRef.current = true;
+    let scanner = null;
+    if (show && locationId) {
+      // Attempt to override the stored permission flag
+      const storedData = localStorage.getItem("HTML5_QRCODE_DATA");
+      if (storedData) {
+        try {
+          const parsedData = JSON.parse(storedData);
+          if (parsedData && typeof parsedData === "object") {
+            parsedData.hasPermission = true;
+            localStorage.setItem(
+              "HTML5_QRCODE_DATA",
+              JSON.stringify(parsedData)
+            );
+          }
+        } catch (err) {
+          console.warn("Failed to parse HTML5_QRCODE_DATA:", err);
+        }
+      }
+
+      const onScanSuccess = (decodedText) => {
+        if (scanningCooldownRef.current) return;
+
+        // Activate cooldown
+        scanningCooldownRef.current = true;
+
+        handleScanResult(decodedText);
+
+        // Deactivate cooldown after 1 second
+        setTimeout(() => {
+          scanningCooldownRef.current = false;
+        }, 1000);
+      };
+
+      const onScanError = (errorMessage) => {
+        console.warn("QR Scan error:", errorMessage);
+      };
+
+      scanner = new Html5QrcodeScanner(
+        "qr-scanner-container",
+        {
+          fps: 30,
+          qrbox: { width: 350, height: 350 },
+          rememberLastUsedCamera: true,
+        },
+        false
+      );
+
+      scanner.render(onScanSuccess, onScanError);
+    }
+
     return () => {
-      isMountedRef.current = false;
-      if (codeReaderRef.current) {
-        codeReaderRef.current.reset();
-        codeReaderRef.current = null;
+      if (scanner) {
+        scanner
+          .clear()
+          .catch((err) => console.warn("Failed to clear scanner", err));
       }
     };
-  }, []);
-
-  useEffect(() => {
-    if (show && !scannerStarted && locationId) {
-      startScanner();
-    } else if (!show && scannerStarted) {
-      stopScanner();
-    }
-  }, [show, scannerStarted, locationId]);
-
-  const startScanner = () => {
-    if (!locationId) {
-      toast.error("Please select a location before starting the scanner.");
-      return;
-    }
-
-    setScannerStarted(true);
-
-    const codeReader = new BrowserMultiFormatReader();
-    codeReaderRef.current = codeReader;
-
-    codeReader
-      .decodeFromVideoDevice(null, videoRef.current, (result, err) => {
-        if (!isMountedRef.current) return;
-
-        if (result) {
-          if (isProcessingRef.current) {
-            // Ignore scans during processing cooldown
-            return;
-          }
-
-          isProcessingRef.current = true; // Set processing flag
-          const data = result.getText();
-
-          handleScanResult(data);
-
-          // Reset processing flag after 1 second
-          setTimeout(() => {
-            isProcessingRef.current = false;
-          }, 1000);
-        }
-
-        if (err && !(err instanceof NotFoundException)) {
-          console.error(err);
-          toast.error("Error scanning QR code.");
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Error initializing QR scanner.");
-      });
-  };
-
-  const stopScanner = () => {
-    if (codeReaderRef.current) {
-      codeReaderRef.current.reset();
-      codeReaderRef.current = null;
-    }
-    setScannerStarted(false);
-  };
+  }, [show, locationId]);
 
   const handleScanResult = (data) => {
     setQrCodeData(data);
@@ -149,7 +137,6 @@ const ScanQRCodeModal = ({
 
     const parsedMPN = parsed.mpn.trim().toUpperCase();
 
-    // Find matching order item
     const matchingItem = poItems.find((item) => {
       const itemMPNs = [
         item.mpn,
@@ -169,26 +156,40 @@ const ScanQRCodeModal = ({
       return;
     }
 
-    // Check if item is already in stagedItems
-    const existingItemIndex = stagedItems.findIndex(
-      (item) => item.matchingItem.id === matchingItem.id
-    );
-
-    if (existingItemIndex !== -1) {
-      // Update existing item's quantity
-      const updatedStagedItems = [...stagedItems];
-      updatedStagedItems[existingItemIndex].quantity += parsed.quantity;
-      setStagedItems(updatedStagedItems);
-    } else {
-      // Add new item to stagedItems
-      const stagedItem = {
-        id: nextIdRef.current++, // Assign a unique ID
-        matchingItem,
-        quantity: parsed.quantity,
-        locationId,
-      };
-      setStagedItems((prevItems) => [...prevItems, stagedItem]);
+    if (matchingItem.item_received) {
+      toast.info(`Item ${parsedMPN} is already marked as received. Skipping.`);
+      return;
     }
+
+    setStagedItems((prevItems) => {
+      const existingItemIndex = prevItems.findIndex(
+        (item) => item.mpn === parsedMPN && item.quantity === parsed.quantity
+      );
+
+      if (existingItemIndex !== -1) {
+        const confirmed = window.confirm(
+          `Double scan detected. Add another ${parsedMPN} with Quantity: ${parsed.quantity}?`
+        );
+        if (!confirmed) {
+          return prevItems;
+        }
+
+        const updatedStagedItems = [...prevItems];
+        updatedStagedItems[existingItemIndex].quantity += parsed.quantity;
+        toast.success(`Scanned ${parsedMPN}!`);
+        return updatedStagedItems;
+      } else {
+        const stagedItem = {
+          id: nextIdRef.current++,
+          matchingItem,
+          quantity: parsed.quantity,
+          locationId,
+          mpn: parsedMPN,
+        };
+        toast.success(`Scanned ${parsedMPN}!`);
+        return [...prevItems, stagedItem];
+      }
+    });
   };
 
   const handleDeleteStagedItem = (row) => {
@@ -210,10 +211,13 @@ const ScanQRCodeModal = ({
       const { matchingItem, quantity, locationId } = stagedItem;
 
       try {
-        // Mark the item as received
-        await markItemAsReceived(matchingItem.id);
+        const markItemData = {
+          po_id,
+          item_id: matchingItem.id,
+          quantity,
+        };
+        await markItemAsReceived(matchingItem.id, markItemData);
 
-        // Prepare data for the new API call
         const adjustData = {
           object_id:
             matchingItem.part || matchingItem.assembly || matchingItem.pcba,
@@ -225,7 +229,6 @@ const ScanQRCodeModal = ({
           location_id: locationId,
         };
 
-        // Call the new API endpoint
         await addInventoryEntry(adjustData);
       } catch (error) {
         toast.error(
@@ -239,11 +242,10 @@ const ScanQRCodeModal = ({
 
     toast.success("All staged items have been processed successfully");
     setRefreshPo(true);
-    stagedItems.length = 0; // Clear staged items
+    setStagedItems([]);
     onHide();
   };
 
-  // Define columns for DokulyTable
   const columns = [
     {
       key: "full_part_number",
@@ -287,64 +289,74 @@ const ScanQRCodeModal = ({
   ];
 
   return (
-    <>
-      <DokulyModal show={show} onHide={onHide} title="Bulk receive" size="lg">
-        <Form>
-          <Form.Group controlId="parsingConfig">
-            <Form.Label>Parsing Configuration (JSON)</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={5}
-              value={parsingConfigInput}
-              onChange={(e) => setParsingConfigInput(e.target.value)}
-            />
-          </Form.Group>
-          <Form.Group controlId="location">
-            <Form.Label>Select Location</Form.Label>
-            <GenericDropdownSelector
-              state={locationId}
-              setState={setLocationId}
-              dropdownValues={locationOptions}
-              placeholder={"Select location"}
-              borderIfPlaceholder={false}
-              textSize={"16px"}
-              readOnly={false}
-            />
-          </Form.Group>
+    <DokulyModal
+      show={show}
+      onHide={onHide}
+      title="Bulk receive"
+      size="fullscreen"
+    >
+      <Form.Group controlId="parsingConfig">
+        <Form.Label>Parsing Configuration (JSON)</Form.Label>
+        <Form.Control
+          as="textarea"
+          rows={5}
+          value={parsingConfigInput}
+          onChange={(e) => setParsingConfigInput(e.target.value)}
+        />
+      </Form.Group>
+      <Form.Group controlId="location">
+        <Form.Label>Select Location</Form.Label>
+        <GenericDropdownSelector
+          state={locationId}
+          setState={setLocationId}
+          dropdownValues={locationOptions}
+          placeholder={"Select location"}
+          borderIfPlaceholder={false}
+          textSize={"16px"}
+          readOnly={false}
+        />
+      </Form.Group>
 
-          {/* Embed the QR Scanner here */}
-          {locationId && (
-            <div style={{ textAlign: "center", marginTop: "20px" }}>
-              <video ref={videoRef} style={{ width: "100%" }} />
+      {locationId && (
+        <div className="d-flex mt-4">
+          <div style={{ flex: "1", paddingRight: "10px", textAlign: "center" }}>
+            <div id="qr-scanner-container" style={{ width: "100%" }} />
+          </div>
+
+          <div style={{ flex: "1", maxWidth: "50%" }}>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5 className="mb-0">Staged Items</h5>
+              <span className="badge bg-warning">
+                Entries Scanned: {stagedItems.length}
+              </span>
             </div>
-          )}
+            {stagedItems.length > 0 ? (
+              <DokulyTable
+                data={stagedItems}
+                columns={columns}
+                tableName="StagedItemsTable"
+                showColumnSelector={false}
+                itemsPerPage={100000}
+                showPagination={false}
+                showSearch={false}
+                showCsvDownload={false}
+                navigateColumn={false}
+              />
+            ) : (
+              <p>No items staged yet.</p>
+            )}
+          </div>
+        </div>
+      )}
 
-          <h5 className="mt-4">Staged Items</h5>
-          {stagedItems.length > 0 ? (
-            <DokulyTable
-              data={stagedItems}
-              columns={columns}
-              tableName="StagedItemsTable"
-              showColumnSelector={false}
-              itemsPerPage={100000} // No pagination
-              showPagination={false}
-              showSearch={false}
-              showCsvDownload={false}
-              navigateColumn={false}
-            />
-          ) : (
-            <p>No items staged yet.</p>
-          )}
-
-          <SubmitButton
-            onClick={handleSubmitAll}
-            disabled={stagedItems.length === 0}
-          >
-            Submit All
-          </SubmitButton>
-        </Form>
-      </DokulyModal>
-    </>
+      <SubmitButton
+        onClick={handleSubmitAll}
+        disabled={stagedItems.length === 0}
+        className="mt-4"
+      >
+        Submit All
+      </SubmitButton>
+    </DokulyModal>
   );
 };
 

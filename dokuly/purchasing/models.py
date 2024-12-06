@@ -95,3 +95,5 @@ class PoItem(models.Model):
     temporary_manufacturer = models.CharField(max_length=100, blank=True, null=True)
 
     item_received = models.BooleanField(null=True, blank=True, default=False)
+
+    quantity_received = models.IntegerField(blank=True, default=0)

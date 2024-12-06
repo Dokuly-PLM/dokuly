@@ -189,7 +189,6 @@ def add_po_item_with_contents(request, poId):
         # Parse the updated data from the request
         data = request.data
 
-
         # Create a new PoItem instance with the provided details
         new_po_item = PoItem.objects.create(
             po_id=poId,
@@ -215,6 +214,7 @@ def add_po_item_with_contents(request, poId):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+
 @api_view(["PUT"])
 @renderer_classes([JSONRenderer])
 @login_required(login_url="/login")
@@ -222,7 +222,7 @@ def clear_po_items(request, poId):
     permission, response = check_user_auth_and_app_permission(request, "procurement")
     if not permission:
         return response
-        
+
     try:
         items = PoItem.objects.filter(po_id=poId)
         items.delete()
@@ -320,21 +320,44 @@ def mark_item_as_received(request, itemId):
 
     try:
         po_item = PoItem.objects.get(id=itemId)
-        po_item.item_received = True
+        data = request.data
+
+        quantity = data.get("quantity", None)
+        if quantity is not None:
+            # Partial receiving logic
+            try:
+                quantity = float(quantity)
+            except (TypeError, ValueError):
+                return Response({"error": "Invalid quantity value"}, status=status.HTTP_400_BAD_REQUEST)
+
+            po_item.quantity_received += quantity
+
+            # If quantity_received reaches or exceeds original quantity, mark as received
+            if po_item.quantity_received >= po_item.quantity:
+                po_item.item_received = True
+                po_item.quantity_received = po_item.quantity
+            else:
+                # Not fully received yet
+                po_item.item_received = False
+        else:
+            po_item.item_received = True
+            po_item.quantity_received = po_item.quantity
+
         po_item.save()
 
         # Fetch all items related to the same PurchaseOrder
         po = po_item.po
-        if po:  # Ensure po is not None
+        if po:
             all_items = PoItem.objects.filter(po=po)
-            # Check if all items are received
+            # Check if all items are fully received now
             if all(all_item.item_received for all_item in all_items):
                 po.is_completed = True
-                po.save()  # Update the PurchaseOrder's is_completed field
             else:
                 po.is_completed = False
-                po.save()
+            po.save()
 
         return Response(status=status.HTTP_200_OK)
+    except PoItem.DoesNotExist:
+        return Response({"error": "PoItem not found."}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

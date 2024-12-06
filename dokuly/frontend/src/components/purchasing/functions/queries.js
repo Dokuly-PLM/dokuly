@@ -104,9 +104,9 @@ export const matchPoItemsWithParts = (poId) => {
     });
 };
 
-export const markItemAsReceived = (itemId) => {
+export const markItemAsReceived = (itemId, data = {}) => {
   const url = `/api/purchase_order/markItemAsReceived/${itemId}/`;
-  const promise = axios.put(url, {}, tokenConfig());
+  const promise = axios.put(url, data, tokenConfig());
   const dataPromise = promise.then((res) => res.data);
   return dataPromise;
 };
