@@ -19,6 +19,7 @@ import { toast } from "react-toastify";
 import TransactionInput from "./components/transactionInput";
 import CheckBox from "../checkBox";
 import DeleteButton from "../deleteButton";
+import NoDataFound from "../dokulyTable/components/noDataFound";
 
 const InventoryTable = ({
   dbObject,
@@ -321,19 +322,22 @@ const InventoryTable = ({
         <div className="m-2">No locations entires found.</div>
       ) : (
         <>
-          <DokulyTable
-            tableName="locationsTable"
-            key={filteredLocationData?.length ?? 0}
-            data={filteredLocationData}
-            columns={columns}
-            showColumnSelector={true}
-            itemsPerPage={100000} // No pagination
-            onRowClick={(rowId, row, e) => handleRowClick(rowId, row, e)}
-            navigateColumn={false} // No navigation
-            onNavigate={(row) => onNavigate(row)}
-            defaultSort={{ columnNumber: 0, order: "asc" }}
-            textSize="16px"
-          />
+          {filteredLocationData.length === 0 ? (
+            <NoDataFound />
+          ) : (
+            <DokulyTable
+              tableName="locationsTable"
+              data={filteredLocationData}
+              columns={columns}
+              showColumnSelector={true}
+              itemsPerPage={100000} // No pagination
+              onRowClick={(rowId, row, e) => handleRowClick(rowId, row, e)}
+              navigateColumn={false} // No navigation
+              onNavigate={(row) => onNavigate(row)}
+              defaultSort={{ columnNumber: 0, order: "asc" }}
+              textSize="16px"
+            />
+          )}
         </>
       )}
     </DokulyCard>
