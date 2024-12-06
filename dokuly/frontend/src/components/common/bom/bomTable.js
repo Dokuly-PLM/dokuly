@@ -18,6 +18,7 @@ import useCurrencyConversions from "../hooks/useCurrencyConversions";
 import { getBomTableColumns } from "../../dokuly_components/dokulyBom/getBomCols";
 import BomToPOForm from "../../dokuly_components/dokulyBom/bomToPOForm";
 import useSuppliers from "../hooks/useSuppliers";
+import NoDataFound from "../../dokuly_components/dokulyTable/components/noDataFound";
 
 export const convertPriceToOrganizationCurrency = (
   price,
@@ -303,20 +304,23 @@ const BomTable = ({
               )}
             </Row>
             <Row>
-              <DokulyTable
-                tableName="BomTable"
-                key={refreshKey ? bom.length : bom.length + 1} // Force re-render
-                data={bom}
-                columns={columns}
-                showColumnSelector={true}
-                itemsPerPage={100000} // No pagination
-                onRowClick={(index) => handleRowClick(index)}
-                navigateColumn={true}
-                onNavigate={(row) => onNavigate(row)}
-                textSize={tableTextSize}
-                setTextSize={setTableTextSize}
-                showTableSettings={true}
-              />
+              {bom.length === 0 ? (
+                <NoDataFound />
+              ) : (
+                <DokulyTable
+                  tableName="BomTable"
+                  data={bom}
+                  columns={columns}
+                  showColumnSelector={true}
+                  itemsPerPage={100000} // No pagination
+                  onRowClick={(index) => handleRowClick(index)}
+                  navigateColumn={true}
+                  onNavigate={(row) => onNavigate(row)}
+                  textSize={tableTextSize}
+                  setTextSize={setTableTextSize}
+                  showTableSettings={true}
+                />
+              )}
             </Row>
             {!is_locked_bom && (
               <React.Fragment>
