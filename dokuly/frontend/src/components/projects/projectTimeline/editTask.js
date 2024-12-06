@@ -140,6 +140,7 @@ export const EditTaskForm = ({
     };
     editProjectTask(task?.id, data).then((res) => {
       if (res.status === 200) {
+        toast.success("Task archived");
         setRefresh(true);
         setShow(false);
       }

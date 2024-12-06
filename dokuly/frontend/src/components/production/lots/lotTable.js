@@ -129,10 +129,14 @@ const LotTable = ({ refresh }) => {
     navigate(`/production/lot/${row?.id}`);
   };
 
-  const onRowClick = (index) => {
+  const onRowClick = (e, index) => {
     try {
       const row = filteredLots[index];
-      navigate(`/production/lot/${row?.id}`);
+      if (e.ctrlKey || e.metaKey) {
+        window.open(`/#/production/lot/${row?.id}`, "_blank");
+      } else {
+        navigate(`/production/lot/${row?.id}`);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -161,7 +165,7 @@ const LotTable = ({ refresh }) => {
             columns={columns}
             data={filteredLots}
             itemsPerPage={5}
-            onRowClick={(index) => onRowClick(index)}
+            onRowClick={(rowId, row, e) => onRowClick(e, rowId)}
             onNavigate={(row) => onNavigate(row)}
             navigateColumn={true}
             showColumnSelector={true}
