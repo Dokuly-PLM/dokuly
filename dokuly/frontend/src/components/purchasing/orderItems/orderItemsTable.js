@@ -33,6 +33,7 @@ import { loadingSpinner } from "../../admin/functions/helperFunctions";
 import { ClearOrderItemsButton } from "./clearOrderItemsButton";
 import ScanQRCodeModal from "./smartReceive/scanQRCodeModal";
 import TransparentButton from "../../dokuly_components/transparentButton";
+import NoDataFound from "../../dokuly_components/dokulyTable/components/noDataFound";
 
 const OrderItemsTable = ({
   po_id,
@@ -694,27 +695,28 @@ const OrderItemsTable = ({
             </Row>
             <Row>
               {!loadingPurchaseOrder ? (
-                <DokulyTable
-                  tableName="OrderItemsTable"
-                  key={
-                    refreshPo
-                      ? matchedPoItems.length
-                      : matchedPoItems.length + 1
-                  }
-                  data={matchedPoItems}
-                  columns={columns}
-                  showColumnSelector={!isPrintable}
-                  itemsPerPage={100000} // No pagination
-                  onRowClick={(index) => handleRowClick(index)}
-                  navigateColumn={!isPrintable}
-                  onNavigate={(row) => onNavigate(row)}
-                  textSize={tableTextSize}
-                  setTextSize={setTableTextSize}
-                  showTableSettings={true}
-                  showCsvDownload={!isPrintable}
-                  showPagination={false}
-                  showSearch={!isPrintable}
-                />
+                <>
+                  {matchedPoItems.length === 0 ? (
+                    <NoDataFound />
+                  ) : (
+                    <DokulyTable
+                      tableName="OrderItemsTable"
+                      data={matchedPoItems}
+                      columns={columns}
+                      showColumnSelector={!isPrintable}
+                      itemsPerPage={100000} // No pagination
+                      onRowClick={(index) => handleRowClick(index)}
+                      navigateColumn={!isPrintable}
+                      onNavigate={(row) => onNavigate(row)}
+                      textSize={tableTextSize}
+                      setTextSize={setTableTextSize}
+                      showTableSettings={true}
+                      showCsvDownload={!isPrintable}
+                      showPagination={false}
+                      showSearch={!isPrintable}
+                    />
+                  )}
+                </>
               ) : (
                 loadingSpinner()
               )}
