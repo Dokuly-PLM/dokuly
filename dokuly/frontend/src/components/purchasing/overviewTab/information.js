@@ -102,9 +102,9 @@ const Information = (props) => {
     };
 
     updatePurchaseOrder(updatedOrder).then((res) => {
-      if (res.status === 200) {
-        props.setRefresh(true); // Trigger a refresh to update the UI
-        // Additional UI feedback can be added here (e.g., toast notification)
+      if (res.status === 200 || res.status === 206) {
+        props.setRefresh(true);
+        toast.success("Purchase order marked as received");
       }
     });
   };

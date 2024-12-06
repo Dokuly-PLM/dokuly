@@ -155,7 +155,24 @@ const OrderItemsTable = ({
         if (b.temporary_mpn === "Shipping Cost") return -1;
         return 0;
       });
-      setMatchedPoItems(sortedMergedList);
+      const moveNewRowsToTop = sortedMergedList.sort((a, b) => {
+        const aIsNew =
+          a?.temporary_mpn === "" &&
+          a?.assembly === null &&
+          a?.pcba === null &&
+          a?.part === null;
+        const bIsNew =
+          b?.temporary_mpn === "" &&
+          b?.assembly === null &&
+          b?.pcba === null &&
+          b?.part === null;
+
+        if (aIsNew && !bIsNew) return -1; // a goes before b
+        if (!aIsNew && bIsNew) return 1; // b goes before a
+        return 0; // Otherwise, no change in order
+      });
+
+      setMatchedPoItems(moveNewRowsToTop);
     }
   }, [poItems, pcbas, assemblies, parts, partTypes]);
 
@@ -700,6 +717,7 @@ const OrderItemsTable = ({
                     <NoDataFound />
                   ) : (
                     <DokulyTable
+                      key={poState ?? 1}
                       tableName="OrderItemsTable"
                       data={matchedPoItems}
                       columns={columns}
