@@ -24,6 +24,7 @@ import { issueTableTooltipText } from "./issueTableTooltipText";
 import AddButton from "../AddButton";
 import { useNavigate } from "react-router";
 import DokulyTags from "../dokulyTags/dokulyTags";
+import NoDataFound from "../dokulyTable/components/noDataFound";
 
 export const appToModelName = {
   assemblies: "assembly",
@@ -50,7 +51,6 @@ const IssuesTable = ({
   const [hideBomIssues, setHideBomIssues] = useState(false);
   const closedInFieldName = `closed_in_${appToModelName[app]}`;
   const [tableTextSize, setTableTextSize] = useState("16px");
-
 
   const navigate = useNavigate();
 
@@ -535,27 +535,33 @@ const IssuesTable = ({
         <div className="m-2">No issues found.</div>
       ) : (
         <>
-          <DokulyTable
-            tableName="issuesTable"
-            key={filteredIssues?.length ?? 0}
-            data={filteredIssues}
-            columns={columns}
-            showColumnSelector={true}
-            itemsPerPage={100000} // No pagination
-            onRowClick={(rowId, row, event) =>
-              handleRowClick(rowId, row, event)
-            }
-            navigateColumn={true}
-            onNavigate={(row) => onNavigate(row)}
-            defaultSort={{ columnNumber: 0, order: "desc" }}
-            textSize={tableTextSize}
-            setTextSize={setTableTextSize}
-            showTableSettings={true}
-          />
-          <small className="m-2 text-secondary">
-            Click on a field to edit it. To submit your changes press{" "}
-            <kbd>Tab</kbd> on your keyboard, or de-focus the field.
-          </small>
+          {" "}
+          {filteredIssues.length === 0 ? (
+            <NoDataFound />
+          ) : (
+            <>
+              <DokulyTable
+                tableName="issuesTable"
+                data={filteredIssues}
+                columns={columns}
+                showColumnSelector={true}
+                itemsPerPage={100000} // No pagination
+                onRowClick={(rowId, row, event) =>
+                  handleRowClick(rowId, row, event)
+                }
+                navigateColumn={true}
+                onNavigate={(row) => onNavigate(row)}
+                defaultSort={{ columnNumber: 0, order: "desc" }}
+                textSize={tableTextSize}
+                setTextSize={setTableTextSize}
+                showTableSettings={true}
+              />
+              <small className="m-2 text-secondary">
+                Click on a field to edit it. To submit your changes press{" "}
+                <kbd>Tab</kbd> on your keyboard, or de-focus the field.
+              </small>
+            </>
+          )}
         </>
       )}
     </DokulyCard>

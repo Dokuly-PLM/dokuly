@@ -15,6 +15,7 @@ import { ThumbnailFormatter } from "../../dokuly_components/dokulyTable/function
 import BomToPOForm from "../../dokuly_components/dokulyBom/bomToPOForm";
 import useOrganization from "../../common/hooks/useOrganization";
 import useCurrencyConversions from "../../common/hooks/useCurrencyConversions";
+import NoDataFound from "../../dokuly_components/dokulyTable/components/noDataFound";
 
 const LotBom = ({
   bom,
@@ -452,27 +453,32 @@ const LotBom = ({
       </Row>
       <Row>
         {bom && app !== "parts" ? (
-          <DokulyTable
-            tableName="LotBomTable"
-            key={refreshKey ? bom.length : bom.length + 1} // Force re-render
-            data={bom}
-            columns={columns}
-            showColumnSelector={true}
-            itemsPerPage={100000} // No pagination
-            onRowClick={(index) => handleRowClick(index)}
-            navigateColumn={true}
-            onNavigate={(row) => onNavigate(row)}
-            textSize="16px"
-            renderChildrenNextToSearch={
-              <Col sm={6} md={6} lg={4} xl={4} className="mt-1">
-                <ProductionProgress
-                  lot={lot}
-                  currentProducedCount={currentProducedCount ?? 0}
-                  firstColClassname="col-auto"
-                />
-              </Col>
-            }
-          />
+          <>
+            {bom.length === 0 ? (
+              <NoDataFound />
+            ) : (
+              <DokulyTable
+                tableName="LotBomTable"
+                data={bom}
+                columns={columns}
+                showColumnSelector={true}
+                itemsPerPage={100000} // No pagination
+                onRowClick={(index) => handleRowClick(index)}
+                navigateColumn={true}
+                onNavigate={(row) => onNavigate(row)}
+                textSize="16px"
+                renderChildrenNextToSearch={
+                  <Col sm={6} md={6} lg={4} xl={4} className="mt-1">
+                    <ProductionProgress
+                      lot={lot}
+                      currentProducedCount={currentProducedCount ?? 0}
+                      firstColClassname="col-auto"
+                    />
+                  </Col>
+                }
+              />
+            )}
+          </>
         ) : (
           <div className="m-5">No BOM for current production</div>
         )}

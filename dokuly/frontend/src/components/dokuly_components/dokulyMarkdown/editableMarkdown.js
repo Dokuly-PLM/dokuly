@@ -180,6 +180,7 @@ const EditableMarkdown = ({
 
   const handleSave = () => {
     onSubmit(markdown);
+    setIsSplitView(false);
     setEditMode(false);
   };
 

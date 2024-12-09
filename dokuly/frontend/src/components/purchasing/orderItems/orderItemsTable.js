@@ -33,6 +33,7 @@ import { loadingSpinner } from "../../admin/functions/helperFunctions";
 import { ClearOrderItemsButton } from "./clearOrderItemsButton";
 import ScanQRCodeModal from "./smartReceive/scanQRCodeModal";
 import TransparentButton from "../../dokuly_components/transparentButton";
+import NoDataFound from "../../dokuly_components/dokulyTable/components/noDataFound";
 
 const OrderItemsTable = ({
   po_id,
@@ -154,7 +155,24 @@ const OrderItemsTable = ({
         if (b.temporary_mpn === "Shipping Cost") return -1;
         return 0;
       });
-      setMatchedPoItems(sortedMergedList);
+      const moveNewRowsToTop = sortedMergedList.sort((a, b) => {
+        const aIsNew =
+          a?.temporary_mpn === "" &&
+          a?.assembly === null &&
+          a?.pcba === null &&
+          a?.part === null;
+        const bIsNew =
+          b?.temporary_mpn === "" &&
+          b?.assembly === null &&
+          b?.pcba === null &&
+          b?.part === null;
+
+        if (aIsNew && !bIsNew) return -1; // a goes before b
+        if (!aIsNew && bIsNew) return 1; // b goes before a
+        return 0; // Otherwise, no change in order
+      });
+
+      setMatchedPoItems(moveNewRowsToTop);
     }
   }, [poItems, pcbas, assemblies, parts, partTypes]);
 
@@ -694,27 +712,29 @@ const OrderItemsTable = ({
             </Row>
             <Row>
               {!loadingPurchaseOrder ? (
-                <DokulyTable
-                  tableName="OrderItemsTable"
-                  key={
-                    refreshPo
-                      ? matchedPoItems.length
-                      : matchedPoItems.length + 1
-                  }
-                  data={matchedPoItems}
-                  columns={columns}
-                  showColumnSelector={!isPrintable}
-                  itemsPerPage={100000} // No pagination
-                  onRowClick={(index) => handleRowClick(index)}
-                  navigateColumn={!isPrintable}
-                  onNavigate={(row) => onNavigate(row)}
-                  textSize={tableTextSize}
-                  setTextSize={setTableTextSize}
-                  showTableSettings={true}
-                  showCsvDownload={!isPrintable}
-                  showPagination={false}
-                  showSearch={!isPrintable}
-                />
+                <>
+                  {matchedPoItems.length === 0 ? (
+                    <NoDataFound />
+                  ) : (
+                    <DokulyTable
+                      key={poState ?? 1}
+                      tableName="OrderItemsTable"
+                      data={matchedPoItems}
+                      columns={columns}
+                      showColumnSelector={!isPrintable}
+                      itemsPerPage={100000} // No pagination
+                      onRowClick={(index) => handleRowClick(index)}
+                      navigateColumn={!isPrintable}
+                      onNavigate={(row) => onNavigate(row)}
+                      textSize={tableTextSize}
+                      setTextSize={setTableTextSize}
+                      showTableSettings={true}
+                      showCsvDownload={!isPrintable}
+                      showPagination={false}
+                      showSearch={!isPrintable}
+                    />
+                  )}
+                </>
               ) : (
                 loadingSpinner()
               )}
