@@ -17,9 +17,9 @@ from accounts.serializers import UserSerializer
 from organizations.models import Organization
 from django.conf import settings
 from django.db.models import Q
-from .models import Tenant, Domain, SignupInfo
+# from .models import Tenant, Domain, SignupInfo
 from django.utils.crypto import get_random_string
-from .serializers import TenantSerializer, SignUpSerializer
+# from .serializers import TenantSerializer, SignUpSerializer
 from organizations.models import Organization, Subscription
 from organizations.serializers import (
     CustomerOrganizationSerializer,

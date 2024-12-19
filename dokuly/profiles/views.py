@@ -1,8 +1,8 @@
 from django.db.models import Prefetch
 from organizations.serializers import SubscriptionSerializer, OrganizationManagerSerializer
 from organizations.models import Organization, Subscription
-from tenants.models import Tenant
-from django_tenants.utils import schema_context, tenant_context, get_tenant_model, remove_www
+# from tenants.models import Tenant
+# from django_tenants.utils import schema_context, tenant_context, get_tenant_model, remove_www
 import pyotp
 import os
 import string
@@ -165,15 +165,15 @@ def check_permissions_alter_persmissions(user, target):
     return False
 
 
-def check_tenant_exist(subdomain):
-    foundMatchingSchema = False
-    with schema_context("public"):
-        try:
-            tenant_model = get_tenant_model().objects.get(schema_name=subdomain)
-            foundMatchingSchema = True
-        except get_tenant_model().DoesNotExist:
-            foundMatchingSchema = False
-    return foundMatchingSchema
+# def check_tenant_exist(subdomain):
+#     foundMatchingSchema = False
+#     with schema_context("public"):
+#         try:
+#             tenant_model = get_tenant_model().objects.get(schema_name=subdomain)
+#             foundMatchingSchema = True
+#         except get_tenant_model().DoesNotExist:
+#             foundMatchingSchema = False
+#     return foundMatchingSchema
 
 
 @api_view(('POST', 'PUT'))

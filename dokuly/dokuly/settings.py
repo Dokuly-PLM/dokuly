@@ -49,43 +49,26 @@ else:
 
 # Application definition ---------------------------------------------------------------------------
 
-# Shared apps between tenants and public
-SHARED_APPS = [
-    "django_tenants",
+INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "tenants",
+    "django.contrib.staticfiles",
     "corsheaders",
     "accounts",
     "knox",
     "profiles",
     "domains",
-    "django.contrib.staticfiles",  # For serving static files on public
-    "django.contrib.sitemaps",
-]
-
-if not testing_server:
-    SHARED_APPS.append("debug_toolbar")
-
-if util.find_spec("public_page") is not None:
-    SHARED_APPS.append("public_page")
-
-# Tenant-specific apps
-TENANT_APPS = [
     "timetracking",
     "documents",
     "rest_framework",
     "rest_framework_api_key",
     "frontend",
-    "knox",
-    'organizations.apps.OrganizationsConfig',
-    "accounts",
+    "organizations.apps.OrganizationsConfig",
     "projects",
     "parts",
     "part_numbers",
     "assemblies",
     "customers",
-    "profiles",
     "files",
     "inventory",
     "images",
@@ -93,25 +76,20 @@ TENANT_APPS = [
     "production",
     "purchasing",
     "requirements",
-    "tenants",
     "todos",
     "serialnumbers",
     "sales_opportunities",
     "reimbursements",
     "assembly_bom",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.staticfiles",
     "django_expiring_token",
 ]
 
-TENANT_MODEL = "tenants.Tenant"  # app.Model
+if not testing_server:
+    INSTALLED_APPS.append("debug_toolbar")
 
-TENANT_DOMAIN_MODEL = "tenants.Domain"  # app.Model
+if util.find_spec("public_page") is not None:
+    INSTALLED_APPS.append("public_page")
 
-INSTALLED_APPS = list(SHARED_APPS) + [
-    app for app in TENANT_APPS if app not in SHARED_APPS
-]
 
 EXPIRING_TOKEN_DURATION = timedelta(hours=192)
 # Any timedelta setting can be used! If not set, the default value is 1 day
@@ -128,11 +106,12 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+ROOT_URLCONF = "dokuly.urls"
+
 
 REST_KNOX = {"TOKEN_TTL": timedelta(hours=96)}
 
 MIDDLEWARE = [
-    "django_tenants.middleware.main.TenantMainMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django_permissions_policy.PermissionsPolicyMiddleware",
@@ -192,12 +171,6 @@ else:
         "https://code.jquery.com",
         "https://cdn.jsdelivr.net",
     ]
-ROOT_URLCONF = "dokuly.urls"
-
-# For creating api calls with different domains, nd.dokuly/api/... and customer1.dokuly/api/...
-PUBLIC_SCHEMA_URLCONF = "dokuly.urls_public"
-
-SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
 
 GOOGLE_ANALYTICS_CLIENT_ID = os.getenv("GOOGLE_ANALYTICS_CLIENT_ID")
 
@@ -208,7 +181,6 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
-                "django.template.context_processors.request",  # Included for tenants
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
@@ -220,15 +192,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "dokuly.wsgi.application"
 
-DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
-
 if testing_server:
     TEST_DATABASE_PREFIX = "test_"
 
 if local_server:
     DATABASES = {
         "default": {
-            "ENGINE": "django_tenants.postgresql_backend",
+            "ENGINE": "django.db.backends.postgresql",
             "NAME": "DokulyOSS",
             "USER": "postgres",
             "PASSWORD": os.getenv("self_host_db_key", "AAAAmeaIE1elf213fe_fseof302fldAADokulySelfhost"),
@@ -240,7 +210,7 @@ if local_server:
 elif testing_server:
     DATABASES = {
         "default": {
-            "ENGINE": "django_tenants.postgresql_backend",
+            "ENGINE": "django.db.backends.postgresql",
             "NAME": "DokulyOSS",
             "USER": "postgres",
             "PASSWORD": "AAAAmeaIE1elf213fe_fseof302fldAADokulySelfhost",
@@ -251,7 +221,7 @@ elif testing_server:
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django_tenants.postgresql_backend",
+            "ENGINE": "django.db.backends.postgresql",
             "NAME": os.getenv("AZURE_POSTGRESQL_NAME"),
             "USER": os.getenv("AZURE_POSTGRESQL_USER"),
             "PASSWORD": os.getenv("AZURE_POSTGRESQL_PASSWORD"),
@@ -321,12 +291,11 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "public_page/static/"),
 ]
 
-DEFAULT_FILE_STORAGE = "tenants.azure_storage.CustomAzureStorage"
+DEFAULT_FILE_STORAGE = "tenants.azure_storage.CustomAzureStorage"  # Keep this here. Azure storage reconfigured for local root.
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ____________________________________________________________________________________________________________________
 # Media files
-MULTITENANT_RELATIVE_MEDIA_ROOT = ""
 GS_BUCKET_NAME = os.getenv("GS_BUCKET_NAME")
 
 AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
@@ -334,11 +303,11 @@ AZURE_ACCOUNT_NAME = os.getenv("AZURE_ACCOUNT_NAME")
 AZURE_CUSTOM_DOMAIN = f"{AZURE_ACCOUNT_NAME}.blob.core.windows.net"
 AZURE_ACCOUNT_KEY = os.getenv("AZURE_ACCOUNT_KEY")
 
-MEDIA_ROOT = os.path.join(BASE_DIR, "frontend/static/media")
+MEDIA_ROOT = os.path.join("/dokuly_image/", "media/")
 MEDIA_URL = f"https://{AZURE_CUSTOM_DOMAIN}/{AZURE_CONTAINER_NAME}/"
 
 
-if local_server:
+if local_server or testing_server:
     print("Running local development bucket...")
     if (
         AZURE_CUSTOM_DOMAIN is None
@@ -346,10 +315,10 @@ if local_server:
         or AZURE_ACCOUNT_KEY is None
         or AZURE_ACCOUNT_NAME is None
     ):
-        MEDIA_URL = os.path.join(BASE_DIR, "frontend/static/media/")
-        MEDIA_ROOT = os.path.join(BASE_DIR, "frontend/static/media/")
+        MEDIA_URL = os.path.join("/dokuly_image/", "media/")
+        MEDIA_ROOT = os.path.join("/dokuly_image/", "media/")
         print("Using local storage, container config not found")
-        DEFAULT_FILE_STORAGE = "django_tenants.files.storage.TenantFileSystemStorage"
+        DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
 # ____________________________________________________________________________________________________________________
 

@@ -23,3 +23,16 @@ dokuly/frontend/static/frontend/vendors-node_modules_dompurify_dist_purify_js.js
 /backups/*
 backups/*
 backups
+
+
+dokuly/frontend/static/frontend/780.js
+dokuly/frontend/static/frontend/*.txt
+dokuly/frontend/static/frontend/838.js
+
+/media
+/media/
+/media/*
+
+media/
+media
+media/*
