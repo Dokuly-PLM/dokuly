@@ -6,6 +6,7 @@ from django.utils.deconstruct import deconstructible
 
 # DO NOT DELETE; FILE IS INCLUDED IN THE MIGRATION RECORDS
 
+
 @deconstructible
 class GoogleCloudMediaStorage(GoogleCloudStorage):
 
@@ -15,11 +16,5 @@ class GoogleCloudMediaStorage(GoogleCloudStorage):
         kwargs['bucket_name'] = getattr(settings, 'GS_BUCKET_NAME')
         super(GoogleCloudMediaStorage, self).__init__(*args, **kwargs)
 
-    def url (self, name):
+    def url(self, name):
         return urljoin(settings.MEDIA_URL, name)
-
-    # Sets the tenants file location
-    @property
-    def location(self):
-        _location = utils.parse_tenant_config_path('%s')
-        return _location

@@ -17,9 +17,9 @@ from accounts.serializers import UserSerializer
 from organizations.models import Organization
 from django.conf import settings
 from django.db.models import Q
-from .models import Tenant, Domain, SignupInfo
+# from .models import Tenant, Domain, SignupInfo
 from django.utils.crypto import get_random_string
-from .serializers import TenantSerializer, SignUpSerializer
+# from .serializers import TenantSerializer, SignUpSerializer
 from organizations.models import Organization, Subscription
 from organizations.serializers import CustomerOrganizationSerializer, SubscriptionSerializer
 from django.contrib.auth.decorators import login_required
@@ -78,7 +78,7 @@ def initialize_tenant_for_self_hosting(request):
         except Exception as e:
             print(str(e))
             max_allowed_active_users = 3
-        
+
             domain_name = signup.domain
             username = signup.username
             full_name = signup.full_name

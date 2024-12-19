@@ -18,13 +18,18 @@ class CustomAzureStorage(Storage):
     def __init__(self, *args, **kwargs):
         # Check if we are running in a local environment
         self.local_server = bool(int(os.environ.get("DJANGO_LOCAL_SERVER", 0)))
-
+        self.testing_server = bool(int(os.environ.get("DJANGO_TESTING_SERVER", 0)))
         if self.local_server and (settings.AZURE_CUSTOM_DOMAIN is None
                                   or settings.AZURE_CONTAINER_NAME is None
                                   or settings.AZURE_ACCOUNT_KEY is None
                                   or settings.AZURE_ACCOUNT_NAME is None):
             # Use local storage if running locally, and Azure settings are not set
-            self._storage = TenantFileSystemStorage(
+            self._storage = FileSystemStorage(
+                location=settings.MEDIA_ROOT,
+                base_url=settings.MEDIA_URL
+            )
+        elif self.testing_server:
+            self._storage = FileSystemStorage(
                 location=settings.MEDIA_ROOT,
                 base_url=settings.MEDIA_URL
             )
