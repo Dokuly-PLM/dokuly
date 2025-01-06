@@ -131,7 +131,7 @@ def get_time_record_by_user_and_year(request, year):
 @api_view(('GET', ))
 @renderer_classes((JSONRenderer, ))
 @permission_classes((IsAuthenticated,))
-def get_time_record_by_user_and_week(request, isoWeek):
+def get_time_record_by_user_and_week(request, isoWeek, year):
     """Returns all records by a single user.
     Speedup the request by specifying a year.
     """
@@ -141,12 +141,10 @@ def get_time_record_by_user_and_week(request, isoWeek):
         if not permission:
             return response
 
-        current_year = timezone.now().year
-
         time_records = EmployeeTime.objects.filter(
             user__pk=user.id,
             date__week=isoWeek,
-            date__year=current_year  # Filter by the current year
+            date__year=year
         ).prefetch_related('project', 'task_id')
 
         serializer = EmployeeTimeSerializerWithBillable(time_records, many=True)

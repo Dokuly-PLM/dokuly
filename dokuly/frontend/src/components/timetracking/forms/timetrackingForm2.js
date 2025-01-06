@@ -82,6 +82,7 @@ const TimeTrackingForm = ({
   timeRecordId,
   parentDate,
   setRefresh,
+  year,
 }) => {
   const [comments, setComments] = useState("");
 
@@ -107,7 +108,7 @@ const TimeTrackingForm = ({
 
   const [date, setDate] = useState(
     parentDate === undefined || parentDate === ""
-      ? moment().format("YYYY-MM-DD")
+      ? moment().year(year).format("YYYY-MM-DD")
       : parentDate
   );
 
@@ -199,6 +200,10 @@ const TimeTrackingForm = ({
       launchFormFromProp();
     }
   }, [doLaunchForm]);
+
+  useEffect(() => {
+    setDate(moment().year(year).format("YYYY-MM-DD"));
+  }, [year]);
 
   /**
    * Pre-load data to the form.
