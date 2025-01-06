@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 export const getTimeRecord = (id) => {
   const promise = axios.get(
     `api/timetracking/get/timeRecord/${id}/`,
-    tokenConfig(),
+    tokenConfig()
   );
   const dataPromise = promise.then((res) => res);
   const error = promise.catch((err) => err);
@@ -22,7 +22,7 @@ export const getTimeRecord = (id) => {
 export const getEmplyeeTimeRecords = () => {
   const promise = axios.get(
     "api/timetracking/get/timeRecordByUser/",
-    tokenConfig(),
+    tokenConfig()
   );
   const dataPromise = promise.then((res) => res);
   const error = promise.catch((err) => err);
@@ -35,7 +35,7 @@ export const getEmplyeeTimeRecords = () => {
 export const getTaskTime = (project_id) => {
   const promise = axios.get(
     `api/timetracking/get/timeByProjectTasks/${project_id}/`,
-    tokenConfig(),
+    tokenConfig()
   );
   const dataPromise = promise.then((res) => res);
   const error = promise.catch((err) => err);
@@ -53,7 +53,7 @@ export const getTaskTime = (project_id) => {
 export const getEmployeeTimeRecordsByYear = (year) => {
   const promise = axios.get(
     `api/timetracking/get/timeRecordByUser/${year}/`,
-    tokenConfig(),
+    tokenConfig()
   );
   const dataPromise = promise.then((res) => res);
   const error = promise.catch((err) => err);
@@ -68,10 +68,10 @@ export const getEmployeeTimeRecordsByYear = (year) => {
  * @param {*} data must contain the 'isoWeek' kwarg
  * @returns
  */
-export const getEmployeeTimeRecordsByWeek = (isoWeek) => {
+export const getEmployeeTimeRecordsByWeek = (isoWeek, year) => {
   const promise = axios.get(
-    `api/timetracking/get/timeRecordByUserByWeek/${isoWeek}/`,
-    tokenConfig(),
+    `api/timetracking/get/timeRecordByUserByWeek/${isoWeek}/${year}/`,
+    tokenConfig()
   );
   const dataPromise = promise.then((res) => res);
   const error = promise.catch((err) => err);
@@ -85,7 +85,7 @@ export const setEmployeeTimeRecord = (data) => {
   const promise = axios.put(
     "api/timetracking/put/timeRecord/",
     data,
-    tokenConfig(),
+    tokenConfig()
   );
   const dataPromise = promise.then((res) => res);
   const error = promise.catch((err) => err);
@@ -96,7 +96,11 @@ export const setEmployeeTimeRecord = (data) => {
 };
 
 export const deleteTimeRecord = (id) => {
-  const promise = axios.put(`api/timetracking/delete/${id}/`, {}, tokenConfig());
+  const promise = axios.put(
+    `api/timetracking/delete/${id}/`,
+    {},
+    tokenConfig()
+  );
   const dataPromise = promise.then((res) => res);
   const error = promise.catch((err) => err);
   if (error != null) {
@@ -109,7 +113,7 @@ export const newCloneRecord = (id, data) => {
   const promise = axios.put(
     `api/timetracking/put/newCloneRecord/${id}/`,
     data,
-    tokenConfig(),
+    tokenConfig()
   );
   const dataPromise = promise.then((res) => res);
   const error = promise.catch((err) => err);

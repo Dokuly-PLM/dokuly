@@ -10,7 +10,7 @@ router.register('api/timetracking', EmployeeTimeViewSet, 'timetracking')
 urlpatterns = [
     path('api/timetracking/get/timeRecordByUser/',
          views.get_time_record_by_user),
-    path('api/timetracking/get/timeRecordByUserByWeek/<str:isoWeek>/',
+    path('api/timetracking/get/timeRecordByUserByWeek/<str:isoWeek>/<int:year>/',
          views.get_time_record_by_user_and_week),
     path('api/timetracking/get/timeRecordByUser/<str:year>/',
          views.get_time_record_by_user_and_year),

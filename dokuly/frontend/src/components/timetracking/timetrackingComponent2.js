@@ -14,6 +14,8 @@ import { useSpring, animated } from "react-spring";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../App";
 import { toast } from "react-toastify";
+import DokulySelect from "../dokuly_components/dokulySelect";
+import { Col, Row } from "react-bootstrap";
 
 export default function TimetrackingComponent() {
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
@@ -29,6 +31,10 @@ export default function TimetrackingComponent() {
   const [date, setDate] = useState("");
   const [selected_week, setSelectedWeek] = useState("");
   const [selectedDay, setSelectedDay] = useState("");
+  const [selectedYear, setSelectedYear] = useState({
+    value: moment().year(),
+    label: moment().year(),
+  });
 
   const [projects, setProjects] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -37,7 +43,10 @@ export default function TimetrackingComponent() {
 
   const [billableHoursPerDay, setBillableHoursPerDay] = useState({});
 
-  const navigate = useNavigate();
+  const currentYear = moment().year();
+  const formattedYearDropdownOptions = Array.from({ length: 5 }, (_, i) => {
+    return { value: currentYear - i, label: currentYear - i };
+  });
 
   useEffect(() => {
     if (refresh === true) {
@@ -105,8 +114,11 @@ export default function TimetrackingComponent() {
       setSelectedWeek(current_date.clone().isoWeek());
       setSelectedDay(current_date.clone().isoWeekday());
     }
-    if (refreshAfterEntry === true) {
-      getEmployeeTimeRecordsByWeek(selected_week)
+    if (refreshAfterEntry === true && selected_week) {
+      getEmployeeTimeRecordsByWeek(
+        selected_week,
+        selectedYear?.value ?? currentYear
+      )
         .then((res) => {
           if (res.status === 200) {
             setTimeRecords(res.data);
@@ -133,6 +145,33 @@ export default function TimetrackingComponent() {
     // Updates tab title
     document.title = "Timesheet | Dokuly";
   }, [refresh, refreshAfterEntry]);
+
+  useEffect(() => {
+    if (selectedYear !== "" && selected_week) {
+      getEmployeeTimeRecordsByWeek(
+        selected_week,
+        selectedYear?.value ?? currentYear
+      )
+        .then((res) => {
+          if (res.status === 200) {
+            setTimeRecords(res.data);
+            localStorage.setItem(
+              `my_time_records_week_${selected_week}`,
+              JSON.stringify(res.data)
+            );
+          }
+        })
+        .catch((err) => {
+          if (err?.response) {
+            if (err?.response?.status === 401) {
+              setIsAuthenticated(false);
+            }
+            setTimeRecords([]);
+            toast.error(err.response.data.message);
+          }
+        });
+    }
+  }, [selectedYear]);
 
   // Function to calculate billable hours for each weekday
   function calculateBillableHours() {
@@ -172,7 +211,10 @@ export default function TimetrackingComponent() {
         `my_time_records_week_${selected_week}`
       );
 
-      getEmployeeTimeRecordsByWeek(selected_week).then((res) => {
+      getEmployeeTimeRecordsByWeek(
+        selected_week,
+        selectedYear?.value ?? currentYear
+      ).then((res) => {
         if (res.status === 200) {
           setTimeRecords(res.data);
           localStorage.setItem(
@@ -187,9 +229,7 @@ export default function TimetrackingComponent() {
 
   useEffect(() => {
     if (time_records !== undefined) {
-      const filteredTimetrackings = time_records.filter((timetrack) => {
-        return moment(timetrack.date).isSame(moment(), "year");
-      });
+      const filteredTimetrackings = time_records;
 
       // Sorting time entries by date and start time
       filteredTimetrackings
@@ -209,7 +249,10 @@ export default function TimetrackingComponent() {
     let hours_today = 0;
     let billableHoursToday = 0;
     let timerIsRunning = false;
-    const today = moment().isoWeek(selected_week).isoWeekday(weekday);
+    const today = moment()
+      .year(selectedYear?.value ?? currentYear)
+      .isoWeek(selected_week)
+      .isoWeekday(weekday);
 
     time_records.forEach((timetrack) => {
       if (moment(timetrack.date).isSame(today, "day")) {
@@ -264,11 +307,6 @@ export default function TimetrackingComponent() {
               )}
             </div>
           </div>
-          {/*
-					<div className="row-2 flex">
-						Billable: {billableHoursToday.toFixed(1)} h
-					</div>
-					*/}
         </div>
       </div>
     ) : (
@@ -307,11 +345,6 @@ export default function TimetrackingComponent() {
               )}
             </div>
           </div>
-          {/*
-					<div className="row-2 flex">
-						Billable: {billableHoursToday.toFixed(1)} h
-					</div>
-					*/}
         </div>
       </div>
     );
@@ -346,24 +379,35 @@ export default function TimetrackingComponent() {
   }
 
   function changeDay(change) {
-    const newDate = moment().clone().isoWeek(selected_week).isoWeekday(change);
+    const newDate = moment()
+      .year(selectedYear?.value ?? currentYear)
+      .isoWeek(selected_week)
+      .isoWeekday(change);
     setDate(newDate.format("YYYY-MM-DD"));
     setSelectedDay(change);
   }
 
   function changeWeek(change) {
     let new_selected_week = selected_week + change;
+    let new_year = selectedYear.value;
 
-    // TODO increment year when wrapping week number.
-
-    // Week number wrap.
-    if (moment().weeksInYear() < new_selected_week) {
-      new_selected_week -= moment().weeksInYear();
+    // Adjust the year when wrapping week numbers
+    if (new_selected_week > moment().year(new_year).weeksInYear()) {
+      new_selected_week = 1;
+      new_year += 1;
     } else if (new_selected_week < 1) {
-      new_selected_week += moment().weeksInYear();
+      new_selected_week = moment()
+        .year(new_year - 1)
+        .weeksInYear();
+      new_year -= 1;
     }
+
     setSelectedWeek(new_selected_week);
-    const newDate = moment().isoWeek(new_selected_week).isoWeekday(selectedDay);
+    setSelectedYear({ value: new_year, label: new_year }); // Update the year
+    const newDate = moment()
+      .year(new_year)
+      .isoWeek(new_selected_week)
+      .isoWeekday(selectedDay);
     setDate(newDate.format("YYYY-MM-DD"));
   }
 
@@ -463,10 +507,21 @@ export default function TimetrackingComponent() {
         timeRecord={time_record}
         parentDate={date}
         setRefresh={setRefreshAfterEntry}
+        year={selectedYear?.value ?? currentYear}
       />
       <div className="card rounded p-3">
         <div className="row">
-          <div className="col"> </div>
+          <div className="col">
+            <Row>
+              <Col lg={4} md={4}>
+                <DokulySelect
+                  options={formattedYearDropdownOptions}
+                  value={selectedYear}
+                  onChange={(value) => setSelectedYear(value)}
+                />
+              </Col>
+            </Row>
+          </div>
           <div className="col">
             {" "}
             <div className="d-flex justify-content-center">
