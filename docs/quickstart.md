@@ -32,7 +32,7 @@ Then follow these steps:
   <li>
     <strong>Access Dokuly:</strong>
     <p>In your web browser, access Dokuly at:
-      <a href="http://oss.dokuly.localhost:8000" target="_blank">http://oss.dokuly.localhost:8000</a>
+      <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>
     </p>
   </li>
   <li>

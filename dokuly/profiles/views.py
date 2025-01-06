@@ -719,6 +719,7 @@ def generate_random_password(length=25):
 @renderer_classes((JSONRenderer, ))
 def manage_user_subscriptions(request):
     d = request.data
+    local_server = bool(int(os.environ.get('DJANGO_LOCAL_SERVER', 0)))
     if request.user == None:
         return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
     if request.method == 'PUT':
@@ -752,8 +753,8 @@ def manage_user_subscriptions(request):
             # Fetch organization
             org = get_object_or_404(Organization, id=profile.organization_id)
             local_server = bool(int(os.environ.get('DJANGO_LOCAL_SERVER', 0)))
-            # Check for special tenant case
-            if str(request.tenant) == "nd" or local_server:
+
+            if local_server:
                 return Response([{'id': 'unlimited', 'interval': 'forever', 'quantity': 99, 'status': 'active', 'priceObj': {'price': 0}}])
 
             # Fetch Subscription objects related to this Organization

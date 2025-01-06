@@ -845,7 +845,7 @@ def check_tenant_storage_size(request):
                 {
                     "count": 0,
                     "size": 0,
-                    "tenant": str(request.tenant),
+                    "tenant": "oss",
                     "bytes": 0,
                     "limit": "Limited by host",
                     "limit_bytes": 1_000_000_000_000,

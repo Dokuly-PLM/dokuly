@@ -80,7 +80,7 @@ docker compose -f docker-compose-dev.yml up
 
 In your web browser, dokuly can be accessed at
 
-[http://oss.dokuly.localhost:8000](http://oss.dokuly.localhost:8000).
+[http://localhost:8000](http://localhost:8000).
 
 ### Logging in for the first time on localhost
 
@@ -95,6 +95,8 @@ To start hosting the service on your own machine you have to have all dependenci
 <a name="nginx_proxy" />
 
 ### Nginx proxy
+
+NOTE: The nginx proxy is not necessary for making the server accessible on your network from other machines. Your local host / network ip, (say 10.0.0.35) and the port is enough, so to access dokuly it would be: 10.0.0.35:8000. 
 
 ## Local Hosting Setup Guide
 
