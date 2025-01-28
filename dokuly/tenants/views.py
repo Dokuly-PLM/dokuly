@@ -597,7 +597,8 @@ def create_checkout_session(request):
 def check_max_users_on_subscription(request):
     if request.user is None:
         return Response("Unauthorized", status=status.HTTP_400_BAD_REQUEST)
-
+    
+    local_server = bool(int(os.environ.get("DJANGO_LOCAL_SERVER", 0)))
     try:
         profile = get_object_or_404(Profile, user__pk=request.user.id)
         org = get_object_or_404(Organization, id=profile.organization_id)
@@ -627,12 +628,14 @@ def check_max_users_on_subscription(request):
 
             if len(subscriptions) == 0:
                 allowed_users = 3  # This is a free tier account
-            if str(request.tenant) == "nd":
+            if local_server:
                 allowed_users = 99
 
         except Exception as e:
             print(str(e))
             allowed_users = 1
+            if local_server:
+                allowed_users = 99
 
         # Calculate active_users
         active_users = Profile.objects.filter(
