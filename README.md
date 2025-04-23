@@ -5,7 +5,9 @@ Built to be easy to use and maintain for teams that move fast.
 
 This is a tool for designing and managing products and systems of all sizes.
 
-Dokuly is free to use and simple to set up. See the [getting started guide](https://github.com/Dokuly-PLM/dokuly/blob/master/getting_started.md)
+dokuly is free to use and simple to set up. See the [getting started guide](https://github.com/Dokuly-PLM/dokuly/blob/master/getting_started.md)
+
+Some documentation can be found on [github pages](https://dokuly-plm.github.io/dokuly/)
 
 ## Features
 
@@ -45,7 +47,6 @@ Dokuly is free to use and simple to set up. See the [getting started guide](http
   - Support for multiple API keys
   - Project-based access control per API key
   - API-key expiry date
-  - [Docs](https://dokuly.com/#/api)
 
 ## Contribution
 
