@@ -268,6 +268,7 @@ def new_revision(request, pk, **kwargs):
     new_pcba.created_by = old_pcba.created_by
     new_pcba.part_number = old_pcba.part_number
     new_pcba.external_part_number = old_pcba.external_part_number
+    new_pcba.erp_link = old_pcba.erp_link
     new_pcba.full_part_number = f"PCBA{old_pcba.part_number}"
     new_pcba.revision = increment_revision(old_pcba.revision)
 
@@ -401,6 +402,8 @@ def edit_pcba(request, pk, **kwargs):
 
         if "external_part_number" in data:
             pcba.external_part_number = data.get("external_part_number", "")
+        if "erp_link" in data:
+            pcba.erp_link = data.get("erp_link", "")
 
         if "tags" in data:
             error, message, tag_ids = check_for_and_create_new_tags(pcba.project, data["tags"])
@@ -454,6 +457,7 @@ def create_new_pcba(request, **kwargs):
         pcba.part_number = get_next_part_number()
         pcba.full_part_number = f"PCBA{pcba.part_number}"
         pcba.external_part_number = data.get("external_part_number", "")
+        pcba.erp_link = data.get("erp_link", "")
 
         if APIAndProjectAccess.has_validated_key(request):
             if "created_by" in data:

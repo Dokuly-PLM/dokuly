@@ -15,6 +15,7 @@ const PcbaForm = (props) => {
   const [attributes, setAttributes] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [externalPartNumber, setExternalPartNumber] = useState("");
+  const [erpLink, setErpLink] = useState("");
 
   useEffect(() => {
     setDisplayName(props.pcba?.display_name);
@@ -22,6 +23,7 @@ const PcbaForm = (props) => {
     setReleaseState(props.pcba?.release_state);
     setAttributes(props.pcba?.attributes || {});
     setExternalPartNumber(props?.pcba?.external_part_number ?? "");
+    setErpLink(props?.pcba?.erp_link ?? "");
   }, [props.pcba]);
 
   const launchForm = () => {
@@ -36,6 +38,7 @@ const PcbaForm = (props) => {
       is_approved_for_release: is_approved_for_release,
       attributes: attributes,
       external_part_number: externalPartNumber,
+      erp_link: erpLink,
     };
 
     setShowModal(false);
@@ -143,6 +146,21 @@ const PcbaForm = (props) => {
             externalPartNumber={externalPartNumber}
             setExternalPartNumber={setExternalPartNumber}
           />
+
+          <div className="form-group">
+            <label>ERP System Link</label>
+            <input
+              className="form-control"
+              type="url"
+              name="erp_link"
+              placeholder="https://example.com/erp/part/123"
+              onChange={(e) => setErpLink(e.target.value)}
+              value={erpLink}
+            />
+            <small className="form-text text-muted">
+              Link to the part in the external ERP system
+            </small>
+          </div>
 
           <div className="form-group">
             <label>Description</label>
