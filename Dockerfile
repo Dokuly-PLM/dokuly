@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:experimental
-FROM python:3.11.1-slim-buster
+FROM python:3.11-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DOCKER_BUILDKIT=1
@@ -19,7 +19,6 @@ RUN apt-get update \
     libffi-dev \
     libxml2-dev \
     libxslt1-dev \
-    python-dev \
     libpq-dev \
     python3-dev \
     libssl-dev \
