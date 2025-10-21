@@ -9,6 +9,9 @@ dokuly is free to use and simple to set up. See the [getting started guide](http
 
 Some documentation can be found on [github pages](https://dokuly-plm.github.io/dokuly/)
 
+<img width="3304" height="2765" alt="image" src="https://github.com/user-attachments/assets/0b2afb84-5156-4b84-b187-7dd1d0115d91" />
+
+
 ## Features
 
 -  Product Data
