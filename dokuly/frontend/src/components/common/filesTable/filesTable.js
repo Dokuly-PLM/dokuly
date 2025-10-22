@@ -51,15 +51,6 @@ export const FilesTable = (props, { release_state }) => {
   const app = props?.app;
   const setRefresh = props.setRefresh;
 
-  const [file_type, setFileType] = useState(
-    file_type !== null && props.file_type !== undefined ? props.file_type : null
-  );
-
-  useEffect(() => {
-    if (props.file_type !== null && props.file_type !== undefined) {
-      setFileType(props.file_type);
-    }
-  }, [props.file_type]);
 
   //___________________________________________________________________________________________________
   // File viewer.
@@ -85,13 +76,13 @@ export const FilesTable = (props, { release_state }) => {
 
   //___________________________________________________________________________________________________
 
-  // This function filters out archived files from the file list.
-  const filterOutArchivedFiles = (files) => {
-    return files.filter((file) => file.archived !== 1);
-  };
-
   useEffect(() => {
     if (props.file_id_list !== null && props.file_id_list !== undefined) {
+      // This function filters out archived files from the file list.
+      const filterOutArchivedFiles = (files) => {
+        return files.filter((file) => file.archived !== 1);
+      };
+      
       get_files({ file_ids: props.file_id_list })
         .then((res) => {
           const unarchivedFiles = filterOutArchivedFiles(res.data); // Filter out archived files.

@@ -28,8 +28,4 @@ DokulyDateFormat.propTypes = {
   showTime: PropTypes.bool,
 };
 
-DokulyDateFormat.defaultProps = {
-  showTime: false,
-};
-
 export default DokulyDateFormat;

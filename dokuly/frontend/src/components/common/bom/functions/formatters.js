@@ -1,8 +1,10 @@
 import React from "react";
+import { formatPartNumberWithRevision } from "../../../../utils/revisionUtils";
 
 export const partNumberFormatter = (cell, row) => {
   if (row?.full_part_number) {
-    return row?.full_part_number + row?.revision;
+    // full_part_number already contains the properly formatted part number with revision
+    return row?.full_part_number;
   } else {
     // Default or fallback formatting
     return (

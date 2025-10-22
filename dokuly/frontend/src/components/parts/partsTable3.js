@@ -212,8 +212,10 @@ export default function PartsTable(props) {
     {
       key: "full_part_number",
       header: "Part Number",
-      formatter: (row) =>
-        `${row.full_part_number}${row.revision ? `${row.revision}` : ""}`,
+        formatter: (row) => {
+          // full_part_number already contains the properly formatted part number with revision
+          return row.full_part_number;
+        },
       maxWidth: "100px",
     },
     {

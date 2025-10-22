@@ -158,8 +158,8 @@ export const newPart = (data) => {
   });
 };
 
-export const newPartRevision = (id) => {
-  const promise = axios.post(`api/parts/newRevision/${id}/`, {}, tokenConfig());
+export const newPartRevision = (id, revisionType = 'major') => {
+  const promise = axios.post(`api/parts/newRevision/${id}/`, { revision_type: revisionType }, tokenConfig());
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };

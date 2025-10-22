@@ -53,12 +53,25 @@ const ItemInformation = ({ producedItem }) => {
           }}
         >
           <span>
-            {producedItem.part?.full_part_number +
-              producedItem.part?.revision ||
-              producedItem.pcba?.full_part_number +
-                producedItem.pcba?.revision ||
-              producedItem.assembly?.full_part_number +
-                producedItem.assembly?.revision}
+            {(() => {
+              const part = producedItem.part || producedItem.pcba || producedItem.assembly;
+              if (!part) return "";
+              
+              const partNumber = part.full_part_number || "";
+              const revision = part.revision || "";
+              const useNumberRevisions = part?.organization?.use_number_revisions || false;
+              
+              if (useNumberRevisions && revision) {
+                // Check if partNumber already contains the revision with underscore
+                if (partNumber.includes(`_${revision}`)) {
+                  return partNumber; // Already formatted correctly
+                } else {
+                  return `${partNumber}_${revision}`;
+                }
+              } else {
+                return `${partNumber}${revision}`;
+              }
+            })()}
           </span>
           <img
             src="/static/icons/arrow-right.svg"

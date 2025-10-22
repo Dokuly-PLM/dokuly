@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { newPartRevision } from "./functions/queries";
 import { useNavigate } from "react-router-dom";
+import RevisionTypeModal from "../dokuly_components/revisionTypeModal";
 
 /**
  * Component for revising a ASM entity.
@@ -9,25 +10,34 @@ import { useNavigate } from "react-router-dom";
  */
 export const PartNewRevision = (props) => {
   const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+
+  const handleCreateRevision = (revisionType) => {
+    // Pass the selected revision type to the API
+    newPartRevision(props.part.id, revisionType).then((res) => {
+      if (res.status === 200) {
+        // Close modal first
+        setShowModal(false);
+        // Navigate to new part.
+        navigate(`/parts/${res.data.id}`);
+      }
+    }).catch((error) => {
+      console.error('Error creating revision:', error);
+      // Close modal even on error
+      setShowModal(false);
+    });
+  };
 
   return (
     <React.Fragment>
-      {props.part?.is_latest_revision === true &&
-      props.part?.release_state === "Released" ? (
+      {props.part?.release_state === "Released" ? (
         <div>
           <button
             className={"btn btn-bg-transparent "}
             data-toggle="tooltip"
             data-placement="top"
             title={"Create new revision."}
-            onClick={() => {
-              newPartRevision(props.part.id).then((res) => {
-                if (res.status === 200) {
-                  // Navigate to new part.
-                  navigate(`/parts/${res.data.id}`);
-                }
-              });
-            }}
+            onClick={() => setShowModal(true)}
           >
             <div className="row">
               <img
@@ -42,6 +52,14 @@ export const PartNewRevision = (props) => {
       ) : (
         ""
       )}
+      
+      <RevisionTypeModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        onConfirm={handleCreateRevision}
+        currentRevision={props.part?.revision}
+        organization={props.part?.organization}
+      />
     </React.Fragment>
   );
 };

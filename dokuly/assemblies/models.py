@@ -24,7 +24,7 @@ class Assembly(models.Model):
     # Assembly basic data fields
     display_name = models.CharField(max_length=150, blank=True)
     description = models.TextField(max_length=500, blank=True)
-    revision = models.CharField(max_length=2)
+    revision = models.CharField(max_length=10)
     is_latest_revision = models.BooleanField(default=False, blank=True)
 
     release_state = models.CharField(max_length=50, blank=True)

@@ -398,7 +398,7 @@ export const getRevisions = (asmId) => {
     }
   })
  */
-export const newAsmRevision = (asmId, data) => {
+export const newAsmRevision = (asmId, data = {}) => {
   const promise = axios.post(
     `api/assemblies/newAsmRevision/${asmId}/`,
     data,

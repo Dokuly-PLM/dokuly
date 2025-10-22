@@ -121,9 +121,9 @@ const PartNumberEditor = ({
     }
 
     const displayPartNumber =
-      row?.full_part_number || row?.revision ? (
+      row?.full_part_number ? (
         <React.Fragment>
-          {`${row?.full_part_number}${row?.revision}`}{" "}
+          {row?.full_part_number}{" "}
           {not_latest_rev_warning(row)}
         </React.Fragment>
       ) : isEditing ? (

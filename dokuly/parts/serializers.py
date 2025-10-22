@@ -45,9 +45,29 @@ class PartSerializer(serializers.ModelSerializer):
     part_type = PartTypeSerializer()
     alternative_parts_v2 = AlternativePartSerializer(many=True)
     supplier_name = serializers.CharField(source="supplier.name", read_only=True)
+    organization = serializers.SerializerMethodField()
     thumbnail_uri = serializers.CharField(source="image.uri", read_only=True)
     markdown_notes = MarkdownTextSerializer()
     tags = TagSerializer(many=True)
+
+    def get_organization(self, obj):
+        """Get organization revision settings for the current user."""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            try:
+                from profiles.models import Profile
+                profile = Profile.objects.get(user=request.user)
+                if profile.organization_id:
+                    from organizations.models import Organization
+                    org = Organization.objects.get(id=profile.organization_id)
+                    return {
+                        'use_number_revisions': org.use_number_revisions,
+                        'revision_format': org.revision_format,
+                        'revision_separator': org.revision_separator
+                    }
+            except:
+                pass
+        return None
 
     class Meta:
         model = Part
@@ -56,6 +76,7 @@ class PartSerializer(serializers.ModelSerializer):
 
 class PartSerializerNoAlternate(serializers.ModelSerializer):
     """All part info, not loading alternate parts."""
+    organization = serializers.SerializerMethodField()
 
     class Meta:
         model = Part
@@ -84,11 +105,32 @@ class PartSerializerNoAlternate(serializers.ModelSerializer):
             "price_history",
             "stock",
             "price",
+            "organization",
         ]
+
+    def get_organization(self, obj):
+        """Get organization revision settings for the current user."""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            try:
+                from profiles.models import Profile
+                profile = Profile.objects.get(user=request.user)
+                if profile.organization_id:
+                    from organizations.models import Organization
+                    org = Organization.objects.get(id=profile.organization_id)
+                    return {
+                        'use_number_revisions': org.use_number_revisions,
+                        'revision_format': org.revision_format,
+                        'revision_separator': org.revision_separator
+                    }
+            except:
+                pass
+        return None
 
 
 class PartTableSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
+    organization = serializers.SerializerMethodField()
 
     class Meta:
         model = Part
@@ -112,7 +154,27 @@ class PartTableSerializer(serializers.ModelSerializer):
             "current_total_stock",
             "external_part_number",
             "tags",
+            "organization",
         ]
+
+    def get_organization(self, obj):
+        """Get organization revision settings for the current user."""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            try:
+                from profiles.models import Profile
+                profile = Profile.objects.get(user=request.user)
+                if profile.organization_id:
+                    from organizations.models import Organization
+                    org = Organization.objects.get(id=profile.organization_id)
+                    return {
+                        'use_number_revisions': org.use_number_revisions,
+                        'revision_format': org.revision_format,
+                        'revision_separator': org.revision_separator
+                    }
+            except:
+                pass
+        return None
 
 
 class PartSerializerWithProject(serializers.ModelSerializer):

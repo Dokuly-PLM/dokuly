@@ -46,6 +46,7 @@ class ProjectTitleSerializer(serializers.ModelSerializer):
 class PcbaTableSerializer(serializers.ModelSerializer):
     project = ProjectTitleSerializer()
     tags = TagSerializer(many=True)
+    organization = serializers.SerializerMethodField()
 
     class Meta:
         model = Pcba
@@ -62,7 +63,27 @@ class PcbaTableSerializer(serializers.ModelSerializer):
             "thumbnail",
             "project",
             "tags",
+            "organization",
         )
+
+    def get_organization(self, obj):
+        """Get organization revision settings for the current user."""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            try:
+                from profiles.models import Profile
+                profile = Profile.objects.get(user=request.user)
+                if profile.organization_id:
+                    from organizations.models import Organization
+                    org = Organization.objects.get(id=profile.organization_id)
+                    return {
+                        'use_number_revisions': org.use_number_revisions,
+                        'revision_format': org.revision_format,
+                        'revision_separator': org.revision_separator
+                    }
+            except:
+                pass
+        return None
 
 
 class PcbaSerializerFull(serializers.ModelSerializer):
@@ -70,6 +91,26 @@ class PcbaSerializerFull(serializers.ModelSerializer):
 
     markdown_notes = MarkdownTextSerializer()
     tags = TagSerializer(many=True)
+    organization = serializers.SerializerMethodField()
+
+    def get_organization(self, obj):
+        """Get organization revision settings for the current user."""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            try:
+                from profiles.models import Profile
+                profile = Profile.objects.get(user=request.user)
+                if profile.organization_id:
+                    from organizations.models import Organization
+                    org = Organization.objects.get(id=profile.organization_id)
+                    return {
+                        'use_number_revisions': org.use_number_revisions,
+                        'revision_format': org.revision_format,
+                        'revision_separator': org.revision_separator
+                    }
+            except:
+                pass
+        return None
 
     class Meta:
         model = Pcba

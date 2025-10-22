@@ -12,6 +12,7 @@ import DokulyInformation from "../adminComponents/general/dokulyInformation";
 import Profile2FA from "../../profiles/profileMfa";
 import Stats from "../adminComponents/general/stats";
 import ActiveModules from "../adminComponents/general/activeModules";
+import RevisionSystemSettings from "../adminComponents/general/revisionSystemSettings";
 
 const AdminGeneral = (props) => {
   const [loading, setLoading] = useState(true);
@@ -112,6 +113,9 @@ const AdminGeneral = (props) => {
               </Col>
             </Row>
           </div>
+        </div>
+        <div className="card px-3 mt-3">
+          <RevisionSystemSettings org={orgData} setRefresh={setRefresh} />
         </div>
       </Col>
     </Row>

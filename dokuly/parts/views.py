@@ -116,11 +116,11 @@ def get_single_part(request, pk, **kwargs):
         if APIAndProjectAccess.has_validated_key(request):
             part = get_object_or_404(Part, id=pk)
             if not part.internal:
-                serializer = PartSerializer(part)
+                serializer = PartSerializer(part, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
             if not APIAndProjectAccess.check_project_access(request, part.project.pk):
                 return Response("Not authorized", status=status.HTTP_401_UNAUTHORIZED)
-            serializer = PartSerializer(part)
+            serializer = PartSerializer(part, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         part = query.get(
@@ -139,7 +139,7 @@ def get_single_part(request, pk, **kwargs):
             part.markdown_notes = markdown_notes
             part.save()
 
-        serializer = PartSerializer(part)
+        serializer = PartSerializer(part, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Part.DoesNotExist:
         return Response("Part not found", status=status.HTTP_404_NOT_FOUND)
@@ -292,7 +292,7 @@ def get_parts_table(request):
         .prefetch_related("tags")
     )
 
-    serializer = PartTableSerializer(parts, many=True)
+    serializer = PartTableSerializer(parts, many=True, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -778,8 +778,26 @@ def create_new_part(request, **kwargs):
             new_part.created_by = user
         new_part.part_number = get_next_part_number()
         new_part.release_state = "Draft"
-        new_part.revision = "A"
         new_part.is_latest_revision = True
+        
+        # Get organization_id from user profile for revision system
+        organization_id = None
+        if hasattr(user, 'profile') and user.profile.organization_id:
+            organization_id = user.profile.organization_id
+        
+        # Set initial revision based on organization settings
+        from organizations.revision_utils import get_organization_revision_settings
+        if organization_id:
+            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
+            if use_number_revisions:
+                if revision_format == "major-minor":
+                    new_part.revision = f"1{separator}0"
+                else:
+                    new_part.revision = "1"
+            else:
+                new_part.revision = "A"
+        else:
+            new_part.revision = "A"
         new_part.description = data["description"]
         new_part.datasheet = data["datasheet"]
         new_part.display_name = data["display_name"]
@@ -798,7 +816,19 @@ def create_new_part(request, **kwargs):
         if "part_type" in data:
             new_part.part_type_id = data["part_type"]
             prefix = new_part.part_type.prefix
-        new_part.full_part_number = f"{prefix}{new_part.part_number}"
+        
+        # Format full_part_number based on organization revision settings
+        if organization_id:
+            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
+            if use_number_revisions:
+                # For number revisions, use underscore separator
+                new_part.full_part_number = f"{prefix}{new_part.part_number}_{new_part.revision}"
+            else:
+                # For letter revisions, use direct concatenation
+                new_part.full_part_number = f"{prefix}{new_part.part_number}{new_part.revision}"
+        else:
+            # Default to letter revision format
+            new_part.full_part_number = f"{prefix}{new_part.part_number}{new_part.revision}"
 
         if "unit" in data:
             new_part.unit = data["unit"]
@@ -1054,8 +1084,29 @@ def new_revision(request, pk, **kwargs):
     new_part_rev.part_type = old_part_rev.part_type
 
     prefix = old_part_rev.part_type.prefix
-    new_part_rev.full_part_number = f"{prefix}{new_part_rev.part_number}"
-    new_part_rev.revision = increment_revision(old_part_rev.revision)
+    # Get organization_id from user profile for revision system
+    organization_id = None
+    if hasattr(request.user, 'profile') and request.user.profile.organization_id:
+        organization_id = request.user.profile.organization_id
+    
+    # Get revision type from request data (default to "major" for backward compatibility)
+    revision_type = request.data.get('revision_type', 'major')
+    
+    new_part_rev.revision = increment_revision(old_part_rev.revision, organization_id, revision_type)
+    
+    # Format full_part_number based on organization revision settings
+    from organizations.revision_utils import get_organization_revision_settings
+    if organization_id:
+        use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
+        if use_number_revisions:
+            # For number revisions, use underscore separator
+            new_part_rev.full_part_number = f"{prefix}{new_part_rev.part_number}_{new_part_rev.revision}"
+        else:
+            # For letter revisions, use direct concatenation
+            new_part_rev.full_part_number = f"{prefix}{new_part_rev.part_number}{new_part_rev.revision}"
+    else:
+        # Default to letter revision format
+        new_part_rev.full_part_number = f"{prefix}{new_part_rev.part_number}{new_part_rev.revision}"
 
     new_part_rev.created_by = old_part_rev.created_by
     new_part_rev.display_name = old_part_rev.display_name

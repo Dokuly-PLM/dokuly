@@ -331,9 +331,10 @@ const OrderItemsTable = ({
         if (!(row.part || row.assembly || row.pcba)) {
           return "";
         }
-        return row?.full_part_number || row?.revision
-          ? `${row?.full_part_number}${row?.revision}`
-          : "Unknown";
+        if (row?.full_part_number) {
+          return row?.full_part_number;
+        }
+        return "Unknown";
       },
       includeInCsv: true,
       defaultShowColumn: true,

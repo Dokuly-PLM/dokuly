@@ -3,6 +3,7 @@ import { useSpring, animated, config } from "react-spring";
 import { basicSkeletonLoaderInfoCard } from "../../admin/functions/helperFunctions";
 import { newAsmRevision } from "../functions/queries";
 import { useNavigate } from "react-router-dom";
+import RevisionTypeModal from "../../dokuly_components/revisionTypeModal";
 
 /**
  * Component for revising a ASM entity.
@@ -28,6 +29,7 @@ const AsmNewRevision = (props) => {
   const [inLineForm, setInLineForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copyPrev, setCopyPrev] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const [copyBom, setCopyBom] = useState(true);
   const [description, setDescription] = useState("");
   const [newAsm, setNewAsm] = useState({});
@@ -181,8 +183,7 @@ const AsmNewRevision = (props) => {
     <div className="ml-3 my-1">
       <animated.div style={fadeReverse}>
         <div className="row">
-          {props?.asm?.is_latest_revision &&
-          props?.asm?.release_state === "Released" ? (
+          {props?.asm?.release_state === "Released" ? (
             <button
               className={
                 props?.asm?.is_latest_revision &&
@@ -209,7 +210,7 @@ const AsmNewRevision = (props) => {
                 props?.asm?.release_state
               )}
               onClick={() => {
-                setInLineForm(true);
+                setShowModal(true);
               }}
             >
               <div className="row">
@@ -226,6 +227,32 @@ const AsmNewRevision = (props) => {
           )}
         </div>
       </animated.div>
+      
+      <RevisionTypeModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        onConfirm={(revisionType) => {
+          // Pass the selected revision type to the API
+          newAsmRevision(props?.asm?.id, { 
+            revision_type: revisionType,
+            copyPrev: 1,
+            copyBom: 1
+          }).then((res) => {
+            if (res.status === 201) {
+              // Close modal first
+              setShowModal(false);
+              // Navigate to new assembly revision
+              navigate(`/assemblies/${res.data.id}`);
+            }
+          }).catch((error) => {
+            console.error('Error creating revision:', error);
+            // Close modal even on error
+            setShowModal(false);
+          });
+        }}
+        currentRevision={props?.asm?.revision}
+        organization={props?.asm?.organization}
+      />
     </div>
   );
 };

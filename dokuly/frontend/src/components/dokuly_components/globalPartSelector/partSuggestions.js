@@ -33,7 +33,15 @@ export const PartSuggestions = ({
             formattedProjectTitle = `- ${project_title}`;
           }
 
-          const combinedText = `${full_part_number}${revision}, ${display_name} ${formattedProjectTitle}`;
+          const combinedText = `${(() => {
+            const useNumberRevisions = suggestion?.organization?.use_number_revisions || false;
+            if (useNumberRevisions) {
+              // For number revisions, full_part_number already includes the revision with underscore
+              return full_part_number;
+            }
+            // For letter revisions, append the revision to the base part number
+            return `${full_part_number}${revision}`;
+          })()}, ${display_name} ${formattedProjectTitle}`;
 
           return (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>

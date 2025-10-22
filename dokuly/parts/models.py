@@ -61,7 +61,7 @@ class Part(models.Model):
     reference_list_id = models.IntegerField(default=-1, blank=True)
 
     # Internal parts, extra part information
-    revision = models.CharField(max_length=2, blank=True, null=True)
+    revision = models.CharField(max_length=10, blank=True, null=True)
     is_latest_revision = models.BooleanField(default=False, blank=True)
 
     model_url = models.CharField(max_length=500, blank=True, null=True)

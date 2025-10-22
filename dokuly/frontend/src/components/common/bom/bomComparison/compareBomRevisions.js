@@ -205,11 +205,20 @@ export default function BomComparisonTable({
 
         {filteredItems.map((item) => (
           <th scope="col" key={item.id}>
-            {item.revision === sortedItems[currentRevisionIndex].revision
-              ? `${item.full_part_number}${item.revision} (Current)`
-              : item.revision === sortedItems[comparisonRevisionIndex].revision
-              ? `${item.full_part_number}${item.revision}`
-              : `${item.full_part_number}${item.revision}`}
+            {(() => {
+              const useNumberRevisions = item?.organization?.use_number_revisions || false;
+              const formattedPartNumber = useNumberRevisions 
+                ? item.full_part_number 
+                : `${item.full_part_number}${item.revision}`;
+              
+              if (item.revision === sortedItems[currentRevisionIndex].revision) {
+                return `${formattedPartNumber} (Current)`;
+              } else if (item.revision === sortedItems[comparisonRevisionIndex].revision) {
+                return formattedPartNumber;
+              } else {
+                return formattedPartNumber;
+              }
+            })()}
           </th>
         ))}
         <th scope="col" />
@@ -265,7 +274,15 @@ export default function BomComparisonTable({
                   onKeyUp={() => {}}
                   key={index}
                 >
-                  <b>{`${item.full_part_number}${item.revision}:`}</b>{" "}
+                  <b>{`${(() => {
+                    const useNumberRevisions = item?.organization?.use_number_revisions || false;
+                    if (useNumberRevisions) {
+                      // For number revisions, full_part_number already includes the revision with underscore
+                      return item.full_part_number;
+                    }
+                    // For letter revisions, append the revision to the base part number
+                    return `${item.full_part_number}${item.revision}`;
+                  })()}:`}</b>{" "}
                   {limit_caracters(item.display_name, 30)}
                 </td>
               );

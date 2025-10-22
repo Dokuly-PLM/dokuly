@@ -26,4 +26,9 @@ def copy_markdown_tabs_to_new_revision(current_obj, new_obj):
 
             # Associate all new tabs with new_obj
             new_obj.markdown_note_tabs.add(*new_tabs)
+            # Preserve the is_latest_revision flag when saving
+            is_latest = new_obj.is_latest_revision
             new_obj.save()
+            if is_latest:
+                new_obj.is_latest_revision = True
+                new_obj.save()
