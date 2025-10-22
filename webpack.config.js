@@ -1,41 +1,88 @@
-const NodePolyfillPlugin = require("./node_modules/node-polyfill-webpack-plugin");
+const path = require('path');
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
 module.exports = {
+  mode: 'development',
+  entry: './dokuly/frontend/src/index.js',
+  output: {
+    path: path.resolve(__dirname, 'dokuly/frontend/static/frontend'),
+    filename: 'main.js',
+    clean: {
+      keep: /\.(wasm|hdr)$/,
+    },
+  },
+  devServer: {
+    static: {
+      directory: path.join(__dirname, 'dokuly/frontend/static'),
+    },
+    port: 3000,
+    hot: true,
+    liveReload: true,
+    watchFiles: ['dokuly/frontend/src/**/*'],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/admin': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/static': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: {
-          loader: "babel-loader",
-        },
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              ['@babel/preset-env', { targets: 'defaults' }],
+              ['@babel/preset-react', { runtime: 'automatic' }]
+            ],
+            plugins: [
+              'babel-plugin-transform-class-properties'
+            ]
+          }
+        }
       },
       {
         test: /\.css$/i,
-        use: ["style-loader", "css-loader"],
+        use: ['style-loader', 'css-loader'],
       },
       {
         test: /\.s[ac]ss$/i,
         use: [
-          // Creates `style` nodes from JS strings
-          "style-loader",
-          // Translates CSS into CommonJS
-          "css-loader",
-          // Compiles Sass to CSS
-          "sass-loader",
+          'style-loader',
+          'css-loader',
+          'sass-loader',
         ],
       },
       {
         test: /\.hdr$/,
         use: [
           {
-            loader: "file-loader",
+            loader: 'file-loader',
             options: {},
           },
         ],
       },
     ],
   },
-  target: ["web", "es5"],
-  plugins: [new NodePolyfillPlugin()],
+  resolve: {
+    extensions: ['.js', '.jsx'],
+    alias: {
+      '@': path.resolve(__dirname, 'dokuly/frontend/src'),
+    }
+  },
+  plugins: [
+    new NodePolyfillPlugin(),
+  ],
+  target: ['web', 'es5'],
 };
