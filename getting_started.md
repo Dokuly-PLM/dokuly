@@ -301,12 +301,17 @@ The Docker stack needs the compiled JSX from the Frontend Django Application. Bu
    npm install --save-dev webpack
    ```
 
-2. Start the web server.
+2. Start the development server with hot reloading.
 
    ```bash
    npm i
    npm run dev
    ```
+
+3. **Important**: Use the browser-sync URL for hot reloading:
+   - ✅ **Hot reloading**: `http://localhost:3000` (browser-sync proxy)
+   - ❌ **No hot reloading**: `http://localhost:8000` (direct Django)
+
 
 <a name="django_dealing_with_files"/>
 
