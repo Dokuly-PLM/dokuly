@@ -17,6 +17,7 @@ const NewPcbaForm = (props) => {
   const [selected_project_id, setSelectedProjectId] = useState(-1);
   const [showModal, setShowModal] = useState(false);
   const [externalPartNumber, setExternalPartNumber] = useState("");
+  const [erpLink, setErpLink] = useState("");
 
   useEffect(() => {
     if (
@@ -47,6 +48,7 @@ const NewPcbaForm = (props) => {
       description: description,
       project: parseInt(selected_project_id),
       external_part_number: externalPartNumber,
+      erp_link: erpLink,
     };
 
     createNewPcba(data)
@@ -104,6 +106,21 @@ const NewPcbaForm = (props) => {
           externalPartNumber={externalPartNumber}
           setExternalPartNumber={setExternalPartNumber}
         />
+
+        <div className="form-group">
+          <label>ERP System Link</label>
+          <input
+            className="form-control"
+            type="url"
+            name="erp_link"
+            placeholder="https://example.com/erp/part/123"
+            onChange={(e) => setErpLink(e.target.value)}
+            value={erpLink}
+          />
+          <small className="form-text text-muted">
+            Link to the part in the external ERP system
+          </small>
+        </div>
 
         <div className="form-group">
           <label>Description</label>

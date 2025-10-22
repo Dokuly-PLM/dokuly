@@ -132,6 +132,7 @@ class Pcba(models.Model):
     archived_date = models.DateField(null=True, blank=True)
 
     external_part_number = models.CharField(max_length=1000, blank=True, null=True)
+    erp_link = models.URLField(max_length=2000, blank=True, null=True, help_text="Link to the part in the external ERP system")
 
     # Stock data
     current_total_stock = models.IntegerField(blank=True, null=True)
