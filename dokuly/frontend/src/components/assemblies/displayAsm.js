@@ -313,7 +313,7 @@ const DisplayASM = (props) => {
     refreshPart: setRefresh,
   };
 
-  const tabs = [
+  const baseTabs = [
     {
       eventKey: "overview",
       title: "Overview",
@@ -448,13 +448,17 @@ const DisplayASM = (props) => {
         />
       ),
     },
-    {
-      eventKey: "reference-documents",
-      title: "Reference documents",
-      content: (
-        <ReferenceDocumentsTable asm_id={currentASMID} asm={asmDetailed} />
-      ),
-    },
+  ];
+
+  const referenceDocumentsTab = {
+    eventKey: "reference-documents",
+    title: "Reference documents",
+    content: (
+      <ReferenceDocumentsTable asm_id={currentASMID} asm={asmDetailed} />
+    ),
+  };
+
+  const remainingTabs = [
     {
       eventKey: "revisions",
       title: "Revisions",
@@ -477,6 +481,12 @@ const DisplayASM = (props) => {
         </div>
       ),
     },
+  ];
+
+  const tabs = [
+    ...baseTabs,
+    ...(organization?.document_is_enabled ? [referenceDocumentsTab] : []),
+    ...remainingTabs,
   ];
 
   return (

@@ -32,6 +32,7 @@ import InventoryTable from "../dokuly_components/dokulyInventory/inventoryTable"
 import useLocationEntires from "../common/hooks/useLocationEntires";
 import InventoryStatus from "../dokuly_components/dokulyInventory/inventoryStatus";
 import WhereUsedTable from "../common/whereUsed/whereUsedTable";
+import useOrganization from "../common/hooks/useOrganization";
 
 const DisplayPart = (props) => {
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
@@ -93,6 +94,8 @@ const DisplayPart = (props) => {
   const [locations, refreshLocations, loadingLocations] = useLocations({
     setIsAuthenticated: setIsAuthenticated,
   });
+
+  const [organization, refreshOrganization] = useOrganization();
 
   useEffect(() => {
     if (refresh || part == null || currentPartID !== part?.id) {
@@ -234,7 +237,7 @@ const DisplayPart = (props) => {
     refreshPart: setRefresh,
   };
 
-  const tabs = [
+  const baseTabs = [
     {
       eventKey: "overview",
       title: "Overview",
@@ -363,11 +366,15 @@ const DisplayPart = (props) => {
         />
       ),
     },
-    {
-      eventKey: "reference-documents",
-      title: "Reference Documents",
-      content: <ReferenceDocumentsTable part_id={currentPartID} />,
-    },
+  ];
+
+  const referenceDocumentsTab = {
+    eventKey: "reference-documents",
+    title: "Reference Documents",
+    content: <ReferenceDocumentsTable part_id={currentPartID} />,
+  };
+
+  const remainingTabs = [
     {
       eventKey: "specs",
       title: "Specifications",
@@ -411,6 +418,12 @@ const DisplayPart = (props) => {
         </div>
       ),
     },
+  ];
+
+  const tabs = [
+    ...baseTabs,
+    ...(organization?.document_is_enabled ? [referenceDocumentsTab] : []),
+    ...remainingTabs,
   ];
 
   return (
