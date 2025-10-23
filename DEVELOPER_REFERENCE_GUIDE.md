@@ -4,6 +4,39 @@
 
 Dokuly is an open-source Product Lifecycle Management (PLM) system built with Django (backend) and React (frontend). It's designed for teams that need to manage product data, documents, projects, and manufacturing processes.
 
+## Quick Reference - Docker Commands
+
+### **Essential Commands**
+```bash
+# Check container status
+docker-compose -f docker-compose-dev-mac.yml ps
+
+# Django shell with command execution
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py shell -c "
+from pcbas.models import Pcba
+print('PCBAs:', Pcba.objects.count())
+"
+
+# Database migrations
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py migrate
+
+# Run tests
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test
+
+# View logs
+docker-compose -f docker-compose-dev-mac.yml logs web
+```
+
+### **File Paths in Docker**
+- **Manage.py**: `/dokuly_image/dokuly/manage.py`
+- **Project root**: `/dokuly_image/`
+- **Django app**: `/dokuly_image/dokuly/`
+
+### **Docker Compose File Selection**
+- **Mac Development**: `docker-compose-dev-mac.yml` (used in examples above)
+- **Linux/Windows Development**: `docker-compose-dev.yml`
+- **Production**: `docker-compose.yml`
+
 ## System Architecture
 
 ### Backend (Django)
@@ -1114,23 +1147,139 @@ python manage.py runserver
 ```
 
 ### Running Python Commands
-When using Docker Compose, Python commands must be run through the Docker container:
+When using Docker Compose, Python commands must be run through the Docker container. The system uses different Docker Compose files for different environments:
 
+#### **Docker Compose File Selection**
+- **Development (Mac)**: `docker-compose-dev-mac.yml`
+- **Development (Linux/Windows)**: `docker-compose-dev.yml`
+- **Production**: `docker-compose.yml`
+
+#### **Basic Django Commands**
 ```bash
 # Database migrations
-docker-compose exec web python manage.py migrate
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py migrate
 
 # Create superuser
-docker-compose exec web python manage.py createsuperuser
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py createsuperuser
 
-# Django shell
-docker-compose exec web python manage.py shell
+# Django shell (interactive)
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py shell
+
+# Django shell with command execution
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py shell -c "
+from pcbas.models import Pcba
+print('Total PCBAs:', Pcba.objects.count())
+"
 
 # Collect static files
-docker-compose exec web python manage.py collectstatic
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py collectstatic
 
 # Run tests
-docker-compose exec web python manage.py test
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test
+```
+
+#### **Django Shell Best Practices**
+For complex operations, use the Django shell with command execution:
+
+```bash
+# Single command execution
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py shell -c "
+from pcbas.models import Pcba
+from assemblies.models import Assembly
+print('PCBAs:', Pcba.objects.count())
+print('Assemblies:', Assembly.objects.count())
+"
+
+# Multi-line commands (use quotes and escape characters)
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py shell -c "
+from pcbas.models import Pcba
+pcbas = Pcba.objects.all()
+for p in pcbas:
+    print(f'ID {p.id}: {p.display_name}')
+"
+
+# Interactive shell for complex operations
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py shell
+```
+
+#### **Container Management**
+```bash
+# Check running containers
+docker-compose -f docker-compose-dev-mac.yml ps
+
+# View container logs
+docker-compose -f docker-compose-dev-mac.yml logs web
+
+# Restart services
+docker-compose -f docker-compose-dev-mac.yml restart web
+
+# Stop all services
+docker-compose -f docker-compose-dev-mac.yml down
+
+# Start services
+docker-compose -f docker-compose-dev-mac.yml up -d
+```
+
+#### **File Paths in Docker**
+When running commands in Docker containers, use these paths:
+- **Django project root**: `/dokuly_image/`
+- **Manage.py location**: `/dokuly_image/dokuly/manage.py`
+- **Project files**: `/dokuly_image/dokuly/`
+- **Static files**: `/dokuly_image/dokuly/static/`
+- **Media files**: `/dokuly_image/media/`
+
+#### **Database Operations and Data Management**
+For database operations and data manipulation:
+
+```bash
+# Check current data in models
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py shell -c "
+from pcbas.models import Pcba
+from assemblies.models import Assembly
+print('PCBAs:', Pcba.objects.count())
+print('Assemblies:', Assembly.objects.count())
+for p in Pcba.objects.all()[:5]:
+    print(f'PCBA {p.id}: {p.display_name}')
+"
+
+# Bulk data operations
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py shell -c "
+from pcbas.models import Pcba
+# Update all PCBAs
+for pcba in Pcba.objects.all():
+    pcba.display_name = f'Updated {pcba.display_name}'
+    pcba.save()
+print('Updated all PCBAs')
+"
+
+# Create test data
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py shell -c "
+from pcbas.models import Pcba
+from projects.models import Project
+# Create a new PCBA
+project = Project.objects.first()
+pcba = Pcba.objects.create(
+    display_name='Test PCBA',
+    project=project,
+    part_number=9999
+)
+print(f'Created PCBA: {pcba.id}')
+"
+```
+
+#### **Common Docker Issues and Solutions**
+```bash
+# If containers are not running
+docker-compose -f docker-compose-dev-mac.yml up -d
+
+# If you get "service not found" errors, check container names
+docker-compose -f docker-compose-dev-mac.yml ps
+
+# If you get "no such file" errors, verify the file path
+docker-compose -f docker-compose-dev-mac.yml exec web ls -la /dokuly_image/dokuly/
+
+# If Django setup fails, ensure the container is running
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py check
 ```
 
 ## Dependencies and Component Architecture
@@ -1664,18 +1813,21 @@ const DataFetcher = ({ endpoint, children }) => {
 **Testing Commands:**
 ```bash
 # Run all backend tests
-docker-compose exec web python manage.py test
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test
 
 # Run tests for specific app
-docker-compose exec web python manage.py test parts
-docker-compose exec web python manage.py test assemblies
-docker-compose exec web python manage.py test projects
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test parts
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test assemblies
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test projects
 
 # Run tests with coverage
-docker-compose exec web python manage.py test --coverage
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test --coverage
 
 # Run tests with verbose output
-docker-compose exec web python manage.py test --verbosity=2
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test --verbosity=2
+
+# Run specific test method
+docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test parts.tests.PartTestCase.test_api_part_creation
 ```
 
 ### Frontend Testing
@@ -1715,12 +1867,16 @@ npm run test:coverage
 ## Troubleshooting
 
 ### Common Issues
-1. **Database migrations**: Ensure all migrations are applied using `docker-compose exec web python manage.py migrate`
+1. **Database migrations**: Ensure all migrations are applied using `docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py migrate`
 2. **File permissions**: Check file storage permissions
 3. **API authentication**: Verify token validity and project access
 4. **Frontend build**: Clear node_modules and reinstall dependencies
 5. **Database connections**: Check PostgreSQL connection settings in Docker Compose
-6. **Docker container issues**: Use `docker-compose logs web` to check backend logs
+6. **Docker container issues**: Use `docker-compose -f docker-compose-dev-mac.yml logs web` to check backend logs
+7. **Django shell access**: Use the correct file path `/dokuly_image/dokuly/manage.py` when running shell commands
+8. **Container not running**: Check container status with `docker-compose -f docker-compose-dev-mac.yml ps`
+9. **Service not found**: Verify the correct service name (usually `web`) in docker-compose commands
+10. **File path errors**: Ensure you're using the correct Docker volume mount paths (`/dokuly_image/`)
 
 ### Debug Tools
 - Django Debug Toolbar (development)
