@@ -233,6 +233,7 @@ const BomTable = ({
     designatorHeaderTooltip: designator_header_tooltip,
     thumbnailFormatter: thumbnailFormatter,
     currencyPairs: currencyPairs,
+    organization: organization,
   };
 
   const columns = getBomTableColumns(columnConfiguration);
