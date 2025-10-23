@@ -31,6 +31,7 @@ import useLocations from "../common/hooks/useLocations";
 import InventoryTable from "../dokuly_components/dokulyInventory/inventoryTable";
 import useLocationEntires from "../common/hooks/useLocationEntires";
 import InventoryStatus from "../dokuly_components/dokulyInventory/inventoryStatus";
+import WhereUsedTable from "../common/whereUsed/whereUsedTable";
 
 const DisplayPart = (props) => {
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
@@ -395,6 +396,19 @@ const DisplayPart = (props) => {
             </div>
           )}
         </>
+      ),
+    },
+    {
+      eventKey: "where-used",
+      title: "Where Used",
+      content: (
+        <div className="row m-3">
+          <WhereUsedTable 
+            app="parts" 
+            itemId={currentPartID} 
+            itemType="Part"
+          />
+        </div>
       ),
     },
   ];

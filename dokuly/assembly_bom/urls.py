@@ -46,6 +46,11 @@ urlpatterns = [
         "api/assembly_bom/get/bomCost/<str:app>/<int:id>/",
         viewsBomCost.get_bom_cost,
     ),
+    # Where Used functionality
+    path(
+        "api/assembly_bom/whereUsed/<str:app>/<int:item_id>/",
+        views.get_where_used,
+    ),
 ]
 
 urlpatterns += router.urls

@@ -34,6 +34,7 @@ import InventoryTable from "../dokuly_components/dokulyInventory/inventoryTable"
 import useLocationEntires from "../common/hooks/useLocationEntires";
 import useLocations from "../common/hooks/useLocations";
 import InventoryStatus from "../dokuly_components/dokulyInventory/inventoryStatus";
+import WhereUsedTable from "../common/whereUsed/whereUsedTable";
 
 const DisplayPcba = (props) => {
   const location = useLocation();
@@ -380,6 +381,19 @@ const DisplayPcba = (props) => {
             />
           </div>
         </>
+      ),
+    },
+    {
+      eventKey: "where-used",
+      title: "Where Used",
+      content: (
+        <div className="row m-3">
+          <WhereUsedTable 
+            app="pcbas" 
+            itemId={id} 
+            itemType="PCBA"
+          />
+        </div>
       ),
     },
   ];

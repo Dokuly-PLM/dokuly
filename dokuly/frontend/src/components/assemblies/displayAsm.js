@@ -33,6 +33,7 @@ import useBomIssues from "../common/hooks/useBomIssues";
 import useLocationEntires from "../common/hooks/useLocationEntires";
 import useLocations from "../common/hooks/useLocations";
 import InventoryTable from "../dokuly_components/dokulyInventory/inventoryTable";
+import WhereUsedTable from "../common/whereUsed/whereUsedTable";
 import InventoryStatus from "../dokuly_components/dokulyInventory/inventoryStatus";
 
 export const getIssueColor = (issue, app) => {
@@ -460,6 +461,19 @@ const DisplayASM = (props) => {
       content: (
         <div className="row m-3">
           <RevisionsTable app={"assemblies"} item={asmDetailed} />
+        </div>
+      ),
+    },
+    {
+      eventKey: "where-used",
+      title: "Where Used",
+      content: (
+        <div className="row m-3">
+          <WhereUsedTable 
+            app="assemblies" 
+            itemId={currentASMID} 
+            itemType="Assembly"
+          />
         </div>
       ),
     },
