@@ -1,6 +1,10 @@
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
+import os
+
+# Check if we're in testing mode
+testing_server = bool(int(os.environ.get("DJANGO_TESTING_SERVER", 0)))
 
 urlpatterns = [
     path("", include("django_expiring_token.urls")),
@@ -38,6 +42,10 @@ urlpatterns = [
     path("", include("API.v1.urls_migrations")),
     path("", include("API.v1.urls_projects")),
     path("", include("API.v1.urls_customers")),
+]
 
-    path("__debug__/", include("debug_toolbar.urls")),
-] + static(settings.STATIC_ROOT, document_root=settings.STATIC_ROOT)
+# Only include debug_toolbar URLs if not in testing mode
+if not testing_server:
+    urlpatterns.append(path("__debug__/", include("debug_toolbar.urls")))
+
+urlpatterns += static(settings.STATIC_ROOT, document_root=settings.STATIC_ROOT)
