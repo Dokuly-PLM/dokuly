@@ -86,7 +86,7 @@ def fetch_single_pcba(request, pk, **kwargs):
         pcba.markdown_notes = markdown_notes
         pcba.save()
 
-    serializer = PcbaSerializerFull(pcba, many=False)
+    serializer = PcbaSerializerFull(pcba, many=False, context={'request': request})
 
     data = serializer.data
 
@@ -132,7 +132,7 @@ def fetch_pcba_by_revision_and_part_number(request, **kwargs):
         pcba.markdown_notes = markdown_notes
         pcba.save()
 
-    serializer = PcbaSerializerFull(pcba, many=False)
+    serializer = PcbaSerializerFull(pcba, many=False, context={'request': request})
 
     data = serializer.data
 
@@ -233,7 +233,7 @@ def get_latest_revisions(request, **kwargs):
         pcba = pcba.filter(Q(project__project_members=user)
                            | Q(project__isnull=True))
 
-    serializer = PcbaTableSerializer(pcba, many=True)
+    serializer = PcbaTableSerializer(pcba, many=True, context={'request': request})
     data = serializer.data
     return Response(data)
 
@@ -268,8 +268,29 @@ def new_revision(request, pk, **kwargs):
     new_pcba.created_by = old_pcba.created_by
     new_pcba.part_number = old_pcba.part_number
     new_pcba.external_part_number = old_pcba.external_part_number
-    new_pcba.full_part_number = f"PCBA{old_pcba.part_number}"
-    new_pcba.revision = increment_revision(old_pcba.revision)
+    # Get organization_id from user profile for revision system
+    organization_id = None
+    if hasattr(user, 'profile') and user.profile.organization_id:
+        organization_id = user.profile.organization_id
+    
+    # Get revision type from request data (default to "major" for backward compatibility)
+    revision_type = request.data.get('revision_type', 'major')
+    
+    new_pcba.revision = increment_revision(old_pcba.revision, organization_id, revision_type)
+    
+    # Format full_part_number based on organization revision settings
+    from organizations.revision_utils import get_organization_revision_settings
+    if organization_id:
+        use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
+        if use_number_revisions:
+            # For number revisions, use underscore separator
+            new_pcba.full_part_number = f"PCBA{old_pcba.part_number}_{new_pcba.revision}"
+        else:
+            # For letter revisions, use direct concatenation
+            new_pcba.full_part_number = f"PCBA{old_pcba.part_number}{new_pcba.revision}"
+    else:
+        # Default to letter revision format
+        new_pcba.full_part_number = f"PCBA{old_pcba.part_number}{new_pcba.revision}"
 
     new_pcba.price = old_pcba.price
     new_pcba.currency = old_pcba.currency
@@ -449,11 +470,41 @@ def create_new_pcba(request, **kwargs):
 
         pcba.is_latest_revision = True
         pcba.is_archived = False
-        pcba.revision = "A"
         pcba.release_state = "Draft"
         pcba.part_number = get_next_part_number()
-        pcba.full_part_number = f"PCBA{pcba.part_number}"
         pcba.external_part_number = data.get("external_part_number", "")
+        
+        # Get organization_id from user profile for revision system
+        organization_id = None
+        if hasattr(request.user, 'profile') and request.user.profile.organization_id:
+            organization_id = request.user.profile.organization_id
+        
+        # Set initial revision based on organization settings
+        from organizations.revision_utils import get_organization_revision_settings
+        if organization_id:
+            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
+            if use_number_revisions:
+                if revision_format == "major-minor":
+                    pcba.revision = f"1{separator}0"
+                else:
+                    pcba.revision = "1"
+            else:
+                pcba.revision = "A"
+        else:
+            pcba.revision = "A"
+        
+        # Format full_part_number based on organization revision settings
+        if organization_id:
+            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
+            if use_number_revisions:
+                # For number revisions, use underscore separator
+                pcba.full_part_number = f"PCBA{pcba.part_number}_{pcba.revision}"
+            else:
+                # For letter revisions, use direct concatenation
+                pcba.full_part_number = f"PCBA{pcba.part_number}{pcba.revision}"
+        else:
+            # Default to letter revision format
+            pcba.full_part_number = f"PCBA{pcba.part_number}{pcba.revision}"
 
         if APIAndProjectAccess.has_validated_key(request):
             if "created_by" in data:

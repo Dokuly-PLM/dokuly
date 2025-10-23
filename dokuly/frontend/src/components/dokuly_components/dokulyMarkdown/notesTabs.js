@@ -188,7 +188,7 @@ const NotesTabs = ({
           {" "}
           <Nav>
             {tabs.map((tab, index) => (
-              <ContextMenu actions={contextMenuActions}>
+              <ContextMenu key={tab.eventKey} actions={contextMenuActions}>
                 {({ onContextMenu }) => (
                   <Nav.Item
                     as="li"

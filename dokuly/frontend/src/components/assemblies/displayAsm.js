@@ -488,6 +488,7 @@ const DisplayASM = (props) => {
           revision={asmDetailed?.revision}
           is_latest_revision={asmDetailed?.is_latest_revision}
           app="assemblies"
+          organization={asmDetailed?.organization}
         />
 
         <DokulyTabs tabs={tabs} basePath={`/assemblies/${currentASMID}`} />

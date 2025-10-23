@@ -1,35 +1,36 @@
 {
-  "cSpell.words": ["dokuly"],
-  "editor.formatOnSave": true,
-  "editor.detectIndentation": true,
-  "editor.defaultFormatter": "biomejs.biome",
-  "[python]": {
-    "editor.defaultFormatter": "ms-python.autopep8"
-  },
-  "autopep8.args": ["--max-line-length=200"],
-  "peacock.color": "#155216",
-  "workbench.colorCustomizations": {
-    "activityBar.activeBackground": "#1f7b21",
-    "activityBar.background": "#1f7b21",
-    "activityBar.foreground": "#e7e7e7",
-    "activityBar.inactiveForeground": "#e7e7e799",
-    "activityBarBadge.background": "#9b99e5",
-    "activityBarBadge.foreground": "#151212",
-    "commandCenter.border": "#e7e7e799",
-    "sash.hoverBorder": "#1f7b21",
-    "statusBar.background": "#155216",
-    "statusBar.foreground": "#e7e7e7",
-    "statusBarItem.hoverBackground": "#1f7b21",
-    "statusBarItem.remoteBackground": "#155216",
-    "statusBarItem.remoteForeground": "#e7e7e7",
-    "titleBar.activeBackground": "#155216",
-    "titleBar.activeForeground": "#e7e7e7",
-    "titleBar.inactiveBackground": "#15521699",
-    "titleBar.inactiveForeground": "#e7e7e799"
-  },
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "python.analysis.typeCheckingMode": "off",
-  "prettier.configPath": "prettier.json"
+	"cSpell.words": ["dokuly"],
+	"editor.formatOnSave": true,
+	"editor.detectIndentation": true,
+	"editor.defaultFormatter": "biomejs.biome",
+	"[python]": {
+		"editor.defaultFormatter": "ms-python.autopep8"
+	},
+	"autopep8.args": ["--max-line-length=200"],
+	"peacock.color": "#155216",
+	"workbench.colorCustomizations": {
+		"activityBar.activeBackground": "#1f7b21",
+		"activityBar.background": "#1f7b21",
+		"activityBar.foreground": "#e7e7e7",
+		"activityBar.inactiveForeground": "#e7e7e799",
+		"activityBarBadge.background": "#9b99e5",
+		"activityBarBadge.foreground": "#151212",
+		"commandCenter.border": "#e7e7e799",
+		"sash.hoverBorder": "#1f7b21",
+		"statusBar.background": "#155216",
+		"statusBar.foreground": "#e7e7e7",
+		"statusBarItem.hoverBackground": "#1f7b21",
+		"statusBarItem.remoteBackground": "#155216",
+		"statusBarItem.remoteForeground": "#e7e7e7",
+		"titleBar.activeBackground": "#155216",
+		"titleBar.activeForeground": "#e7e7e7",
+		"titleBar.inactiveBackground": "#15521699",
+		"titleBar.inactiveForeground": "#e7e7e799"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"python.analysis.typeCheckingMode": "off",
+	"prettier.configPath": "prettier.json",
+	"cursorpyright.analysis.typeCheckingMode": "off"
 }

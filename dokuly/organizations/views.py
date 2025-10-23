@@ -343,6 +343,9 @@ def update_organization(request, id):
             "postal_code",
             "country",
             "billing_address",
+            "use_number_revisions",
+            "revision_format",
+            "revision_separator",
         ]:
             if field in data:
                 setattr(organization, field, data[field])
@@ -361,7 +364,28 @@ def update_organization(request, id):
             if not data["enforce_2fa"]:
                 Profile.objects.all().update(mfa_hash=None, mfa_validated=False)
 
+        # Check if revision system settings changed and trigger migration
+        revision_settings_changed = False
+        if "use_number_revisions" in data and organization.use_number_revisions != data["use_number_revisions"]:
+            revision_settings_changed = True
+        if "revision_format" in data and organization.revision_format != data["revision_format"]:
+            revision_settings_changed = True
+        if "revision_separator" in data and organization.revision_separator != data["revision_separator"]:
+            revision_settings_changed = True
+
         organization.save()
+        
+        # Trigger revision migration if settings changed
+        if revision_settings_changed and organization.use_number_revisions:
+            from organizations.management.commands.migrate_revisions_to_numbers import migrate_organization_revisions
+            try:
+                migrate_organization_revisions(organization.id)
+            except Exception as e:
+                # Log the error but don't fail the organization update
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to migrate revisions for organization {organization.id}: {e}")
+        
         Profile.objects.update(organization_id=organization.id)
         update_currency_pairs()    # Update the currency pairs
 

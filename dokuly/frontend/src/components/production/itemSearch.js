@@ -56,9 +56,24 @@ const ItemSearch = () => {
 
         const partNumber = part.full_part_number || "";
         const revision = part.revision || "";
+        const useNumberRevisions = part?.organization?.use_number_revisions || false;
 
-        return partNumber || revision
-          ? highlightSearchTerm(`${partNumber}${revision}`, query)
+        let formattedPartNumber = "";
+        if (partNumber || revision) {
+          if (useNumberRevisions && revision) {
+            // Check if partNumber already contains the revision with underscore
+            if (partNumber.includes(`_${revision}`)) {
+              formattedPartNumber = partNumber; // Already formatted correctly
+            } else {
+              formattedPartNumber = `${partNumber}_${revision}`;
+            }
+          } else {
+            formattedPartNumber = `${partNumber}${revision}`;
+          }
+        }
+
+        return formattedPartNumber
+          ? highlightSearchTerm(formattedPartNumber, query)
           : "";
       },
       csvFormatter: (row, column) => {
@@ -67,7 +82,21 @@ const ItemSearch = () => {
         if (!part) return "";
         const partNumber = part.full_part_number || "";
         const revision = part.revision || "";
-        return partNumber || revision ? `${partNumber}${revision}` : "";
+        const useNumberRevisions = part?.organization?.use_number_revisions || false;
+        
+        if (partNumber || revision) {
+          if (useNumberRevisions && revision) {
+            // Check if partNumber already contains the revision with underscore
+            if (partNumber.includes(`_${revision}`)) {
+              return partNumber; // Already formatted correctly
+            } else {
+              return `${partNumber}_${revision}`;
+            }
+          } else {
+            return `${partNumber}${revision}`;
+          }
+        }
+        return "";
       },
     },
     {

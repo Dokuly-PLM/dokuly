@@ -69,8 +69,8 @@ export const createNewPcba = (data) => {
   return dataPromise;
 };
 
-export const createNewRevision = (id) => {
-  const promise = axios.put(`api/pcbas/newRevision/${id}/`, {}, tokenConfig());
+export const createNewRevision = (id, revisionType = 'major') => {
+  const promise = axios.put(`api/pcbas/newRevision/${id}/`, { revision_type: revisionType }, tokenConfig());
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };

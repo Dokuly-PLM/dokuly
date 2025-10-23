@@ -152,7 +152,18 @@ const DisplayPart = (props) => {
           });
       }
     } else {
-      document.title = `${part?.full_part_number}${part?.revision}`;
+      document.title = (() => {
+        const useNumberRevisions = part?.organization?.use_number_revisions || false;
+        console.log(useNumberRevisions);
+        console.log(part?.full_part_number);
+        console.log(part?.revision);
+        if (useNumberRevisions) {
+          // For number revisions, full_part_number already includes the revision with underscore
+          return part?.full_part_number;
+        }
+        // For letter revisions, append the revision to the base part number
+        return `${part?.full_part_number}${part?.revision}`;
+      })();
       if (
         part.alternative_parts != null &&
         part.alternative_parts !== undefined &&
@@ -408,6 +419,7 @@ const DisplayPart = (props) => {
           revision={part?.revision}
           is_latest_revision={part?.is_latest_revision}
           app="parts"
+          organization={part?.organization}
         />
         <DokulyTabs tabs={tabs} basePath={`/parts/${currentPartID}`} />
       </div>

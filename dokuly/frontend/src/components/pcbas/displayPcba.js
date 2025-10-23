@@ -112,7 +112,15 @@ const DisplayPcba = (props) => {
 
   useEffect(() => {
     if (pcba) {
-      document.title = `${pcba?.full_part_number}${pcba?.revision} | Dokuly`;
+      document.title = `${(() => {
+        const useNumberRevisions = pcba?.organization?.use_number_revisions || false;
+        if (useNumberRevisions) {
+          // For number revisions, full_part_number already includes the revision with underscore
+          return pcba?.full_part_number;
+        }
+        // For letter revisions, append the revision to the base part number
+        return `${pcba?.full_part_number}${pcba?.revision}`;
+      })()} | Dokuly`;
     }
   }, [pcba]);
 
@@ -396,6 +404,7 @@ const DisplayPcba = (props) => {
           revision={pcba?.revision}
           is_latest_revision={pcba?.is_latest_revision}
           app="pcbas"
+          organization={pcba?.organization}
         />
         <DokulyTabs tabs={tabs} basePath={`/pcbas/${id}`} />
       </div>

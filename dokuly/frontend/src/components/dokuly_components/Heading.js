@@ -9,6 +9,7 @@ const Heading = ({
   display_name = "",
   is_latest_revision = true,
   app = "",
+  organization = null,
 }) => {
   const titleRef = useRef(null);
 
@@ -66,14 +67,13 @@ const Heading = ({
           <h2
             className="title-container mt-3"
             ref={titleRef}
-            onClick={() =>
-              handleCopyToClipboard(
-                `${item_number}${revision} - ${display_name}`
-              )
-            }
+            onClick={() => {
+              // item_number (full_part_number) already contains the properly formatted part number with revision
+              handleCopyToClipboard(`${item_number} - ${display_name}`);
+            }}
             title="Click to copy to clipboard"
           >
-            {`${item_number}${revision} - ${display_name}`}
+{item_number} - {display_name}
             {!is_latest_revision && (
               <span>
                 <img

@@ -1,6 +1,7 @@
 import React from "react";
 import { getMpn } from "./helperFunctions";
 import { formatBOMImageData } from "./formatBOMImageData";
+import { formatPartNumberWithRevision } from "../../../utils/revisionUtils";
 
 function not_latest_rev_warning(item) {
   return item?.is_latest_revision === false ? (
@@ -59,32 +60,39 @@ export const partNumberFortmatter = (cell, row) => {
     );
   }
   if (row?.full_part_number) {
-    return row?.full_part_number + row?.revision;
+    // full_part_number already contains the properly formatted part number with revision
+    return row?.full_part_number;
   }
   if (row.type === "PCBA" || row.type === "Pcba") {
+    const useNumberRevisions = row?.organization?.use_number_revisions || false;
+    const formattedNumber = formatPartNumberWithRevision(`PCBA${row?.part_number}`, row?.revision, useNumberRevisions);
     return (
       <span data-toggle="tooltip" data-placement="top" title={getMpn(row)}>
         <a style={{ marginRight: "0.3rem" }}>
-          {`${row?.type}${row?.part_number}${row?.revision}`}
+          {formattedNumber}
         </a>
         {not_latest_rev_warning(row)}
       </span>
     );
   } else if (row.type == "ASM" || row.type == "Assembly") {
+    const useNumberRevisions = row?.organization?.use_number_revisions || false;
+    const formattedNumber = formatPartNumberWithRevision(`ASM${row?.part_number}`, row?.revision, useNumberRevisions);
     return (
       <span data-toggle="tooltip" data-placement="top" title={getMpn(row)}>
         <a
           style={{ marginRight: "0.3rem" }}
-        >{`ASM${row?.part_number}${row?.revision}`}</a>
+        >{formattedNumber}</a>
         {not_latest_rev_warning(row)}
       </span>
     );
   } else {
+    const useNumberRevisions = row?.organization?.use_number_revisions || false;
+    const formattedNumber = formatPartNumberWithRevision(`PRT${row?.part_number}`, row?.revision, useNumberRevisions);
     return (
       <span data-toggle="tooltip" data-placement="top" title={getMpn(row)}>
         <a
           style={{ marginRight: "0.3rem" }}
-        >{`PRT${row?.part_number}${row?.revision}`}</a>
+        >{formattedNumber}</a>
         {not_latest_rev_warning(row)}
       </span>
     );

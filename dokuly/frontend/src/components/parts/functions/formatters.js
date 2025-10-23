@@ -4,7 +4,8 @@ import DokulyImage from "../../dokuly_components/dokulyImage";
 
 export const numberFormatter = (cell, row) => {
   if (row !== undefined && row != null) {
-    return `${row?.full_part_number}${row?.revision}`;
+    // full_part_number already contains the properly formatted part number with revision
+    return row?.full_part_number;
   }
   return row?.full_part_number;
 };

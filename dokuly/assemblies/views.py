@@ -46,7 +46,6 @@ def create_new_assembly(request, **kwargs):
     try:
         assembly_entry = Assembly()
         assembly_entry.part_number = get_next_part_number()
-        assembly_entry.full_part_number = f"ASM{assembly_entry.part_number}"
         assembly_entry.price = 0
         if APIAndProjectAccess.has_validated_key(request):
             if "created_by" in data:
@@ -55,9 +54,40 @@ def create_new_assembly(request, **kwargs):
         else:
             assembly_entry.created_by = request.user
         assembly_entry.release_state = "Draft"
-        assembly_entry.revision = "A"
         assembly_entry.is_latest_revision = True
         assembly_entry.is_archived = False
+        
+        # Get organization_id from user profile for revision system
+        organization_id = None
+        if hasattr(request.user, 'profile') and request.user.profile.organization_id:
+            organization_id = request.user.profile.organization_id
+        
+        # Set initial revision based on organization settings
+        from organizations.revision_utils import get_organization_revision_settings
+        if organization_id:
+            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
+            if use_number_revisions:
+                if revision_format == "major-minor":
+                    assembly_entry.revision = f"1{separator}0"
+                else:
+                    assembly_entry.revision = "1"
+            else:
+                assembly_entry.revision = "A"
+        else:
+            assembly_entry.revision = "A"
+        
+        # Format full_part_number based on organization revision settings
+        if organization_id:
+            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
+            if use_number_revisions:
+                # For number revisions, use underscore separator
+                assembly_entry.full_part_number = f"ASM{assembly_entry.part_number}_{assembly_entry.revision}"
+            else:
+                # For letter revisions, use direct concatenation
+                assembly_entry.full_part_number = f"ASM{assembly_entry.part_number}{assembly_entry.revision}"
+        else:
+            # Default to letter revision format
+            assembly_entry.full_part_number = f"ASM{assembly_entry.part_number}{assembly_entry.revision}"
 
         if "display_name" in data:
             assembly_entry.display_name = data["display_name"]
@@ -139,7 +169,7 @@ def get_single_asm(request, pk, **kwargs):
         if APIAndProjectAccess.has_validated_key(request):
             # Here we have already checked if the user has access to the project, dont need to check again
             asm = get_object_or_404(Assembly, id=pk)
-            serializer = AssemblySerializer(asm, many=False)
+            serializer = AssemblySerializer(asm, many=False, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             asm = get_object_or_404(
@@ -157,7 +187,7 @@ def get_single_asm(request, pk, **kwargs):
                 asm.markdown_notes = markdown_notes
                 asm.save()
 
-            serializer = AssemblySerializer(asm, many=False)
+            serializer = AssemblySerializer(asm, many=False, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
     except Assembly.DoesNotExist:
         return Response("ASM not found", status=status.HTTP_404_NOT_FOUND)
@@ -182,7 +212,7 @@ def get_latest_revisions(request, **kwargs):
             assemblies_query = assemblies_query.filter(
                 Q(project__project_members=user) | Q(project__isnull=True)
             ).prefetch_related("tags")
-        serializer = AssemblyTableSerializer(assemblies_query, many=True)
+        serializer = AssemblyTableSerializer(assemblies_query, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(f"Error: {str(e)}", status=status.HTTP_404_NOT_FOUND)
@@ -267,8 +297,29 @@ def new_revision(request, pk, **kwargs):
             newRevision.project = current_asm.project
             newRevision.part_number = current_asm.part_number
             newRevision.external_part_number = current_asm.external_part_number
-            newRevision.full_part_number = f"ASM{current_asm.part_number}"
-            newRevision.revision = increment_revision(current_asm.revision)
+            # Get organization_id from user profile for revision system
+            organization_id = None
+            if hasattr(request.user, 'profile') and request.user.profile.organization_id:
+                organization_id = request.user.profile.organization_id
+            
+            # Get revision type from request data (default to "major" for backward compatibility)
+            revision_type = data.get('revision_type', 'major')
+            
+            newRevision.revision = increment_revision(current_asm.revision, organization_id, revision_type)
+            
+            # Format full_part_number based on organization revision settings
+            from organizations.revision_utils import get_organization_revision_settings
+            if organization_id:
+                use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
+                if use_number_revisions:
+                    # For number revisions, use underscore separator
+                    newRevision.full_part_number = f"ASM{current_asm.part_number}_{newRevision.revision}"
+                else:
+                    # For letter revisions, use direct concatenation
+                    newRevision.full_part_number = f"ASM{current_asm.part_number}{newRevision.revision}"
+            else:
+                # Default to letter revision format
+                newRevision.full_part_number = f"ASM{current_asm.part_number}{newRevision.revision}"
             if APIAndProjectAccess.has_validated_key(request):
                 if "created_by" in data:
                     newRevision.created_by = User.objects.get(

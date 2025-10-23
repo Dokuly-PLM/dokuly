@@ -139,23 +139,45 @@ const LotBom = ({
         if (!(row.part || row.assembly || row.pcba)) {
           return "";
         }
+        const formatPartNumber = (item) => {
+          if (!item) return "";
+          const useNumberRevisions = item?.organization?.use_number_revisions || false;
+          if (useNumberRevisions) {
+            // For number revisions, full_part_number already includes the revision with underscore
+            return item.full_part_number;
+          }
+          // For letter revisions, append the revision to the base part number
+          return `${item.full_part_number}${item.revision}`;
+        };
+        
         if (row.part) {
-          return `${row.part.full_part_number}${row.part.revision}`;
+          return formatPartNumber(row.part);
         } else if (row.assembly) {
-          return `${row.assembly.full_part_number}${row.assembly.revision}`;
+          return formatPartNumber(row.assembly);
         }
-        return `${row.pcba.full_part_number}${row.pcba.revision}`;
+        return formatPartNumber(row.pcba);
       },
       csvFormatter: (row) => {
         if (!(row.part || row.assembly || row.pcba)) {
           return "";
         }
+        const formatPartNumber = (item) => {
+          if (!item) return "";
+          const useNumberRevisions = item?.organization?.use_number_revisions || false;
+          if (useNumberRevisions) {
+            // For number revisions, full_part_number already includes the revision with underscore
+            return item.full_part_number;
+          }
+          // For letter revisions, append the revision to the base part number
+          return `${item.full_part_number}${item.revision}`;
+        };
+        
         if (row.part) {
-          return `${row.part.full_part_number}${row.part.revision}`;
+          return formatPartNumber(row.part);
         } else if (row.assembly) {
-          return `${row.assembly.full_part_number}${row.assembly.revision}`;
+          return formatPartNumber(row.assembly);
         }
-        return `${row.pcba.full_part_number}${row.pcba.revision}`;
+        return formatPartNumber(row.pcba);
       },
       includeInCsv: true,
       defaultShowColumn: true,

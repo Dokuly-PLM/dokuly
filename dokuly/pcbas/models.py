@@ -21,7 +21,7 @@ class Pcba(models.Model):
     # The complete part number of a pcba. e.g. PCBA1234.
     full_part_number = models.CharField(null=True, blank=True, max_length=50)
 
-    revision = models.CharField(max_length=3, blank=True, null=True)
+    revision = models.CharField(max_length=10, blank=True, null=True)
     is_latest_revision = models.BooleanField(default=False, blank=True)
 
     # Revision notes are the data that will be used in revision tables.

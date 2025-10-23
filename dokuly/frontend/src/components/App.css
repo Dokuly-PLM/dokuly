@@ -284,6 +284,27 @@ kbd>kbd {
   box-shadow: 0 0 5px #165216ff !important;
 }
 
+/* DokulyDropdown menu styling */
+.dokuly-dropdown-menu .dropdown-item {
+  color: #212529 !important;
+  background-color: #ffffff !important;
+  border: none !important;
+  padding: 0.5rem 1rem !important;
+}
+
+.dokuly-dropdown-menu .dropdown-item:hover,
+.dokuly-dropdown-menu .dropdown-item:focus {
+  color: #ffffff !important;
+  background-color: #165216ff !important;
+  border: none !important;
+}
+
+.dokuly-dropdown-menu .dropdown-item.active {
+  color: #ffffff !important;
+  background-color: #165216ff !important;
+  border: none !important;
+}
+
 .dokuly-bg-secondary {
   background-color: #108e82ff;
   color: #000000ff;

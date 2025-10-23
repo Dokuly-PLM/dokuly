@@ -12,24 +12,19 @@ from parts.models import Part
 
 
 # TODO ensure this works for long strings of letters.
-def increment_revision(old_rev):
+def increment_revision(old_rev, organization_id=None, revision_type="major"):
     """Smart incrementing of revision.
-    Only works up to ZZ.!!
-
+    Supports both letter-based and number-based revisions.
+    
     ## Example
 
     >>> increment_revision("A")
     B
+    >>> increment_revision("1", organization_id=1)  # If org uses number revisions
+    2
     """
-    if old_rev[-1] == "Z" and len(old_rev) == 1:
-        return "AA"
-    elif old_rev[-1] == "Z":
-        new_letter = chr(ord(old_rev[-2]) + 1)
-        return old_rev[0:-3] + new_letter + "A"
-    elif 1 < len(old_rev):
-        new_letter = chr(ord(old_rev[-1]) + 1)
-        return old_rev[0:-1] + new_letter
-    return chr(ord(old_rev) + 1)
+    from organizations.revision_utils import increment_revision as smart_increment
+    return smart_increment(old_rev, organization_id, revision_type)
 
 
 def get_matches(array, target_mpn):

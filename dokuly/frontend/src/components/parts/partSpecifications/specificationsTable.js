@@ -237,7 +237,6 @@ const SpecificationsTable = (props) => {
               The table supports pasting from web tables. Simply copy the contents from web tables and paste into the key field.`
             }
           />
-
       <Row className="mt-1 ml-1 mr-1 align-items-center">
         <table className="table">
           <thead>

@@ -71,6 +71,27 @@ class Organization(models.Model):
     procurement_is_enabled = models.BooleanField(default=True, blank=True)
     requirement_is_enabled = models.BooleanField(default=True, blank=True)
 
+    # Revision system settings
+    use_number_revisions = models.BooleanField(default=False, blank=True)
+    revision_format = models.CharField(
+        max_length=20, 
+        default="major-minor", 
+        choices=[
+            ("major-only", "Major Only (1, 2, 3...)"),
+            ("major-minor", "Major-Minor (1-0, 1-1, 2-0...)")
+        ],
+        blank=True
+    )
+    revision_separator = models.CharField(
+        max_length=5,
+        default="-",
+        choices=[
+            ("-", "Dash (1-0, 1-1, 2-0...)"),
+            (".", "Dot (1.0, 1.1, 2.0...)")
+        ],
+        blank=True
+    )
+
     delivery_address = models.CharField(max_length=1000, blank=True, null=True)
     postal_code = models.CharField(max_length=1000, blank=True, null=True)
     country = models.CharField(max_length=1000, blank=True, null=True)

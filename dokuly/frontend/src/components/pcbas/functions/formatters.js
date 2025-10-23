@@ -5,6 +5,12 @@ import DokulyImage from "../../dokuly_components/dokulyImage";
 
 export const numberFormatter = (row) => {
   if (row) {
+    const useNumberRevisions = row?.organization?.use_number_revisions || false;
+    if (useNumberRevisions) {
+      // For number revisions, full_part_number already includes the revision with underscore
+      return row?.full_part_number;
+    }
+    // For letter revisions, append the revision to the base part number
     return `${row?.full_part_number}${row?.revision}`;
   }
   return row?.full_part_number;
@@ -197,7 +203,17 @@ export const partNumberFormatter = (cell, row) => {
         </Col>
         <Col className="col-auto col-sm-auto col-md-auto col-lg-auto col-xl-auto align-items-center">
           <h6 className="mt-2">
-            {row?.part?.full_part_number + row?.part?.revision}
+            {(() => {
+              const part = row?.part;
+              if (!part) return "";
+              const useNumberRevisions = part?.organization?.use_number_revisions || false;
+              if (useNumberRevisions) {
+                // For number revisions, full_part_number already includes the revision with underscore
+                return part?.full_part_number;
+              }
+              // For letter revisions, append the revision to the base part number
+              return `${part?.full_part_number}${part?.revision}`;
+            })()}
           </h6>
         </Col>
       </Row>

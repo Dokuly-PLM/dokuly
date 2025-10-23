@@ -90,7 +90,15 @@ const InlineItemSelector = ({ row, readOnly, onSelectItem, searchTerm }) => {
     const displayPartNumber =
       row?.full_part_number || row?.revision ? (
         <React.Fragment>
-          {`${row?.full_part_number}${row?.revision}`}{" "}
+          {(() => {
+            const useNumberRevisions = row?.organization?.use_number_revisions || false;
+            if (useNumberRevisions) {
+              // For number revisions, full_part_number already includes the revision with underscore
+              return row?.full_part_number;
+            }
+            // For letter revisions, append the revision to the base part number
+            return `${row?.full_part_number}${row?.revision}`;
+          })()}{" "}
           {not_latest_rev_warning(row)}
         </React.Fragment>
       ) : isEditing ? (
