@@ -17,6 +17,9 @@ testing_server = bool(int(os.environ.get("DJANGO_TESTING_SERVER", 0)))
 LOCAL_SERVER = local_server
 TESTING_SERVER = testing_server
 
+LOCAL_FORWARD_IP = os.getenv("LOCAL_FORWARD_IP", "localhost:8000")
+print(f"LOCAL_FORWARD_IP: {LOCAL_FORWARD_IP}")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 

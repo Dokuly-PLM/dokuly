@@ -850,7 +850,7 @@ def send_reset_pass_mail(request):
             "token": AuthToken.objects.create(user)[1],
             "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
         }
-        resetLink = f"https://{request.tenant}.dokuly.com/#/passwordRecovery/{token['token']}/{user.id}"
+        resetLink = f"http://{settings.LOCAL_FORWARD_IP}/#/passwordRecovery/{token['token']}/{user.id}"
         send_mail(
             subject='Password Recovery',
             message=f'Hello {user.username}\n\nSomeone has requested to reset the password connected to this email account.\nIF THIS WAS NOT YOU IGNORE THIS EMAIL\nClick here to reset you password: {resetLink}\n\n\nBest Regards,\nDokuly Team',
