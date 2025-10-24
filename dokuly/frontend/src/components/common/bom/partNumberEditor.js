@@ -31,6 +31,7 @@ const PartNumberEditor = ({
   is_locked_bom,
   setRefreshBom,
   setExpandCol,
+  organization,
   className = "d-flex w-100",
   innerClassName = "w-100",
   style = { minWidth: "200px" },
@@ -68,7 +69,7 @@ const PartNumberEditor = ({
           toast.error(`Error updating designator: ${error.message}`);
         });
     }
-  }, [selected_item]);
+  }, [selected_item, row.id, setExpandCol, setRefreshBom]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -85,7 +86,7 @@ const PartNumberEditor = ({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [setExpandCol]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -106,7 +107,7 @@ const PartNumberEditor = ({
       // Unbind the event listener on clean up
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [editorRef, globalPartSelectionRef]);
+  }, [setExpandCol]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -120,17 +121,37 @@ const PartNumberEditor = ({
       return "-";
     }
 
-    const displayPartNumber =
-      row?.full_part_number ? (
-        <React.Fragment>
-          {row?.full_part_number}{" "}
-          {not_latest_rev_warning(row)}
-        </React.Fragment>
-      ) : isEditing ? (
-        ""
-      ) : (
-        "Unknown"
-      );
+    // Get organization settings from props
+    const useNumberRevisions = organization?.use_number_revisions || false;
+
+    // Format part number with proper revision handling based on organization settings
+    let formattedPartNumber = "";
+    if (row?.full_part_number) {
+      
+      // Check if full_part_number already contains revision (has underscore)
+      const hasUnderscore = row.full_part_number.includes('_');
+      
+      if (useNumberRevisions || hasUnderscore) {
+        // For number revisions or if full_part_number already includes revision, use as-is
+        formattedPartNumber = row.full_part_number;
+      } else {
+        // For letter revisions, append the revision to the base part number
+        formattedPartNumber = `${row.full_part_number}${row.revision}`;
+      }
+    } else if (isEditing) {
+      formattedPartNumber = "";
+    } else {
+      formattedPartNumber = "Unknown";
+    }
+
+    const displayPartNumber = formattedPartNumber ? (
+      <React.Fragment>
+        {formattedPartNumber}{" "}
+        {not_latest_rev_warning(row)}
+      </React.Fragment>
+    ) : (
+      formattedPartNumber
+    );
 
     return displayPartNumber;
   }
@@ -147,6 +168,7 @@ const PartNumberEditor = ({
           <GlobalPartSelection
             searchTerm={searchTerm}
             setSelectedItem={setSelectedItem}
+            organization={organization}
           />
         </div>
       ) : (

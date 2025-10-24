@@ -40,6 +40,7 @@ export const getBomTableColumns = ({
             setRefreshBom={setRefreshBom}
             is_locked_bom={isLockedBom}
             setExpandCol={setExpandPnCol}
+            organization={organization}
           />
         );
       },
@@ -48,9 +49,68 @@ export const getBomTableColumns = ({
           return "";
         }
         if (row?.full_part_number) {
-          return row?.full_part_number;
+          // Get organization settings from the column configuration
+          const useNumberRevisions = organization?.use_number_revisions || false;
+          
+          
+          // Check if full_part_number already contains revision (has underscore)
+          const hasUnderscore = row.full_part_number.includes('_');
+          
+          if (useNumberRevisions || hasUnderscore) {
+            // For number revisions or if full_part_number already includes revision, use as-is
+            return row.full_part_number;
+          }
+          // For letter revisions, append the revision to the base part number
+          return `${row.full_part_number}${row.revision}`;
         }
         return "Unknown";
+      },
+      // Enhanced search functionality for part numbers
+      searchValue: (row) => {
+        const searchTerms = [];
+        
+        // Get organization settings from the column configuration
+        const useNumberRevisions = organization?.use_number_revisions || false;
+        
+        // Add properly formatted part number with revision based on organization settings
+        if (row?.full_part_number) {
+          
+          // Check if full_part_number already contains revision (has underscore)
+          const hasUnderscore = row.full_part_number.includes('_');
+          
+          if (useNumberRevisions || hasUnderscore) {
+            // For number revisions or if full_part_number already includes revision, use as-is
+            searchTerms.push(row.full_part_number);
+          } else {
+            // For letter revisions, append the revision to the base part number
+            const formattedPartNumber = `${row.full_part_number}${row.revision}`;
+            searchTerms.push(formattedPartNumber);
+          }
+        }
+        
+        // Add base part number without revision for better search (only for letter revisions)
+        if (row?.part_number && !(useNumberRevisions || hasUnderscore)) {
+          searchTerms.push(row.part_number.toString());
+        }
+        
+        // For number revisions, don't add separate revision field to search terms
+        // since it's already included in full_part_number
+        if (!(useNumberRevisions || hasUnderscore) && row?.revision) {
+          searchTerms.push(row.revision);
+        }
+        
+        
+        // Add MPN for cross-reference searches
+        if (row?.mpn) {
+          searchTerms.push(row.mpn);
+        }
+        
+        // Add temporary MPN for imported BOMs
+        if (row?.temporary_mpn && row.temporary_mpn !== "-") {
+          searchTerms.push(row.temporary_mpn);
+        }
+        
+        return searchTerms.join(" ");
       },
       includeInCsv: true,
       defaultShowColumn: true,
@@ -68,6 +128,27 @@ export const getBomTableColumns = ({
       key: "display_name",
       header: "Display Name",
       csvFormatter: (row) => (row?.display_name ? `${row?.display_name}` : ""),
+      // Enhanced search functionality for display names
+      searchValue: (row) => {
+        const searchTerms = [];
+        
+        // Add display name
+        if (row?.display_name) {
+          searchTerms.push(row.display_name);
+        }
+        
+        // Add description if available
+        if (row?.description) {
+          searchTerms.push(row.description);
+        }
+        
+        // Add manufacturer for manufacturer-based searches
+        if (row?.manufacturer) {
+          searchTerms.push(row.manufacturer);
+        }
+        
+        return searchTerms.join(" ");
+      },
       defaultShowColumn: true,
       maxWidth: includeSelector ? "400px" : expandPnCol ? "160px" : "800px",
     },
@@ -91,6 +172,27 @@ export const getBomTableColumns = ({
         </span>
       ),
       csvFormatter: (row) => (row.mpn ? `${row.mpn}` : ""),
+      // Enhanced search functionality for MPN
+      searchValue: (row) => {
+        const searchTerms = [];
+        
+        // Add MPN
+        if (row?.mpn) {
+          searchTerms.push(row.mpn);
+        }
+        
+        // Add temporary MPN for imported BOMs
+        if (row?.temporary_mpn && row.temporary_mpn !== "-") {
+          searchTerms.push(row.temporary_mpn);
+        }
+        
+        // Add manufacturer for manufacturer-based searches
+        if (row?.manufacturer) {
+          searchTerms.push(row.manufacturer);
+        }
+        
+        return searchTerms.join(" ");
+      },
       includeInCsv: true,
       defaultShowColumn: true,
       maxWidth: includeSelector ? "200px" : expandPnCol ? "160px" : "800px",
@@ -115,6 +217,22 @@ export const getBomTableColumns = ({
         />
       ),
       csvFormatter: (row) => (row?.designator ? `${row.designator}` : ""),
+      // Enhanced search functionality for designators
+      searchValue: (row) => {
+        const searchTerms = [];
+        
+        // Add designator
+        if (row?.designator) {
+          searchTerms.push(row.designator);
+        }
+        
+        // Add comment for comment-based searches
+        if (row?.comment) {
+          searchTerms.push(row.comment);
+        }
+        
+        return searchTerms.join(" ");
+      },
       includeInCsv: true,
       defaultShowColumn: true,
       maxWidth: expandPnCol ? "200px" : "600px",
@@ -222,7 +340,7 @@ export const getBomTableColumns = ({
     });
   }
 
-  partInformationColumns.forEach((key) => {
+  for (const key of partInformationColumns) {
     columns.push({
       key: key,
       header: key,
@@ -232,7 +350,7 @@ export const getBomTableColumns = ({
       includeInCsv: true,
       defaultShowColumn: false,
     });
-  });
+  }
 
   if (!isLockedBom) {
     columns.push({

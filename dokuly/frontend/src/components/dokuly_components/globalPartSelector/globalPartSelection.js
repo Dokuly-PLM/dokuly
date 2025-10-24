@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Container, Form, Row, Col } from "react-bootstrap";
 import SearchButton from "../SearchButton";
 import { searchPartsGlobal } from "../funcitons/queries";
@@ -6,12 +6,12 @@ import { toast } from "react-toastify";
 import highlightSearchTerm from "../funcitons/highlightSearchTerm"; // TODO
 import { PartSuggestions } from "./partSuggestions";
 
-const GlobalPartSelection = ({ setSelectedItem, searchTerm = "" }) => {
+const GlobalPartSelection = ({ setSelectedItem, searchTerm = "", organization }) => {
   const [query, setQuery] = useState(searchTerm);
   const [results, setResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const handleSearch = async (searchQuery) => {
+  const handleSearch = useCallback(async (searchQuery) => {
     try {
       const response = await searchPartsGlobal(searchQuery);
       const searchResults = response.data;
@@ -25,14 +25,14 @@ const GlobalPartSelection = ({ setSelectedItem, searchTerm = "" }) => {
     } catch (error) {
       toast.error(`Error searching for global items: ${error.message}`);
     }
-  };
+  }, []);
 
   // Effect to automatically search when searchTerm changes
   useEffect(() => {
     if (searchTerm) {
       handleSearch(searchTerm);
     }
-  }, [searchTerm]);
+  }, [searchTerm, handleSearch]);
 
   const enter_part_information = (suggestion) => {
     if (suggestion == null) {
@@ -102,6 +102,7 @@ const GlobalPartSelection = ({ setSelectedItem, searchTerm = "" }) => {
             suggestions={sortedResults}
             onSelectSuggestion={enter_part_information}
             onHide={() => setShowSuggestions(false)}
+            organization={organization}
           />
         )}
       </Row>

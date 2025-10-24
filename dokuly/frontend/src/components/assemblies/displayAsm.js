@@ -33,6 +33,7 @@ import useBomIssues from "../common/hooks/useBomIssues";
 import useLocationEntires from "../common/hooks/useLocationEntires";
 import useLocations from "../common/hooks/useLocations";
 import InventoryTable from "../dokuly_components/dokulyInventory/inventoryTable";
+import WhereUsedTable from "../common/whereUsed/whereUsedTable";
 import InventoryStatus from "../dokuly_components/dokulyInventory/inventoryStatus";
 
 export const getIssueColor = (issue, app) => {
@@ -312,7 +313,7 @@ const DisplayASM = (props) => {
     refreshPart: setRefresh,
   };
 
-  const tabs = [
+  const baseTabs = [
     {
       eventKey: "overview",
       title: "Overview",
@@ -447,13 +448,17 @@ const DisplayASM = (props) => {
         />
       ),
     },
-    {
-      eventKey: "reference-documents",
-      title: "Reference documents",
-      content: (
-        <ReferenceDocumentsTable asm_id={currentASMID} asm={asmDetailed} />
-      ),
-    },
+  ];
+
+  const referenceDocumentsTab = {
+    eventKey: "reference-documents",
+    title: "Reference documents",
+    content: (
+      <ReferenceDocumentsTable asm_id={currentASMID} asm={asmDetailed} />
+    ),
+  };
+
+  const remainingTabs = [
     {
       eventKey: "revisions",
       title: "Revisions",
@@ -463,6 +468,25 @@ const DisplayASM = (props) => {
         </div>
       ),
     },
+    {
+      eventKey: "where-used",
+      title: "Where Used",
+      content: (
+        <div className="row m-3">
+          <WhereUsedTable 
+            app="assemblies" 
+            itemId={currentASMID} 
+            itemType="Assembly"
+          />
+        </div>
+      ),
+    },
+  ];
+
+  const tabs = [
+    ...baseTabs,
+    ...(organization?.document_is_enabled ? [referenceDocumentsTab] : []),
+    ...remainingTabs,
   ];
 
   return (

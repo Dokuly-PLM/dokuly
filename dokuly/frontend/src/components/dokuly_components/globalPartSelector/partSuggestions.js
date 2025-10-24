@@ -6,6 +6,7 @@ export const PartSuggestions = ({
   style,
   onHide,
   searchTerm,
+  organization,
 }) => {
   const highlightSearchTerm = (text) => {
     if (!text) {
@@ -13,19 +14,20 @@ export const PartSuggestions = ({
     }
 
     const parts = text.split(new RegExp(`(${searchTerm})`, "gi"));
-    return parts.map((part, index) =>
-      part.toLowerCase() === searchTerm.toLowerCase() ? (
-        <strong key={index}>{part}</strong>
+    return parts.map((part, index) => {
+      const key = `${part}-${index}`;
+      return part.toLowerCase() === searchTerm.toLowerCase() ? (
+        <strong key={key}>{part}</strong>
       ) : (
-        part
-      ),
-    );
+        <span key={key}>{part}</span>
+      );
+    });
   };
 
   return (
     <div className="part-suggestions" style={{ ...style }}>
       <ul className="list-group scrollable-list">
-        {suggestions.map((suggestion, index) => {
+        {suggestions.map((suggestion) => {
           let formattedProjectTitle = "";
           const { full_part_number, revision, display_name, project_title } =
             suggestion;
@@ -34,7 +36,7 @@ export const PartSuggestions = ({
           }
 
           const combinedText = `${(() => {
-            const useNumberRevisions = suggestion?.organization?.use_number_revisions || false;
+            const useNumberRevisions = organization?.use_number_revisions || false;
             if (useNumberRevisions) {
               // For number revisions, full_part_number already includes the revision with underscore
               return full_part_number;
@@ -46,7 +48,7 @@ export const PartSuggestions = ({
           return (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
             <li
-              key={index}
+              key={`${full_part_number}-${revision}`}
               className="list-group-item d-flex align-items-center"
               onClick={() => {
                 onSelectSuggestion(suggestion);

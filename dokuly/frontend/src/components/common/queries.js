@@ -35,7 +35,7 @@ export const tokenConfig = () => {
   };
   // If token, add to header config
   if (token) {
-    config.headers["Authorization"] = `Token ${token}`;
+    config.headers.Authorization = `Token ${token}`;
   }
   return config;
 };
@@ -59,7 +59,7 @@ export const getRelatedProject = (relatedObjectId, app) => {
 };
 
 export const getAllLots = () => {
-  const promise = axios.get(`/api/lots/`, tokenConfig());
+  const promise = axios.get("/api/lots/", tokenConfig());
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
@@ -88,6 +88,15 @@ export const getLotSerialNumbers = (lotId) => {
 export const getConnectedLotPos = (lotId) => {
   const promise = axios.get(
     `/api/lots/getConnectedPo/${lotId}/`,
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+export const fetchWhereUsedData = (app, itemId, latestOnly = true) => {
+  const promise = axios.get(
+    `api/assembly_bom/whereUsed/${app}/${itemId}/?latest_only=${latestOnly}`,
     tokenConfig()
   );
   const dataPromise = promise.then((res) => res);

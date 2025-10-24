@@ -176,3 +176,156 @@ def simple_asm_bom_search(request, search, currentBomId):
             result = {"asm": asm_serializer.data, "bom": serializer.data[i]}
             boms.append(result)
     return Response(boms, status=status.HTTP_200_OK)
+
+
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
+def get_where_used(request, app, item_id):
+    """
+    Get all BOMs where a specific part, assembly, or PCBA is used.
+    Returns assemblies and PCBAs that contain this item in their BOM.
+    Excludes self-references to prevent circular dependencies.
+    
+    Query parameters:
+    - latest_only: If true, only show usage in latest revisions (default: true)
+    """
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+    
+    if item_id is None or item_id == -1:
+        return Response("Invalid item id", status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get query parameter for latest revisions filter
+    latest_only = request.GET.get('latest_only', 'true').lower() == 'true'
+    
+    try:
+        from .models import Bom_item
+        
+        # Find all BOM items that reference this part/assembly/PCBA
+        # Filter by the correct field based on the app type
+        if app == "parts":
+            bom_items = Bom_item.objects.filter(part_id=item_id)
+        elif app == "assemblies":
+            bom_items = Bom_item.objects.filter(assembly_id=item_id)
+        elif app == "pcbas":
+            bom_items = Bom_item.objects.filter(pcba_id=item_id)
+        else:
+            # Fallback to original logic for unknown app types
+            bom_items = Bom_item.objects.filter(
+                Q(part_id=item_id) | Q(assembly_id=item_id) | Q(pcba_id=item_id)
+            )
+        
+        # Group by parent (assembly/pcba) and BOM to aggregate quantities and designators
+        grouped_data = {}
+        
+        for bom_item in bom_items:
+            bom = bom_item.bom
+            if not bom:
+                continue
+                
+            # Get the parent assembly or PCBA that owns this BOM
+            parent_assembly = None
+            parent_pcba = None
+            
+            if bom.assembly_id:
+                try:
+                    parent_assembly = Assembly.objects.get(id=bom.assembly_id)
+                    # Skip self-references for assemblies
+                    if app == "assemblies" and parent_assembly.id == item_id:
+                        continue
+                    # Filter by latest revision if requested
+                    if latest_only and not parent_assembly.is_latest_revision:
+                        continue
+                except Assembly.DoesNotExist:
+                    continue
+            elif bom.pcba_id:
+                try:
+                    parent_pcba = Pcba.objects.get(id=bom.pcba_id)
+                    # Skip self-references for PCBAs
+                    if app == "pcbas" and parent_pcba.id == item_id:
+                        continue
+                    # Filter by latest revision if requested
+                    if latest_only and not parent_pcba.is_latest_revision:
+                        continue
+                except Pcba.DoesNotExist:
+                    continue
+            
+            # Create a unique key for grouping (parent + BOM)
+            if parent_assembly:
+                group_key = f"assembly_{parent_assembly.id}_{bom.id}"
+                parent_type = 'assembly'
+                parent_obj = parent_assembly
+            elif parent_pcba:
+                group_key = f"pcba_{parent_pcba.id}_{bom.id}"
+                parent_type = 'pcba'
+                parent_obj = parent_pcba
+            else:
+                continue
+            
+            # Initialize group if it doesn't exist
+            if group_key not in grouped_data:
+                grouped_data[group_key] = {
+                    'parent_type': parent_type,
+                    'parent': parent_obj,
+                    'bom_id': bom.id,
+                    'bom_name': bom.bom_name,
+                    'bom_comments': bom.comments,
+                    'total_quantity': 0,
+                    'designators': [],
+                    'bom_items': [],
+                    'all_mounted': True,
+                    'comments': []
+                }
+            
+            # Aggregate data - ensure quantities are integers
+            quantity = int(bom_item.quantity) if bom_item.quantity is not None else 0
+            grouped_data[group_key]['total_quantity'] += quantity
+            if bom_item.designator:
+                grouped_data[group_key]['designators'].append(bom_item.designator)
+            grouped_data[group_key]['bom_items'].append(bom_item.id)
+            if not bom_item.is_mounted:
+                grouped_data[group_key]['all_mounted'] = False
+            if bom_item.comment:
+                grouped_data[group_key]['comments'].append(bom_item.comment)
+        
+        # Convert grouped data to final format
+        where_used_data = []
+        
+        for group_key, group_data in grouped_data.items():
+            # Serialize parent data
+            if group_data['parent_type'] == 'assembly':
+                parent_serializer = AssemblySerializer(group_data['parent'], many=False)
+            else:
+                parent_serializer = PcbaSerializer(group_data['parent'], many=False)
+            
+            # Create designator string
+            designators_str = ', '.join(sorted(set(group_data['designators']))) if group_data['designators'] else 'No designators'
+            
+            # Create comments string
+            comments_str = '; '.join(filter(None, group_data['comments'])) if group_data['comments'] else ''
+            
+            result_item = {
+                'parent_type': group_data['parent_type'],
+                'parent': parent_serializer.data,
+                'bom_id': group_data['bom_id'],
+                'bom_name': group_data['bom_name'],
+                'bom_comments': group_data['bom_comments'],
+                'total_quantity': int(group_data['total_quantity']),  # Ensure integer
+                'designators': designators_str,
+                'bom_item_count': len(group_data['bom_items']),
+                'all_mounted': group_data['all_mounted'],
+                'comments': comments_str,
+                'bom_items': group_data['bom_items']  # For debugging/tracking
+            }
+            
+            where_used_data.append(result_item)
+        
+        return Response(where_used_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            f"get_where_used failed: {e}",
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

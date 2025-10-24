@@ -34,6 +34,7 @@ import InventoryTable from "../dokuly_components/dokulyInventory/inventoryTable"
 import useLocationEntires from "../common/hooks/useLocationEntires";
 import useLocations from "../common/hooks/useLocations";
 import InventoryStatus from "../dokuly_components/dokulyInventory/inventoryStatus";
+import WhereUsedTable from "../common/whereUsed/whereUsedTable";
 
 const DisplayPcba = (props) => {
   const location = useLocation();
@@ -196,7 +197,7 @@ const DisplayPcba = (props) => {
     refreshPart: setRefresh,
   };
 
-  const tabs = [
+  const baseTabs = [
     {
       eventKey: "overview",
       title: "Overview",
@@ -356,17 +357,21 @@ const DisplayPcba = (props) => {
         />
       ),
     },
-    {
-      eventKey: "reference-documents",
-      title: "Reference documents",
-      content: (
-        <>
-          <div className="row m-3">
-            <ReferenceDocumentsTable pcba_id={pcba?.id} />
-          </div>
-        </>
-      ),
-    },
+  ];
+
+  const referenceDocumentsTab = {
+    eventKey: "reference-documents",
+    title: "Reference documents",
+    content: (
+      <>
+        <div className="row m-3">
+          <ReferenceDocumentsTable pcba_id={pcba?.id} />
+        </div>
+      </>
+    ),
+  };
+
+  const remainingTabs = [
     {
       eventKey: "revisions",
       title: "Revisions",
@@ -382,6 +387,25 @@ const DisplayPcba = (props) => {
         </>
       ),
     },
+    {
+      eventKey: "where-used",
+      title: "Where Used",
+      content: (
+        <div className="row m-3">
+          <WhereUsedTable 
+            app="pcbas" 
+            itemId={id} 
+            itemType="PCBA"
+          />
+        </div>
+      ),
+    },
+  ];
+
+  const tabs = [
+    ...baseTabs,
+    ...(organization?.document_is_enabled ? [referenceDocumentsTab] : []),
+    ...remainingTabs,
   ];
 
   return (
