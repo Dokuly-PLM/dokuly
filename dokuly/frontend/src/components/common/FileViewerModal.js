@@ -38,8 +38,74 @@ export default function FileViewerModal({
   const extension = fileName?.split(".").pop().toLowerCase();
   let content;
 
+
   if (error) {
     content = <p>{error}</p>;
+  } else if (extension === "step" || extension === "stp") {
+    // Handle STEP files with the StepViewer component
+    return (
+      <DokulyModal
+        show={isOpen}
+        onHide={handleClose}
+        title="STEP File Viewer"
+        size="full-screen"
+      >
+        <StepViewer
+          ref={stepViewerRef}
+          stepFileUrl={fileContent}
+          windowWidth={window.innerWidth * 0.9}
+          windowHeight={window.innerHeight * 0.8}
+        />
+      </DokulyModal>
+    );
+  } else if (extension === "gcode" || extension === "nc") {
+    // Handle G-code files with the GCodeViewerComponent
+    return (
+      <DokulyModal
+        show={isOpen}
+        onHide={handleClose}
+        title="G-Code Viewer"
+        size="full-screen"
+      >
+        <GCodeViewerComponent fileUri={fileContent} />
+      </DokulyModal>
+    );
+  } else if (
+    extension === "js" ||
+    extension === "ts" ||
+    extension === "jsx" ||
+    extension === "tsx" ||
+    extension === "py" ||
+    extension === "java" ||
+    extension === "cpp" ||
+    extension === "c" ||
+    extension === "cs" ||
+    extension === "php" ||
+    extension === "rb" ||
+    extension === "go" ||
+    extension === "rs" ||
+    extension === "swift" ||
+    extension === "kt" ||
+    extension === "scala" ||
+    extension === "sh" ||
+    extension === "bash" ||
+    extension === "sql" ||
+    extension === "html" ||
+    extension === "css" ||
+    extension === "scss" ||
+    extension === "less" ||
+    extension === "json" ||
+    extension === "xml" ||
+    extension === "yaml" ||
+    extension === "yml" ||
+    extension === "md" ||
+    extension === "txt" ||
+    extension === "log"
+  ) {
+    // Handle code files with the CodeViewer component
+    content = (
+      <CodeViewer extension={extension} fileUri={fileContent} />
+    );
   } else if (
     extension === "pdf" ||
     extension === "svg" ||
