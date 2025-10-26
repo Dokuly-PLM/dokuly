@@ -28,6 +28,7 @@ from organizations.utils import (cancel_paddle_subscription,
                                  update_organization_users,
                                  update_paddle_subscription_count,
                                  update_subscriptions_from_paddle)
+from organizations.management.commands.migrate_revisions_to_numbers import fix_corrupted_revisions
 
 
 def validate_token(token):
@@ -564,3 +565,87 @@ def get_subscription_type(user, request):
     except Exception as e:
         print(str(e))
         return None
+
+
+@api_view(["GET"])
+@renderer_classes([JSONRenderer])
+@permission_classes([IsAuthenticated])
+def check_corrupted_revisions(request):
+    """Check if the organization has corrupted full_part_number values."""
+    try:
+        user_profile = get_object_or_404(Profile, user=request.user)
+        org_id = user_profile.organization_id
+        
+        if org_id is None:
+            return Response("No connected organization found", status=status.HTTP_204_NO_CONTENT)
+        
+        organization = get_object_or_404(Organization, id=org_id)
+        
+        # Only check if organization uses number revisions
+        if not organization.use_number_revisions:
+            return Response({"has_corrupted_revisions": False, "reason": "Organization uses letter revisions"})
+        
+        # Check for corrupted full_part_number values
+        from parts.models import Part
+        from assemblies.models import Assembly
+        from pcbas.models import Pcba
+        
+        user_profiles = Profile.objects.filter(organization_id=org_id)
+        user_ids = [profile.user_id for profile in user_profiles if profile.user_id]
+        
+        # Check parts
+        parts = Part.objects.filter(created_by_id__in=user_ids)
+        corrupted_parts = []
+        
+        for part in parts:
+            if part.full_part_number and part.revision:
+                # Determine correct prefix
+                prefix = part.part_type.prefix if part.part_type else "PRT"
+                correct_full_part_number = f"{prefix}{part.part_number}_{part.revision}"
+                
+                if part.full_part_number != correct_full_part_number:
+                    corrupted_parts.append({
+                        'id': part.id,
+                        'current': part.full_part_number,
+                        'correct': correct_full_part_number
+                    })
+        
+        has_corrupted = len(corrupted_parts) > 0
+        
+        return Response({
+            "has_corrupted_revisions": has_corrupted,
+            "corrupted_count": len(corrupted_parts),
+            "corrupted_items": corrupted_parts[:5] if has_corrupted else []  # Show first 5 examples
+        })
+        
+    except Exception as e:
+        return Response(f"Error checking corrupted revisions: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@renderer_classes([JSONRenderer])
+@permission_classes([IsAuthenticated])
+def fix_corrupted_revisions_api(request):
+    """Fix corrupted full_part_number values for the organization."""
+    try:
+        user_profile = get_object_or_404(Profile, user=request.user)
+        org_id = user_profile.organization_id
+        
+        if org_id is None:
+            return Response("No connected organization found", status=status.HTTP_204_NO_CONTENT)
+        
+        # Check if user has admin/owner permissions
+        if not check_permissions_owner(request.user):
+            return Response("Insufficient permissions", status=status.HTTP_403_FORBIDDEN)
+        
+        # Run the fix
+        total_fixed = fix_corrupted_revisions(org_id, dry_run=False)
+        
+        return Response({
+            "success": True,
+            "message": f"Successfully fixed {total_fixed} items with corrupted full_part_number values",
+            "total_fixed": total_fixed
+        })
+        
+    except Exception as e:
+        return Response(f"Error fixing corrupted revisions: {str(e)}", status=status.HTTP_400_BAD_REQUEST)

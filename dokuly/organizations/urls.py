@@ -40,4 +40,8 @@ urlpatterns = [
         "api/organizations/componentVault/request/",
         views.send_request_to_component_vault,
     ),
+    
+    # Revision system fixes
+    path("api/organizations/checkCorruptedRevisions/", views.check_corrupted_revisions),
+    path("api/organizations/fixCorruptedRevisions/", views.fix_corrupted_revisions_api),
 ]
