@@ -48,6 +48,77 @@ def migrate_organization_revisions(organization_id, dry_run=False, force=False):
     return total_migrated
 
 
+def fix_corrupted_revisions(organization_id, dry_run=False):
+    """
+    Fix corrupted full_part_number values by re-migrating from letter to number revisions.
+    This function temporarily switches the organization back to letter revisions,
+    then runs the corrected migration to number revisions.
+    """
+    try:
+        organization = Organization.objects.get(id=organization_id)
+    except Organization.DoesNotExist:
+        raise ValueError(f'Organization with ID {organization_id} does not exist')
+
+    if not organization.use_number_revisions:
+        raise ValueError(f'Organization {organization.name} does not use number revisions. This fix is only for organizations that have already migrated to number revisions.')
+
+    print(f"Fixing corrupted revisions for organization: {organization.name}")
+    print(f"Current settings:")
+    print(f"  - use_number_revisions: {organization.use_number_revisions}")
+    print(f"  - revision_format: {organization.revision_format}")
+    print(f"  - revision_separator: {organization.revision_separator}")
+    print(f"Dry run: {dry_run}")
+    print("-" * 60)
+    
+    if not dry_run:
+        # Step 1: Temporarily switch back to letter revisions
+        print("Step 1: Switching organization back to letter revisions...")
+        organization.use_number_revisions = False
+        organization.save()
+        print("✓ Organization switched to letter revisions")
+        
+        # Step 2: Run the corrected migration to number revisions
+        print("\nStep 2: Running corrected migration to number revisions...")
+        total_migrated = migrate_organization_revisions(organization_id, dry_run=False, force=True)
+        print(f"✓ Migration completed. {total_migrated} items migrated")
+        
+        print("\n" + "="*60)
+        print("RE-MIGRATION COMPLETED SUCCESSFULLY")
+        print("="*60)
+        print(f"Total items re-migrated: {total_migrated}")
+        print("All full_part_number values should now be correctly formatted.")
+        
+    else:
+        # Dry run - just show what would happen
+        print("DRY RUN - No changes will be made")
+        print("\nWhat would happen:")
+        print("1. Organization would be switched back to letter revisions")
+        print("2. Corrected migration would be run to number revisions")
+        print("3. All full_part_number values would be fixed")
+        
+        # Estimate how many items would be affected
+        from profiles.models import Profile
+        from parts.models import Part
+        from assemblies.models import Assembly
+        from pcbas.models import Pcba
+        
+        user_profiles = Profile.objects.filter(organization_id=organization.id)
+        user_ids = [profile.user_id for profile in user_profiles if profile.user_id]
+        
+        parts_count = Part.objects.filter(created_by_id__in=user_ids).count()
+        assemblies_count = Assembly.objects.filter(created_by_id__in=user_ids).count()
+        pcbas_count = Pcba.objects.filter(created_by_id__in=user_ids).count()
+        total_count = parts_count + assemblies_count + pcbas_count
+        
+        print(f"\nEstimated items to be re-migrated:")
+        print(f"  - Parts: {parts_count}")
+        print(f"  - Assemblies: {assemblies_count}")
+        print(f"  - PCBAs: {pcbas_count}")
+        print(f"  - Total: {total_count}")
+    
+    return total_migrated if not dry_run else 0
+
+
 def _migrate_parts(organization, revision_format, separator, dry_run):
     """Migrate parts for the organization."""
     from profiles.models import Profile
@@ -102,6 +173,9 @@ def _migrate_item_revision(item, revision_format, separator, dry_run):
     Also updates full_part_number to include underscore separator for number revisions.
     Returns True if migration was performed, False if skipped.
     """
+    # Store the original revision before any changes
+    original_revision = item.revision
+    
     # Handle items without revision - give them a default revision and format full_part_number
     if not item.revision:
         # For items without revision, give them a default revision and format full_part_number
@@ -166,11 +240,12 @@ def _migrate_item_revision(item, revision_format, separator, dry_run):
         if needs_underscore_update and hasattr(item, 'full_part_number') and item.full_part_number:
             # Remove old revision from full_part_number and add new one with underscore
             base_number = item.full_part_number
-            if item.revision and not base_number.endswith(item.revision):
-                # Find the last occurrence of the old revision and remove it
-                old_revision = item.revision
-                if old_revision in base_number:
-                    base_number = base_number.rsplit(old_revision, 1)[0]
+            
+            # Use the ORIGINAL revision to remove from full_part_number, not the updated one
+            if original_revision and not base_number.endswith(original_revision):
+                # Find the last occurrence of the original revision and remove it
+                if original_revision in base_number:
+                    base_number = base_number.rsplit(original_revision, 1)[0]
             
             item.full_part_number = f"{base_number}_{new_revision}"
         
@@ -198,23 +273,43 @@ class Command(BaseCommand):
             action='store_true',
             help='Force migration even if organization already uses number revisions'
         )
+        parser.add_argument(
+            '--fix-corrupted',
+            action='store_true',
+            help='Fix corrupted full_part_number values by re-migrating from letter to number revisions'
+        )
 
     def handle(self, *args, **options):
         org_id = options['organization_id']
         dry_run = options['dry_run']
         force = options['force']
+        fix_corrupted = options['fix_corrupted']
 
         try:
-            total_migrated = migrate_organization_revisions(org_id, dry_run, force)
-            
-            if not dry_run:
-                self.stdout.write(
-                    self.style.SUCCESS(f'Successfully migrated {total_migrated} items to number-based revisions')
-                )
+            if fix_corrupted:
+                # Use the fix function for corrupted revisions
+                total_migrated = fix_corrupted_revisions(org_id, dry_run)
+                
+                if not dry_run:
+                    self.stdout.write(
+                        self.style.SUCCESS(f'Successfully fixed {total_migrated} items with corrupted full_part_number values')
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.SUCCESS(f'Would fix corrupted full_part_number values for the organization')
+                    )
             else:
-                self.stdout.write(
-                    self.style.SUCCESS(f'Would migrate {total_migrated} items to number-based revisions')
-                )
+                # Use the normal migration function
+                total_migrated = migrate_organization_revisions(org_id, dry_run, force)
+                
+                if not dry_run:
+                    self.stdout.write(
+                        self.style.SUCCESS(f'Successfully migrated {total_migrated} items to number-based revisions')
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.SUCCESS(f'Would migrate {total_migrated} items to number-based revisions')
+                    )
         except ValueError as e:
             raise CommandError(str(e))
         except Exception as e:

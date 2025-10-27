@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Form, Row, Col, Dropdown } from "react-bootstrap";
+import { Form, Row, Col, Dropdown, Alert, Button } from "react-bootstrap";
 import { editOrg } from "../../functions/queries";
 import { toast } from "react-toastify";
 import SubmitButton from "../../../dokuly_components/submitButton";
 import CheckBox from "../../../dokuly_components/checkBox";
 import DokulyDropdown from "../../../dokuly_components/dokulyDropdown";
+import axios from "axios";
+import { tokenConfig } from "../../../common/queries";
 
 const RevisionSystemSettings = ({ org, setRefresh }) => {
   const [useNumberRevisions, setUseNumberRevisions] = useState(
@@ -17,6 +19,9 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
     org?.revision_separator || "-"
   );
   const [isUpdating, setIsUpdating] = useState(false);
+  const [corruptedRevisions, setCorruptedRevisions] = useState(null);
+  const [isCheckingCorrupted, setIsCheckingCorrupted] = useState(false);
+  const [isFixingCorrupted, setIsFixingCorrupted] = useState(false);
 
   // Update state when org prop changes
   useEffect(() => {
@@ -26,6 +31,57 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
       setRevisionSeparator(org.revision_separator || "-");
     }
   }, [org]);
+
+  const checkCorruptedRevisions = async () => {
+    setIsCheckingCorrupted(true);
+    try {
+      const response = await axios.get("/api/organizations/checkCorruptedRevisions/", tokenConfig());
+      setCorruptedRevisions(response.data);
+      
+      if (response.data.has_corrupted_revisions) {
+        toast.warning(`Found ${response.data.corrupted_count} corrupted items`);
+      } else {
+        toast.success("No corrupted revisions found");
+      }
+    } catch (error) {
+      console.error("Error checking corrupted revisions:", error);
+      if (error.response?.status === 401) {
+        toast.error("Authentication required. Please log in again.");
+      } else if (error.response?.status === 403) {
+        toast.error("Insufficient permissions to check for corrupted revisions.");
+      } else {
+        toast.error(`Failed to check for corrupted revisions: ${error.response?.data?.detail || error.message}`);
+      }
+    } finally {
+      setIsCheckingCorrupted(false);
+    }
+  };
+
+  const fixCorruptedRevisions = async () => {
+    setIsFixingCorrupted(true);
+    try {
+      const response = await axios.post("/api/organizations/fixCorruptedRevisions/", {}, tokenConfig());
+      
+      if (response.data.success) {
+        toast.success(response.data.message);
+        setCorruptedRevisions(null);
+        setRefresh(true);
+      } else {
+        toast.error("Failed to fix corrupted revisions.");
+      }
+    } catch (error) {
+      console.error("Error fixing corrupted revisions:", error);
+      if (error.response?.status === 401) {
+        toast.error("Authentication required. Please log in again.");
+      } else if (error.response?.status === 403) {
+        toast.error("Insufficient permissions to fix corrupted revisions.");
+      } else {
+        toast.error(`Failed to fix corrupted revisions: ${error.response?.data?.detail || error.message}`);
+      }
+    } finally {
+      setIsFixingCorrupted(false);
+    }
+  };
 
   const handleSave = async () => {
     setIsUpdating(true);
@@ -41,6 +97,8 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
       if (response.status === 200) {
         toast.success("Revision system settings updated successfully.");
         setRefresh(true);
+        
+        // Don't auto-check for corrupted revisions after saving
       } else {
         toast.error("Failed to update revision system settings.");
       }
@@ -71,6 +129,54 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
       <p className="text-muted mb-3">
         Configure how revisions are displayed and managed for parts, assemblies, and PCBAs.
       </p>
+      
+      {/* Corrupted Revisions Alert */}
+      {corruptedRevisions && corruptedRevisions.has_corrupted_revisions && (
+        <Alert variant="warning" className="mb-3">
+          <Alert.Heading>Corrupted Revision Data Detected</Alert.Heading>
+          <p>
+            We found {corruptedRevisions.corrupted_count} items with corrupted full part numbers. 
+            This can happen when migrating from letter to number revisions.
+          </p>
+          {corruptedRevisions.corrupted_items.length > 0 && (
+            <div className="mb-3">
+              <strong>Examples:</strong>
+              <ul className="mb-0">
+                {corruptedRevisions.corrupted_items.map((item, index) => (
+                  <li key={index}>
+                    <code>{item.current}</code> → <code>{item.correct}</code>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <Button 
+            variant="warning" 
+            size="sm" 
+            onClick={fixCorruptedRevisions}
+            disabled={isFixingCorrupted}
+          >
+            {isFixingCorrupted ? "Fixing..." : "Fix Corrupted Revisions"}
+          </Button>
+        </Alert>
+      )}
+      
+      {/* Check for corrupted revisions button */}
+      {useNumberRevisions && (
+        <div className="mb-3">
+          <Button 
+            variant="outline-secondary" 
+            size="sm" 
+            onClick={checkCorruptedRevisions}
+            disabled={isCheckingCorrupted}
+          >
+            {isCheckingCorrupted ? "Checking..." : "Check for Corrupted Revisions"}
+          </Button>
+          <small className="text-muted d-block mt-1">
+            Check if any parts have corrupted full part numbers from previous migrations.
+          </small>
+        </div>
+      )}
         
         <Form>
           <Row>
