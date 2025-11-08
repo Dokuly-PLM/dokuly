@@ -313,6 +313,11 @@ def archive_revision(request, pk, **kwargs):
     **Optional fields:**
     - `description`: Description for the new revision (max 500 characters)
     - `revision_notes`: Notes describing the changes in this revision (max 20000 characters)
+    - `revision_type`: Type of revision ("major" or "minor", default: "major")
+      - Use "major" for significant changes (increments major version: 1-0 → 2-0, or 1 → 2)
+      - Use "minor" for minor changes (increments minor version: 1-0 → 1-1, or adds .1 in major-only format)
+      - Only applies when number-based revisions are enabled for the organization
+      - For letter-based revisions (A, B, C...), this parameter is ignored
     - `copyPrev`: Integer flag to copy previous BOM (1 to copy, 0 to not copy)
     - `bom_id`: BOM ID to copy (integer, used when copyPrev is 1)
     
@@ -326,6 +331,7 @@ def archive_revision(request, pk, **kwargs):
             'persistData': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Flag to persist data (must be true)', example=True),
             'description': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='Description for the new revision'),
             'revision_notes': openapi.Schema(type=openapi.TYPE_STRING, maxLength=20000, description='Notes describing the changes in this revision', example='Updated BOM and improved assembly process'),
+            'revision_type': openapi.Schema(type=openapi.TYPE_STRING, description='Type of revision (only applies when number-based revisions are enabled)', enum=['major', 'minor'], example='major', default='major'),
             'copyPrev': openapi.Schema(type=openapi.TYPE_INTEGER, description='Flag to copy previous BOM (1 to copy, 0 to not copy)', example=1, enum=[0, 1]),
             'bom_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='BOM ID to copy (used when copyPrev is 1)'),
         }
