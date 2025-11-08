@@ -95,9 +95,13 @@ def create_new_assembly(request, **kwargs):
         assembly_entry.is_latest_revision = True
         assembly_entry.is_archived = False
         
-        # Get organization_id from user profile for revision system
+        # Get organization_id from user profile or API key for revision system
         organization_id = None
-        if hasattr(request.user, 'profile') and request.user.profile.organization_id:
+        if APIAndProjectAccess.has_validated_key(request):
+            org_id = APIAndProjectAccess.get_organization_id(request)
+            if org_id != -1:
+                organization_id = org_id
+        elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
             organization_id = request.user.profile.organization_id
         
         # Set initial revision based on organization settings
@@ -379,9 +383,13 @@ def new_revision(request, pk, **kwargs):
             newRevision.project = current_asm.project
             newRevision.part_number = current_asm.part_number
             newRevision.external_part_number = current_asm.external_part_number
-            # Get organization_id from user profile for revision system
+            # Get organization_id from user profile or API key for revision system
             organization_id = None
-            if hasattr(request.user, 'profile') and request.user.profile.organization_id:
+            if APIAndProjectAccess.has_validated_key(request):
+                org_id = APIAndProjectAccess.get_organization_id(request)
+                if org_id != -1:
+                    organization_id = org_id
+            elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
                 organization_id = request.user.profile.organization_id
             
             # Get revision type from request data (default to "major" for backward compatibility)
@@ -446,6 +454,10 @@ def new_revision(request, pk, **kwargs):
                 )
                 newRevision.markdown_notes = new_markdown_notes
 
+            # Set revision_notes from request data if provided
+            if "revision_notes" in data:
+                newRevision.revision_notes = data["revision_notes"]
+
             newRevision.save()
 
             copy_markdown_tabs_to_new_revision(current_asm, newRevision)
@@ -473,10 +485,7 @@ def new_revision(request, pk, **kwargs):
                     Assembly.objects.filter(id=newRevision.id).update(
                         description=data["description"]
                     )
-                if "revision_notes" in data:
-                    Assembly.objects.filter(id=newRevision.id).update(
-                        revision_notes=data["revision_notes"]
-                    )
+                # revision_notes is handled above before save()
 
             link_issues_on_new_object_revision('assemblies', current_asm, newRevision)
 

@@ -247,7 +247,12 @@ def get_latest_revisions(request, **kwargs):
     Create a new revision of an existing PCBA.
     
     **Optional fields:**
+    - `revision_notes`: Notes describing the changes in this revision (max 20000 characters)
     - `revision_type`: Type of revision ("major" or "minor", default: "major")
+      - Use "major" for significant changes (increments major version: 1-0 → 2-0, or 1 → 2)
+      - Use "minor" for minor changes (increments minor version: 1-0 → 1-1, or adds .1 in major-only format)
+      - Only applies when number-based revisions are enabled for the organization
+      - For letter-based revisions (A, B, C...), this parameter is ignored
     - `created_by`: User ID (only for API key requests, integer)
     
     **Note:** The PCBA must be the latest revision to create a new revision. The new revision will inherit most fields from the previous revision.
@@ -257,7 +262,8 @@ def get_latest_revisions(request, **kwargs):
         type=openapi.TYPE_OBJECT,
         required=[],
         properties={
-            'revision_type': openapi.Schema(type=openapi.TYPE_STRING, description='Type of revision', enum=['major', 'minor'], example='major', default='major'),
+            'revision_notes': openapi.Schema(type=openapi.TYPE_STRING, maxLength=20000, description='Notes describing the changes in this revision', example='Updated PCB layout and component placement'),
+            'revision_type': openapi.Schema(type=openapi.TYPE_STRING, description='Type of revision (only applies when number-based revisions are enabled)', enum=['major', 'minor'], example='major', default='major'),
             'created_by': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID (only for API key requests)'),
         }
     ),
@@ -299,9 +305,13 @@ def new_revision(request, pk, **kwargs):
     new_pcba.created_by = old_pcba.created_by
     new_pcba.part_number = old_pcba.part_number
     new_pcba.external_part_number = old_pcba.external_part_number
-    # Get organization_id from user profile for revision system
+    # Get organization_id from user profile or API key for revision system
     organization_id = None
-    if hasattr(user, 'profile') and user.profile.organization_id:
+    if APIAndProjectAccess.has_validated_key(request):
+        org_id = APIAndProjectAccess.get_organization_id(request)
+        if org_id != -1:
+            organization_id = org_id
+    elif hasattr(user, 'profile') and user.profile.organization_id:
         organization_id = user.profile.organization_id
     
     # Get revision type from request data (default to "major" for backward compatibility)
@@ -362,6 +372,10 @@ def new_revision(request, pk, **kwargs):
             created_by=old_pcba.markdown_notes.created_by,
         )
         new_pcba.markdown_notes = new_markdown_notes
+
+    # Set revision_notes from request data if provided
+    if "revision_notes" in request.data:
+        new_pcba.revision_notes = request.data["revision_notes"]
 
     new_pcba.save()
 
@@ -584,9 +598,13 @@ def create_new_pcba(request, **kwargs):
         pcba.part_number = get_next_part_number()
         pcba.external_part_number = data.get("external_part_number", "")
         
-        # Get organization_id from user profile for revision system
+        # Get organization_id from user profile or API key for revision system
         organization_id = None
-        if hasattr(request.user, 'profile') and request.user.profile.organization_id:
+        if APIAndProjectAccess.has_validated_key(request):
+            org_id = APIAndProjectAccess.get_organization_id(request)
+            if org_id != -1:
+                organization_id = org_id
+        elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
             organization_id = request.user.profile.organization_id
         
         # Set initial revision based on organization settings

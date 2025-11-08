@@ -883,9 +883,13 @@ def create_new_part(request, **kwargs):
         new_part.release_state = "Draft"
         new_part.is_latest_revision = True
         
-        # Get organization_id from user profile for revision system
+        # Get organization_id from user profile or API key for revision system
         organization_id = None
-        if hasattr(user, 'profile') and user.profile.organization_id:
+        if APIAndProjectAccess.has_validated_key(request):
+            org_id = APIAndProjectAccess.get_organization_id(request)
+            if org_id != -1:
+                organization_id = org_id
+        elif hasattr(user, 'profile') and user.profile.organization_id:
             organization_id = user.profile.organization_id
         
         # Set initial revision based on organization settings
@@ -1315,10 +1319,18 @@ def new_revision(request, pk, **kwargs):
     new_part_rev.part_number = old_part_rev.part_number
     new_part_rev.part_type = old_part_rev.part_type
 
-    prefix = old_part_rev.part_type.prefix
-    # Get organization_id from user profile for revision system
+    # Get prefix - default to "PRT" if part_type is None
+    prefix = "PRT"
+    if old_part_rev.part_type and old_part_rev.part_type.prefix:
+        prefix = old_part_rev.part_type.prefix
+    
+    # Get organization_id from user profile or API key for revision system
     organization_id = None
-    if hasattr(request.user, 'profile') and request.user.profile.organization_id:
+    if APIAndProjectAccess.has_validated_key(request):
+        org_id = APIAndProjectAccess.get_organization_id(request)
+        if org_id != -1:
+            organization_id = org_id
+    elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
         organization_id = request.user.profile.organization_id
     
     # Get revision type from request data (default to "major" for backward compatibility)
@@ -1331,7 +1343,7 @@ def new_revision(request, pk, **kwargs):
     if organization_id:
         use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
         if use_number_revisions:
-            # For number revisions, use underscore separator
+            # For number revisions, use underscore separator between part number and revision
             new_part_rev.full_part_number = f"{prefix}{new_part_rev.part_number}_{new_part_rev.revision}"
         else:
             # For letter revisions, use direct concatenation
@@ -1400,6 +1412,10 @@ def new_revision(request, pk, **kwargs):
             created_by=old_part_rev.markdown_notes.created_by,
         )
         new_part_rev.markdown_notes = new_markdown_notes
+
+    # Set revision_notes from request data if provided
+    if "revision_notes" in request.data:
+        new_part_rev.revision_notes = request.data["revision_notes"]
 
     new_part_rev.save()
 
