@@ -20,10 +20,7 @@ export default function AssembliesTable(props) {
   const [assemblies, setAssemblies] = useState([]);
   const [unProcessedAssemblies, setUnProcessedAssemblies] = useState([]);
 
-  const [filtered_items, setFilteredItems] = useState([]);
-  const [selected_customer_id, setSelectedCustomerId] = useState("");
   const [customers, setCustomers] = useState([]);
-  const [selected_project_id, setSelectedProjectId] = useState("");
   const [projects, setProjecs] = useState([]);
 
   useEffect(() => {
@@ -99,38 +96,12 @@ export default function AssembliesTable(props) {
     }
   }, [unProcessedAssemblies, customers, projects]);
 
-  const [show_inactive_customers, setShowInactiveCustomers] = useState(false);
-  const [show_inactive_projects, setShowInactiveProjects] = useState(false);
 
-  useEffect(() => {
-    let temp_assemblies = assemblies;
-
-    // Customer Filter.
-    if (selected_customer_id !== "") {
-      temp_assemblies = temp_assemblies.filter((item) => {
-        return item.customer_id === parseInt(selected_customer_id);
-      });
-    }
-
-    // Project Filter.
-    if (selected_project_id !== "" && selected_customer_id !== "") {
-      temp_assemblies = temp_assemblies.filter((item) => {
-        return item.project === parseInt(selected_project_id);
-      });
-    }
-    setFilteredItems(temp_assemblies);
-  }, [assemblies, selected_customer_id, selected_project_id]);
-
-  function toggle(value) {
-    return !value;
-  }
-
-  const handleRowClick = (row) => {
-    const selectedItem = filtered_items[row];
-    if (event.ctrlKey || event.metaKey) {
-      window.open(`/#/assemblies/${selectedItem.id}`);
+  const handleRowClick = (row_id, row, event) => {
+    if (event?.ctrlKey || event?.metaKey) {
+      window.open(`/#/assemblies/${row.id}`);
     } else {
-      navigate(`/assemblies/${selectedItem.id}`);
+      navigate(`/assemblies/${row.id}`);
     }
   };
 
@@ -145,6 +116,7 @@ export default function AssembliesTable(props) {
       header: "",
       includeInCsv: false,
       formatter: thumbnailFormatter,
+      filterable: false,
     },
     {
       key: "display_name",
@@ -154,6 +126,11 @@ export default function AssembliesTable(props) {
       key: "tags",
       header: "Tags",
       maxWidth: "140px",
+      filterType: "multiselect",
+      filterValue: (row) => {
+        const tags = row?.tags ?? [];
+        return tags?.length > 0 ? tags.map((tag) => tag.name) : [];
+      },
       searchValue: (row) => {
         const tags = row?.tags ?? [];
         return tags?.length > 0 ? tags.map((tag) => tag.name).join(" ") : "";
@@ -165,17 +142,26 @@ export default function AssembliesTable(props) {
       defaultShowColumn: true,
     },
     {
+      key: "customer_name",
+      header: "Customer",
+      filterType: "select",
+    },
+    {
       key: "project_name",
       header: "Project",
+      filterType: "select",
     },
     {
       key: "release_state",
       header: "State",
+      filterType: "select",
+      filterValue: (row) => row.release_state || "",
       formatter: releaseStateFormatter,
     },
     {
       key: "last_updated",
       header: "Last modified",
+      filterType: "date",
       formatter: dateFormatter,
     },
   ];
@@ -187,133 +173,18 @@ export default function AssembliesTable(props) {
     >
       <NewAssemblyForm setRefresh={props?.setRefresh} />
       <div className="card rounded p-3">
-        <div className="row">
-          <div className="input-group p-3">
-            <div className="input-group-prepend">
-              <label className="input-group-text">Customer:&nbsp;</label>
-            </div>
-            <select
-              className="custom-select flex-grow-1"
-              name="selected_customer_id"
-              value={selected_customer_id}
-              onChange={(e) => {
-                setSelectedCustomerId(e.target.value);
-              }}
-            >
-              <option value={""}>All</option>
-              {customers
-                .filter((customer) => {
-                  if (!show_inactive_customers) {
-                    if (
-                      customer?.is_active === true ||
-                      customer?.is_active === null
-                    ) {
-                      return customer;
-                    } else {
-                      return "";
-                    }
-                  } else return customer;
-                })
-                .sort(function (a, b) {
-                  if (a.customer_id < b.customer_id) {
-                    return -1;
-                  } else {
-                    return 1;
-                  }
-                })
-                .map((customer) => {
-                  return (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.customer_id} - {customer.name}
-                    </option>
-                  );
-                })}
-            </select>
-          </div>
-          <div className="form-check mb-3 ml-4">
-            <input
-              className="dokuly-checkbox"
-              name="show_inactive_customers"
-              type="checkbox"
-              onChange={() => {
-                setShowInactiveCustomers(toggle);
-              }}
-              checked={show_inactive_customers}
-            />
-            <label className="form-check-label ml-1" htmlFor="flexCheckDefault">
-              Show inactive customers
-            </label>
-          </div>
-        </div>
-        <div className="row">
-          <div className="input-group p-3">
-            <div className="input-group-prepend">
-              <label className="input-group-text">Project:&nbsp;</label>
-            </div>
-            <select
-              className="custom-select flex-grow-1"
-              name="selected_project_id"
-              value={selected_project_id}
-              onChange={(e) => {
-                setSelectedProjectId(e.target.value);
-              }}
-            >
-              <option value={""}>All</option>
-              {projects
-                .filter((project) => {
-                  if (!show_inactive_projects) {
-                    if (
-                      project?.is_active === true ||
-                      project?.is_active === null
-                    ) {
-                      return project;
-                    } else {
-                      return "";
-                    }
-                  } else return project;
-                })
-                .map((project) => {
-                  return parseInt(project.customer_id) ===
-                    parseInt(selected_customer_id) ||
-                    selected_customer_id === "" ? (
-                    <option key={project.id} value={project.id}>
-                      {project.full_number} -&nbsp;
-                      {project.title}
-                    </option>
-                  ) : (
-                    ""
-                  );
-                })}
-            </select>
-          </div>
-          <div className="form-check mb-3 ml-4">
-            <input
-              className="dokuly-checkbox"
-              name="show_inactive_projects"
-              type="checkbox"
-              onChange={() => {
-                setShowInactiveProjects(toggle);
-              }}
-              checked={show_inactive_projects}
-            />
-            <label
-              className="form-check-label  ml-1"
-              htmlFor="flexCheckDefault"
-            >
-              Show inactive projects
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <DokulyTable
-            data={filtered_items}
-            columns={columns}
-            itemsPerPage={100}
-            onRowClick={handleRowClick}
-            defaultSort={{ columnNumber: 6, order: "desc" }}
-          />
-        </div>
+        <DokulyTable
+          tableName="assemblies"
+          data={assemblies}
+          columns={columns}
+          itemsPerPage={100}
+          onRowClick={handleRowClick}
+          defaultSort={{ columnNumber: 6, order: "desc" }}
+          showColumnFilters={true}
+          showFilterChips={true}
+          showSavedViews={true}
+          showColumnSelector={true}
+        />
       </div>
     </div>
   );

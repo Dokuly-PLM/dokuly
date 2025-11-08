@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Form, Row, Col, Button } from "react-bootstrap";
+import FilterPanel from "./filterPanel";
 
 const ColumnSelector = ({
   tableName = "",
@@ -7,6 +8,11 @@ const ColumnSelector = ({
   selectedColumns,
   setSelectedColumns,
   fontsize = "14px",
+  onSetAsDefault = null,
+  columnFilters = {},
+  onFilterChange = null,
+  tableData = [],
+  showFilters = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -22,6 +28,12 @@ const ColumnSelector = ({
         return [...currentColumns, columnToAdd];
       }
     });
+  };
+
+  const handleSetAsDefault = () => {
+    if (onSetAsDefault) {
+      onSetAsDefault(selectedColumns.map((col) => col.key));
+    }
   };
 
   const handleExpandToggle = () => {
@@ -52,39 +64,70 @@ const ColumnSelector = ({
         fontSize: fontsize,
       }}
     >
-      <Row className="justify-content-center">
-        <Col />
-        <Col md={10}>
-          {rows.map((row, rowIndex) => (
-            <Row key={rowIndex} className="align-items-center">
-              {row.map((column) => (
-                <Col key={column.key} md={12 / columnsPerRow}>
-                  <Form.Check
-                    className="dokuly-checkbox dokuly-checkbox-custom"
-                    type="checkbox"
-                    id={`checkbox-${column.key}`}
-                    label={column.header}
-                    checked={selectedColumns.some(
-                      (col) => col.key === column.key,
-                    )}
-                    onChange={() => handleColumnToggle(column.key)}
-                  />
-                </Col>
-              ))}
-            </Row>
-          ))}
-        </Col>
-        <Col />
-      </Row>
-      {columns.length > 12 && (
-        <Button
-          className="btn btn-bg-transparent"
-          onClick={handleExpandToggle}
-          style={{ marginTop: "10px" }}
-        >
-          {isExpanded ? "Collapse" : "Expand"}
-        </Button>
+      {showFilters && onFilterChange && (
+        <div style={{ borderBottom: "1px solid #ccc", marginBottom: "20px", paddingBottom: "20px" }}>
+          <h6 className="mb-3" style={{ fontWeight: "600" }}>Filters</h6>
+          <FilterPanel
+            columns={columns}
+            selectedColumns={selectedColumns}
+            columnFilters={columnFilters}
+            onFilterChange={onFilterChange}
+            tableData={tableData}
+            textSize={fontsize}
+          />
+        </div>
       )}
+      
+      <div>
+        <h6 className="mb-3" style={{ fontWeight: "600" }}>Columns</h6>
+        <Row className="justify-content-center">
+          <Col />
+          <Col md={10}>
+            {rows.map((row, rowIndex) => (
+              <Row key={rowIndex} className="align-items-center">
+                {row.map((column) => (
+                  <Col key={column.key} md={12 / columnsPerRow}>
+                    <Form.Check
+                      className="dokuly-checkbox dokuly-checkbox-custom"
+                      type="checkbox"
+                      id={`checkbox-${column.key}`}
+                      label={column.header}
+                      checked={selectedColumns.some(
+                        (col) => col.key === column.key,
+                      )}
+                      onChange={() => handleColumnToggle(column.key)}
+                    />
+                  </Col>
+                ))}
+              </Row>
+            ))}
+          </Col>
+          <Col />
+        </Row>
+        <Row className="justify-content-center mt-2">
+          <Col md={10}>
+            <div className="d-flex justify-content-between align-items-center">
+              {columns.length > 12 && (
+                <Button
+                  className="btn btn-bg-transparent"
+                  onClick={handleExpandToggle}
+                >
+                  {isExpanded ? "Collapse" : "Expand"}
+                </Button>
+              )}
+              {onSetAsDefault && (
+                <Button
+                  className="btn dokuly-btn-transparent"
+                  onClick={handleSetAsDefault}
+                  style={{ marginLeft: "auto" }}
+                >
+                  Set as Default Columns
+                </Button>
+              )}
+            </div>
+          </Col>
+        </Row>
+      </div>
     </div>
   );
 };

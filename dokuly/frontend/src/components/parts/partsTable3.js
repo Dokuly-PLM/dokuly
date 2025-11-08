@@ -22,9 +22,7 @@ export default function PartsTable(props) {
   const [unProcessedParts, setUnProcessedParts] = useState([]);
 
   const [data, setFilteredItems] = useState([]);
-  const [selected_customer_id, setSelectedCustomerId] = useState("");
   const [customers, setCustomers] = useState([]);
-  const [selected_project_id, setSelectedProjectId] = useState("");
   const [projects, setProjecs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [allowed_app, setAllowedApp] = useState(true);
@@ -41,7 +39,8 @@ export default function PartsTable(props) {
     const searchParam = params.get("search");
     const historyState = location.state?.searchTerm;
     setSearchTerm(searchParam || historyState || "");
-  }, [location.state]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, location.search]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -51,13 +50,16 @@ export default function PartsTable(props) {
       params.set("search", searchTerm);
       navigate(`${location.pathname}?${params.toString()}`);
     }
-  }, [searchTerm]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, location.pathname, location.search, navigate]);
 
   useEffect(() => {
+    // Apply search filter if needed (DokulyTable handles its own search now)
     const temp_parts = parts;
-    setFilteredItems(partSearch(searchTerm, temp_parts));
+    setFilteredItems(temp_parts);
   }, [parts]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: This effect should only run when refresh changes
   useEffect(() => {
     getUser().then((res) => {
       if (res.status === 200) {
@@ -152,6 +154,7 @@ export default function PartsTable(props) {
     setRefresh(false);
     // Updates tab title
     document.title = "Parts | Dokuly";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh]);
 
   useEffect(() => {
@@ -170,35 +173,6 @@ export default function PartsTable(props) {
     }
   }, [unProcessedParts, customers, projects]);
 
-  const [show_inactive_customers, setShowInactiveCustomers] = useState(false);
-  const [show_inactive_projects, setShowInactiveProjects] = useState(false);
-
-  useEffect(() => {
-    let temp_parts = parts;
-
-    // Customer Filter.
-    if (selected_customer_id !== "") {
-      temp_parts = temp_parts.filter((item) => {
-        return item.customer_id === parseInt(selected_customer_id);
-      });
-    }
-
-    // Project Filter.
-    if (selected_project_id !== "" && selected_customer_id !== "") {
-      temp_parts = temp_parts.filter((item) => {
-        return item.project === parseInt(selected_project_id);
-      });
-    }
-
-    // Search Filter.
-    temp_parts = partSearch(searchTerm, temp_parts);
-
-    setFilteredItems(temp_parts);
-  }, [parts, selected_customer_id, selected_project_id, searchTerm]);
-
-  function toggle(value) {
-    return !value;
-  }
 
   const handleRowClick = (rowIndex, row) => {
     if (event.ctrlKey || event.metaKey) {
@@ -223,6 +197,7 @@ export default function PartsTable(props) {
       header: "",
       formatter: (row) => imageFormatter({}, row, partTypes),
       maxWidth: "100px",
+      filterable: false,
     },
     {
       key: "display_name",
@@ -233,6 +208,11 @@ export default function PartsTable(props) {
       key: "tags",
       header: "Tags",
       maxWidth: "140px",
+      filterType: "multiselect",
+      filterValue: (row) => {
+        const tags = row?.tags ?? [];
+        return tags.length > 0 ? tags.map((tag) => tag.name) : [];
+      },
       searchValue: (row) => {
         const tags = row?.tags ?? [];
         return tags?.length > 0 ? tags.map((tag) => tag.name).join(" ") : "";
@@ -244,25 +224,37 @@ export default function PartsTable(props) {
       defaultShowColumn: true,
     },
     {
+      key: "customer_name",
+      header: "Customer",
+      filterType: "select",
+    },
+    {
       key: "project_name",
       header: "Project",
+      filterType: "select",
     },
     {
       key: "release_state",
       header: "State",
+      filterType: "select",
+      filterValue: (row) => row.release_state || "", // Use raw value for filtering
       formatter: (row) => {
         if (row.release_state === "Draft") {
           return <span className="badge badge-pill badge-warning">Draft</span>;
-        } else if (row.release_state === "Review") {
+        }
+        if (row.release_state === "Review") {
           return <span className="badge badge-pill badge-warning">Review</span>;
-        } else if (row.release_state === "Released") {
+        }
+        if (row.release_state === "Released") {
           return row.release_state;
         }
+        return null;
       },
     },
     {
       key: "last_updated",
       header: "Last Modified",
+      filterType: "date",
       formatter: (row) => dateFormatter(row),
     },
     {
@@ -278,6 +270,7 @@ export default function PartsTable(props) {
     {
       key: "current_total_stock",
       header: "Current Stock",
+      filterType: "number",
       defaultShowColumn: false,
     },
     {
@@ -299,139 +292,23 @@ export default function PartsTable(props) {
     >
       <PartNewForm setRefresh={props?.setRefresh} />
       <div className="card rounded p-3">
-        <div className="row">
-          <div className="input-group p-3">
-            <div className="input-group-prepend">
-              <label className="input-group-text">Customer:&nbsp;</label>
-            </div>
-            <select
-              className="custom-select flex-grow-1"
-              name="selected_customer_id"
-              value={selected_customer_id}
-              onChange={(e) => {
-                setSelectedCustomerId(e.target.value);
-              }}
-            >
-              <option value={""}>All</option>
-              {customers
-                .filter((customer) => {
-                  if (allowed_app === false) {
-                    return "";
-                  }
-                  if (!show_inactive_customers) {
-                    if (
-                      customer?.is_active === true ||
-                      customer?.is_active === null
-                    ) {
-                      return customer;
-                    } else {
-                      return "";
-                    }
-                  } else return customer;
-                })
-                .sort(function (a, b) {
-                  if (a.customer_id < b.customer_id) {
-                    return -1;
-                  } else {
-                    return 1;
-                  }
-                })
-                .map((customer) => {
-                  return (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.customer_id} - {customer.name}
-                    </option>
-                  );
-                })}
-            </select>
-          </div>
-          <div className="form-check mb-3 ml-4">
-            <input
-              className="dokuly-checkbox"
-              name="show_inactive_customers"
-              type="checkbox"
-              onChange={() => {
-                setShowInactiveCustomers(toggle);
-              }}
-              checked={show_inactive_customers}
-            />
-            <label className="form-check-label ml-1" htmlFor="flexCheckDefault">
-              Show inactive customers
-            </label>
-          </div>
-        </div>
-        <div className="row">
-          <div className="input-group p-3">
-            <div className="input-group-prepend">
-              <label className="input-group-text">Project:&nbsp;</label>
-            </div>
-            <select
-              className="custom-select flex-grow-1"
-              name="selected_project_id"
-              value={selected_project_id}
-              onChange={(e) => {
-                setSelectedProjectId(e.target.value);
-              }}
-            >
-              <option value={""}>All</option>
-              {projects
-                .filter((project) => {
-                  if (allowed_app === false) {
-                    return "";
-                  }
-                  if (!show_inactive_projects) {
-                    if (
-                      project?.is_active === true ||
-                      project?.is_active === null
-                    ) {
-                      return project;
-                    } else {
-                      return "";
-                    }
-                  } else return project;
-                })
-                .map((project) => {
-                  return parseInt(project.customer) ===
-                    parseInt(selected_customer_id) ||
-                    selected_customer_id === "" ? (
-                    <option key={project.id} value={project.id}>
-                      {project.full_number} -&nbsp;
-                      {project.title}
-                    </option>
-                  ) : (
-                    ""
-                  );
-                })}
-            </select>
-          </div>
-          <div className="form-check mb-3 ml-4">
-            <input
-              className="dokuly-checkbox"
-              name="show_inactive_projects"
-              type="checkbox"
-              onChange={() => {
-                setShowInactiveProjects(toggle);
-              }}
-              checked={show_inactive_projects}
-            />
-            <label className="form-check-label ml-1" htmlFor="flexCheckDefault">
-              Show inactive projects
-            </label>
-          </div>
-        </div>
-
         <Row className="p-2">
           {data.length > 0 ? (
             <DokulyTable
               data={data}
+              tableName="parts"
               columns={columns}
               showCsvDownload={true}
+              showColumnSelector={true}
               itemsPerPage={100}
               selectedRowIndex={null}
               onRowClick={handleRowClick}
               showPagination={true}
               showSearch={true}
-              defaultSort={{ columnNumber: 6, sorting: "desc" }}
+              showColumnFilters={true}
+              showFilterChips={true}
+              showSavedViews={true}
+              defaultSort={{ columnNumber: 6, order: "desc" }}
             />
           ) : (
             <>

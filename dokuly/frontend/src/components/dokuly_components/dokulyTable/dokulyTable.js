@@ -19,6 +19,8 @@ import HierarchicalCol from "./components/hierarchicalCol";
 import { useSpring, animated } from "react-spring";
 import DokulySettingsButton from "./components/editDropdown";
 import useTableSettings from "./components/useTableSettings";
+import FilterChips from "./components/filterChips";
+import SavedViews from "./components/savedViews";
 
 /**
  * DokulyTable is a table component that can be used to display data in a table format.
@@ -49,6 +51,9 @@ import useTableSettings from "./components/useTableSettings";
  * @param {Array} props.contextMenuActions - The actions to be displayed in the context menu
  * @param {Boolean} props.useOnRightClick - Whether to use the on right click functionality
  * @param {Boolean} props.showTableSettings - Whether to show the table settings button
+ * @param {Boolean} props.showColumnFilters - Whether to show column filter dropdowns
+ * @param {Boolean} props.showFilterChips - Whether to show active filter chips
+ * @param {Boolean} props.showSavedViews - Whether to show saved views functionality
  * @returns {JSX.Element}
  * @constructor
  * @example
@@ -101,6 +106,9 @@ function DokulyTableContents({
   contextMenuActions = [],
   useOnRightClick = false,
   showTableSettings = false,
+  showColumnFilters = false,
+  showFilterChips = true,
+  showSavedViews = false,
 }) {
 
   const [tableSettings, updateTableSetting] = useTableSettings(tableName);
@@ -117,14 +125,34 @@ function DokulyTableContents({
     updateTableSetting("textSize", newSize); // Persist to localStorage
   };
 
-  const [selectedColumns, setSelectedColumns] = useState(
-    columns.filter((col) => col.defaultShowColumn !== false)
-  );
+  // Get default columns from settings or use column defaults
+  const getDefaultColumns = () => {
+    if (tableSettings.defaultColumns && Array.isArray(tableSettings.defaultColumns)) {
+      // Load from saved settings
+      const savedCols = columns.filter((col) => tableSettings.defaultColumns.includes(col.key));
+      if (savedCols.length > 0) {
+        return savedCols;
+      }
+    }
+    // Use column defaultShowColumn property
+    return columns.filter((col) => col.defaultShowColumn !== false);
+  };
+
+  const [selectedColumns, setSelectedColumns] = useState(() => {
+    // Initialize with column defaults first (will be updated by useEffect if settings exist)
+    return columns.filter((col) => col.defaultShowColumn !== false);
+  });
+  const [isColumnSelectorVisible, setIsColumnSelectorVisible] = useState(false);
+
+  const handleSetDefaultColumns = (columnKeys) => {
+    updateTableSetting("defaultColumns", columnKeys);
+  };
   const [tableData, setTableData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOrder, setSortOrder] = useState(defaultSort.order);
   const [sortedColumn, setSortedColumn] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [columnFilters, setColumnFilters] = useState({});
 
   const [expandedRows, setExpandedRows] = useState({});
   const [parentToChildren, setParentToChildren] = useState({});
@@ -137,6 +165,72 @@ function DokulyTableContents({
   });
 
   const tableRef = useRef(null);
+
+  const handleLoadView = (view) => {
+    // Restore column selection
+    if (view.columns && Array.isArray(view.columns)) {
+      const restoredColumns = columns.filter((col) =>
+        view.columns.includes(col.key)
+      );
+      if (restoredColumns.length > 0) {
+        setSelectedColumns(restoredColumns);
+      }
+    }
+
+    // Restore filters
+    if (view.filters && typeof view.filters === "object") {
+      setColumnFilters(view.filters);
+    }
+
+    // Restore sort
+    if (view.sortedColumn) {
+      const column = columns.find((col) => col.key === view.sortedColumn);
+      if (column) {
+        setSortedColumn(column);
+        setSortOrder(view.sortOrder || "asc");
+      }
+    }
+
+    setCurrentPage(1);
+  };
+
+  // Load default columns from settings on mount and when they change
+  useEffect(() => {
+    if (columns && columns.length > 0) {
+      if (tableSettings.defaultColumns && Array.isArray(tableSettings.defaultColumns)) {
+        const defaultCols = columns.filter((col) =>
+          tableSettings.defaultColumns.includes(col.key)
+        );
+        if (defaultCols.length > 0) {
+          setSelectedColumns(defaultCols);
+          return;
+        }
+      }
+      // If no saved defaults, use column defaultShowColumn property
+      const defaultCols = columns.filter((col) => col.defaultShowColumn !== false);
+      if (defaultCols.length > 0) {
+        setSelectedColumns(defaultCols);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableSettings.defaultColumns, columns]);
+
+  // Load saved view on mount if available
+  useEffect(() => {
+    if (showSavedViews && tableName && columns && columns.length > 0) {
+      try {
+        const stored = localStorage.getItem(`tableViews_${tableName}`);
+        const savedViews = stored ? JSON.parse(stored) : [];
+        const defaultView = savedViews.find((v) => v.name === "Default") || savedViews[0];
+        if (defaultView) {
+          handleLoadView(defaultView);
+        }
+      } catch (error) {
+        console.error("Failed to load saved view:", error);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableName, showSavedViews]);
 
   useEffect(() => {
     if (data && data.length > 0) {
@@ -288,30 +382,144 @@ function DokulyTableContents({
     .map((term) => term.trim())
     .filter((term) => term);
 
+  const handleFilterChange = (columnKey, filterValue) => {
+    setColumnFilters((prev) => {
+      const newFilters = { ...prev };
+      if (!filterValue || (typeof filterValue === "string" && filterValue === "") ||
+          (Array.isArray(filterValue) && filterValue.length === 0) ||
+          (typeof filterValue === "object" && Object.values(filterValue).every(v => v == null || v === ""))) {
+        delete newFilters[columnKey];
+      } else {
+        newFilters[columnKey] = filterValue;
+      }
+      return newFilters;
+    });
+    // Reset to first page when filter changes - done in useEffect below
+  };
+
+  // Reset to page 1 when filters or search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [columnFilters, searchTerm]);
+
+  const handleRemoveFilter = (columnKey) => {
+    handleFilterChange(columnKey, "");
+  };
+
+  const handleClearAllFilters = () => {
+    setColumnFilters({});
+    setCurrentPage(1);
+  };
+
+  const applyColumnFilter = (row, column, filterValue) => {
+    if (!filterValue) return true;
+
+    const columnConfig = columns.find((col) => col.key === column.key);
+    const filterType = columnConfig?.filterType || "text";
+    const cellValue = columnConfig?.filterValue
+      ? columnConfig.filterValue(row)
+      : row[column.key];
+
+    if (cellValue == null) return false;
+
+    switch (filterType) {
+      case "text":
+        return String(cellValue)
+          .toLowerCase()
+          .includes(String(filterValue).toLowerCase());
+
+      case "select":
+        return String(cellValue) === String(filterValue);
+
+      case "multiselect":
+        if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+        // Handle both single values and arrays of values (e.g., tags)
+        if (Array.isArray(cellValue)) {
+          return cellValue.some((cv) =>
+            filterValue.some((fv) => String(cv) === String(fv))
+          );
+        }
+        const cellStr = String(cellValue);
+        return filterValue.some((fv) => cellStr === String(fv));
+
+      case "number":
+        const numValue = Number(cellValue);
+        if (isNaN(numValue)) return false;
+        if (filterValue.min != null && numValue < filterValue.min) return false;
+        if (filterValue.max != null && numValue > filterValue.max) return false;
+        return true;
+
+      case "date":
+        const dateValue = new Date(cellValue);
+        if (isNaN(dateValue.getTime())) return false;
+        if (filterValue.from) {
+          const fromDate = new Date(filterValue.from);
+          if (dateValue < fromDate) return false;
+        }
+        if (filterValue.to) {
+          const toDate = new Date(filterValue.to);
+          toDate.setHours(23, 59, 59, 999); // Include the entire end date
+          if (dateValue > toDate) return false;
+        }
+        return true;
+
+      default:
+        return true;
+    }
+  };
+
   const filterData = (data) => {
+    // Apply text search filter
     const terms = searchTerm
       .toLowerCase()
       .split(/\s*,\s*|\s+/)
       .filter(Boolean);
 
-    return data.filter((row) =>
-      terms.every((term) =>
-        columns.some((column) => {
-          if (column?.searchValue) {
-            const cellValue =
-              column.searchValue(row)?.toString().toLowerCase() || "";
+    let filtered = data;
+
+    // Apply text search
+    if (terms.length > 0) {
+      filtered = filtered.filter((row) =>
+        terms.every((term) =>
+          columns.some((column) => {
+            if (column?.searchValue) {
+              const cellValue =
+                column.searchValue(row)?.toString().toLowerCase() || "";
+              return cellValue.includes(term);
+            }
+            const cellValue = row[column.key]?.toString().toLowerCase() || "";
             return cellValue.includes(term);
-          }
-          const cellValue = row[column.key]?.toString().toLowerCase() || "";
-          return cellValue.includes(term);
-        })
-      )
-    );
+          })
+        )
+      );
+    }
+
+    // Apply column-specific filters
+    Object.entries(columnFilters).forEach(([columnKey, filterValue]) => {
+      const column = columns.find((col) => col.key === columnKey);
+      if (column) {
+        filtered = filtered.filter((row) =>
+          applyColumnFilter(row, column, filterValue)
+        );
+      }
+    });
+
+    return filtered;
   };
 
   const filteredData = filterData(tableData);
   const sortedData = sortData(filteredData, sortedColumn, sortOrder);
   const visibleData = getVisibleData(sortedData);
+  const totalFilteredItems = visibleData.length;
+  const totalPages = Math.ceil(totalFilteredItems / itemsPerPage);
+  
+  // Reset to page 1 if current page is beyond available pages after filtering
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+  
   const paginatedData = visibleData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -507,8 +715,41 @@ function DokulyTableContents({
 
   return (
     <Container fluid ref={tableRef} onClick={handleClickOutside}>
+      <Row className="mb-2 mt-2">
+        <Col className="d-flex justify-content-end align-items-center gap-2">
+          {showSavedViews && (
+            <SavedViews
+              tableName={tableName}
+              currentView={null}
+              onLoadView={handleLoadView}
+              columns={columns}
+              selectedColumns={selectedColumns}
+              filters={columnFilters}
+              sortedColumn={sortedColumn}
+              sortOrder={sortOrder}
+              textSize={textSize}
+            />
+          )}
+          {showColumnSelector && (
+            <button
+              type="button"
+              className="btn dokuly-btn-transparent p-1"
+              onClick={() => setIsColumnSelectorVisible(!isColumnSelectorVisible)}
+              title={isColumnSelectorVisible ? "Hide column selector" : "Show column selector"}
+              style={{ fontSize: textSize }}
+            >
+              <img
+                src="../../../static/icons/settings.svg"
+                alt="Column settings"
+                style={{ width: "18px", height: "18px", opacity: isColumnSelectorVisible ? 1 : 0.7 }}
+              />
+            </button>
+          )}
+        </Col>
+      </Row>
+
       {showSearch && (
-        <Row className="mb-2 mt-2">
+        <Row className="mb-2">
           <Col md={5}>
             <Row className="mb-1">
               <Col className="col-9">
@@ -533,13 +774,28 @@ function DokulyTableContents({
         </Row>
       )}
 
-      {showColumnSelector && (
+      {showFilterChips && (
+        <FilterChips
+          filters={columnFilters}
+          columns={columns}
+          onRemoveFilter={handleRemoveFilter}
+          onClearAll={handleClearAllFilters}
+          textSize={textSize}
+        />
+      )}
+
+      {showColumnSelector && isColumnSelectorVisible && (
         <ColumnSelector
           tableName={tableName}
           columns={columns}
           selectedColumns={selectedColumns}
           setSelectedColumns={setSelectedColumns}
           fontsize={12}
+          onSetAsDefault={handleSetDefaultColumns}
+          columnFilters={columnFilters}
+          onFilterChange={handleFilterChange}
+          tableData={tableData}
+          showFilters={showColumnFilters}
         />
       )}
 
@@ -556,6 +812,11 @@ function DokulyTableContents({
                   handleHeaderClick={handleHeaderClick}
                   sortedColumn={sortedColumn}
                   sortOrder={sortOrder}
+                  filterValue={columnFilters[column.key]}
+                  onFilterChange={handleFilterChange}
+                  tableData={tableData}
+                  textSize={textSize}
+                  showColumnFilters={false}
                 />
               ))}
               {navigateColumn && (
@@ -638,12 +899,11 @@ function DokulyTableContents({
             </div>
 
             {(isMarkdownTable &&
-              Math.ceil(tableData.length / itemsPerPage) !== 1) ||
+              totalPages !== 1) ||
               (!isMarkdownTable && (
                 <div className="d-flex align-items-center">
                   <span style={{ fontSize: textSize }}>
-                    {currentPage} of{" "}
-                    {Math.ceil(tableData.length / itemsPerPage)}
+                    {totalPages > 0 ? currentPage : 0} of {totalPages}
                   </span>
                 </div>
               ))}
@@ -655,13 +915,9 @@ function DokulyTableContents({
                 alt="Next Page"
                 style={{
                   cursor: "pointer",
-                  opacity:
-                    currentPage < Math.ceil(tableData.length / itemsPerPage)
-                      ? 1
-                      : 0,
+                  opacity: currentPage < totalPages ? 1 : 0,
                 }}
                 onClick={() => {
-                  const totalPages = Math.ceil(tableData.length / itemsPerPage);
                   if (currentPage < totalPages) {
                     handlePageChange(currentPage + 1);
                   }
