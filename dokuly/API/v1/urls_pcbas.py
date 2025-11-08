@@ -1,6 +1,7 @@
 from django.urls import path
 from pcbas import views, viewsFiles, viewsBom
 from files import views as file_views
+from API.v1 import views_files
 
 # API Requirements:
 # - GET by ID
@@ -53,5 +54,8 @@ urlpatterns = [
     path('api/v1/pcbas/thumbnail/<int:pk>/',
          file_views.upload_thumbnail,
          kwargs={"model_type": "pcba"}),  # Thumbnail upload
+
+    path('api/v1/pcbas/<int:pcba_id>/files/', views_files.download_files_from_pcba,
+         kwargs={"model_type": "pcba"}),  # Download all files from PCBA as ZIP
 
 ]

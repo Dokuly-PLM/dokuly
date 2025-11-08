@@ -17,8 +17,10 @@ class APIV1SchemaGenerator(OpenAPISchemaGenerator):
         Initialize with only API v1 URL patterns.
         """
         # Import API v1 URL patterns
-        from API.v1 import urls_parts, urls_assemblies, urls_documents, urls_pcbas
-        from API.v1 import urls_production, urls_migrations, urls_projects, urls_customers
+        from API.v1 import (
+            urls_parts, urls_assemblies, urls_documents, urls_pcbas,
+            urls_production, urls_migrations, urls_projects, urls_customers
+        )
         
         # Combine all API v1 URL patterns
         api_v1_patterns = (

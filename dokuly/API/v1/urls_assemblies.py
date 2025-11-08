@@ -1,6 +1,7 @@
 from django.urls import path
 from assemblies import views
 from assemblies import viewsFile
+from API.v1 import views_files
 
 # API Requirements:
 # - GET by ID
@@ -39,5 +40,9 @@ urlpatterns = [
          views.archive_revision, kwargs={"model_type": "assembly"}),  # Tested
 
     ################### FILE API ######################
-    # Need a new view for this, currently have upload file view + connect to assembly
+    path('api/v1/assemblies/upload/<int:assembly_id>/', views_files.upload_file_to_assembly,
+         kwargs={"model_type": "assembly"}),  # Upload file to assembly
+    
+    path('api/v1/assemblies/<int:assembly_id>/files/', views_files.download_files_from_assembly,
+         kwargs={"model_type": "assembly"}),  # Download all files from assembly as ZIP
 ]
