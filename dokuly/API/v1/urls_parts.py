@@ -22,6 +22,9 @@ urlpatterns = [
     path('api/v1/parts/<int:pk>/', views.get_single_part,
          kwargs={"model_type": "part"}),  # Tested
 
+    path('api/v1/parts/types/', views.get_part_types,
+         kwargs={"model_type": "part"}),  # Get all part types
+
     ################### POST API ######################
     path('api/v1/parts/new/', views.create_new_part,
          kwargs={"model_type": "part"}),  # Tested

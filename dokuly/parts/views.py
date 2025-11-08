@@ -22,6 +22,7 @@ from .serializers import (
     PartSerializer,
     PartSerializerNoAlternate,
     PartTableSerializer,
+    PartTypeSerializer,
     SimplePcbaSerializer,
     SimplePartSerializer,
     SimpleAsmSerializer,
@@ -33,7 +34,7 @@ from projects.models import Project
 
 from organizations.views import get_subscription_type
 from files.models import Image
-from parts.models import Part
+from parts.models import Part, PartType
 from pcbas.models import Pcba
 from part_numbers.methods import get_next_part_number
 
@@ -187,6 +188,36 @@ def get_unarchived_parts(request):
     )
     serializer = PartSerializerNoAlternate(data, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_id='get_part_types',
+    operation_description="""
+    Get a list of all part types.
+    
+    Returns all available part types with their properties including name, description, prefix, default unit, and icon URL.
+    """,
+    tags=['parts'],
+    responses={
+        200: openapi.Response(description='List of part types retrieved successfully', schema=PartTypeSerializer(many=True)),
+        401: openapi.Response(description='Unauthorized'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated | APIAndProjectAccess])
+def get_part_types(request, **kwargs):
+    """Get all part types."""
+    try:
+        part_types = PartType.objects.all().order_by('name')
+        serializer = PartTypeSerializer(part_types, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            f"get_part_types failed: {e}", status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 @api_view(("GET",))
@@ -751,15 +782,15 @@ def clear_sellers_data(request, partId):
     
     **Required fields:**
     - `display_name`: Name of the part (max 150 characters)
+    - `internal`: Boolean indicating if the part is internal (true) or external (false)
+    - `mpn`: Manufacturer part number (max 50 characters, required for external parts)
+    - `manufacturer`: Manufacturer name (max 60 characters, required for external parts)
+    
+    **Optional fields:**
     - `description`: Description of the part (max 500 characters)
     - `datasheet`: URL to the datasheet (max 200 characters)
     - `image_url`: URL to the part image (max 200 characters)
-    - `internal`: Boolean indicating if the part is internal (true) or external (false)
-    
-    **Optional fields:**
     - `part_type`: ID of the part type (integer)
-    - `mpn`: Manufacturer part number (max 50 characters, required for external parts)
-    - `manufacturer`: Manufacturer name (max 60 characters, required for external parts)
     - `unit`: Unit of measurement (default: "pcs", max 20 characters)
     - `price`: Price of the part (deprecated field, string)
     - `currency`: Currency code (default: "USD", max 20 characters)
@@ -779,13 +810,13 @@ def clear_sellers_data(request, partId):
     tags=['parts'],
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
-        required=['display_name', 'description', 'datasheet', 'image_url', 'internal'],
+        required=['display_name', 'internal'],
         properties={
             'display_name': openapi.Schema(type=openapi.TYPE_STRING, maxLength=150, description='Name of the part', example='Resistor 10kΩ'),
+            'internal': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='True for internal parts, false for external parts', example=False),
             'description': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='Description of the part', example='10 kOhms ±1% chip resistor'),
             'datasheet': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='URL to the datasheet', example='https://example.com/datasheet.pdf'),
             'image_url': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='URL to the part image', example='https://example.com/image.jpg'),
-            'internal': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='True for internal parts, false for external parts', example=False),
             'part_type': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the part type', example=1),
             'mpn': openapi.Schema(type=openapi.TYPE_STRING, maxLength=50, description='Manufacturer part number (required for external parts)', example='ERJ-2RKF1002X'),
             'manufacturer': openapi.Schema(type=openapi.TYPE_STRING, maxLength=60, description='Manufacturer name (required for external parts)', example='Panasonic'),
@@ -870,11 +901,14 @@ def create_new_part(request, **kwargs):
                 new_part.revision = "A"
         else:
             new_part.revision = "A"
-        new_part.description = data["description"]
-        new_part.datasheet = data["datasheet"]
         new_part.display_name = data["display_name"]
-        new_part.image_url = data["image_url"]
         new_part.internal = data["internal"]
+        if "description" in data:
+            new_part.description = data["description"]
+        if "datasheet" in data:
+            new_part.datasheet = data["datasheet"]
+        if "image_url" in data:
+            new_part.image_url = data["image_url"]
         new_part.external_part_number = data.get("external_part_number", "")
 
         if "git_link" in data:
@@ -1219,6 +1253,11 @@ def remove_part_notes(request, pk, **kwargs):
     - `revision_notes`: Notes describing the changes in this revision (max 20000 characters)
     
     **Optional fields:**
+    - `revision_type`: Type of revision ("major" or "minor", default: "major")
+      - Use "major" for significant changes (increments major version: 1-0 → 2-0, or 1 → 2)
+      - Use "minor" for minor changes (increments minor version: 1-0 → 1-1, or adds .1 in major-only format)
+      - Only applies when number-based revisions are enabled for the organization
+      - For letter-based revisions (A, B, C...), this parameter is ignored
     - `created_by`: User ID (only for API key requests, integer)
     
     **Note:** The part must be the latest revision to create a new revision. The new revision will inherit most fields from the previous revision.
@@ -1229,6 +1268,7 @@ def remove_part_notes(request, pk, **kwargs):
         required=['revision_notes'],
         properties={
             'revision_notes': openapi.Schema(type=openapi.TYPE_STRING, maxLength=20000, description='Notes describing the changes in this revision', example='Updated component values and improved thermal performance'),
+            'revision_type': openapi.Schema(type=openapi.TYPE_STRING, description='Type of revision (only applies when number-based revisions are enabled)', enum=['major', 'minor'], example='major', default='major'),
             'created_by': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID (only for API key requests)'),
         }
     ),
