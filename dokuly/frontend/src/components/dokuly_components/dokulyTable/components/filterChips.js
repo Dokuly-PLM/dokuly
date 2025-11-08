@@ -1,5 +1,5 @@
 import React from "react";
-import { Badge, Button } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 
 /**
  * FilterChips component displays active filters as removable pills
@@ -46,15 +46,17 @@ const FilterChips = ({ filters, columns, onRemoveFilter, onClearAll, textSize = 
         <span style={{ marginRight: "4px", fontWeight: "500" }}>Filters:</span>
       )}
       {activeFilters.map(([columnKey, filterValue]) => (
-        <Badge
+        <span
           key={columnKey}
-          bg="secondary"
           className="d-flex align-items-center gap-1"
           style={{
             fontSize: textSize,
             padding: "4px 8px",
             cursor: "default",
-            backgroundColor: "#6c757d",
+            backgroundColor: "#165216",
+            color: "#ffffff",
+            borderRadius: "0.375rem",
+            display: "inline-flex",
           }}
         >
           <span>{getFilterLabel(columnKey, filterValue)}</span>
@@ -65,12 +67,13 @@ const FilterChips = ({ filters, columns, onRemoveFilter, onClearAll, textSize = 
               fontSize: "10px",
               padding: "0",
               marginLeft: "4px",
-              opacity: 0.8,
+              opacity: 0.9,
+              filter: "invert(1)",
             }}
             onClick={() => onRemoveFilter(columnKey)}
             aria-label="Remove filter"
           />
-        </Badge>
+        </span>
       ))}
       {activeFilters.length > 1 && (
         <Button

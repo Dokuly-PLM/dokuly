@@ -128,8 +128,14 @@ function DokulyTableContents({
   // Get default columns from settings or use column defaults
   const getDefaultColumns = () => {
     if (tableSettings.defaultColumns && Array.isArray(tableSettings.defaultColumns)) {
-      // Load from saved settings
-      const savedCols = columns.filter((col) => tableSettings.defaultColumns.includes(col.key));
+      // Create a map of columns by key for quick lookup
+      const columnsMap = new Map(columns.map((col) => [col.key, col]));
+      
+      // Restore columns in the saved order
+      const savedCols = tableSettings.defaultColumns
+        .map((key) => columnsMap.get(key))
+        .filter((col) => col !== undefined); // Filter out any columns that no longer exist
+      
       if (savedCols.length > 0) {
         return savedCols;
       }
@@ -167,11 +173,16 @@ function DokulyTableContents({
   const tableRef = useRef(null);
 
   const handleLoadView = (view) => {
-    // Restore column selection
+    // Restore column selection and order
     if (view.columns && Array.isArray(view.columns)) {
-      const restoredColumns = columns.filter((col) =>
-        view.columns.includes(col.key)
-      );
+      // Create a map of columns by key for quick lookup
+      const columnsMap = new Map(columns.map((col) => [col.key, col]));
+      
+      // Restore columns in the saved order
+      const restoredColumns = view.columns
+        .map((key) => columnsMap.get(key))
+        .filter((col) => col !== undefined); // Filter out any columns that no longer exist
+      
       if (restoredColumns.length > 0) {
         setSelectedColumns(restoredColumns);
       }
@@ -198,9 +209,14 @@ function DokulyTableContents({
   useEffect(() => {
     if (columns && columns.length > 0) {
       if (tableSettings.defaultColumns && Array.isArray(tableSettings.defaultColumns)) {
-        const defaultCols = columns.filter((col) =>
-          tableSettings.defaultColumns.includes(col.key)
-        );
+        // Create a map of columns by key for quick lookup
+        const columnsMap = new Map(columns.map((col) => [col.key, col]));
+        
+        // Restore columns in the saved order
+        const defaultCols = tableSettings.defaultColumns
+          .map((key) => columnsMap.get(key))
+          .filter((col) => col !== undefined); // Filter out any columns that no longer exist
+        
         if (defaultCols.length > 0) {
           setSelectedColumns(defaultCols);
           return;

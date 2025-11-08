@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from profiles.models import Notification, Profile
+from profiles.models import Notification, Profile, TableView
 # from .models import Employee
 
 # User Serializer
@@ -32,3 +32,29 @@ class ProfileSerializerSmall(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ('id', 'first_name', 'last_name', 'profile_image')
+
+
+class TableViewSerializer(serializers.ModelSerializer):
+    """Serializer for TableView model"""
+    
+    class Meta:
+        model = TableView
+        fields = [
+            "id",
+            "table_name",
+            "name",
+            "user",
+            "is_shared",
+            "columns",
+            "filters",
+            "sorted_column",
+            "sort_order",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "user", "created_at", "updated_at"]
+    
+    def create(self, validated_data):
+        # Set the user from the request
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
