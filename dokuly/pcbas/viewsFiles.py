@@ -10,6 +10,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.decorators import login_required
 from organizations.permissions import APIAndProjectAccess
 from django.db.models import Q
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from pcbas.models import Pcba
 from files.models import File
@@ -252,10 +254,77 @@ def add_file_to_pcba(request, pcba_id, file_id):
         return Response("Assembly or file not found", status=status.HTTP_404_NOT_FOUND)
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_id='upload_file_to_pcba',
+    operation_description="""
+    Upload a file to a PCBA.
+    
+    **Required fields:**
+    - `file`: The file to upload (multipart/form-data)
+    - `display_name`: Name for the file (max 250 characters)
+    
+    **Optional fields:**
+    - `replace_files`: Set to `true` to replace existing file with same display_name. Default: `false`
+    - `gerber`: Set to `true` to mark file as Gerber file for PCB layer processing. Default: `false`
+    
+    **Note:** The PCBA must not be in "Released" state to upload files.
+    """,
+    tags=['pcbas'],
+    manual_parameters=[
+        openapi.Parameter(
+            'file',
+            openapi.IN_FORM,
+            type=openapi.TYPE_FILE,
+            required=True,
+            description='The file to upload (any file type)'
+        ),
+        openapi.Parameter(
+            'display_name',
+            openapi.IN_FORM,
+            type=openapi.TYPE_STRING,
+            required=True,
+            description='Display name for the file (max 250 characters)',
+            max_length=250
+        ),
+        openapi.Parameter(
+            'replace_files',
+            openapi.IN_FORM,
+            type=openapi.TYPE_BOOLEAN,
+            required=False,
+            description='If true, replace existing file with same display_name. Default: false'
+        ),
+        openapi.Parameter(
+            'gerber',
+            openapi.IN_FORM,
+            type=openapi.TYPE_BOOLEAN,
+            required=False,
+            description='If true, mark file as Gerber file for PCB layer processing. Default: false'
+        ),
+    ],
+    consumes=['multipart/form-data'],
+    responses={
+        201: openapi.Response(description='File uploaded successfully'),
+        400: openapi.Response(description='Bad request - missing required fields, PCBA is released, or invalid data'),
+        401: openapi.Response(description='Unauthorized - invalid API key or no project access'),
+        404: openapi.Response(description='PCBA not found'),
+        409: openapi.Response(description='Storage limit exceeded'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(('POST', ))
 @renderer_classes((JSONRenderer, ))
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
 def upload_file_to_pcba(request, pcba_id, **kwargs):
+    """
+    Upload a file to a PCBA.
+    
+    Request must be multipart/form-data with:
+    - file: The file to upload (required)
+    - display_name: Name for the file (required, max 250 chars)
+    - replace_files: Boolean, if true replaces existing file with same name (optional)
+    - gerber: Boolean, if true marks file as Gerber file for PCB processing (optional)
+    """
     # Check if 'file' is in request data
     if "file" not in request.data:
         return Response("No file in request", status=status.HTTP_400_BAD_REQUEST)

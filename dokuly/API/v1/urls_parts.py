@@ -1,5 +1,6 @@
 from django.urls import path
 from parts import views
+from API.v1 import views_files
 
 # API Requirements:
 # - GET by ID
@@ -37,5 +38,9 @@ urlpatterns = [
          views.archive_part, kwargs={"model_type": "part"}),  # Tested
 
     ################### FILE API ######################
-    # Need a new view for this, currently have upload file view + connect to part
+    path('api/v1/parts/upload/<int:part_id>/', views_files.upload_file_to_part,
+         kwargs={"model_type": "part"}),  # Upload file to part
+    
+    path('api/v1/parts/<int:part_id>/files/', views_files.download_files_from_part,
+         kwargs={"model_type": "part"}),  # Download all files from part as ZIP
 ]
