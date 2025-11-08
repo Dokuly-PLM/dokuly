@@ -16,7 +16,7 @@ export const FilesTable = (props) => {
   const [refresh, setRefresh] = useState(false);
 
   const [file_type, setFileType] = useState(
-    file_type !== null && props.file_type !== undefined ? props.file_type : null
+    props.file_type !== null && props.file_type !== undefined ? props.file_type : null
   );
 
   const [modal_file_type, setModalFileType] = useState(null);
