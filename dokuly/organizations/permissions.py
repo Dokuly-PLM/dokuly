@@ -1,8 +1,14 @@
 from rest_framework import permissions
 from rest_framework_api_key.permissions import BaseHasAPIKey
+from django.core.exceptions import ObjectDoesNotExist
 from .models import OrganizationAPIKey, Project
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+
+# Constants for API key header format
+API_KEY_PREFIX = "Api-Key "
+AUTHORIZATION_HEADER = "HTTP_AUTHORIZATION"
+X_API_KEY_HEADER = "HTTP_X_API_KEY"
 
 
 class APIAndProjectAccess(BaseHasAPIKey):
@@ -39,11 +45,56 @@ class APIAndProjectAccess(BaseHasAPIKey):
     model = OrganizationAPIKey
 
     def has_permission(self, request, view):
+        """
+        Check if the request has permission based on API key validation and project access.
+        
+        This method:
+        1. Extracts the API key from Authorization header (with "Api-Key" prefix) or X-Api-Key header
+        2. Validates the API key using BaseHasAPIKey
+        3. Checks project-level access permissions
+        4. Sets request attributes for downstream use
+        
+        Returns:
+            bool: True if access is granted, False otherwise
+        """
         # Set key validation flag to False by default
         request.key_validated = False
 
-        # Check if the API key is valid
-        has_key_permission = super().has_permission(request, view)
+        # Extract API key from Authorization header, handling "Api-Key" prefix
+        auth_header = request.META.get(AUTHORIZATION_HEADER, "")
+        api_key = None
+        
+        if auth_header:
+            # Check if the header starts with "Api-Key" prefix
+            if auth_header.startswith(API_KEY_PREFIX):
+                # Extract just the key part (after "Api-Key ")
+                api_key = auth_header.split(API_KEY_PREFIX, 1)[-1].strip()
+            else:
+                # If it doesn't start with "Api-Key", assume it's just the key
+                api_key = auth_header.strip()
+        
+        # Also check X-Api-Key header as fallback (default for rest_framework_api_key)
+        if not api_key:
+            api_key = request.META.get(X_API_KEY_HEADER, "")
+        
+        if not api_key:
+            return False
+        
+        # Temporarily set HTTP_X_API_KEY so BaseHasAPIKey can find it
+        # (BaseHasAPIKey looks for HTTP_X_API_KEY by default)
+        original_x_api_key = request.META.get(X_API_KEY_HEADER)
+        request.META[X_API_KEY_HEADER] = api_key
+
+        try:
+            # Check if the API key is valid
+            has_key_permission = super().has_permission(request, view)
+        finally:
+            # Always restore original X-Api-Key header if we modified it
+            if original_x_api_key is not None:
+                request.META[X_API_KEY_HEADER] = original_x_api_key
+            elif X_API_KEY_HEADER in request.META:
+                del request.META[X_API_KEY_HEADER]
+        
         # If the API key is invalid, deny access
         if not has_key_permission:
             return False
@@ -53,9 +104,12 @@ class APIAndProjectAccess(BaseHasAPIKey):
         if not model_type:
             return False  # Ensures there is a model type to process
 
-        # Extracts the API key from the request headers
-        api_key = request.META.get("HTTP_AUTHORIZATION").split()[-1]
-        organization_api_key = self.model.objects.get_from_key(api_key)
+        # Extract and validate the API key object
+        try:
+            organization_api_key = self.model.objects.get_from_key(api_key)
+        except (ObjectDoesNotExist, ValueError):
+            # Invalid API key format or key doesn't exist
+            return False
 
         request.organization_id = organization_api_key.organization.id
 
@@ -88,9 +142,12 @@ class APIAndProjectAccess(BaseHasAPIKey):
             return True
 
         # Gets the model class from Django's ContentType framework based on model_type
-        model_class = ContentType.objects.get(model=model_type).model_class()
-        model_instance = model_class.objects.get(
-            pk=model_id)  # Retrieves the model instance
+        try:
+            model_class = ContentType.objects.get(model=model_type).model_class()
+            model_instance = model_class.objects.get(pk=model_id)
+        except ObjectDoesNotExist:
+            # Model type or instance doesn't exist
+            return False
 
         # Checks if the project associated with the model instance is allowed access
         project = model_instance.project
@@ -151,9 +208,8 @@ class APIAndProjectAccess(BaseHasAPIKey):
         """
         if not hasattr(request, 'allowed_projects'):
             return False
-        if request.allowed_projects == [] and len(request.allowed_projects) == 0:
-            return True
-        return False
+        # Empty list indicates wildcard access (no project restrictions)
+        return request.allowed_projects == []
 
     def check_project_access(request, project):
         """
@@ -171,11 +227,11 @@ class APIAndProjectAccess(BaseHasAPIKey):
         """
         if not hasattr(request, 'allowed_projects'):
             return False
-        if project in request.allowed_projects:
+        # Empty list indicates wildcard access (all projects allowed)
+        if request.allowed_projects == []:
             return True
-        if request.allowed_projects == [] and len(request.allowed_projects) == 0:
-            return True
-        return False
+        # Check if project is in the allowed list
+        return project in request.allowed_projects
 
     def get_organization_id(request):
         """
