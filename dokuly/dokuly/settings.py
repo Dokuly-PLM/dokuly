@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "documents",
     "rest_framework",
     "rest_framework_api_key",
+    "drf_yasg",
     "frontend",
     "organizations.apps.OrganizationsConfig",
     "projects",
@@ -104,6 +105,64 @@ REST_FRAMEWORK = {
     )
 }
 
+# Swagger/OpenAPI Configuration - Modern UI with Testing Features
+# "Try it out" is enabled by default in Swagger UI
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Token': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'Django Knox Token authentication. Enter as: "Token <your-token>" (include the word "Token" and a space before your token)'
+        },
+        'Api-Key': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'Organization API Key authentication. Enter as: "Api-Key <your-api-key>" (include "Api-Key" and a space before your key)'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'JSON_EDITOR': True,
+    'SUPPORTED_SUBMIT_METHODS': [
+        'get',
+        'post',
+        'put',
+        'delete',
+        'patch'
+    ],
+    'OPERATIONS_SORTER': 'alpha',
+    'TAGS_SORTER': 'alpha',
+    'DOC_EXPANSION': 'list',  # Show all operations expanded by default
+    'DEFAULT_INFO': None,  # Use the info from schema_view
+    'DEEP_LINKING': True,
+    'SHOW_EXTENSIONS': True,
+    'DEFAULT_MODEL_RENDERING': 'example',  # Show example values
+    'SHOW_REQUEST_HEADERS': True,  # Show request headers
+    'DEFAULT_FIELD_INSPECTORS': [
+        'drf_yasg.inspectors.CamelCaseJSONFilter',
+        'drf_yasg.inspectors.ReferencingSerializerInspector',
+        'drf_yasg.inspectors.RelatedFieldInspector',
+        'drf_yasg.inspectors.ChoiceFieldInspector',
+        'drf_yasg.inspectors.FileFieldInspector',
+        'drf_yasg.inspectors.DictFieldInspector',
+        'drf_yasg.inspectors.SimpleFieldInspector',
+        'drf_yasg.inspectors.StringDefaultFieldInspector',
+    ],
+    'DEFAULT_PAGINATOR_INSPECTORS': [
+        'drf_yasg.inspectors.DjangoRestResponsePagination',
+        'drf_yasg.inspectors.CoreAPICompatInspector',
+    ],
+    'VALIDATOR_URL': None,  # Disable online validator for faster loading
+}
+
+REDOC_SETTINGS = {
+    'LAZY_RENDERING': False,
+    'HIDE_HOSTNAME': False,
+    'EXPAND_RESPONSES': '200,201',
+    'PATH_IN_MIDDLE': True,
+}
+
 AUTHENTICATION_BACKENDS = [
     'accounts.email_authentication.EmailAuthBackend',
     'django.contrib.auth.backends.ModelBackend',
@@ -135,6 +194,27 @@ if local_server:
     print("Running dev...")
     CSRF_COOKIE_SECURE = False
     DEBUG = True
+    # CORS settings for local development
+    CORS_ORIGIN_ALLOW_ALL = True
+    CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    CORS_ALLOW_HEADERS = [
+        'accept',
+        'accept-encoding',
+        'authorization',
+        'content-type',
+        'dnt',
+        'origin',
+        'user-agent',
+        'x-csrftoken',
+        'x-requested-with',
+        'x-api-key',
+    ]
 
 else:
     print("Running PRODUCTION")
