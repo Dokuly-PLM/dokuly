@@ -5,6 +5,8 @@ from organizations.permissions import APIAndProjectAccess
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from datetime import datetime
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
@@ -37,6 +39,42 @@ from projects.viewsTags import check_for_and_create_new_tags
 from parts.viewUtilities import copy_markdown_tabs_to_new_revision
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_id='create_new_assembly',
+    operation_description="""
+    Create a new assembly with a unique part number.
+    
+    **Required fields:**
+    - `display_name`: Name of the assembly (max 150 characters)
+    - `description`: Description of the assembly (max 500 characters)
+    - `project`: Project ID (integer, must have access to the project)
+    
+    **Optional fields:**
+    - `external_part_number`: External part number (max 1000 characters)
+    - `created_by`: User ID (only for API key requests, integer)
+    
+    **Note:** A new BOM (Bill of Materials) is automatically created for each new assembly.
+    """,
+    tags=['assemblies'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['display_name', 'description', 'project'],
+        properties={
+            'display_name': openapi.Schema(type=openapi.TYPE_STRING, maxLength=150, description='Name of the assembly', example='Main Controller Assembly'),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='Description of the assembly', example='Main controller board with power management'),
+            'project': openapi.Schema(type=openapi.TYPE_INTEGER, description='Project ID (must have access to the project)', example=1),
+            'external_part_number': openapi.Schema(type=openapi.TYPE_STRING, maxLength=1000, description='External part number'),
+            'created_by': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID (only for API key requests)'),
+        }
+    ),
+    responses={
+        201: openapi.Response(description='Assembly created successfully', schema=AssemblySerializer),
+        400: openapi.Response(description='Bad request - missing required fields or invalid data'),
+        401: openapi.Response(description='Unauthorized - no project access'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([APIAndProjectAccess | IsAuthenticated])
@@ -263,6 +301,44 @@ def archive_revision(request, pk, **kwargs):
         return Response("Object not found", status=status.HTTP_404_NOT_FOUND)
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_id='new_revision_assembly',
+    operation_description="""
+    Create a new revision of an existing assembly.
+    
+    **Required fields:**
+    - `persistData`: Boolean flag to persist data (must be true or 1)
+    
+    **Optional fields:**
+    - `description`: Description for the new revision (max 500 characters)
+    - `revision_notes`: Notes describing the changes in this revision (max 20000 characters)
+    - `copyPrev`: Integer flag to copy previous BOM (1 to copy, 0 to not copy)
+    - `bom_id`: BOM ID to copy (integer, used when copyPrev is 1)
+    
+    **Note:** The assembly must be the latest revision to create a new revision. The new revision will inherit most fields from the previous revision.
+    """,
+    tags=['assemblies'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['persistData'],
+        properties={
+            'persistData': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Flag to persist data (must be true)', example=True),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='Description for the new revision'),
+            'revision_notes': openapi.Schema(type=openapi.TYPE_STRING, maxLength=20000, description='Notes describing the changes in this revision', example='Updated BOM and improved assembly process'),
+            'copyPrev': openapi.Schema(type=openapi.TYPE_INTEGER, description='Flag to copy previous BOM (1 to copy, 0 to not copy)', example=1, enum=[0, 1]),
+            'bom_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='BOM ID to copy (used when copyPrev is 1)'),
+        }
+    ),
+    responses={
+        201: openapi.Response(description='New revision created successfully', schema=AssemblySerializer),
+        400: openapi.Response(description='Bad request - missing required fields, no data persistence flag set, or invalid data'),
+        401: openapi.Response(description='Unauthorized - not latest revision or no project access'),
+        404: openapi.Response(description='Assembly not found'),
+        500: openapi.Response(description='Internal server error'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([APIAndProjectAccess | IsAuthenticated])
@@ -414,6 +490,55 @@ def new_revision(request, pk, **kwargs):
         )
 
 
+@swagger_auto_schema(
+    method='put',
+    operation_id='update_assembly',
+    operation_description="""
+    Update an existing assembly.
+    
+    **Note:** Most fields can only be edited when the assembly is in "Draft" state. Released assemblies can only have `markdown_notes`, `tags`, and `price_update` modified.
+    
+    **Optional fields (all can be updated):**
+    - `display_name`: Name of the assembly (max 150 characters)
+    - `description`: Description of the assembly (max 500 characters)
+    - `price`: Price of the assembly (number)
+    - `model_url`: 3D model URL (max 500 characters)
+    - `revision`: Revision string (max 10 characters)
+    - `part_number`: Part number (integer)
+    - `release_state`: Release state ("Draft", "Released", etc.)
+    - `is_approved_for_release`: Boolean to approve for release
+    - `markdown_notes`: Markdown text (can be edited on released assemblies)
+    - `tags`: Array of tag IDs (can be edited on released assemblies)
+    - `price_update`: Boolean to allow price updates on released assemblies
+    - `quality_assurance`: User ID for quality assurance (only for API key requests, integer)
+    """,
+    tags=['assemblies'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=[],
+        properties={
+            'display_name': openapi.Schema(type=openapi.TYPE_STRING, maxLength=150, description='Name of the assembly'),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='Description of the assembly'),
+            'price': openapi.Schema(type=openapi.TYPE_NUMBER, description='Price of the assembly'),
+            'model_url': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='3D model URL'),
+            'revision': openapi.Schema(type=openapi.TYPE_STRING, maxLength=10, description='Revision string'),
+            'part_number': openapi.Schema(type=openapi.TYPE_INTEGER, description='Part number'),
+            'release_state': openapi.Schema(type=openapi.TYPE_STRING, description='Release state', enum=['Draft', 'Released']),
+            'is_approved_for_release': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Approve for release'),
+            'markdown_notes': openapi.Schema(type=openapi.TYPE_STRING, description='Markdown text (can be edited on released assemblies)'),
+            'tags': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER), description='Array of tag IDs (can be edited on released assemblies)'),
+            'price_update': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Allow price updates on released assemblies'),
+            'quality_assurance': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID for quality assurance (only for API key requests)'),
+        }
+    ),
+    responses={
+        200: openapi.Response(description='Assembly updated successfully', schema=AssemblySerializer),
+        400: openapi.Response(description='Bad request - assembly is released and field cannot be edited, or invalid data'),
+        401: openapi.Response(description='Unauthorized'),
+        404: openapi.Response(description='Assembly not found'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([APIAndProjectAccess | IsAuthenticated])
