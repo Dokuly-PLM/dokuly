@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, renderer_classes, permission_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from django.db.models import Q, F, Prefetch
 from django.db.models.functions import Concat
 from django.contrib.auth.decorators import login_required
@@ -741,6 +743,76 @@ def clear_sellers_data(request, partId):
     )
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_id='create_new_part',
+    operation_description="""
+    Create a new part.
+    
+    **Required fields:**
+    - `display_name`: Name of the part (max 150 characters)
+    - `description`: Description of the part (max 500 characters)
+    - `datasheet`: URL to the datasheet (max 200 characters)
+    - `image_url`: URL to the part image (max 200 characters)
+    - `internal`: Boolean indicating if the part is internal (true) or external (false)
+    
+    **Optional fields:**
+    - `part_type`: ID of the part type (integer)
+    - `mpn`: Manufacturer part number (max 50 characters, required for external parts)
+    - `manufacturer`: Manufacturer name (max 60 characters, required for external parts)
+    - `unit`: Unit of measurement (default: "pcs", max 20 characters)
+    - `price`: Price of the part (deprecated field, string)
+    - `currency`: Currency code (default: "USD", max 20 characters)
+    - `distributor`: Distributor name (max 100 characters)
+    - `project`: Project ID (integer, must have access to the project)
+    - `supplier`: Supplier ID (integer)
+    - `git_link`: Git repository link (max 200 characters)
+    - `model_url`: 3D model URL (max 500 characters)
+    - `external_part_number`: External part number (max 1000 characters)
+    - `part_information`: JSON object with additional part information
+    - `urls`: Array of JSON objects with URLs
+    - `component_vault_id`: Component vault ID (integer)
+    - `created_by`: User ID (only for API key requests, integer)
+    
+    **Note:** For external parts (internal=false), mpn and manufacturer are required and must be unique.
+    """,
+    tags=['parts'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['display_name', 'description', 'datasheet', 'image_url', 'internal'],
+        properties={
+            'display_name': openapi.Schema(type=openapi.TYPE_STRING, maxLength=150, description='Name of the part', example='Resistor 10kΩ'),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='Description of the part', example='10 kOhms ±1% chip resistor'),
+            'datasheet': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='URL to the datasheet', example='https://example.com/datasheet.pdf'),
+            'image_url': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='URL to the part image', example='https://example.com/image.jpg'),
+            'internal': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='True for internal parts, false for external parts', example=False),
+            'part_type': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the part type', example=1),
+            'mpn': openapi.Schema(type=openapi.TYPE_STRING, maxLength=50, description='Manufacturer part number (required for external parts)', example='ERJ-2RKF1002X'),
+            'manufacturer': openapi.Schema(type=openapi.TYPE_STRING, maxLength=60, description='Manufacturer name (required for external parts)', example='Panasonic'),
+            'unit': openapi.Schema(type=openapi.TYPE_STRING, maxLength=20, description='Unit of measurement', example='pcs', default='pcs'),
+            'price': openapi.Schema(type=openapi.TYPE_STRING, maxLength=10, description='Price (deprecated field)', example='0.10'),
+            'currency': openapi.Schema(type=openapi.TYPE_STRING, maxLength=20, description='Currency code', example='USD', default='USD'),
+            'distributor': openapi.Schema(type=openapi.TYPE_STRING, maxLength=100, description='Distributor name'),
+            'project': openapi.Schema(type=openapi.TYPE_INTEGER, description='Project ID (must have access to the project)', example=1),
+            'supplier': openapi.Schema(type=openapi.TYPE_INTEGER, description='Supplier ID', example=1),
+            'git_link': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='Git repository link', example='https://github.com/example/repo'),
+            'model_url': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='3D model URL', example='https://example.com/model.step'),
+            'external_part_number': openapi.Schema(type=openapi.TYPE_STRING, maxLength=1000, description='External part number'),
+            'part_information': openapi.Schema(type=openapi.TYPE_OBJECT, description='JSON object with additional part information'),
+            'urls': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_OBJECT), description='Array of URL objects'),
+            'component_vault_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Component vault ID'),
+            'created_by': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID (only for API key requests)'),
+        }
+    ),
+    responses={
+        201: openapi.Response(description='Part created successfully', schema=PartSerializer),
+        208: openapi.Response(description='Part with same MPN and manufacturer already exists', schema=PartSerializerNoAlternate),
+        400: openapi.Response(description='Bad request - missing required fields or invalid data'),
+        401: openapi.Response(description='Unauthorized'),
+        406: openapi.Response(description='Cannot create more parts - upgrade account required'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
@@ -876,6 +948,95 @@ def create_new_part(request, **kwargs):
         )
 
 
+@swagger_auto_schema(
+    method='put',
+    operation_id='edit_part',
+    operation_description="""
+    Update an existing part.
+    
+    **Note:** Most fields can only be edited when the part is in "Draft" state. Released parts can only have `markdown_notes`, `tags`, and `price_update` modified.
+    
+    **Optional fields (all can be updated):**
+    - `display_name`: Name of the part (max 150 characters)
+    - `description`: Description of the part (max 500 characters)
+    - `datasheet`: URL to the datasheet (max 200 characters)
+    - `image_url`: URL to the part image (max 200 characters)
+    - `internal`: Boolean indicating if the part is internal
+    - `part_type`: ID of the part type (integer)
+    - `mpn`: Manufacturer part number (max 50 characters)
+    - `manufacturer`: Manufacturer name (max 60 characters)
+    - `unit`: Unit of measurement (max 20 characters)
+    - `price`: Price of the part (deprecated field, string)
+    - `currency`: Currency code (max 20 characters)
+    - `distributor`: Distributor name (max 100 characters)
+    - `project`: Project ID (integer, must have access to the project)
+    - `supplier`: Supplier ID (integer)
+    - `git_link`: Git repository link (max 200 characters)
+    - `model_url`: 3D model URL (max 500 characters)
+    - `external_part_number`: External part number (max 1000 characters)
+    - `part_information`: JSON object with additional part information
+    - `urls`: Array of JSON objects with URLs
+    - `component_vault_id`: Component vault ID (integer)
+    - `is_rohs_compliant`: Boolean for RoHS compliance
+    - `is_reach_compliant`: Boolean for REACH compliance
+    - `is_ul_compliant`: Boolean for UL compliance
+    - `export_control_classification_number`: ECCN (max 200 characters)
+    - `country_of_origin`: Country of origin (max 200 characters)
+    - `harmonized_system_code`: HS code (max 200 characters)
+    - `release_state`: Release state ("Draft", "Released", etc.)
+    - `is_approved_for_release`: Boolean to approve for release
+    - `markdown_notes`: Markdown text (can be edited on released parts)
+    - `tags`: Array of tag IDs (can be edited on released parts)
+    - `price_update`: Boolean to allow price updates on released parts
+    - `created_by`: User ID (only for API key requests, integer)
+    """,
+    tags=['parts'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=[],
+        properties={
+            'display_name': openapi.Schema(type=openapi.TYPE_STRING, maxLength=150, description='Name of the part'),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='Description of the part'),
+            'datasheet': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='URL to the datasheet'),
+            'image_url': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='URL to the part image'),
+            'internal': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='True for internal parts, false for external parts'),
+            'part_type': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the part type'),
+            'mpn': openapi.Schema(type=openapi.TYPE_STRING, maxLength=50, description='Manufacturer part number'),
+            'manufacturer': openapi.Schema(type=openapi.TYPE_STRING, maxLength=60, description='Manufacturer name'),
+            'unit': openapi.Schema(type=openapi.TYPE_STRING, maxLength=20, description='Unit of measurement'),
+            'price': openapi.Schema(type=openapi.TYPE_STRING, maxLength=10, description='Price (deprecated field)'),
+            'currency': openapi.Schema(type=openapi.TYPE_STRING, maxLength=20, description='Currency code'),
+            'distributor': openapi.Schema(type=openapi.TYPE_STRING, maxLength=100, description='Distributor name'),
+            'project': openapi.Schema(type=openapi.TYPE_INTEGER, description='Project ID (must have access to the project)'),
+            'supplier': openapi.Schema(type=openapi.TYPE_INTEGER, description='Supplier ID'),
+            'git_link': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='Git repository link'),
+            'model_url': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='3D model URL'),
+            'external_part_number': openapi.Schema(type=openapi.TYPE_STRING, maxLength=1000, description='External part number'),
+            'part_information': openapi.Schema(type=openapi.TYPE_OBJECT, description='JSON object with additional part information'),
+            'urls': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_OBJECT), description='Array of URL objects'),
+            'component_vault_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Component vault ID'),
+            'is_rohs_compliant': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='RoHS compliance status'),
+            'is_reach_compliant': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='REACH compliance status'),
+            'is_ul_compliant': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='UL compliance status'),
+            'export_control_classification_number': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='ECCN'),
+            'country_of_origin': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='Country of origin'),
+            'harmonized_system_code': openapi.Schema(type=openapi.TYPE_STRING, maxLength=200, description='HS code'),
+            'release_state': openapi.Schema(type=openapi.TYPE_STRING, description='Release state', enum=['Draft', 'Released']),
+            'is_approved_for_release': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Approve for release'),
+            'markdown_notes': openapi.Schema(type=openapi.TYPE_STRING, description='Markdown text (can be edited on released parts)'),
+            'tags': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER), description='Array of tag IDs (can be edited on released parts)'),
+            'price_update': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Allow price updates on released parts'),
+            'created_by': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID (only for API key requests)'),
+        }
+    ),
+    responses={
+        200: openapi.Response(description='Part updated successfully', schema=PartSerializer),
+        400: openapi.Response(description='Bad request - part is released and field cannot be edited, or invalid data'),
+        401: openapi.Response(description='Unauthorized'),
+        404: openapi.Response(description='Part not found'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
@@ -1048,6 +1209,37 @@ def remove_part_notes(request, pk, **kwargs):
         return Response(f"edit_part failed: {e}", status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_id='new_revision_part',
+    operation_description="""
+    Create a new revision of an existing part.
+    
+    **Required fields:**
+    - `revision_notes`: Notes describing the changes in this revision (max 20000 characters)
+    
+    **Optional fields:**
+    - `created_by`: User ID (only for API key requests, integer)
+    
+    **Note:** The part must be the latest revision to create a new revision. The new revision will inherit most fields from the previous revision.
+    """,
+    tags=['parts'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['revision_notes'],
+        properties={
+            'revision_notes': openapi.Schema(type=openapi.TYPE_STRING, maxLength=20000, description='Notes describing the changes in this revision', example='Updated component values and improved thermal performance'),
+            'created_by': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID (only for API key requests)'),
+        }
+    ),
+    responses={
+        201: openapi.Response(description='New revision created successfully', schema=PartSerializer),
+        400: openapi.Response(description='Bad request - missing required fields or invalid data'),
+        401: openapi.Response(description='Unauthorized - not latest revision or no project access'),
+        404: openapi.Response(description='Part not found'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([IsAuthenticated | APIAndProjectAccess])

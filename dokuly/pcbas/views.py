@@ -5,6 +5,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes, permission_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from django.core.files.base import ContentFile
 
 from django.db.models import Q
@@ -238,6 +240,35 @@ def get_latest_revisions(request, **kwargs):
     return Response(data)
 
 
+@swagger_auto_schema(
+    method='put',
+    operation_id='new_revision_pcba',
+    operation_description="""
+    Create a new revision of an existing PCBA.
+    
+    **Optional fields:**
+    - `revision_type`: Type of revision ("major" or "minor", default: "major")
+    - `created_by`: User ID (only for API key requests, integer)
+    
+    **Note:** The PCBA must be the latest revision to create a new revision. The new revision will inherit most fields from the previous revision.
+    """,
+    tags=['pcbas'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=[],
+        properties={
+            'revision_type': openapi.Schema(type=openapi.TYPE_STRING, description='Type of revision', enum=['major', 'minor'], example='major', default='major'),
+            'created_by': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID (only for API key requests)'),
+        }
+    ),
+    responses={
+        200: openapi.Response(description='New revision created successfully', schema=PcbaSerializer),
+        400: openapi.Response(description='Bad request - invalid data'),
+        401: openapi.Response(description='Unauthorized - not latest revision or no project access'),
+        404: openapi.Response(description='PCBA not found'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
@@ -350,6 +381,47 @@ def new_revision(request, pk, **kwargs):
     return Response(data, status=status.HTTP_200_OK)
 
 
+@swagger_auto_schema(
+    method='put',
+    operation_id='edit_pcba',
+    operation_description="""
+    Update an existing PCBA.
+    
+    **Note:** Most fields can only be edited when the PCBA is in "Draft" state. Released PCBAs can only have `markdown_notes`, `tags`, and `price_update` modified.
+    
+    **Optional fields (all can be updated):**
+    - `display_name`: Name of the PCBA (max 150 characters)
+    - `description`: Description of the PCBA (max 500 characters)
+    - `release_state`: Release state ("Draft", "Released", etc.)
+    - `is_approved_for_release`: Boolean to approve for release
+    - `markdown_notes`: Markdown text (can be edited on released PCBAs)
+    - `tags`: Array of tag IDs (can be edited on released PCBAs)
+    - `price_update`: Boolean to allow price updates on released PCBAs
+    - `user_qa_id`: User ID for quality assurance (only for API key requests, integer)
+    """,
+    tags=['pcbas'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=[],
+        properties={
+            'display_name': openapi.Schema(type=openapi.TYPE_STRING, maxLength=150, description='Name of the PCBA'),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='Description of the PCBA'),
+            'release_state': openapi.Schema(type=openapi.TYPE_STRING, description='Release state', enum=['Draft', 'Released']),
+            'is_approved_for_release': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Approve for release'),
+            'markdown_notes': openapi.Schema(type=openapi.TYPE_STRING, description='Markdown text (can be edited on released PCBAs)'),
+            'tags': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER), description='Array of tag IDs (can be edited on released PCBAs)'),
+            'price_update': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Allow price updates on released PCBAs'),
+            'user_qa_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID for quality assurance (only for API key requests)'),
+        }
+    ),
+    responses={
+        200: openapi.Response(description='PCBA updated successfully', schema=PcbaSerializer),
+        400: openapi.Response(description='Bad request - PCBA is released and field cannot be edited, or invalid data'),
+        401: openapi.Response(description='Unauthorized'),
+        404: openapi.Response(description='PCBA not found'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
@@ -438,6 +510,44 @@ def edit_pcba(request, pk, **kwargs):
         )
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_id='create_new_pcba',
+    operation_description="""
+    Create a new PCBA with a unique part number.
+    
+    **Required fields:**
+    - `display_name`: Name of the PCBA (max 150 characters)
+    - `description`: Description of the PCBA (max 500 characters)
+    - `project`: Project ID (integer, must have access to the project)
+    
+    **Optional fields:**
+    - `external_part_number`: External part number (max 1000 characters)
+    - `created_by`: User ID (only for API key requests, integer)
+    
+    **Note:** A new BOM (Bill of Materials) is automatically created for each new PCBA.
+    """,
+    tags=['pcbas'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['display_name', 'description', 'project'],
+        properties={
+            'display_name': openapi.Schema(type=openapi.TYPE_STRING, maxLength=150, description='Name of the PCBA', example='Main Controller PCBA'),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, maxLength=500, description='Description of the PCBA', example='Main controller printed circuit board assembly'),
+            'project': openapi.Schema(type=openapi.TYPE_INTEGER, description='Project ID (must have access to the project)', example=1),
+            'external_part_number': openapi.Schema(type=openapi.TYPE_STRING, maxLength=1000, description='External part number'),
+            'created_by': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID (only for API key requests)'),
+        }
+    ),
+    responses={
+        201: openapi.Response(description='PCBA created successfully', schema=PcbaSerializer),
+        400: openapi.Response(description='Bad request - missing required fields or invalid data'),
+        401: openapi.Response(description='Unauthorized'),
+        404: openapi.Response(description='Project not found'),
+        500: openapi.Response(description='Internal server error'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("GET", "POST",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
