@@ -33,6 +33,7 @@ from organizations.views import get_subscription_type
 from files.models import Image
 from parts.models import Part
 from pcbas.models import Pcba
+from documents.models import Document
 from part_numbers.methods import get_next_part_number
 
 from purchasing.models import PurchaseOrder
@@ -90,6 +91,11 @@ def edit_release_state(request):
             pcba = Pcba.objects.get(id=id)
             pcba.release_state = data["release_state"]
             pcba.save()
+            return Response(status=status.HTTP_200_OK)
+        elif data["app"] == "documents":
+            document = Document.objects.get(id=id)
+            document.release_state = data["release_state"]
+            document.save()
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)

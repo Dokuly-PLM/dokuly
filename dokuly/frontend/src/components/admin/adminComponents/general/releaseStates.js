@@ -6,11 +6,13 @@ import { editReleaseState, getParts } from "../../../parts/functions/queries";
 import { fetchPcbas } from "../../../pcbas/functions/queries";
 import GenericDropdownSelector from "../../../dokuly_components/dokulyTable/components/genericDropdownSelector";
 import { getUnArchivedAssemblies } from "../../../assemblies/functions/queries";
+import { getAllDocuments } from "../../../documents/functions/queries";
 
 const ReleaseStates = ({ setRefresh }) => {
   const [parts, setParts] = useState([]);
   const [pcbas, setPcbas] = useState([]);
   const [assemblies, setAssemblies] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [items, setItems] = useState([]);
 
   const states = [
@@ -36,6 +38,11 @@ const ReleaseStates = ({ setRefresh }) => {
         setAssemblies(response.data);
       }
     });
+    getAllDocuments().then((response) => {
+      if (response.status === 200) {
+        setDocuments(response.data);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -44,9 +51,10 @@ const ReleaseStates = ({ setRefresh }) => {
       ...parts.map((part) => ({ ...part, app: "parts" })),
       ...pcbas.map((pcba) => ({ ...pcba, app: "pcbas" })),
       ...assemblies.map((assembly) => ({ ...assembly, app: "assemblies" })),
+      ...documents.map((document) => ({ ...document, app: "documents" })),
     ];
     setItems(combinedItems);
-  }, [pcbas, parts, assemblies]);
+  }, [pcbas, parts, assemblies, documents]);
 
   const handleStateChange = (id, app, newState) => {
     editReleaseState(id, app, newState).then((data) => {
@@ -61,6 +69,11 @@ const ReleaseStates = ({ setRefresh }) => {
       key: "full_part_number",
       header: "Part number",
       formatter: (row) => {
+        if (row.app === "documents") {
+          return row.full_doc_number || "N/A";
+        }
+        
+        // Handle parts, pcbas, and assemblies
         const useNumberRevisions = row?.organization?.use_number_revisions || false;
         if (useNumberRevisions) {
           // For number revisions, full_part_number already includes the revision with underscore
