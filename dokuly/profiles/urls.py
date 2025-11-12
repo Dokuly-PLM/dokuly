@@ -1,6 +1,6 @@
 from rest_framework import routers
 from django.urls.conf import path
-from .api import ProfileViewSet
+from .api import ProfileViewSet, TableViewViewSet
 from . import views
 from . import viewsNotification
 
@@ -36,5 +36,6 @@ urlpatterns = [
 
 router = routers.DefaultRouter()
 router.register('api/profiles', ProfileViewSet, 'profiles')
+router.register('api/table-views', TableViewViewSet, 'table-views')
 
 urlpatterns += router.urls

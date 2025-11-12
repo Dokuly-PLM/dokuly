@@ -58,3 +58,4 @@ trimesh
 networkx 
 django-cryptography
 djangorestframework-api-key==3.0.0
+drf-yasg>=1.21.7

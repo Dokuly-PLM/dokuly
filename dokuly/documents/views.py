@@ -12,6 +12,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, renderer_classes, permission_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from django.shortcuts import get_object_or_404
 
 import documents.viewUtilities as util
@@ -115,6 +117,46 @@ def increment_document_number(project_id):
     return highest_num + 1
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_id='create_new_document',
+    operation_description="""
+    Create a new document.
+    
+    **Required fields:**
+    - `title`: Title of the document (string)
+    - `project`: Project ID (integer, must have access to the project)
+    - `prefix_id`: Document prefix ID (integer)
+    - `internal`: Boolean indicating if the document is internal (true) or external (false)
+    
+    **Optional fields:**
+    - `description`: Description of the document (string, can be "null" or "undefined")
+    - `template_id`: Template document ID to copy from (integer, -1 to not use template)
+    - `created_by`: User ID (only for API key requests, integer)
+    
+    **Note:** The document number is automatically generated based on the project and prefix.
+    """,
+    tags=['documents'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['title', 'project', 'prefix_id', 'internal'],
+        properties={
+            'title': openapi.Schema(type=openapi.TYPE_STRING, description='Title of the document', example='Product Requirements Document'),
+            'project': openapi.Schema(type=openapi.TYPE_INTEGER, description='Project ID (must have access to the project)', example=1),
+            'prefix_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Document prefix ID', example=1),
+            'internal': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='True for internal documents, false for external documents', example=False),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, description='Description of the document (can be "null" or "undefined")', example='Product requirements and specifications'),
+            'template_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Template document ID to copy from (-1 to not use template)', example=-1),
+            'created_by': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID (only for API key requests)'),
+        }
+    ),
+    responses={
+        201: openapi.Response(description='Document created successfully', schema=DocumentSerializer),
+        400: openapi.Response(description='Bad request - missing required fields or invalid data'),
+        401: openapi.Response(description='Unauthorized - no project access'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([APIAndProjectAccess | IsAuthenticated])
@@ -771,6 +813,30 @@ def update_errata(request, documentId):
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([APIAndProjectAccess | IsAuthenticated])
+@swagger_auto_schema(
+    method='post',
+    operation_id='auto_new_revision_document',
+    operation_description="""
+    Create a new revision of an existing document.
+    
+    **Note:** The document must be the latest revision to create a new revision. The new revision will inherit most fields from the previous revision, including tags.
+    """,
+    tags=['documents'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=[],
+        properties={}
+    ),
+    responses={
+        201: openapi.Response(description='New revision created successfully', schema=DocumentSerializer),
+        401: openapi.Response(description='Unauthorized - not latest revision or no access'),
+        404: openapi.Response(description='Document not found'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated | APIAndProjectAccess])
 def auto_new_revision(request, pk, **kwargs):
     try:
         user = request.user
@@ -967,6 +1033,44 @@ def get_org_id(user):
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([APIAndProjectAccess | IsAuthenticated])
+@swagger_auto_schema(
+    method='put',
+    operation_id='update_document',
+    operation_description="""
+    Update an existing document.
+    
+    **Note:** Documents cannot be edited when they are in "Released" state.
+    
+    **Optional fields (all can be updated):**
+    - `title`: Title of the document (string)
+    - `description`: Description of the document (string)
+    - `summary`: Summary of the document (string)
+    - `shared_document_link`: Shared document link (string, can be "null")
+    - `release_state`: Release state ("Draft", "Released", etc.)
+    """,
+    tags=['documents'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=[],
+        properties={
+            'title': openapi.Schema(type=openapi.TYPE_STRING, description='Title of the document'),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, description='Description of the document'),
+            'summary': openapi.Schema(type=openapi.TYPE_STRING, description='Summary of the document'),
+            'shared_document_link': openapi.Schema(type=openapi.TYPE_STRING, description='Shared document link (can be "null")'),
+            'release_state': openapi.Schema(type=openapi.TYPE_STRING, description='Release state', enum=['Draft', 'Released']),
+        }
+    ),
+    responses={
+        200: openapi.Response(description='Document updated successfully', schema=DocumentSerializer),
+        400: openapi.Response(description='Bad request - document is released and cannot be edited, or invalid data'),
+        401: openapi.Response(description='Unauthorized'),
+        404: openapi.Response(description='Document not found'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated | APIAndProjectAccess])
 def update_doc(request, pk, **kwargs):
     """Method for updating documents, and triggering regeneration of pdf documents."""
     user = request.user

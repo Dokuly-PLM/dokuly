@@ -89,3 +89,34 @@ class Notification(models.Model):
         default=False, null=True, blank=True)
 
     is_project_notification = models.BooleanField(default=False, null=True, blank=True)
+
+
+class TableView(models.Model):
+    """Model for storing table view configurations (column selection, filters, sort order).
+    Views can be personal (user-specific) or shared (available to all users).
+    """
+    
+    table_name = models.CharField(max_length=100, help_text="Name of the table (e.g., 'parts', 'assemblies', 'pcbas')")
+    name = models.CharField(max_length=200, help_text="User-friendly name for this view")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="table_views")
+    is_shared = models.BooleanField(default=False, help_text="If True, view is available to all users")
+    
+    # View configuration stored as JSON
+    columns = models.JSONField(default=list, help_text="List of column keys to display")
+    filters = models.JSONField(default=dict, help_text="Active filters as key-value pairs")
+    sorted_column = models.CharField(max_length=100, null=True, blank=True, help_text="Key of the sorted column")
+    sort_order = models.CharField(max_length=10, default="asc", help_text="Sort order: 'asc' or 'desc'")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["-updated_at"]
+        unique_together = [["table_name", "name", "user"]]
+        indexes = [
+            models.Index(fields=["table_name", "user"]),
+            models.Index(fields=["table_name", "is_shared"]),
+        ]
+    
+    def __str__(self):
+        return f"{self.table_name} - {self.name} ({'Shared' if self.is_shared else 'Personal'})"

@@ -37,7 +37,6 @@ import ResetPassword from "./accounts/ResetPassword";
 import RequireAuth from "./common/requireAuth";
 import PurchasingDashboard from "./purchasing/purchasingDashboard";
 import DisplayPurchaseOrder from "./purchasing/displayPurchaseOrder";
-// import FloatingHelpButton from "./help/FloatingHelpButton";
 import { ToastContainer, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
@@ -145,6 +144,7 @@ function App() {
           setIsAuthenticated,
           subscriptionType,
           setSubscriptionType,
+          user,
         }}
       >
         <ToastContainer
@@ -161,7 +161,6 @@ function App() {
           pauseOnHover
           theme="light"
         />
-        {/* <FloatingHelpButton /> */}
         <TopHeader
           isAuthenticated={isAuthenticated}
           user={user}
@@ -243,7 +242,6 @@ function App() {
               <div className="col-12">
                 <main role="main">
                   <div>
-                    {/* <FloatingHelpButton /> */}
                     <DndProvider backend={HTML5Backend}>
                       <Routes>
                         <Route
