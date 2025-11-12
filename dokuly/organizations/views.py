@@ -410,6 +410,7 @@ def manage_active_modules(request):
             "assembly_is_enabled",
             "procurement_is_enabled",
             "requirement_is_enabled",
+            "production_is_enabled",
         ]:
             if field in data:
                 setattr(organization, field, data[field])

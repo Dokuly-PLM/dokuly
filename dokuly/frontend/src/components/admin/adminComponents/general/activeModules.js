@@ -27,6 +27,11 @@ const ActiveModules = ({ org, setRefresh }) => {
       label: "Requirements",
       isEnabled: "requirement_is_enabled",
     },
+    {
+      id: "production",
+      label: "Production",
+      isEnabled: "production_is_enabled",
+    },
   ];
 
   const handleCheckboxChange = (moduleConfig, isChecked) => {

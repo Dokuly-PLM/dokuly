@@ -374,26 +374,27 @@ const Sidebar = (props) => {
           </li>
         )}
 
-      {testUser && isAppAllowed("production") && (
-        <li
-          className={`nav-item ${
-            location.pathname.startsWith("/production") ? "nav-item-active" : ""
-          }`}
-          key={"Production"}
-        >
-          <Link to="/production" className="nav-link ">
-            <img
-              src="../../static/icons/box.svg"
-              alt="boxes"
-              style={{
-                filter:
-                  "invert(25%) sepia(48%) saturate(4078%) hue-rotate(289deg) brightness(91%) contrast(93%)",
-              }}
-            />
-            {innerWidth > widthWhereTextDisappears ? "Production" : ""}
-          </Link>
-        </li>
-      )}
+      {organization?.production_is_enabled === true &&
+        isAppAllowed("production") && (
+          <li
+            className={`nav-item ${
+              location.pathname.startsWith("/production") ? "nav-item-active" : ""
+            }`}
+            key={"Production"}
+          >
+            <Link to="/production" className="nav-link ">
+              <img
+                src="../../static/icons/box.svg"
+                alt="boxes"
+                style={{
+                  filter:
+                    "invert(25%) sepia(48%) saturate(4078%) hue-rotate(289deg) brightness(91%) contrast(93%)",
+                }}
+              />
+              {innerWidth > widthWhereTextDisappears ? "Production" : ""}
+            </Link>
+          </li>
+        )}
     </ul>
   );
 
