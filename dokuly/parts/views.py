@@ -91,6 +91,12 @@ def edit_release_state(request):
             pcba.release_state = data["release_state"]
             pcba.save()
             return Response(status=status.HTTP_200_OK)
+        elif data["app"] == "documents":
+            from documents.models import Document
+            document = Document.objects.get(id=id)
+            document.release_state = data["release_state"]
+            document.save()
+            return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
