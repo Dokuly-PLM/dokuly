@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useSpring, animated, config } from "react-spring";
-import DocumentInfo from "../adminComponents/documents/documentInfo";
-import DocumentList from "../adminComponents/documents/documentList";
 import DocumentPrefixes from "../adminComponents/documents/documentPrefixes";
 import {
   basicSkeletonLoaderInfoCard,
@@ -179,31 +177,6 @@ const AdminDocuments = (props) => {
               prefixes={prefixes}
             />
           </div>
-        </div>
-        <div className="col">
-          <div className="row">
-            <DocumentInfo
-              users={users}
-              documents={documents}
-              projects={projects}
-              customers={customers}
-              childToParent={childToParent}
-              selectedDocument={selectedDocument}
-              prefixes={prefixes}
-            />
-          </div>
-          <div className="row">
-            <DocumentList
-              users={users}
-              documents={documents}
-              projects={projects}
-              customers={customers}
-              childToParent={childToParent}
-              selectedDocument={selectedDocument}
-              prefixes={prefixes}
-            />
-          </div>
-          <div className="row" />
         </div>
       </div>
     </div>
