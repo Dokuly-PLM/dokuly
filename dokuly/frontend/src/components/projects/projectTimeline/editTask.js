@@ -209,7 +209,6 @@ export const EditTaskForm = ({
       last_name: newAssignee.label.split(" ")[1],
       color: newAssignee.color,
     };
-    console.log(formattedAssignee);
     if (currentAssignees.find((a) => a.id === formattedAssignee.id)) {
       toast.error("User already assigned to task");
       return;

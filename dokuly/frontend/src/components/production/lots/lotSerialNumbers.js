@@ -57,7 +57,7 @@ const LotSerialNumbers = ({
 
     createNewProduction(data)
       .then((res) => {
-        console.log(res);
+        //console.log(res);
       })
       .catch((err) => {})
       .finally(() => {

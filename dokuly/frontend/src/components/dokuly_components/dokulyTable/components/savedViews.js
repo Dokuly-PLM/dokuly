@@ -258,25 +258,6 @@ const SavedViews = ({
                     String(viewUserId) === String(user.pk)
                   );
                   
-                  // Debug logging
-                  if (process.env.NODE_ENV === 'development') {
-                    console.log('=== VIEW OWNERSHIP DEBUG ===');
-                    console.log('View name:', view.name);
-                    console.log('view.user (raw):', view.user, 'type:', typeof view.user);
-                    console.log('viewUserId (extracted):', viewUserId);
-                    console.log('Current user:', user);
-                    console.log('user.id:', user?.id, 'user.pk:', user?.pk);
-                    console.log('currentUserId:', currentUserId);
-                    console.log('userOwnsView result:', userOwnsView);
-                    console.log('Comparisons:');
-                    console.log('  viewUserId === currentUserId:', viewUserId === currentUserId);
-                    console.log('  viewUserId === user.id:', viewUserId === user?.id);
-                    console.log('  viewUserId === user.pk:', viewUserId === user?.pk);
-                    console.log('  String(viewUserId) === String(currentUserId):', String(viewUserId) === String(currentUserId));
-                    console.log('  String(viewUserId) === String(user.id):', String(viewUserId) === String(user?.id));
-                    console.log('  String(viewUserId) === String(user.pk):', String(viewUserId) === String(user?.pk));
-                    console.log('================================');
-                  }
                   
                   // TEMPORARILY: Always show buttons to verify they render
                   // TODO: Change back to userOwnsView once we fix the comparison

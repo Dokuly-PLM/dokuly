@@ -62,7 +62,6 @@ const ItemReceivedForm = ({
   }, [userUpdatedStock]);
 
   useEffect(() => {
-    console.log("refresh", refresh);
     if (refresh) {
       refreshLocationEntires();
       refreshLocations();

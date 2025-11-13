@@ -64,7 +64,6 @@ const TaskManager = (props) => {
   });
 
   const createTaskAddAsSubtask = (row) => {
-    console.log(row);
     const data = {
       // Fields used by the view.
       name: "--",
