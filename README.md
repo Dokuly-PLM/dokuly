@@ -9,8 +9,7 @@ dokuly is free to use and simple to set up. See the [getting started guide](http
 
 Some documentation can be found on [github pages](https://dokuly-plm.github.io/dokuly/)
 
-<img width="3304" height="2765" alt="image" src="https://github.com/user-attachments/assets/0b2afb84-5156-4b84-b187-7dd1d0115d91" />
-
+<img width="1500" height="1500" alt="image" src="https://github.com/user-attachments/assets/ecbc22cf-a21c-4a01-a382-2347c2e6ef58" />
 
 ## Features
 
