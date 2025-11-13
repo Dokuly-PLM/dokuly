@@ -135,6 +135,16 @@ EMAIL_SENDER = 'your_smtp_sender_address'
 
 Replace the values with your own information from your smtp provider.
 
+### Currency Exchange Rate API
+
+Add currency conversion through a free currency API:
+
+https://www.exchangerate-api.com/docs/pair-conversion-requests
+
+```ini
+CURRENCY_API = "https://v6.exchangerate-api.com/v6/__YOUR_API_KEY__/latest/"
+```
+
 <a name="start_dev_on_new_computer"/>
 
 ## To start developing on a new computer
