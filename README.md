@@ -22,7 +22,7 @@ Some documentation can be found on [github pages](https://dokuly-plm.github.io/d
   - Change history with BOM comparison
   - Release management
   - Part-related files and documentation
-  - Vendor pricing with price breaks
+  - Vendor pricing with price breaks and currency conversion
   - Inventory
 - Documents
   - Document numbering
