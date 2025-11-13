@@ -10,23 +10,17 @@ import {
   basicFadeInSpring,
   loadingSpinner,
 } from "../functions/helperFunctions";
-import APIKeysPricingCard from "../adminComponents/general/componentVault/apiKeysPricingCard";
-import ComponentVaultPricing from "../adminComponents/general/componentVault/componentVaultPricing";
-import ComponentVaultSignup from "../adminComponents/general/componentVault/componentVaultSignup";
-import AddExistingKey from "../adminComponents/general/componentVault/addExistingKey";
 import { useSpring, animated } from "react-spring";
 import CopyToClipButton from "../../dokuly_components/copyToClipButton";
 import { AuthContext } from "../../App";
 import { set } from "react-ga";
 import useDokulyAPIKeys from "../adminComponents/apiKeys/useDokulyAPIKeys";
-import ComponentVaultKey from "../adminComponents/apiKeys/componentVault";
 import DokulyAPIKeys from "../adminComponents/apiKeys/dokulyAPIKeys";
 
 const AdminAPIKeys = (props) => {
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
   const [refresh, setRefresh] = useState(false);
   const [loadingCompVaultKey, setLoadingCompVaultKey] = useState(true);
-  const [componentVaultAPIKey, setComponentVaultAPIKey] = useState(null);
   const [loadingDokulyAPIKeys, setLoadingDokulyAPIKeys] = useState(true);
   const [signupCompVault, setSignupCompVault] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState({});
@@ -43,7 +37,6 @@ const AdminAPIKeys = (props) => {
       fetchAPIKeyFromOrg()
         .then((res) => {
           if (res.status === 200) {
-            setComponentVaultAPIKey("Not available");
             setOrgId(res.data.id);
           }
         })

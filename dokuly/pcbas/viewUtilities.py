@@ -591,22 +591,6 @@ def save_temp_file(file):
     return path, unique_name
 
 
-def send_mpns_to_component_vault_request(mpns, api_key):
-    local_server = bool(int(os.environ.get("DJANGO_LOCAL_SERVER", 0)))
-    url = ""
-    if local_server:
-        url = "http://localhost:8001/api/v1/addMpnToQueue/"
-    else:
-        url = "https://componentvault.com/api/v1/addMpnToQueue/"
-    body = {"mpns": mpns}
-    headers = {"Authorization": f"Api-Key {api_key}"}
-    # print(body)
-    # print(headers)
-    res = requests.put(url, data=body, headers=headers)
-    # print(res)
-    return res
-
-
 def find_missing_and_incorrect_connections(master_list, reference_list):
     """Compares two arrays. master_list is the master and contains the valid ids. It can however contain multiple repetitions of the same id.
     The ids listed in bom_ids, that is missing from the bom_part_ids array are returned in th emissing_ids array.

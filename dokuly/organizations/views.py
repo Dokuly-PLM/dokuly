@@ -166,80 +166,6 @@ def get_checkout_details(request):
         return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(("GET", "PUT"))
-@renderer_classes((JSONRenderer,))
-@permission_classes([IsAuthenticated])
-def send_request_to_component_vault(request):
-    if request.user == None:
-        return Response("Invalid query parameters", status=status.HTTP_401_UNAUTHORIZED)
-    data = request.data
-
-    if not ("password" in data or "api_key" in data):
-        return Response(
-            "No key sent with the request", status=status.HTTP_400_BAD_REQUEST
-        )
-
-    if "method" not in data:
-        return Response(
-            "No method sent with the request", status=status.HTTP_400_BAD_REQUEST
-        )
-
-    method = data["method"].upper()
-
-    request_func_map = {
-        "PUT": put_request,
-        "GET": get_request,
-        "POST": post_request,
-    }
-
-    if method not in request_func_map:
-        return Response(
-            f"Method not allowed, {method}", status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
-
-    response = request_func_map[method](data)
-
-    if not response.ok:
-        # Handle other non-success status codes here (if needed)
-        return Response(response.text, status=status.HTTP_400_BAD_REQUEST)
-
-    response_data = ""
-    try:
-        response_data = response.json()
-    except Exception as e:
-        response_data = response.text  # Might not contain any json, try text
-        print(str(e))
-
-    return Response(response_data, status=status.HTTP_200_OK)
-
-
-def get_request(data):
-    url = "https://componentvault.com"
-    return requests.get(
-        f"{url}/{data['request']}",
-        headers=_get_auth_header(data),
-        data=_get_auth_data(data),
-    )
-
-
-def put_request(data):
-    url = "https://componentvault.com"
-    return requests.put(
-        f"{url}/{data['request']}",
-        headers=_get_auth_header(data),
-        data=_get_auth_data(data),
-    )
-
-
-def post_request(data):
-    url = "https://componentvault.com"
-    return requests.post(
-        f"{url}/{data['request']}",
-        headers=_get_auth_header(data),
-        data=_get_auth_data(data),
-    )
-
-
 def _get_auth_header(data):
     if "api_key" in data:
         return {"Authorization": "Api-Key " + data["api_key"]}
@@ -250,32 +176,6 @@ def _get_auth_data(data):
     if "password" in data:
         return {"password": data["password"]}
     return {}
-
-
-@api_view(("GET",))
-@renderer_classes((JSONRenderer,))
-@login_required(login_url="/login")
-def fetch_component_vault_api_key(request):
-    if request.user == None:
-        return Response("Invalid query parameters", status=status.HTTP_401_UNAUTHORIZED)
-    try:
-        user = request.user
-        user_profile = Profile.objects.get(user__pk=user.id)
-        userSerializer = ProfileSerializer(user_profile, many=False)
-        org_id = -1
-        if "organization_id" in userSerializer.data:
-            if userSerializer.data["organization_id"] != None:
-                org_id = userSerializer.data["organization_id"]
-        if org_id == -1:
-            return Response(
-                "No connected organization found", status.HTTP_204_NO_CONTENT
-            )
-        # Cannot use only here as it skips the decryption of the API key, e.g. no .only("component_vault_api_key")
-        org = Organization.objects.get(id=org_id)
-        serializer = OrgComponentVaultAPIKeySerializer(org, many=False)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET"])
@@ -339,7 +239,6 @@ def update_organization(request, id):
             "logo_id",
             "test_user",
             "enforce_2fa",
-            "component_vault_api_key",
             "delivery_address",
             "postal_code",
             "country",

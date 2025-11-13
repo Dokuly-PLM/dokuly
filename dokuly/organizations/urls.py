@@ -10,9 +10,6 @@ urlpatterns = [
     path("api/organizations/get/testUser/", views.fetch_test_user),
     path("api/organizations/create/<int:id>/", views.create_organization),
     path("api/organizations/update/<int:id>/", views.update_organization),
-    path(
-        "api/organizations/fetchCompVaultApiKey/", views.fetch_component_vault_api_key
-    ),
 
     path("api/organizations/manageActiveModules/", views.manage_active_modules),
     # Subscriptions
@@ -35,11 +32,6 @@ urlpatterns = [
     path("api/organizations/deleteAPIKey/<str:key_id>/",
          viewsApiKey.delete_api_key),
 
-    # Component Vault
-    path(
-        "api/organizations/componentVault/request/",
-        views.send_request_to_component_vault,
-    ),
     
     # Revision system fixes
     path("api/organizations/checkCorruptedRevisions/", views.check_corrupted_revisions),
