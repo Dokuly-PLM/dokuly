@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
 import UsersList from "../adminComponents/users/usersList";
 import {
-  basicSkeletonLoaderInfoCard,
-  basicSkeletonLoaderTableCard,
   loadingSpinner,
 } from "../functions/helperFunctions";
 import { fetchUsers, getMaxAllowedActiveUsers } from "../functions/queries";
-import { useSpring, animated } from "react-spring";
 import { Col, Container, Row } from "react-bootstrap";
-import ManageSubscriptions from "../adminComponents/users/manageSubscriptions";
 import { toast } from "react-toastify";
 
 const AdminUsers = (props) => {
@@ -71,17 +67,6 @@ const AdminUsers = (props) => {
 
   return (
     <div>
-      <Row className="mt-2 justify-content-center">
-        <Col className="col-10 offset-1 justify-content-center">
-          <ManageSubscriptions
-            user={props?.user}
-            users={data}
-            allowedUsers={allowedUsers}
-            setRefresh={setRefresh}
-            setSubscriptions={setSubscriptions}
-          />
-        </Col>
-      </Row>
       <Row className="mt-2 justify-content-center">
         <Col className="col-10 offset-1 justify-content-center">
           {data !== null && data !== undefined && data !== -1 && (

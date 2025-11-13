@@ -23,8 +23,6 @@ urlpatterns = [
     path('api/profiles/disable2fa/', views.remove_2fa_totp),
     path('api/profiles/verify2FA/', views.verify2FA),
     path('api/profiles/enable2faLogin/', views.enable_2fa_totp_from_login),
-    # Paddle API
-    path('api/profiles/manageSubscriptions/', views.manage_user_subscriptions),
     # Notifications
     path('api/profiles/get/notifications/',
          viewsNotification.get_unread_notifications),
