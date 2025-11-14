@@ -65,6 +65,7 @@ class Organization(models.Model):
     assembly_is_enabled = models.BooleanField(default=True, blank=True)
     procurement_is_enabled = models.BooleanField(default=True, blank=True)
     requirement_is_enabled = models.BooleanField(default=True, blank=True)
+    production_is_enabled = models.BooleanField(default=False, blank=True)
 
     # Revision system settings
     use_number_revisions = models.BooleanField(default=False, blank=True)
