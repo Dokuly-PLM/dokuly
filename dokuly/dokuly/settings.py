@@ -47,7 +47,6 @@ else:
         "https://dokuly.com",
         ".dokuly.com",
         "dokuly.com",
-        "https://componentvault.com",
     ]
 
 # Application definition ---------------------------------------------------------------------------
@@ -329,9 +328,6 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-
-
-COMPONENT_VAULT_API_KEY = os.getenv("component_vault_key")
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/

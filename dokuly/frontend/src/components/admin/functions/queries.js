@@ -1346,38 +1346,6 @@ export const fetchAPIKeyFromOrg = () => {
   return dataPromise;
 };
 
-/**
- * An axios wrapper function, can be used in any react component.
- * DataKeys: method, api_key, request
- * @return {Promise<AxiosResponse<any>>} The axios data promsie, 
- * contains a data response or error message based on response status.
- *
- * @example
-  sendRequestToComponentVault({
-    request: api/someRequest/1/ // Note no leading slash here, use trailing slash
-    method: GET,
-    api_key: myApiKey
-  }).then((res) => {
-    if(res.status === 200) {
-      // Handle success...
-    }
-  })
-  .catch((err) => {
-    if(err.response.status === 401) {
-      // Handle err response...
-    }
-  })
- */
-export const sendRequestToComponentVault = (data) => {
-  const promise = axios.put(
-    "api/organizations/componentVault/request/",
-    data,
-    tokenConfig(),
-  );
-  const dataPromise = promise.then((res) => res);
-  return dataPromise;
-};
-
 export const paddleCheckoutDetails = (data) => {
   const toastPromise = axios
     .put("api/subscriptions/getProducts/", data, tokenConfig())

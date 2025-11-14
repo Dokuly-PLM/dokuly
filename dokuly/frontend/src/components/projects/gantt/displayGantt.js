@@ -279,7 +279,6 @@ const DisplayGantt = (props) => {
   };
 
   const onDateChangeOptimistic = (task, children) => {
-    console.log("On date change Id:" + task.id);
     let newTasks = tasks.map((t) => (t.id === task.id ? task : t));
 
     const updateParentDates = (currentTask, tasksArray) => {

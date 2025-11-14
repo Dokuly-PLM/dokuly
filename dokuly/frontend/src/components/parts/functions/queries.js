@@ -344,26 +344,6 @@ export const getOrganizationCurrency = () => {
   return dataPromise;
 };
 
-/**
- * Search componentVault for data on the part.
- * @param {*} mpn
- * @returns
- */
-export const searchComopnentVaultByMpn = (mpn) => {
-  const data = { mpn: mpn };
-  const promise = axios.put(
-    "api/componentVault/search/mpn/",
-    data,
-    tokenConfig()
-  );
-  const dataPromise = promise.then((res) => res.data);
-  const error = promise.catch((err) => err);
-  if (error != null) {
-    return error;
-  }
-  return dataPromise;
-};
-
 export const convertThreeMFToGltf = (file_id) => {
   const promise = axios.get(
     `api/parts/get/convert_threemf_to_gltf_view/${file_id}/`,
@@ -373,21 +353,6 @@ export const convertThreeMFToGltf = (file_id) => {
   return dataPromise;
 };
 
-export const sendMpnSearchToComponentVault = (data) => {
-  const toastPromise = axios
-    .put("api/componentVault/search/mpn/", data, tokenConfig())
-    .then((res) => res)
-    .catch((err) => {
-      toast.error("An error occurred while querying Component Vault");
-      throw err;
-    });
-
-  return toast.promise(toastPromise, {
-    pending: "Searching Component Vault...",
-    success: "Search finished successfully",
-    error: "Failed to search Component Vault",
-  });
-};
 
 export const updateThumbnail = (id, imageId) => {
   const toastPromise = axios

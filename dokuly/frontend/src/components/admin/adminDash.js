@@ -18,7 +18,6 @@ import {
   fetchUserProfile,
   fetchUsers,
 } from "./functions/queries";
-import PaymentSuccessful from "./adminComponents/users/paymentOnSuccess";
 import { verifyCheckoutSession } from "./functions/queries";
 import AdminAPIKeys from "./adminPages/adminAPIKeys";
 import { AuthContext } from "../App";
@@ -259,9 +258,6 @@ const AdminDash = () => {
       activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
     }`;
   }, [activeTab]);
-
-  if (success)
-    return <PaymentSuccessful success={success} sessionID={sessionId} />;
 
   return (
     <React.Fragment>

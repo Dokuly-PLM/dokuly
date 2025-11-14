@@ -4,7 +4,6 @@ from .api import PartViewSet
 from . import (
     views,
     viewFiles,
-    viewComponentVault,
     viewRender,
     viewsPartTypes,
     viewsPrice,
@@ -77,11 +76,6 @@ urlpatterns = [
     path("api/parts/put/partType/<int:id>/", viewsPartTypes.edit_part_type),
     path("api/parts/delete/partType/<int:id>/",
          viewsPartTypes.delete_part_type),
-    # ComponentVault
-    path(
-        "api/componentVault/search/mpn/",
-        viewComponentVault.search_component_vault_by_mpn,
-    ),
     path(
         "api/parts/get/convert_threemf_to_gltf_view/<int:file_id>/",
         viewRender.convert_threemf_to_gltf_view,

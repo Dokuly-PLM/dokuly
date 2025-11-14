@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from "react";
-import Select from "react-select";
 import { toast } from "react-toastify";
 import { Button, Col, Row } from "react-bootstrap";
-import { fetchAPIKeyFromOrg } from "../../admin/functions/queries";
 import { getActiveProjectByCustomer } from "../../projects/functions/queries";
-import { newPart, sendMpnSearchToComponentVault } from "../functions/queries";
-import { MpnSuggestions } from "./mpnSuggestions";
-import { parse_cv_data } from "../functions/parseComponentVaultInformation";
 import { get_active_customers } from "../../customers/funcitons/queries";
 import SubmitButton from "../../dokuly_components/submitButton";
 import { usePartTypes } from "../partTypes/usePartTypes";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
+import { newPart } from "../functions/queries";
 
 /**
  * # Button with form to create a new part.
@@ -33,16 +29,13 @@ const PartNewForm = (props) => {
 
   const [active_customers, setActiveCustomers] = useState(null);
   const [selected_customer_id, setSelectedCustomerId] = useState(-1);
-  const [component_vault_id, setComponentVaultId] = useState(-1);
 
   const [projects, setProjects] = useState(null);
   const [selected_project_id, setSelectedProjectId] = useState(-1);
 
-  const [componentVaultResults, setComponentVaultResults] = useState([]);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearchResultSelected, setIsSearchResultSelected] = useState(false);
-  const [componentVaultAPIKey, setComponentVaultAPIKey] = useState(null);
 
   const [price_history, setPriceHistory] = useState(null);
   const [part_information, setPartInformation] = useState(null);
@@ -89,50 +82,7 @@ const PartNewForm = (props) => {
     setPartInformation(information?.part_information);
     setStock(information?.stock);
     setUrls(information?.urls);
-    setComponentVaultId(information?.component_vault_id);
   };
-
-  const queryComponentVault = () => {
-    if (mpn === null || mpn?.length === 0) {
-      toast.info("Enter a mpn to search for matches");
-      return;
-    }
-    sendMpnSearchToComponentVault({
-      mpn: mpn.trim(),
-      api_key: componentVaultAPIKey.toString().trim(),
-    })
-      .then((res) => {
-        if (res.status === 200) {
-          setComponentVaultResults(res.data);
-          setShowSuggestions(true);
-        }
-        if (res.status === 204) {
-          toast.info("No parts found with matching mpn!");
-        }
-      })
-      .catch((err) => {
-        if (err) {
-          setShowSuggestions(false);
-          setComponentVaultResults(null);
-        }
-      });
-  };
-
-  useEffect(() => {
-    fetchAPIKeyFromOrg()
-      .then((res) => {
-        if (res.status === 200) {
-          if (res?.data?.componentVaultAPIKey !== null) {
-            setComponentVaultAPIKey(res.data.component_vault_api_key);
-          }
-        }
-      })
-      .catch((err) => {
-        if (err) {
-          setComponentVaultAPIKey(null);
-        }
-      });
-  }, []);
 
   useEffect(() => {
     if (
@@ -154,8 +104,6 @@ const PartNewForm = (props) => {
     const keydownHandler = (event) => {
       if (event.key === "Control" || event.key === "Meta") {
         setIsCtrlDown(true);
-      } else if (event.key === "Enter" && isCtrlDown) {
-        queryComponentVault();
       }
     };
 
@@ -196,7 +144,6 @@ const PartNewForm = (props) => {
       image_url: image_url,
       currency: currency,
       part_information: part_information,
-      component_vault_id: component_vault_id,
       urls: urls,
       external_part_number: externalPartNumber,
     };

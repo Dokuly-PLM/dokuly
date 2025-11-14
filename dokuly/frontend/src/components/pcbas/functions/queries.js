@@ -105,18 +105,6 @@ export const handleFileQuery = (files) => {
   return dataPromise;
 };
 
-export const autoFetchMissingParts = (data) => {
-  const promise = axios
-    .put("api/pcbas/bulkSearchComponentVault/", data, tokenConfig())
-    .then((res) => res)
-    .catch((err) => err);
-  return toast.promise(promise, {
-    pending: "Finding possible matches for MPNs in BOM...",
-    success: "Query complete",
-    error: "Error finding matches, try again later.",
-  });
-};
-
 /**
  * Push a pcba file to the back-end for processing and storage.
  *

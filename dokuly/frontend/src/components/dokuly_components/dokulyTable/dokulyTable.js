@@ -650,8 +650,6 @@ function DokulyTableContents({
     const offsetX = 10; // Pixels to the right
     const offsetY = 10; // Pixels below
 
-    console.log("On right click: Mouse X:", e.clientX, "Mouse Y:", e.clientY);
-
     setContextMenu({
       visible: true,
       x: e.clientX + offsetX,

@@ -44,11 +44,6 @@ urlpatterns = [
     path("api/pcbas/gerber/<int:pcba_id>/", viewsFiles.handle_gerber_files),
     path("api/pcbas/put/pcbLayers/<int:pcba_id>/", viewsFiles.update_pcb_layers),
 
-    # Component vault mpn queue
-    path("api/sendAllMpnsToComponentVault/",
-         viewsBom.send_mpns_to_componentvault),
-    path("api/pcbas/bulkSearchComponentVault/",
-         viewsBom.bulk_search_component_vault),
     # DEPRECATED
     path("api/pcbas/uploadPcbaFile/", viewsFiles.upload_pcba_file),
 ]

@@ -25,10 +25,8 @@ export const parse_cv_data = (part) => {
   const stock = part?.stock;
   const part_information = filterEmptyValues(part?.part_information);
   const urls = part?.urls;
-  const component_vault_id = part?.id;
 
   return {
-    component_vault_id,
     mpn,
     display_name,
     description,

@@ -15,6 +15,7 @@ import {
 function Login({ setUser }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
   const [workEmail, setWorkEmail] = useState("");
   const [error, setError] = useState(false);
@@ -233,13 +234,45 @@ function Login({ setUser }) {
 
               <div className="form-group">
                 <label>Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  name="password"
-                  onChange={onChange}
-                  value={password}
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control"
+                    name="password"
+                    onChange={onChange}
+                    value={password}
+                    style={{ paddingRight: "40px" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    <img
+                      src="../../static/icons/eye.svg"
+                      alt="toggle password visibility"
+                      width="20px"
+                      style={{
+                        opacity: showPassword ? 1 : 0.5,
+                        filter: showPassword 
+                          ? "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)"
+                          : "invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(90%)",
+                      }}
+                    />
+                  </button>
+                </div>
               </div>
 
               {wrongUsernamePassword && (
@@ -294,13 +327,45 @@ function Login({ setUser }) {
 
           <div className="form-group">
             <label>Password</label>
-            <input
-              type="password"
-              className="form-control"
-              name="password"
-              onChange={onChange}
-              value={password}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control"
+                name="password"
+                onChange={onChange}
+                value={password}
+                style={{ paddingRight: "40px" }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                <img
+                  src="../../static/icons/eye.svg"
+                  alt="toggle password visibility"
+                  width="20px"
+                  style={{
+                    opacity: showPassword ? 1 : 0.5,
+                    filter: showPassword 
+                      ? "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)"
+                      : "invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(90%)",
+                  }}
+                />
+              </button>
+            </div>
           </div>
           {wrongUsernamePassword && (
             <div className="form-group">

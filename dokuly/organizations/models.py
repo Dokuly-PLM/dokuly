@@ -58,11 +58,6 @@ class Organization(models.Model):
     currency_conversion_rates = models.JSONField(default={}, blank=True)
     currency_update_time = models.DateTimeField(null=True, blank=True)
 
-    # Component Vault
-    component_vault_api_key = encrypt(
-        models.CharField(null=True, blank=True, max_length=1024)
-    )
-
     # Enabled modules
     time_tracking_is_enabled = models.BooleanField(default=False, blank=True)
     document_is_enabled = models.BooleanField(default=True, blank=True)
@@ -96,6 +91,11 @@ class Organization(models.Model):
     postal_code = models.CharField(max_length=1000, blank=True, null=True)
     country = models.CharField(max_length=1000, blank=True, null=True)
     billing_address = models.CharField(max_length=1000, blank=True, null=True)
+
+    # Component Vault
+    component_vault_api_key = encrypt(
+        models.CharField(null=True, blank=True, max_length=1024) # DEPRECATED
+    )
 
 
 class Subscription(models.Model):

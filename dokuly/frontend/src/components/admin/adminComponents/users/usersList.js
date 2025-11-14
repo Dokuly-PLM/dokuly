@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import {
   activateUserQ,
   getMaxAllowedActiveUsers,
-  refreshPaddleSubscriptions,
 } from "../../functions/queries";
 import EditUserProfile from "./editUserProfile";
 import PermissionDropdown from "./permissionDropdown";
