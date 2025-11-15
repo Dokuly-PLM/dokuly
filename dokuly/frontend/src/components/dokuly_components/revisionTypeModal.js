@@ -84,15 +84,21 @@ const RevisionTypeModal = ({
     } else if (organization?.use_number_revisions) {
       return "Choose between major (increments version number) or minor (adds decimal) revision.";
     } else {
-      return "Choose between major (next letter) or minor (adds number) revision.";
+      return "A new major revision will be created (next letter).";
     }
   };
+
+  // Only show minor revision option if number-based revisions are enabled
+  const showMinorOption = organization?.use_number_revisions === true;
 
   return (
     <DokulyModal show={show} onHide={onHide} title="Create New Revision">
       <div className="mb-3">
         <p className="mb-3">
-          Choose the type of revision to create for <strong>{currentRevision}</strong>:
+          {showMinorOption 
+            ? `Choose the type of revision to create for ${currentRevision}:`
+            : `Create a new major revision for ${currentRevision}:`
+          }
         </p>
         
         <p className="text-muted mb-3">
@@ -115,22 +121,24 @@ const RevisionTypeModal = ({
             onChange={(e) => setRevisionType("major")}
           />
           
-          <div className="mt-3">
-            <CheckBox
-              id="minor"
-              label={
-                <div>
-                  <strong>Minor Revision</strong>
-                  <br />
-                  <small className="text-muted">
-                    New revision: {getRevisionPreview("minor")}
-                  </small>
-                </div>
-              }
-              checked={revisionType === "minor"}
-              onChange={(e) => setRevisionType("minor")}
-            />
-          </div>
+          {showMinorOption && (
+            <div className="mt-3">
+              <CheckBox
+                id="minor"
+                label={
+                  <div>
+                    <strong>Minor Revision</strong>
+                    <br />
+                    <small className="text-muted">
+                      New revision: {getRevisionPreview("minor")}
+                    </small>
+                  </div>
+                }
+                checked={revisionType === "minor"}
+                onChange={(e) => setRevisionType("minor")}
+              />
+            </div>
+          )}
         </div>
       </div>
       

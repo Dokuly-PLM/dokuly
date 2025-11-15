@@ -42,10 +42,10 @@ export const fetchDocument = (id) => {
   return dataPromise;
 };
 
-export const newDocumentRevision = (id) => {
+export const newDocumentRevision = (id, revisionType = 'major') => {
   const promise = axios.post(
     `/api/documents/post/newRevision/${id}/`,
-    {}, // Important to use empty object here, if not headers will be sent as data
+    { revision_type: revisionType },
     tokenConfig()
   );
   const dataPromise = promise.then((res) => res.data);

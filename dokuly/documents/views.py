@@ -855,6 +855,10 @@ def auto_new_revision(request, pk, **kwargs):
         if user == None:
             return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
 
+        # Get revision type from request data, default to 'major'
+        data = request.data
+        revision_type = data.get('revision_type', 'major')
+
         # Copy over old revision
         old_revision = Document.objects.get(id=pk)
         if old_revision.is_latest_revision == False:
@@ -868,7 +872,13 @@ def auto_new_revision(request, pk, **kwargs):
         new_revision.description = old_revision.description
         new_revision.summary = old_revision.summary
         new_revision.is_latest_revision = True
-        new_revision.revision = increment_revision(old_revision.revision)
+        
+        # Get organization ID from the project
+        organization_id = None
+        if old_revision.project:
+            organization_id = old_revision.project.organization_id
+        
+        new_revision.revision = increment_revision(old_revision.revision, organization_id, revision_type)
         new_revision.created_by = old_revision.created_by
         # new_revision.revision_author = request.user.id # TODO see models.py
         new_revision.previoius_revision_id = pk
