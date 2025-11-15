@@ -6,6 +6,7 @@ import {
 } from "../../functions/queries";
 import ProtectionLevelForm from "./protectionLevelForm";
 import DokulyTable from "../../../dokuly_components/dokulyTable/dokulyTable";
+import EditButton from "../../../dokuly_components/editButton";
 
 const ProtectionLevels = (props) => {
   const [refresh, setRefresh] = useState(false);
@@ -62,21 +63,12 @@ const ProtectionLevels = (props) => {
       key: "actions",
       header: "Actions",
       formatter: (row) => (
-        <div>
-          <button
-            className="btn dokuly-btn-transparent btn-sm me-2"
-            onClick={() => handleEditProtectionLevel(row)}
-          >
-            Edit
-          </button>
-          <button
-            className="btn btn-sm"
-            style={{ color: "#dc3545" }}
-            onClick={() => handleDeleteProtectionLevel(row.id)}
-          >
-            Delete
-          </button>
-        </div>
+        <EditButton
+          onClick={() => handleEditProtectionLevel(row)}
+          buttonText="Edit"
+          textSize="14px"
+          iconSize="20px"
+        />
       ),
     },
   ];

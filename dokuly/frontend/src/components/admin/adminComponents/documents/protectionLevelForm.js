@@ -4,7 +4,11 @@ import { toast } from "react-toastify";
 import {
   newProtectionLevel,
   editProtectionLevel,
+  deleteProtectionLevel,
 } from "../../functions/queries";
+import SubmitButton from "../../../dokuly_components/submitButton";
+import DeleteButton from "../../../dokuly_components/deleteButton";
+import DokulyModal from "../../../dokuly_components/dokulyModal";
 
 const ProtectionLevelForm = (props) => {
   const [name, setName] = useState("");
@@ -81,74 +85,98 @@ const ProtectionLevelForm = (props) => {
     props.onHide();
   };
 
+  const handleDelete = () => {
+    if (window.confirm("Are you sure you want to delete this protection level? This action cannot be undone.")) {
+      deleteProtectionLevel(props.protectionLevelSelected.id)
+        .then((res) => {
+          if (res.status === 200) {
+            toast.success("Protection level deleted successfully");
+            props.setRefresh(true);
+            props.onHide();
+            resetForm();
+          }
+        })
+        .catch((error) => {
+          if (error.response?.status === 400) {
+            toast.error("Cannot delete protection level that is in use by documents");
+          } else {
+            toast.error("Error deleting protection level");
+          }
+        });
+    }
+  };
+
   return (
-    <Modal show={props.show} onHide={handleClose}>
-      <Modal.Header closeButton>
-        <Modal.Title>
-          {props.protectionLevelSelected
-            ? "Edit Protection Level"
-            : "New Protection Level"}
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Name *</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter protection level name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-            <Form.Text className="text-muted">
-              Examples: Internal, Confidential, Public, Customer Releasable
-            </Form.Text>
-          </Form.Group>
+    <DokulyModal
+      show={props.show}
+      onHide={handleClose}
+      title={props.protectionLevelSelected
+        ? "Edit Protection Level"
+        : "New Protection Level"}
+    >
+      <Form onSubmit={handleSubmit}>
+        <Form.Group className="mb-3">
+          <Form.Label>Name *</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter protection level name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <Form.Text className="text-muted">
+            Examples: Internal, Confidential, Public, Customer Releasable
+          </Form.Text>
+        </Form.Group>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Description</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              placeholder="Enter description (optional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={500}
-            />
-            <Form.Text className="text-muted">
-              {description.length}/500 characters
-            </Form.Text>
-          </Form.Group>
+        <Form.Group className="mb-3">
+          <Form.Label>Description</Form.Label>
+          <Form.Control
+            as="textarea"
+            rows={3}
+            placeholder="Enter description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={500}
+          />
+          <Form.Text className="text-muted">
+            {description.length}/500 characters
+          </Form.Text>
+        </Form.Group>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Level *</Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Enter numeric level for sorting"
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-              required
-            />
-            <Form.Text className="text-muted">
-              Numeric value used to sort protection levels in increasing order (e.g., 0=Public, 1=Internal, 2=Confidential)
-            </Form.Text>
-          </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose}>
-          Cancel
-        </Button>
-        <Button
-          variant="primary"
-          onClick={handleSubmit}
+        <Form.Group className="mb-3">
+          <Form.Label>Level *</Form.Label>
+          <Form.Control
+            type="number"
+            placeholder="Enter numeric level for sorting"
+            value={level}
+            onChange={(e) => setLevel(e.target.value)}
+            required
+          />
+          <Form.Text className="text-muted">
+            Numeric value used to sort protection levels in increasing order (e.g., 0=Public, 1=Internal, 2=Confidential)
+          </Form.Text>
+        </Form.Group>
+      </Form>
+
+      <div className="form-group mt-3 d-flex align-items-center">
+        <SubmitButton
+          type="submit"
           disabled={!name.trim()}
+          onClick={handleSubmit}
+          disabledTooltip="Name is required"
         >
           {props.protectionLevelSelected ? "Save Changes" : "Create"}
-        </Button>
-      </Modal.Footer>
-    </Modal>
+        </SubmitButton>
+
+        {props.protectionLevelSelected && (
+          <DeleteButton
+            onDelete={handleDelete}
+            buttonText="Delete"
+          />
+        )}
+      </div>
+    </DokulyModal>
   );
 };
 
