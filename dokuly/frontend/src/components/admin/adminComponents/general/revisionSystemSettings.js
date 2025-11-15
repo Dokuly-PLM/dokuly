@@ -189,62 +189,67 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                   onChange={(e) => setUseNumberRevisions(e.target.checked)}
                 />
                 <Form.Text className="text-muted">
-                  When enabled, revisions will use numbers (1, 2, 3...) instead of letters (A, B, C...). Existing letter revisions will be treated as major revisions.
+                  When enabled, revisions will use numbers (1, 2, 3...) instead of letters (A, B, C...).
                 </Form.Text>
               </Form.Group>
             </Col>
           </Row>
 
-          {useNumberRevisions && (
-            <Row>
-              <Col md={12}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Revision Format</Form.Label>
-                  <DokulyDropdown
-                    title={revisionFormat === "major-only" ? "Major Only (1, 2, 3...)" : "Major-Minor (1-0, 1-1, 2-0...)"}
-                    variant="outline-secondary"
-                    disabled={!useNumberRevisions}
-                  >
-                    {({ closeDropdown }) => (
-                      <>
-                        <Dropdown.Item
-                          onClick={() => {
-                            setRevisionFormat("major-only");
-                            closeDropdown();
-                          }}
-                          active={revisionFormat === "major-only"}
-                        >
-                          Major Only (1, 2, 3...)
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => {
-                            setRevisionFormat("major-minor");
-                            closeDropdown();
-                          }}
-                          active={revisionFormat === "major-minor"}
-                        >
-                          Major-Minor (1-0, 1-1, 2-0...)
-                        </Dropdown.Item>
-                      </>
-                    )}
-                  </DokulyDropdown>
-                  <Form.Text className="text-muted">
-                    Choose the format for number-based revisions. Major-minor format allows for more granular versioning.
-                  </Form.Text>
-                </Form.Group>
-              </Col>
-            </Row>
-          )}
+          <Row>
+            <Col md={12}>
+              <Form.Group className="mb-3">
+                <Form.Label>Revision Format</Form.Label>
+                <DokulyDropdown
+                  title={
+                    revisionFormat === "major-only" 
+                      ? useNumberRevisions ? "Major Only (1, 2, 3...)" : "Major Only (A, B, C...)"
+                      : useNumberRevisions ? "Major-Minor (1-0, 1-1, 2-0...)" : "Major-Minor (A-0, A-1, B-0...)"
+                  }
+                  variant="outline-secondary"
+                >
+                  {({ closeDropdown }) => (
+                    <>
+                      <Dropdown.Item
+                        onClick={() => {
+                          setRevisionFormat("major-only");
+                          closeDropdown();
+                        }}
+                        active={revisionFormat === "major-only"}
+                      >
+                        {useNumberRevisions ? "Major Only (1, 2, 3...)" : "Major Only (A, B, C...)"}
+                      </Dropdown.Item>
+                      <Dropdown.Item
+                        onClick={() => {
+                          setRevisionFormat("major-minor");
+                          closeDropdown();
+                        }}
+                        active={revisionFormat === "major-minor"}
+                      >
+                        {useNumberRevisions ? "Major-Minor (1-0, 1-1, 2-0...)" : "Major-Minor (A-0, A-1, B-0...)"}
+                      </Dropdown.Item>
+                    </>
+                  )}
+                </DokulyDropdown>
+                <Form.Text className="text-muted">
+                  Choose the format for {useNumberRevisions ? "number" : "letter"}-based revisions. Major-minor format allows for more granular versioning with sub-revisions.
+                </Form.Text>
+              </Form.Group>
+            </Col>
+          </Row>
 
-          {useNumberRevisions && revisionFormat === "major-minor" && (
+          {revisionFormat === "major-minor" && (
             <Row>
               <Col md={12}>
                 <Form.Group className="mb-3">
                   <Form.Label>Major-Minor Separator</Form.Label>
                   <DokulyDropdown
-                    title={revisionSeparator === "-" ? "Dash (1-0, 1-1, 2-0...)" : "Dot (1.0, 1.1, 2.0...)"}
+                    title={
+                      revisionSeparator === "-" 
+                        ? useNumberRevisions ? "Dash (1-0, 1-1, 2-0...)" : "Dash (A-0, A-1, B-0...)"
+                        : useNumberRevisions ? "Dot (1.0, 1.1, 2.0...)" : "Dot (A.0, A.1, B.0...)"
+                    }
                     variant="outline-secondary"
-                    disabled={!useNumberRevisions || revisionFormat !== "major-minor"}
+                    disabled={revisionFormat !== "major-minor"}
                   >
                     {({ closeDropdown }) => (
                       <>
@@ -255,7 +260,7 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                           }}
                           active={revisionSeparator === "-"}
                         >
-                          Dash (1-0, 1-1, 2-0...)
+                          {useNumberRevisions ? "Dash (1-0, 1-1, 2-0...)" : "Dash (A-0, A-1, B-0...)"}
                         </Dropdown.Item>
                         <Dropdown.Item
                           onClick={() => {
@@ -264,13 +269,13 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                           }}
                           active={revisionSeparator === "."}
                         >
-                          Dot (1.0, 1.1, 2.0...)
+                          {useNumberRevisions ? "Dot (1.0, 1.1, 2.0...)" : "Dot (A.0, A.1, B.0...)"}
                         </Dropdown.Item>
                       </>
                     )}
                   </DokulyDropdown>
                   <Form.Text className="text-muted">
-                    Choose the separator between major and minor revision numbers.
+                    Choose the separator between major and minor revision {useNumberRevisions ? "numbers" : "identifiers"}.
                   </Form.Text>
                 </Form.Group>
               </Col>
@@ -280,13 +285,54 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
           <Row>
             <Col md={12}>
               <div className="alert alert-info">
-                <strong>Note:</strong> When you save these settings:
+                <strong>Current Configuration:</strong>
                 <ul className="mb-0 mt-2">
-                  <li>Existing letter revisions (A, B, C...) will be automatically converted to numbers (1, 2, 3...)</li>
-                  <li>Part numbers will display with underscore separator (e.g., PRT1234_1 instead of PRT1234A)</li>
-                  <li>This change affects all parts, assemblies, and PCBAs in your organization</li>
-                  <li>The data migration will run automatically when you click "Save Settings"</li>
+                  <li>
+                    <strong>Revision Type:</strong> {useNumberRevisions ? "Number-based" : "Letter-based"}
+                  </li>
+                  <li>
+                    <strong>Format:</strong> {revisionFormat === "major-only" ? "Major only" : "Major-minor"}
+                  </li>
+                  {revisionFormat === "major-minor" && (
+                    <li>
+                      <strong>Separator:</strong> {revisionSeparator === "-" ? "Dash (-)" : "Dot (.)"}
+                    </li>
+                  )}
+                  <li>
+                    <strong>Example:</strong>{" "}
+                    {useNumberRevisions 
+                      ? revisionFormat === "major-only" 
+                        ? "1, 2, 3..."
+                        : revisionSeparator === "-" 
+                          ? "1-0, 1-1, 2-0..."
+                          : "1.0, 1.1, 2.0..."
+                      : revisionFormat === "major-only"
+                        ? "A, B, C..."
+                        : revisionSeparator === "-"
+                          ? "A-0, A-1, B-0..."
+                          : "A.0, A.1, B.0..."
+                    }
+                  </li>
                 </ul>
+                {hasChanges && (
+                  <>
+                    <hr />
+                    <strong>Note:</strong> Changing these settings will affect how new revisions are created:
+                    <ul className="mb-0 mt-2">
+                      {useNumberRevisions !== (org?.use_number_revisions || false) && (
+                        <li>Switching between letter and number systems requires a data migration</li>
+                      )}
+                      {revisionFormat !== (org?.revision_format || "major-minor") && (
+                        <li>
+                          {revisionFormat === "major-minor" 
+                            ? "Enabling major-minor format allows creating sub-revisions (e.g., 1-0, 1-1)" 
+                            : "Disabling major-minor format will only allow major revisions (e.g., 1, 2, 3)"}
+                        </li>
+                      )}
+                      <li>This change affects all parts, assemblies, PCBAs, and documents in your organization</li>
+                    </ul>
+                  </>
+                )}
               </div>
             </Col>
           </Row>

@@ -23,18 +23,19 @@ const RevisionTypeModal = ({
   const getRevisionPreview = (type) => {
     if (!currentRevision) return "1-0";
     
+    const separator = organization?.revision_separator || "-";
+    const revisionFormat = organization?.revision_format || "major-minor";
+    
     // Parse current revision to show what the new one would be
     if (organization?.use_number_revisions) {
-      if (organization?.revision_format === "major-minor") {
-        const separator = organization?.revision_separator || "-";
-        
+      // NUMBER-BASED REVISIONS
+      if (revisionFormat === "major-minor") {
         if (currentRevision.includes(separator)) {
           const [major, minor] = currentRevision.split(separator);
           
           if (type === "major") {
             return `${parseInt(major) + 1}${separator}0`;
           } else {
-            // Ensure we don't add leading zeros
             const newMinor = parseInt(minor) + 1;
             return `${major}${separator}${newMinor}`;
           }
@@ -62,34 +63,72 @@ const RevisionTypeModal = ({
         if (isNaN(parseInt(currentRevision))) {
           // Convert letter to number: A=1, B=2, C=3, etc.
           const letterValue = currentRevision.charCodeAt(0) - 64; // A=1, B=2, etc.
-          return type === "major" ? `${letterValue + 1}` : `${letterValue}.1`;
+          return `${letterValue + 1}`;
         } else {
           const currentMajor = parseInt(currentRevision) || 0;
-          return type === "major" ? `${currentMajor + 1}` : `${currentMajor}.1`;
+          return `${currentMajor + 1}`;
         }
       }
     } else {
-      // Letter revisions
-      if (type === "major") {
-        return String.fromCharCode(currentRevision.charCodeAt(0) + 1);
+      // LETTER-BASED REVISIONS
+      if (revisionFormat === "major-minor") {
+        // Letter-based with major-minor support (A-0, A-1, B-0, etc.)
+        if (currentRevision.includes(separator)) {
+          const parts = currentRevision.split(separator);
+          const letterPart = parts[0];
+          const minorPart = parseInt(parts[1]) || 0;
+          
+          if (type === "major") {
+            // Next letter with minor reset to 0
+            const nextLetter = String.fromCharCode(letterPart.charCodeAt(letterPart.length - 1) + 1);
+            return `${nextLetter}${separator}0`;
+          } else {
+            // Same letter, increment minor
+            return `${letterPart}${separator}${minorPart + 1}`;
+          }
+        } else {
+          // Simple letter, add minor revision
+          if (type === "major") {
+            // Next letter with minor 0
+            const nextLetter = String.fromCharCode(currentRevision.charCodeAt(currentRevision.length - 1) + 1);
+            return `${nextLetter}${separator}0`;
+          } else {
+            // Same letter, add minor 1
+            return `${currentRevision}${separator}1`;
+          }
+        }
       } else {
-        return currentRevision + "1";
+        // Major-only format (legacy letter revisions)
+        if (type === "major") {
+          return String.fromCharCode(currentRevision.charCodeAt(0) + 1);
+        } else {
+          // In major-only mode, minor doesn't make sense
+          return currentRevision;
+        }
       }
     }
   };
 
   const getDescriptionText = () => {
-    if (organization?.use_number_revisions && organization?.revision_format === "major-minor") {
-      return "Choose between major (increments major version) or minor (increments minor version) revision.";
-    } else if (organization?.use_number_revisions) {
-      return "Choose between major (increments version number) or minor (adds decimal) revision.";
+    const revisionFormat = organization?.revision_format || "major-minor";
+    
+    if (revisionFormat === "major-minor") {
+      if (organization?.use_number_revisions) {
+        return "Choose between major (increments major version) or minor (increments minor version) revision.";
+      } else {
+        return "Choose between major (next letter, reset minor to 0) or minor (same letter, increment minor) revision.";
+      }
     } else {
-      return "A new major revision will be created (next letter).";
+      if (organization?.use_number_revisions) {
+        return "A new major revision will be created (next number).";
+      } else {
+        return "A new major revision will be created (next letter).";
+      }
     }
   };
 
-  // Only show minor revision option if number-based revisions are enabled
-  const showMinorOption = organization?.use_number_revisions === true;
+  // Show minor revision option if major-minor format is enabled (for both letter and number systems)
+  const showMinorOption = (organization?.revision_format || "major-minor") === "major-minor";
 
   return (
     <DokulyModal show={show} onHide={onHide} title="Create New Revision">

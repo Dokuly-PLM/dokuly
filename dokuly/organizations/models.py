@@ -73,19 +73,21 @@ class Organization(models.Model):
         max_length=20, 
         default="major-minor", 
         choices=[
-            ("major-only", "Major Only (1, 2, 3...)"),
-            ("major-minor", "Major-Minor (1-0, 1-1, 2-0...)")
+            ("major-only", "Major Only"),
+            ("major-minor", "Major-Minor")
         ],
-        blank=True
+        blank=True,
+        help_text="Format for revisions. Applies to both letter (A, B vs A-0, A-1) and number (1, 2 vs 1-0, 1-1) systems."
     )
     revision_separator = models.CharField(
         max_length=5,
         default="-",
         choices=[
-            ("-", "Dash (1-0, 1-1, 2-0...)"),
-            (".", "Dot (1.0, 1.1, 2.0...)")
+            ("-", "Dash"),
+            (".", "Dot")
         ],
-        blank=True
+        blank=True,
+        help_text="Separator between major and minor revisions (e.g., A-0 or A.0, 1-0 or 1.0)"
     )
 
     delivery_address = models.CharField(max_length=1000, blank=True, null=True)

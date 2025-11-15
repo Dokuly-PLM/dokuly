@@ -48,7 +48,7 @@ class Document(models.Model):
     )
 
     document_supplier = models.CharField(max_length=50, blank=True, null=True)
-    revision = models.CharField(max_length=2, blank=True, null=True)
+    revision = models.CharField(max_length=10, blank=True, null=True)
     is_latest_revision = models.BooleanField(blank=True, null=True)
 
     # ID of the preceding document revision. # TODO can we consider not using linked lists?

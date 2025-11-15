@@ -238,9 +238,11 @@ def _migrate_document_revision(document, revision_format, separator, dry_run):
                 new_revision = f"{document.revision}{separator}0"
                 needs_migration = True
     except ValueError:
-        # Not a number, convert from letter to number
-        new_revision = convert_letter_to_number_revision(document.revision)
-        if revision_format == "major-minor":
+        # Not a number, convert from letter to number (handles both "A" and "A-1" format)
+        new_revision = convert_letter_to_number_revision(document.revision, separator)
+        # If major-only and no separator in result, it's already converted
+        # If major-minor and separator already in result (from "A-1" conversion), keep it
+        if revision_format == "major-minor" and separator not in new_revision:
             new_revision = f"{new_revision}{separator}0"
         needs_migration = True
     
@@ -324,9 +326,11 @@ def _migrate_item_revision(item, revision_format, separator, dry_run):
                 new_revision = f"{item.revision}{separator}0"
                 needs_migration = True
     except ValueError:
-        # Not a number, convert from letter to number
-        new_revision = convert_letter_to_number_revision(item.revision)
-        if revision_format == "major-minor":
+        # Not a number, convert from letter to number (handles both "A" and "A-1" format)
+        new_revision = convert_letter_to_number_revision(item.revision, separator)
+        # If major-only and no separator in result, it's already converted
+        # If major-minor and separator already in result (from "A-1" conversion), keep it
+        if revision_format == "major-minor" and separator not in new_revision:
             new_revision = f"{new_revision}{separator}0"
         needs_migration = True
     

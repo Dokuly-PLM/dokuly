@@ -21,21 +21,57 @@ def get_organization_revision_settings(organization_id: int) -> Tuple[bool, str,
         return False, "major-minor", "-"
 
 
-def convert_letter_to_number_revision(letter_revision: str) -> str:
+def convert_letter_to_number_revision(letter_revision: str, separator: str = "-") -> str:
     """
     Convert letter revision to number revision.
-    A -> 1, B -> 2, ..., Z -> 26, AA -> 27, etc.
+    Handles both simple letters (A -> 1) and letter-minor format (A-1 -> 1-1).
+    
+    Args:
+        letter_revision: Letter-based revision (e.g., "A", "B", "AA", "A-1", "B-2")
+        separator: Separator to use/detect (default "-")
+    
+    Returns:
+        Number-based revision string
+    
+    Examples:
+        - "A" -> "1"
+        - "B" -> "2"
+        - "AA" -> "27"
+        - "A-0" -> "1-0"
+        - "A-1" -> "1-1"
+        - "B-2" -> "2-2"
     """
     if not letter_revision:
         return "1"
     
+    # Check if it has a minor revision part
+    if separator in letter_revision:
+        try:
+            letter_part, minor_part = letter_revision.split(separator)
+            major_number = _convert_letter_part_to_number(letter_part)
+            return f"{major_number}{separator}{minor_part}"
+        except (ValueError, IndexError):
+            # Malformed, treat as simple letter
+            return _convert_letter_part_to_number(letter_revision)
+    
+    return _convert_letter_part_to_number(letter_revision)
+
+
+def _convert_letter_part_to_number(letter_part: str) -> str:
+    """
+    Convert just the letter part to a number.
+    A -> 1, B -> 2, ..., Z -> 26, AA -> 27, etc.
+    """
+    if not letter_part:
+        return "1"
+    
     # Handle single letter
-    if len(letter_revision) == 1:
-        return str(ord(letter_revision.upper()) - ord('A') + 1)
+    if len(letter_part) == 1:
+        return str(ord(letter_part.upper()) - ord('A') + 1)
     
     # Handle multiple letters (AA, AB, etc.)
     result = 0
-    for i, char in enumerate(reversed(letter_revision.upper())):
+    for i, char in enumerate(reversed(letter_part.upper())):
         result += (ord(char) - ord('A') + 1) * (26 ** i)
     
     return str(result)
@@ -92,6 +128,96 @@ def increment_number_revision(old_revision: str, revision_format: str = "major-m
     return f"1{separator}0"
 
 
+def increment_letter_revision(old_revision: str, separator: str = "-", revision_type: str = "major") -> str:
+    """
+    Increment letter-based revision with support for minor revisions.
+    
+    Args:
+        old_revision: Current revision (e.g., "A", "A-0", "A-1", "B")
+        separator: Separator between major and minor ("-" or ".")
+        revision_type: "major" or "minor"
+    
+    Returns:
+        New revision string
+    
+    Examples:
+        - increment_letter_revision("A", "-", "major") -> "B-0"
+        - increment_letter_revision("A", "-", "minor") -> "A-1"
+        - increment_letter_revision("A-0", "-", "major") -> "B-0"
+        - increment_letter_revision("A-0", "-", "minor") -> "A-1"
+        - increment_letter_revision("A-1", "-", "minor") -> "A-2"
+    """
+    if not old_revision:
+        return f"A{separator}0"
+    
+    # Parse existing revision
+    if separator in old_revision:
+        # Has minor revision already (e.g., "A-0", "A-1")
+        try:
+            letter_part, minor_str = old_revision.split(separator)
+            minor = int(minor_str)
+            
+            if revision_type == "major":
+                # Increment letter, reset minor to 0
+                next_letter = increment_letter_major_only(letter_part)
+                return f"{next_letter}{separator}0"
+            else:  # minor
+                # Increment minor number
+                return f"{letter_part}{separator}{minor + 1}"
+        except (ValueError, IndexError):
+            # Malformed, start fresh
+            return f"A{separator}0"
+    else:
+        # No minor revision yet (e.g., "A", "B", "AA")
+        if revision_type == "major":
+            # Increment letter and add minor 0
+            next_letter = increment_letter_major_only(old_revision)
+            return f"{next_letter}{separator}0"
+        else:  # minor
+            # Add minor revision 1 to existing letter
+            return f"{old_revision}{separator}1"
+
+
+def increment_letter_major_only(old_revision: str) -> str:
+    """
+    Increment letter-based major revision only (no minor support).
+    
+    Args:
+        old_revision: Current revision (e.g., "A", "B", "Z", "AA")
+    
+    Returns:
+        Next major revision letter(s)
+    
+    Examples:
+        - increment_letter_major_only("A") -> "B"
+        - increment_letter_major_only("Z") -> "AA"
+        - increment_letter_major_only("AA") -> "AB"
+        - increment_letter_major_only("AZ") -> "BA"
+    """
+    if not old_revision:
+        return "A"
+    
+    # Remove any separator-based minor revision if present (for migration scenarios)
+    if "-" in old_revision or "." in old_revision:
+        for sep in ["-", "."]:
+            if sep in old_revision:
+                old_revision = old_revision.split(sep)[0]
+                break
+    
+    # Increment the letter(s)
+    if old_revision[-1] == "Z" and len(old_revision) == 1:
+        return "AA"
+    elif old_revision[-1] == "Z":
+        new_letter = chr(ord(old_revision[-2]) + 1)
+        return old_revision[0:-2] + new_letter + "A"
+    elif len(old_revision) > 1:
+        new_letter = chr(ord(old_revision[-1]) + 1)
+        return old_revision[0:-1] + new_letter
+    else:
+        return chr(ord(old_revision) + 1)
+
+
+
 def increment_revision(old_revision: str, organization_id: Optional[int] = None, revision_type: str = "major") -> str:
     """
     Smart revision incrementing that handles both letter and number systems.
@@ -99,7 +225,7 @@ def increment_revision(old_revision: str, organization_id: Optional[int] = None,
     Args:
         old_revision: Current revision string
         organization_id: Organization ID to determine revision system
-        revision_type: "major" or "minor" for number-based revisions
+        revision_type: "major" or "minor"
     
     Returns:
         New revision string
@@ -112,8 +238,17 @@ def increment_revision(old_revision: str, organization_id: Optional[int] = None,
         use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
         if use_number_revisions:
             return increment_number_revision(old_revision, revision_format, separator, revision_type)
+        else:
+            # Letter-based revisions
+            if revision_format == "major-only":
+                # Only major revisions, ignore revision_type
+                return increment_letter_major_only(old_revision)
+            else:
+                # Major-minor format with configurable separator
+                return increment_letter_revision(old_revision, separator, revision_type)
     
-    # Default letter-based incrementing (existing logic)
+    # Default letter-based incrementing for backward compatibility (no separator support)
+    # This path is only used when organization_id is not provided
     if old_revision[-1] == "Z" and len(old_revision) == 1:
         return "AA"
     elif old_revision[-1] == "Z":
