@@ -56,6 +56,7 @@ const DocumentPrefixes = (props) => {
   const columns = [
     { key: "display_name", header: "Display Name" },
     { key: "prefix", header: "Prefix" },
+    { key: "description", header: "Description" },
     {
       key: "archive",
       header: "Archived",
