@@ -9,6 +9,7 @@ from organizations.revision_utils import convert_letter_to_number_revision
 from parts.models import Part
 from assemblies.models import Assembly
 from pcbas.models import Pcba
+from documents.models import Document
 
 
 def migrate_organization_revisions(organization_id, dry_run=False, force=False):
@@ -38,7 +39,10 @@ def migrate_organization_revisions(organization_id, dry_run=False, force=False):
     # Migrate PCBAs
     pcbas_migrated = _migrate_pcbas(organization, revision_format, separator, dry_run)
     
-    total_migrated = parts_migrated + assemblies_migrated + pcbas_migrated
+    # Migrate Documents
+    documents_migrated = _migrate_documents(organization, revision_format, separator, dry_run)
+    
+    total_migrated = parts_migrated + assemblies_migrated + pcbas_migrated + documents_migrated
     
     if not dry_run:
         # Update organization to use number revisions
@@ -108,12 +112,14 @@ def fix_corrupted_revisions(organization_id, dry_run=False):
         parts_count = Part.objects.filter(created_by_id__in=user_ids).count()
         assemblies_count = Assembly.objects.filter(created_by_id__in=user_ids).count()
         pcbas_count = Pcba.objects.filter(created_by_id__in=user_ids).count()
-        total_count = parts_count + assemblies_count + pcbas_count
+        documents_count = Document.objects.filter(created_by_id__in=user_ids).count()
+        total_count = parts_count + assemblies_count + pcbas_count + documents_count
         
         print(f"\nEstimated items to be re-migrated:")
         print(f"  - Parts: {parts_count}")
         print(f"  - Assemblies: {assemblies_count}")
         print(f"  - PCBAs: {pcbas_count}")
+        print(f"  - Documents: {documents_count}")
         print(f"  - Total: {total_count}")
     
     return total_migrated if not dry_run else 0
@@ -165,6 +171,108 @@ def _migrate_pcbas(organization, revision_format, separator, dry_run):
             migrated_count += 1
     
     return migrated_count
+
+
+def _migrate_documents(organization, revision_format, separator, dry_run):
+    """Migrate documents for the organization."""
+    from profiles.models import Profile
+    
+    user_profiles = Profile.objects.filter(organization_id=organization.id)
+    user_ids = [profile.user_id for profile in user_profiles if profile.user_id]
+    documents = Document.objects.filter(created_by_id__in=user_ids)
+    
+    migrated_count = 0
+    for document in documents:
+        if _migrate_document_revision(document, revision_format, separator, dry_run):
+            migrated_count += 1
+    
+    return migrated_count
+
+
+def _migrate_document_revision(document, revision_format, separator, dry_run):
+    """
+    Migrate a single document's revision from letter to number format.
+    Also updates full_doc_number to include underscore separator for number revisions.
+    Returns True if migration was performed, False if skipped.
+    """
+    # Store the original revision before any changes
+    original_revision = document.revision
+    
+    # Handle documents without revision - give them a default revision and format full_doc_number
+    if not document.revision:
+        # For documents without revision, give them a default revision and format full_doc_number
+        if hasattr(document, 'full_doc_number') and document.full_doc_number:
+            # Give them a default revision based on the format
+            if revision_format == "major-only":
+                default_revision = "1"
+            else:
+                default_revision = f"1{separator}0"
+            
+            # Format full_doc_number with underscore separator for number revisions
+            if not dry_run:
+                document.revision = default_revision
+                document.full_doc_number = f"{document.full_doc_number}_{default_revision}"
+                document.save()
+            return True
+        return False
+    
+    needs_migration = False
+    new_revision = document.revision
+    
+    # Check if revision needs to be converted from letter to number
+    try:
+        if revision_format == "major-only":
+            int(document.revision)
+            # Already a number, but check if full_doc_number needs underscore
+        else:
+            # Check if it's already in major-minor format
+            if separator in document.revision:
+                parts = document.revision.split(separator)
+                if len(parts) == 2:
+                    int(parts[0])
+                    int(parts[1])
+                    # Already in major-minor format, but check if full_doc_number needs underscore
+            else:
+                # Single number, convert to major-minor format
+                int(document.revision)
+                new_revision = f"{document.revision}{separator}0"
+                needs_migration = True
+    except ValueError:
+        # Not a number, convert from letter to number
+        new_revision = convert_letter_to_number_revision(document.revision)
+        if revision_format == "major-minor":
+            new_revision = f"{new_revision}{separator}0"
+        needs_migration = True
+    
+    # Check if full_doc_number needs underscore separator
+    needs_underscore_update = False
+    if hasattr(document, 'full_doc_number') and document.full_doc_number:
+        if not document.full_doc_number.endswith(f"_{new_revision}"):
+            needs_underscore_update = True
+    
+    if not needs_migration and not needs_underscore_update:
+        return False  # No changes needed
+    
+    if not dry_run:
+        # Update the document
+        if needs_migration:
+            document.revision = new_revision
+        
+        # Update full_doc_number to include underscore separator
+        if needs_underscore_update and hasattr(document, 'full_doc_number') and document.full_doc_number:
+            # Remove old revision from full_doc_number and add new one with underscore
+            base_number = document.full_doc_number
+            
+            # Use the ORIGINAL revision to remove from full_doc_number, not the updated one
+            if original_revision and base_number.endswith(original_revision):
+                # Remove the original revision from the end
+                base_number = base_number[:-len(original_revision)]
+            
+            document.full_doc_number = f"{base_number}_{new_revision}"
+        
+        document.save()
+    
+    return True
 
 
 def _migrate_item_revision(item, revision_format, separator, dry_run):
