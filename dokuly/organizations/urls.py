@@ -35,5 +35,4 @@ urlpatterns = [
     
     # Revision system fixes
     path("api/organizations/checkCorruptedRevisions/", views.check_corrupted_revisions),
-    path("api/organizations/fixCorruptedRevisions/", views.fix_corrupted_revisions_api),
 ]

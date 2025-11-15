@@ -28,7 +28,6 @@ from organizations.utils import (cancel_paddle_subscription,
                                  update_organization_users,
                                  update_paddle_subscription_count,
                                  update_subscriptions_from_paddle)
-from organizations.management.commands.migrate_revisions_to_numbers import fix_corrupted_revisions
 
 
 def validate_token(token):
@@ -520,32 +519,3 @@ def check_corrupted_revisions(request):
         
     except Exception as e:
         return Response(f"Error checking corrupted revisions: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["POST"])
-@renderer_classes([JSONRenderer])
-@permission_classes([IsAuthenticated])
-def fix_corrupted_revisions_api(request):
-    """Fix corrupted full_part_number values for the organization."""
-    try:
-        user_profile = get_object_or_404(Profile, user=request.user)
-        org_id = user_profile.organization_id
-        
-        if org_id is None:
-            return Response("No connected organization found", status=status.HTTP_204_NO_CONTENT)
-        
-        # Check if user has admin/owner permissions
-        if not check_permissions_owner(request.user):
-            return Response("Insufficient permissions", status=status.HTTP_403_FORBIDDEN)
-        
-        # Run the fix
-        total_fixed = fix_corrupted_revisions(org_id, dry_run=False)
-        
-        return Response({
-            "success": True,
-            "message": f"Successfully fixed {total_fixed} items with corrupted full_part_number values",
-            "total_fixed": total_fixed
-        })
-        
-    except Exception as e:
-        return Response(f"Error fixing corrupted revisions: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
