@@ -127,27 +127,29 @@ def increment_document_number(project_id):
     - `title`: Title of the document (string)
     - `project`: Project ID (integer, must have access to the project)
     - `prefix_id`: Document prefix ID (integer)
-    - `internal`: Boolean indicating if the document is internal (true) or external (false)
+    - `protection_level`: Protection level ID (integer)
     
     **Optional fields:**
     - `description`: Description of the document (string, can be "null" or "undefined")
     - `template_id`: Template document ID to copy from (integer, -1 to not use template)
     - `created_by`: User ID (only for API key requests, integer)
+    - `internal`: DEPRECATED - use protection_level instead (boolean)
     
     **Note:** The document number is automatically generated based on the project and prefix.
     """,
     tags=['documents'],
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
-        required=['title', 'project', 'prefix_id', 'internal'],
+        required=['title', 'project', 'prefix_id', 'protection_level'],
         properties={
             'title': openapi.Schema(type=openapi.TYPE_STRING, description='Title of the document', example='Product Requirements Document'),
             'project': openapi.Schema(type=openapi.TYPE_INTEGER, description='Project ID (must have access to the project)', example=1),
             'prefix_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Document prefix ID', example=1),
-            'internal': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='True for internal documents, false for external documents', example=False),
+            'protection_level': openapi.Schema(type=openapi.TYPE_INTEGER, description='Protection level ID (e.g., 1 for Externally Shareable, 2 for Company Protected)', example=1),
             'description': openapi.Schema(type=openapi.TYPE_STRING, description='Description of the document (can be "null" or "undefined")', example='Product requirements and specifications'),
             'template_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Template document ID to copy from (-1 to not use template)', example=-1),
             'created_by': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID (only for API key requests)'),
+            'internal': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='DEPRECATED - use protection_level instead', example=False),
         }
     ),
     responses={
@@ -164,13 +166,23 @@ def create_new_document(request, **kwargs):
     data = request.data
     user = request.user
     try:
+        # Check for deprecated internal field usage
+        if "internal" in data and "protection_level" not in data:
+            return Response(
+                "The 'internal' field is deprecated. Please use 'protection_level' instead. "
+                "Fetch available protection levels from /api/protectionLevels/get/all/",
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         document_number = increment_document_number(data["project"])
         document = Document()
         document.title = data["title"]
         if data["description"] != "null" and data["description"] != "undefined":
             document.description = data["description"]
 
-        document.internal = data["internal"]
+        # Use new protection_level field
+        if "protection_level" in data and data["protection_level"] not in ("null", "undefined", "", -1):
+            document.protection_level_id = data["protection_level"]
 
         document.prefix_id = data["prefix_id"]
         document.revision = "A"
@@ -268,8 +280,8 @@ def edit_document_info(request, documentId):
 
     if "last_updated" in data:
         document.last_updated = data["last_updated"]
-    if "internal" in data:
-        document.internal = data["internal"]
+    if "protection_level" in data and data["protection_level"] not in ("null", "undefined", "", -1):
+        document.protection_level_id = data["protection_level"]
     if "prefix_id" in data:
         document.prefix_id = data["prefix_id"]
     if "summary" in data:
