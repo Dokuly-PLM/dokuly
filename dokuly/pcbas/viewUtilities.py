@@ -10,6 +10,7 @@ import uuid
 import requests
 from parts.models import Part
 
+from organizations.revision_utils import increment_revision as smart_increment
 
 # TODO ensure this works for long strings of letters.
 def increment_revision(old_rev, organization_id=None, revision_type="major"):
@@ -23,7 +24,6 @@ def increment_revision(old_rev, organization_id=None, revision_type="major"):
     >>> increment_revision("1", organization_id=1)  # If org uses number revisions
     2
     """
-    from organizations.revision_utils import increment_revision as smart_increment
     return smart_increment(old_rev, organization_id, revision_type)
 
 
