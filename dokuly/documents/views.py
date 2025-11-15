@@ -1121,6 +1121,9 @@ def update_doc(request, pk, **kwargs):
                 document.description = data["description"]
             if "summary" in data:
                 document.summary = data["summary"]
+            
+            if "protection_level" in data and data["protection_level"] not in ("null", "undefined", "", -1):
+                document.protection_level_id = data["protection_level"]
 
             if (
                 "release_state" in data
