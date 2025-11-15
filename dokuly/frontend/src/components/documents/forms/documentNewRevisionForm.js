@@ -12,20 +12,29 @@ const NewRevision = (props) => {
   const [showModal, setShowModal] = useState(false);
 
   const handleCreateRevision = (revisionType) => {
+    if (props?.setLoadingDocument) {
+      props.setLoadingDocument(true);
+    }
+    
     // Pass the selected revision type to the API
-    newDocumentRevision(props.document?.id, revisionType).then((res) => {
-      if (res.status === 201) {
-        // Close modal first
+    newDocumentRevision(props.document?.id, revisionType)
+      .then((res) => {
+        if (res.status === 201 && res.data) {
+          // Close modal first
+          setShowModal(false);
+          setTimeout(() => {
+            navigate(`/documents/${res.data.id}`);
+          }, 1000);
+        }
+      })
+      .catch((error) => {
+        console.error('Error creating revision:', error);
+        // Close modal even on error
         setShowModal(false);
-        setTimeout(() => {
-          navigate(`/documents/${res.data.id}`);
-        }, 1000);
-      }
-    }).catch((error) => {
-      console.error('Error creating revision:', error);
-      // Close modal even on error
-      setShowModal(false);
-    });
+        if (props?.setLoadingDocument) {
+          props.setLoadingDocument(false);
+        }
+      });
   };
 
   return (
@@ -36,9 +45,6 @@ const NewRevision = (props) => {
           type="button"
           className="btn btn-bg-transparent mt-2 mb-2"
           onClick={() => {
-            if (props?.setLoadingDocument) {
-              props.setLoadingDocument(true);
-            }
             setShowModal(true);
           }}
         >

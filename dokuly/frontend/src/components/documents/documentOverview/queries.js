@@ -43,17 +43,11 @@ export const fetchDocument = (id) => {
 };
 
 export const newDocumentRevision = (id, revisionType = 'major') => {
-  const promise = axios.post(
+  return axios.post(
     `/api/documents/post/newRevision/${id}/`,
     { revision_type: revisionType },
     tokenConfig()
   );
-  const dataPromise = promise.then((res) => res.data);
-  const error = promise.catch((err) => err);
-  if (error != null) {
-    return error;
-  }
-  return dataPromise;
 };
 
 export const fetchDocumentNumber = (id) => {
