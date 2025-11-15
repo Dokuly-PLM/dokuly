@@ -122,12 +122,16 @@ def process_pdf(
     summary = data.summary
     date_string = datetime_to_iso_string(timestamp_obj)
 
-    internal = data.internal  # True/False
-
-    if bool(internal) == True:
-        classification = "Company Protected"
-    else:
-        classification = "Externally Shareable"
+    # Get classification from protection level, fallback to internal field for backwards compatibility
+    classification = "Externally Shareable"  # Default
+    if data.protection_level is not None:
+        classification = data.protection_level.name
+    elif data.internal is not None:
+        # Fallback to deprecated internal field
+        if bool(data.internal) == True:
+            classification = "Company Protected"
+        else:
+            classification = "Externally Shareable"
 
     # Fetch logo from customers admin database.
     logo_path = ""
