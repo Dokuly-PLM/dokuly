@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 
 import { get_active_customers } from "../customers/funcitons/queries";
 import { getActiveProjectByCustomer } from "../projects/functions/queries";
-import { fetchPrefixes } from "../admin/functions/queries";
+import { fetchPrefixes, fetchProtectionLevels } from "../admin/functions/queries";
 import { createNewDocument } from "./functions/queries";
 import DokulyModal from "../dokuly_components/dokulyModal";
 
@@ -16,7 +16,8 @@ const NewDocumentForm = (props) => {
   const [projects, setProjects] = useState(null);
   const [selected_project_id, setSelectedProjectId] = useState(-1);
 
-  const [internal_doc, setInternalDoc] = useState(true);
+  const [selected_protection_level_id, setSelectedProtectionLevelId] = useState("");
+  const [protectionLevels, setProtectionLevels] = useState([]);
 
   const [selected_prefix_id, setSelectedPrefixId] = useState(-1);
   const [prefixes, setPrefixes] = useState([]);
@@ -30,6 +31,15 @@ const NewDocumentForm = (props) => {
     fetchPrefixes().then((res) => {
       if (res.status === 200) {
         setPrefixes(res.data);
+      }
+    });
+    fetchProtectionLevels().then((res) => {
+      if (res.status === 200) {
+        setProtectionLevels(res.data);
+        // Set default to first protection level (lowest level)
+        if (res.data.length > 0) {
+          setSelectedProtectionLevelId(res.data[0].id);
+        }
       }
     });
   }, []);
@@ -66,7 +76,7 @@ const NewDocumentForm = (props) => {
       title: title,
       description: description,
       project: selected_project_id,
-      internal: internal_doc,
+      protection_level: selected_protection_level_id,
       prefix_id: selected_prefix_id,
       template_id: selectedTemplate,
     };
@@ -77,7 +87,7 @@ const NewDocumentForm = (props) => {
         setDescription("");
         setSelectedProjectId(-1);
         setSelectedPrefixId(-1);
-        setInternalDoc(true);
+        setSelectedProtectionLevelId(protectionLevels.length > 0 ? protectionLevels[0].id : "");
         setSelectedTemplate(null);
         props?.setRefresh(true);
         setShowModal(false);
@@ -190,22 +200,29 @@ const NewDocumentForm = (props) => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="project">Document protection level</label>
+          <label htmlFor="protection_level">Protection Level *</label>
           <select
             className="form-control"
-            name="protection"
-            type="boolean"
-            value={internal_doc}
+            name="protection_level"
+            value={selected_protection_level_id}
             onChange={(e) => {
-              if (e.target.value === "true") {
-                setInternalDoc(true);
-              } else {
-                setInternalDoc(false);
-              }
+              setSelectedProtectionLevelId(e.target.value);
             }}
           >
-            <option value={"true"}>Company protected</option>
-            <option value={"false"}>Externally shareable</option>
+            <option value="">Choose protection level</option>
+            {protectionLevels !== null &&
+            protectionLevels !== undefined &&
+            protectionLevels.length !== 0 ? (
+              protectionLevels.map((level) => {
+                return (
+                  <option value={level.id} key={level.id}>
+                    {level.name}
+                  </option>
+                );
+              })
+            ) : (
+              <option>No protection levels found!</option>
+            )}
           </select>
         </div>
 
@@ -276,7 +293,9 @@ const NewDocumentForm = (props) => {
             className="btn dokuly-bg-primary"
             onClick={onSubmit}
             disabled={
-              selected_prefix_id === -1 || selected_project_id === -1
+              selected_prefix_id === -1 || 
+              selected_project_id === -1 || 
+              selected_protection_level_id === ""
                 ? true
                 : false
             }

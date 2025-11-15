@@ -759,6 +759,61 @@ export const editPrefix = (prefixId, data) => {
 };
 
 /**
+ * Fetch all non-archived protection levels.
+ * @return {Promise<AxiosResponse<any>>} The axios data promise
+ */
+export const fetchProtectionLevels = () => {
+  const promise = axios.get("api/protectionLevels/get/all/", tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Create a new protection level.
+ * @param {JSON} data - Query payload with name and description
+ * @return {Promise<AxiosResponse<any>>} The axios data promise
+ */
+export const newProtectionLevel = (data) => {
+  const promise = axios.post(
+    "api/protectionLevels/post/new/",
+    data,
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Edit an existing protection level.
+ * @param {number} protectionLevelId - Protection level's id number
+ * @param {JSON} data - Query payload
+ * @return {Promise<AxiosResponse<any>>} The axios data promise
+ */
+export const editProtectionLevel = (protectionLevelId, data) => {
+  const promise = axios.put(
+    `api/protectionLevels/put/${protectionLevelId}/`,
+    data,
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Delete a protection level.
+ * @param {number} protectionLevelId - Protection level's id number
+ * @return {Promise<AxiosResponse<any>>} The axios data promise
+ */
+export const deleteProtectionLevel = (protectionLevelId) => {
+  const promise = axios.delete(
+    `api/protectionLevels/delete/${protectionLevelId}/`,
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
  * An axios wrapper function, can be used in any react component.
  * PUT query that updates a given document entity.
  * @param {number} documentId - A document entity's id number.

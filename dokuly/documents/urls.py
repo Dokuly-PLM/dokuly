@@ -3,6 +3,7 @@ from rest_framework import routers
 from .api import DocumentViewSet, DocumentPrefixViewSet
 from . import views
 from . import viewsPrefix
+from . import viewsProtectionLevel
 from . import viewsMarkdown
 
 router = routers.DefaultRouter()
@@ -83,6 +84,11 @@ urlpatterns = [
     path("api/documentPrefixes/put/<int:prefixId>/", viewsPrefix.edit_prefix),
     path("api/documentPrefixes/get/archived/",
          viewsPrefix.fetch_archived_prefixes),
+    # Protection Levels
+    path("api/protectionLevels/get/all/", viewsProtectionLevel.fetch_protection_levels),
+    path("api/protectionLevels/post/new/", viewsProtectionLevel.new_protection_level),
+    path("api/protectionLevels/put/<int:protection_level_id>/", viewsProtectionLevel.edit_protection_level),
+    path("api/protectionLevels/delete/<int:protection_level_id>/", viewsProtectionLevel.delete_protection_level),
     # Reference List
     path(
         "api/referenceList/get/references/<int:referenceListId>/",

@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import { attribute_icons } from "./attributeIcons";
 import { getProfile } from "../profiles/functions/queries";
 import { getProjectWithCustomer } from "../projects/functions/queries";
+import { fetchProtectionLevels } from "../admin/functions/queries";
 import ThumbnailDisplay from "./thumbnailDisplay";
 import DokulyImage from "./dokulyImage";
 import DokulyCard from "./dokulyCard";
@@ -66,6 +67,7 @@ const PartInformationCard = ({
   const [created_by, setCreatedBy] = useState(null);
   const [quality_assurance, setQualityAssurance] = useState(null);
   const [project, setProject] = useState(null);
+  const [protectionLevel, setProtectionLevel] = useState(null);
 
   useEffect(() => {
     if (item?.created_by !== null && item?.created_by !== undefined) {
@@ -101,6 +103,20 @@ const PartInformationCard = ({
       setProject({ id: 0 });
     }
   }, [item?.project]);
+
+  useEffect(() => {
+    // Fetch protection level for documents
+    if (app === "documents" && item?.protection_level !== null && item?.protection_level !== undefined) {
+      fetchProtectionLevels().then((res) => {
+        if (res.status === 200) {
+          const level = res.data.find(pl => pl.id === item.protection_level);
+          if (level) {
+            setProtectionLevel(level);
+          }
+        }
+      });
+    }
+  }, [app, item?.protection_level]);
 
   const changeField = (key, value) => {
     if (item?.id == null) {
@@ -190,6 +206,20 @@ const PartInformationCard = ({
               <Col>{description}</Col>
             </Row>
           )}
+
+          {app === "documents" && protectionLevel !== null && (
+            <Row>
+              <Col className="col-lg-6 col-xl-6">
+                <b>Protection Level:</b>
+              </Col>
+              <Col>
+                <span title={protectionLevel.description || ""}>
+                  {protectionLevel.name}
+                </span>
+              </Col>
+            </Row>
+          )}
+
           {last_updated !== "" && (
             <Row>
               <Col className="col-lg-6 col-xl-6">

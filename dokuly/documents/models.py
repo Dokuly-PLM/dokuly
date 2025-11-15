@@ -65,8 +65,14 @@ class Document(models.Model):
 
     language = models.CharField(max_length=50, blank=True, null=True)
 
-    # Internal/External. Used to show if a document is suitable for public release, or handover to a customer.
-    internal = models.BooleanField(null=True)
+    # Protection level - replaces the deprecated 'internal' boolean
+    protection_level = models.ForeignKey(
+        'Protection_Level', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='documents'
+    )
 
     # Summary is intended for pdf generation.
     summary = models.TextField(max_length=2000, blank=True, null=True)
@@ -102,6 +108,9 @@ class Document(models.Model):
 
     tags = models.ManyToManyField(Tag, blank=True, symmetrical=False, related_name="document_tags")
 
+    # DEPRECATED
+    # Internal/External. Used to show if a document is suitable for public release, or handover to a customer.
+    internal = models.BooleanField(null=True)
     # DEPRECATED
     revision_locked = models.BooleanField(default=False)
     # DEPRECATED
@@ -162,6 +171,26 @@ class Document_Prefix(models.Model):
     # TODO move over to using this field
     is_archived = models.BooleanField(default=False, blank=True)
     archived_date = models.DateField(null=True, blank=True)
+
+
+class Protection_Level(models.Model):
+    """Defines the protection level for documents.
+    Examples: Internal, Confidential, Public, Customer Releasable, etc.
+    """
+
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(max_length=500, blank=True, null=True)
+    level = models.IntegerField(default=0) # Numeric level for sorting protection levels in increasing order
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['level', 'name']
 
 
 class Reference_List(models.Model):

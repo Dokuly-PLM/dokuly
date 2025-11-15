@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from documents.models import Document, MarkdownText
-from documents.models import Document_Prefix
+from documents.models import Document_Prefix, Protection_Level
 from documents.models import Reference_List
 from projects.models import Project, Tag
 # from .models import Employee
@@ -12,6 +12,12 @@ class DocumentTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ["id", "name", "color", "project"]
+
+
+class ProtectionLevelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Protection_Level
+        fields = '__all__'
 
 
 class DocumentSerializer(serializers.ModelSerializer):
