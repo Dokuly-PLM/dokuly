@@ -2,7 +2,6 @@ import moment from "moment";
 import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { useSpring, animated, config } from "react-spring";
-import { getProfileAndImageUrl } from "../../../profiles/profileFunctions";
 import {
   checkDocumentNumber,
   fadeIn1C,

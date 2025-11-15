@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useSpring, animated, config } from "react-spring";
+import DocumentInfo from "../adminComponents/documents/documentInfo";
+import DocumentList from "../adminComponents/documents/documentList";
 import DocumentPrefixes from "../adminComponents/documents/documentPrefixes";
+import ProtectionLevels from "../adminComponents/documents/protectionLevels";
 import {
   basicSkeletonLoaderInfoCard,
   basicSkeletonLoaderTableCard,
@@ -173,6 +176,33 @@ const AdminDocuments = (props) => {
               customers={customers}
               childToParent={childToParent}
               setPrefixes={setPrefixes}
+              selectedDocument={selectedDocument}
+              prefixes={prefixes}
+            />
+          </div>
+          <div className="row">
+            <ProtectionLevels />
+          </div>
+        </div>
+        <div className="col">
+          <div className="row">
+            <DocumentInfo
+              users={users}
+              documents={documents}
+              projects={projects}
+              customers={customers}
+              childToParent={childToParent}
+              selectedDocument={selectedDocument}
+              prefixes={prefixes}
+            />
+          </div>
+          <div className="row">
+            <DocumentList
+              users={users}
+              documents={documents}
+              projects={projects}
+              customers={customers}
+              childToParent={childToParent}
               selectedDocument={selectedDocument}
               prefixes={prefixes}
             />
