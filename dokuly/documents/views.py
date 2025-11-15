@@ -1042,9 +1042,6 @@ def get_org_id(user):
     return org_id
 
 
-@api_view(("PUT",))
-@renderer_classes((JSONRenderer,))
-@permission_classes([APIAndProjectAccess | IsAuthenticated])
 @swagger_auto_schema(
     method='put',
     operation_id='update_document',
