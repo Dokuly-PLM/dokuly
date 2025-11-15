@@ -213,12 +213,9 @@ const PartInformationCard = ({
                 <b>Protection Level:</b>
               </Col>
               <Col>
-                {protectionLevel.name}
-                {protectionLevel.description && (
-                  <div>
-                    <small className="text-muted">{protectionLevel.description}</small>
-                  </div>
-                )}
+                <span title={protectionLevel.description || ""}>
+                  {protectionLevel.name}
+                </span>
               </Col>
             </Row>
           )}
