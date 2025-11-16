@@ -244,7 +244,6 @@ def update_organization(request, id):
             "billing_address",
             "use_number_revisions",
             "revision_format",
-            "revision_separator",
             "full_part_number_template",
             "formatted_revision_template",
         ]:
@@ -270,8 +269,6 @@ def update_organization(request, id):
         if "use_number_revisions" in data and organization.use_number_revisions != data["use_number_revisions"]:
             revision_settings_changed = True
         if "revision_format" in data and organization.revision_format != data["revision_format"]:
-            revision_settings_changed = True
-        if "revision_separator" in data and organization.revision_separator != data["revision_separator"]:
             revision_settings_changed = True
 
         organization.save()

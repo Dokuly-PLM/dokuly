@@ -76,11 +76,11 @@ def get_organization_revision_settings(organization_id: int) -> Tuple[bool, str,
     Get revision system settings for an organization.
     
     Returns:
-        Tuple of (use_number_revisions, revision_format, revision_separator)
+        Tuple of (use_number_revisions, revision_format)
     """
     try:
         org = Organization.objects.get(id=organization_id)
-        return org.use_number_revisions, org.revision_format, org.revision_separator
+        return org.use_number_revisions, org.revision_format
     except Organization.DoesNotExist:
         return False, "major-minor", "-"
 

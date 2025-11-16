@@ -81,7 +81,6 @@ class PcbaTableSerializer(serializers.ModelSerializer):
                     return {
                         'use_number_revisions': org.use_number_revisions,
                         'revision_format': org.revision_format,
-                        'revision_separator': org.revision_separator
                     }
             except:
                 pass
@@ -108,7 +107,6 @@ class PcbaSerializerFull(serializers.ModelSerializer):
                     return {
                         'use_number_revisions': org.use_number_revisions,
                         'revision_format': org.revision_format,
-                        'revision_separator': org.revision_separator
                     }
             except:
                 pass

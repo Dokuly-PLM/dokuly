@@ -1503,7 +1503,7 @@ export const refreshPaddleSubscriptions = (useToast) => {
 
 /**
  * Preview how a part number template will be formatted.
- * @param {Object} data - Object containing template, use_number_revisions, revision_format, revision_separator
+ * @param {Object} data - Object containing template, use_number_revisions, revision_format
  * @return {Promise<AxiosResponse<any>>} Response with example formatted part numbers
  */
 export const previewPartNumberTemplate = (data) => {
