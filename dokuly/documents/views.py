@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from organizations.revision_utils import increment_revision_counters
+from part_numbers.methods import get_next_part_number
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer
@@ -179,6 +180,9 @@ def create_new_document(request, **kwargs):
         document.title = data["title"]
         if data["description"] != "null" and data["description"] != "undefined":
             document.description = data["description"]
+
+        # Assign unique part number from centralized PartNumber table
+        document.part_number = get_next_part_number()
 
         # Use new protection_level field
         if "protection_level" in data and data["protection_level"] not in ("null", "undefined", "", -1):
@@ -875,6 +879,9 @@ def auto_new_revision(request, pk, **kwargs):
         new_revision.description = old_revision.description
         new_revision.summary = old_revision.summary
         new_revision.is_latest_revision = True
+        
+        # Copy part_number from old revision (same part, different revision)
+        new_revision.part_number = old_revision.part_number
         
         # Get organization ID from the project
         organization_id = None

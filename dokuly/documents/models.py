@@ -19,6 +19,9 @@ class Document(models.Model):
 
     title = models.CharField(max_length=1000)
 
+    # Unique part number from the centralized PartNumber table (same as parts, assemblies, PCBAs)
+    part_number = models.IntegerField(default=-1, blank=True, null=True)
+
     # Document type is dummy field now. Data is set in document views,
     # see edit_document_info for references.
     # Keeping it here to minimize refactoring of frontend variables

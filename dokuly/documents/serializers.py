@@ -48,6 +48,7 @@ class DocumentTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = ['id', 'title',
+                  'part_number',
                   'full_doc_number', 'release_state',
                   'released_date', 'project',
                   'last_updated',
