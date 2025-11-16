@@ -35,4 +35,5 @@ urlpatterns = [
     
     # Revision system fixes
     path("api/organizations/checkCorruptedRevisions/", views.check_corrupted_revisions),
+    path("api/organizations/previewPartNumberTemplate/", views.preview_part_number_template),
 ]

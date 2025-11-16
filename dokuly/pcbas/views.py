@@ -325,12 +325,16 @@ def new_revision(request, pk, **kwargs):
     revision_type = request.data.get('revision_type', 'major')
     new_pcba.revision_count_major, new_pcba.revision_count_minor = increment_revision_counters(old_pcba.revision_count_major, old_pcba.revision_count_minor, revision_type == 'major')    
 
+    new_pcba.save()
+
     new_pcba.full_part_number = build_full_part_number(
         organization_id=organization_id,
         prefix="PCBA",
         part_number=new_pcba.part_number,
         revision_count_major=new_pcba.revision_count_major,
         revision_count_minor=new_pcba.revision_count_minor,
+        project_number=new_pcba.project.project_number if new_pcba.project else None,
+        created_at=new_pcba.created_at
     )
 
     new_pcba.price = old_pcba.price       #TODO are these deprecated?
@@ -612,20 +616,24 @@ def create_new_pcba(request, **kwargs):
             organization_id = request.user.profile.organization_id
         
 
-        pcba.full_part_number = build_full_part_number(
-            organization_id=organization_id,
-            prefix="PCBA",
-            part_number=pcba.part_number,
-            revision_count_major=pcba.revision_count_major,
-            revision_count_minor=pcba.revision_count_minor,
-        )
-
         if APIAndProjectAccess.has_validated_key(request):
             if "created_by" in data:
                 user = User.objects.get(pk=data["created_by"])
                 pcba.created_by = user
         else:
             pcba.created_by = request.user
+        pcba.save()
+
+        pcba.full_part_number = build_full_part_number(
+            organization_id=organization_id,
+            prefix="PCBA",
+            part_number=pcba.part_number,
+            revision_count_major=pcba.revision_count_major,
+            revision_count_minor=pcba.revision_count_minor,
+            project_number=pcba.project.project_number if pcba.project else None,
+            created_at=pcba.created_at
+        )
+
         pcba.save()
 
         # Create new assembly bom

@@ -9,7 +9,8 @@ class CustomerOrganizationSerializer(serializers.ModelSerializer):
                   'logo', 'file_ids', 'image_ids', 'logo_id',
                   'tenant_id', 'enforce_2fa', 'current_storage_size',
                   'storage_limit', 'component_vault_api_key', 'currency',
-                  'use_number_revisions', 'revision_format', 'revision_separator']
+                  'use_number_revisions', 'revision_format', 'revision_separator',
+                  'full_part_number_template']
 
 
 class OrgComponentVaultAPIKeySerializer(serializers.ModelSerializer):

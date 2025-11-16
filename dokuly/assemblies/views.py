@@ -106,14 +106,6 @@ def create_new_assembly(request, **kwargs):
                 organization_id = org_id
         elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
             organization_id = request.user.profile.organization_id
-        
-        assembly_entry.full_part_number = build_full_part_number(
-            organization_id=organization_id,
-            prefix="ASM",
-            part_number=assembly_entry.part_number,
-            revision_count_major=assembly_entry.revision_count_major,
-            revision_count_minor=assembly_entry.revision_count_minor,
-        )
 
         if "display_name" in data:
             assembly_entry.display_name = data["display_name"]
@@ -132,6 +124,18 @@ def create_new_assembly(request, **kwargs):
                 pass
 
         assembly_entry.external_part_number = data.get("external_part_number", "")
+        assembly_entry.save()
+
+        assembly_entry.full_part_number = build_full_part_number(
+            organization_id=organization_id,
+            prefix="ASM",
+            part_number=assembly_entry.part_number,
+            revision_count_major=assembly_entry.revision_count_major,
+            revision_count_minor=assembly_entry.revision_count_minor,
+            project_number=assembly_entry.project.project_number if assembly_entry.project else None,
+            created_at=assembly_entry.created_at
+        )
+
         assembly_entry.save()
 
         # Ensure every new assembly has a BOM.
@@ -379,14 +383,6 @@ def new_revision(request, pk, **kwargs):
             # Get revision type from request data (default to "major" for backward compatibility)
             revision_type = data.get('revision_type', 'major')
             newRevision.revision_count_major, newRevision.revision_count_minor = increment_revision_counters(current_asm.revision_count_major, current_asm.revision_count_minor, revision_type == 'major')
-            
-            newRevision.full_part_number = build_full_part_number(
-                organization_id=organization_id,
-                prefix="ASM",
-                part_number=newRevision.part_number,
-                revision_count_major=newRevision.revision_count_major,
-                revision_count_minor=newRevision.revision_count_minor,
-            )
 
             if APIAndProjectAccess.has_validated_key(request):
                 if "created_by" in data:
@@ -436,6 +432,18 @@ def new_revision(request, pk, **kwargs):
             if "revision_notes" in data:
                 newRevision.revision_notes = data["revision_notes"]
 
+            newRevision.save()
+
+            newRevision.full_part_number = build_full_part_number(
+                organization_id=organization_id,
+                prefix="ASM",
+                part_number=newRevision.part_number,
+                revision_count_major=newRevision.revision_count_major,
+                revision_count_minor=newRevision.revision_count_minor,
+                project_number=newRevision.project.project_number if newRevision.project else None,
+                created_at=newRevision.created_at
+            )
+            
             newRevision.save()
 
             copy_markdown_tabs_to_new_revision(current_asm, newRevision)

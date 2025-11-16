@@ -91,6 +91,8 @@ def build_full_part_number(
     part_number: str,
     revision_count_major: int,
     revision_count_minor: int,
+    project_number: Optional[str] = None,
+    created_at: Optional[object] = None,
 ) -> str:
     """
     Build a full part number using organization settings and template.
@@ -104,6 +106,8 @@ def build_full_part_number(
         part_number: The numeric part number (e.g., "1234")
         revision_count_major: Major revision count (0-indexed)
         revision_count_minor: Minor revision count (0-indexed)
+        project_number: Optional project number for template variable
+        created_at: Optional datetime for date-based template variables
     
     Returns:
         Formatted full part number according to organization template
@@ -135,6 +139,8 @@ def build_full_part_number(
         revision_count_major=revision_count_major,
         revision_count_minor=revision_count_minor,
         use_number_revisions=use_number_revisions,
+        project_number=project_number,
+        created_at=created_at,
     )
 
 
@@ -145,6 +151,8 @@ def build_full_part_number_from_template(
     revision_count_major: int,
     revision_count_minor: int,
     use_number_revisions: bool,
+    project_number: Optional[str] = None,
+    created_at: Optional[object] = None,
 ) -> str:
     """
     Build a full part number from a template and revision counts.
@@ -156,6 +164,8 @@ def build_full_part_number_from_template(
         revision_count_major: Major revision count (0-indexed)
         revision_count_minor: Minor revision count (0-indexed)
         use_number_revisions: Whether to use numbers (True) or letters (False)
+        project_number: Optional project number (e.g., "PRJ001")
+        created_at: Optional datetime object for date-based variables
     
     Returns:
         Formatted full part number
@@ -168,14 +178,32 @@ def build_full_part_number_from_template(
         # Template: "<part_number>-<major_revision>.<minor_revision>"
         # (blank), 1234, major=0, minor=2, numbers, major-minor
         # -> "1234-0.2"
+        
+        # Template: "<prefix><part_number>-<year><month><day>-<project_number>"
+        # PRT, 1234, created_at=2025-01-15, project_number=PRJ001
+        # -> "PRT1234-20250115-PRJ001"
     """
     # Convert inputs to strings to ensure replace() works
     prefix_str = str(prefix) if prefix else ""
     part_number_str = str(part_number) if part_number else ""
+    project_number_str = str(project_number) if project_number else ""
     
     # Format individual revision components
     major_formatted = format_revision_count(revision_count_major, use_number_revisions)
     minor_formatted = format_revision_count(revision_count_minor, use_number_revisions)
+    
+    # Format date components if created_at is provided
+    day_str = ""
+    month_str = ""
+    year_str = ""
+    if created_at:
+        try:
+            day_str = created_at.strftime("%d")  # 01-31
+            month_str = created_at.strftime("%m")  # 01-12
+            year_str = created_at.strftime("%Y")  # e.g., 2025
+        except (AttributeError, ValueError):
+            # If created_at is not a datetime object or is invalid, use empty strings
+            pass
     
     # Replace template variables
     result = template
@@ -184,6 +212,10 @@ def build_full_part_number_from_template(
     result = result.replace("<revision>", major_formatted)
     result = result.replace("<major_revision>", major_formatted)
     result = result.replace("<minor_revision>", minor_formatted)
+    result = result.replace("<project_number>", project_number_str)
+    result = result.replace("<day>", day_str)
+    result = result.replace("<month>", month_str)
+    result = result.replace("<year>", year_str)
     
     return result
 

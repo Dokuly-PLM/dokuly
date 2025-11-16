@@ -245,6 +245,7 @@ def update_organization(request, id):
             "use_number_revisions",
             "revision_format",
             "revision_separator",
+            "full_part_number_template",
         ]:
             if field in data:
                 setattr(organization, field, data[field])
@@ -511,3 +512,90 @@ def check_corrupted_revisions(request):
         
     except Exception as e:
         return Response(f"Error checking corrupted revisions: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@renderer_classes([JSONRenderer])
+@permission_classes([IsAuthenticated])
+def preview_part_number_template(request):
+    """
+    Preview how a part number template will be formatted.
+    
+    Request body:
+        template: str - The template string (e.g., "<prefix><part_number><revision>")
+        use_number_revisions: bool - Whether to use number-based revisions
+    
+    Returns:
+        examples: list - List of example formatted part numbers for different scenarios
+    """
+    from organizations.revision_utils import build_full_part_number_from_template
+    from datetime import datetime
+    
+    try:
+        template = request.data.get('template', '<prefix><part_number><revision>')
+        use_number_revisions = request.data.get('use_number_revisions', False)
+        
+        # Create sample datetime for date-based variables
+        sample_date = datetime(2025, 1, 15, 10, 30, 0)  # Jan 15, 2025
+        
+        # Generate examples for different scenarios
+        examples = []
+        
+        # Example 1: PRT, first revision
+        examples.append({
+            'description': 'Part - First revision',
+            'formatted': build_full_part_number_from_template(
+                template=template,
+                prefix='PRT',
+                part_number='10001',
+                revision_count_major=0,
+                revision_count_minor=0,
+                use_number_revisions=use_number_revisions,
+                project_number='PRJ001',
+                created_at=sample_date,
+            )
+        })
+        
+        # Example 2: PCBA, second major revision
+        examples.append({
+            'description': 'PCBA - Second major revision',
+            'formatted': build_full_part_number_from_template(
+                template=template,
+                prefix='PCBA',
+                part_number='20045',
+                revision_count_major=1,
+                revision_count_minor=0,
+                use_number_revisions=use_number_revisions,
+                project_number='PRJ042',
+                created_at=sample_date,
+            )
+        })
+        
+        # Example 3: ASM, with minor revision
+        examples.append({
+            'description': 'Assembly - With minor revision',
+            'formatted': build_full_part_number_from_template(
+                template=template,
+                prefix='ASM',
+                part_number='30012',
+                revision_count_major=0,
+                revision_count_minor=2,
+                use_number_revisions=use_number_revisions,
+                project_number='PRJ100',
+                created_at=sample_date,
+            )
+        })
+        
+        return Response({
+            'examples': examples,
+            'template': template,
+            'settings': {
+                'use_number_revisions': use_number_revisions,
+            }
+        })
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Error previewing template: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )

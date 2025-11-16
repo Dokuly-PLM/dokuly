@@ -919,20 +919,6 @@ def create_new_part(request, **kwargs):
         if "mpn" in data:
             new_part.mpn = data["mpn"]
 
-        prefix = "PRT"
-        if "part_type" in data:
-            new_part.part_type_id = data["part_type"]
-            prefix = new_part.part_type.prefix
-
-        # Format full part number based on organization settings
-        new_part.full_part_number = build_full_part_number(
-            organization_id=organization_id,
-            prefix=prefix,
-            part_number=new_part.part_number,
-            revision_count_major=new_part.revision_count_major,
-            revision_count_minor=new_part.revision_count_minor,
-        )
-
         if "unit" in data:
             new_part.unit = data["unit"]
         if "price" in data:
@@ -970,6 +956,27 @@ def create_new_part(request, **kwargs):
             if data["urls"] != None:
                 new_part.component_vault_id = int(data["component_vault_id"])
 
+
+        prefix = "PRT"
+        if "part_type" in data:
+            new_part.part_type_id = data["part_type"]
+            prefix = new_part.part_type.prefix
+
+        # Save first to populate created_at (auto_now_add field)
+        new_part.save()
+        
+        # Now build full part number with the populated created_at
+        new_part.full_part_number = build_full_part_number(
+            organization_id=organization_id,
+            prefix=prefix,
+            part_number=new_part.part_number,
+            revision_count_major=new_part.revision_count_major,
+            revision_count_minor=new_part.revision_count_minor,
+            project_number=new_part.project.project_number if new_part.project else None,
+            created_at=new_part.created_at
+        )
+
+        # Save again with the full part number
         new_part.save()
         serializer = PartSerializer(new_part, many=False)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1312,10 +1319,7 @@ def new_revision(request, pk, **kwargs):
     new_part_rev.part_number = old_part_rev.part_number
     new_part_rev.part_type = old_part_rev.part_type
 
-    # Get prefix - default to "PRT" if part_type is None
-    prefix = "PRT"
-    if old_part_rev.part_type and old_part_rev.part_type.prefix:
-        prefix = old_part_rev.part_type.prefix
+    
     
     # Get organization_id from user profile or API key for revision system
     organization_id = None
@@ -1330,14 +1334,6 @@ def new_revision(request, pk, **kwargs):
     revision_type = request.data.get('revision_type', 'major')
     new_part_rev.revision_count_major, new_part_rev.revision_count_minor = increment_revision_counters(old_part_rev.revision_count_major, old_part_rev.revision_count_minor, revision_type == 'major')
     
-    # Format full part number based on organization settings
-    new_part_rev.full_part_number = build_full_part_number(
-        organization_id=organization_id,
-        prefix=prefix,
-        part_number=new_part_rev.part_number,
-        revision_count_major=new_part_rev.revision_count_major,
-        revision_count_minor=new_part_rev.revision_count_minor,
-    )
 
     new_part_rev.created_by = old_part_rev.created_by
     new_part_rev.display_name = old_part_rev.display_name
@@ -1404,6 +1400,27 @@ def new_revision(request, pk, **kwargs):
     if "revision_notes" in request.data:
         new_part_rev.revision_notes = request.data["revision_notes"]
 
+
+    # Get prefix - default to "PRT" if part_type is None
+    prefix = "PRT"
+    if old_part_rev.part_type and old_part_rev.part_type.prefix:
+        prefix = old_part_rev.part_type.prefix
+
+    # Save first to populate created_at (auto_now_add field)
+    new_part_rev.save()
+    
+    # Now build full part number with the populated created_at
+    new_part_rev.full_part_number = build_full_part_number(
+        organization_id=organization_id,
+        prefix=prefix,
+        part_number=new_part_rev.part_number,
+        revision_count_major=new_part_rev.revision_count_major,
+        revision_count_minor=new_part_rev.revision_count_minor,
+        project_number=new_part_rev.project.project_number if new_part_rev.project else None,
+        created_at=new_part_rev.created_at
+    )
+
+    # Save again with the full part number
     new_part_rev.save()
 
     copy_markdown_tabs_to_new_revision(old_part_rev, new_part_rev)
