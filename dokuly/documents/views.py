@@ -224,12 +224,7 @@ def create_new_document(request, **kwargs):
 
         # Get organization_id from user profile or API key for revision system
         organization_id = None
-        if APIAndProjectAccess.has_validated_key(request):
-            org_id = APIAndProjectAccess.get_organization_id(request)
-            if org_id != -1:
-                organization_id = org_id
-        elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
-            organization_id = request.user.profile.organization_id
+        organization_id = get_org_id(user)
 
         document.save()
 
@@ -828,9 +823,6 @@ def update_errata(request, documentId):
 
 
 # This opt-out method will lead to bugs when new fields are added.
-@api_view(("POST",))
-@renderer_classes((JSONRenderer,))
-@permission_classes([APIAndProjectAccess | IsAuthenticated])
 @swagger_auto_schema(
     method='post',
     operation_id='auto_new_revision_document',
@@ -880,12 +872,9 @@ def auto_new_revision(request, pk, **kwargs):
         # Copy part_number from old revision (same part, different revision)
         new_revision.part_number = old_revision.part_number
         
-        # Get organization ID from the project
+        # Get organization ID from the user
         organization_id = None
-        if old_revision.project:
-            organization_id = old_revision.project.organization_id
-        
-
+        organization_id = get_org_id(user)
 
         # Get revision type from request data (default to "major" for backward compatibility)
         revision_type = request.data.get('revision_type', 'major')
@@ -916,10 +905,13 @@ def auto_new_revision(request, pk, **kwargs):
 
         link_issues_on_new_object_revision('documents', old_revision, new_revision)
 
+        # Get the prefix for building formatted revision
+        prefix = Document_Prefix.objects.get(pk=old_revision.prefix_id) if old_revision.prefix_id and old_revision.prefix_id != -1 else None
+        prefix_str = prefix.prefix if prefix else ""
 
         new_revision.formatted_revision = build_formatted_revision(
             organization_id=organization_id,
-            prefix=new_revision.get_prefix_string(),
+            prefix=prefix_str,
             part_number=new_revision.part_number,
             revision_count_major=new_revision.revision_count_major,
             revision_count_minor=new_revision.revision_count_minor,
