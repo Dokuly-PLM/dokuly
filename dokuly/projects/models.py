@@ -14,7 +14,12 @@ class Project(models.Model):
     # Basic data fields
     title = models.CharField(max_length=500, blank=True)
     description = models.TextField(default="", blank=True)
-    project_number = models.IntegerField(blank=True)
+
+    # This is because document number must be uniqe, and have project number in its doc. number
+    project_number = models.IntegerField(blank=True) # DEPRECATED
+
+    # This is the new full project number, unique across all projects.
+    full_project_number = models.IntegerField(blank=True, null=True, unique=True)
 
     # References
     organization = models.ForeignKey(
