@@ -145,7 +145,7 @@ const UsersList = (props) => {
   }, [refresh]);
 
   useEffect(() => {
-    if (props?.data && props?.subscriptions) {
+    if (props?.data) {
       const enrichedData = props.data.map((user) => {
         // Determine the subscription type based on allowed apps
         const hasRequirements =
@@ -167,7 +167,7 @@ const UsersList = (props) => {
       });
       setFormattedData(filteredData);
     }
-  }, [props.data, props.subscriptions, props.users, showInactive]);
+  }, [props.data, showInactive]);
 
   if (props.basicList) {
     return (

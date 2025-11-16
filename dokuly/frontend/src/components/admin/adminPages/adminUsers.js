@@ -11,7 +11,6 @@ const AdminUsers = (props) => {
   const [loading, setLoading] = useState(true);
   const [loading2, setLoading2] = useState(true);
   const [refresh, setRefresh] = useState(false);
-  const [subscriptions, setSubscriptions] = useState(null);
   const [data, setData] = useState(
     props.users !== null && props.users !== undefined ? props.users : null
   );
@@ -78,7 +77,6 @@ const AdminUsers = (props) => {
                 allowedUsers={allowedUsers}
                 setRefresh={setRefresh}
                 user={props?.user}
-                subscriptions={subscriptions}
               />
             </div>
           )}

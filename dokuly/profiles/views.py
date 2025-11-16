@@ -804,3 +804,45 @@ def check_email_unique(request):
         return Response(True, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(('PUT',))
+@renderer_classes((JSONRenderer, ))
+def admin_reset_user_password(request, userId):
+    """
+    Admin-only endpoint to reset a user's password without requiring email.
+    This is useful for deployments without an email server configured.
+    """
+    try:
+        # Check authentication
+        if not request.user or not request.user.is_authenticated:
+            return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user is Owner
+        try:
+            user_profile = Profile.objects.get(user=request.user)
+            if user_profile.role not in ["Owner"]:
+                return Response("Only Owner can reset passwords", status=status.HTTP_403_FORBIDDEN)
+        except Profile.DoesNotExist:
+            return Response("User profile not found", status=status.HTTP_404_NOT_FOUND)
+        
+        # Validate request data
+        data = request.data
+        if not data or 'password' not in data:
+            return Response("Password is required", status=status.HTTP_400_BAD_REQUEST)
+        
+        password = data['password']
+        if len(password) < 8:
+            return Response("Password must be at least 8 characters", status=status.HTTP_400_BAD_REQUEST)
+        
+        # Reset the password
+        try:
+            target_user = User.objects.get(id=userId)
+            target_user.set_password(password)
+            target_user.save()
+            return Response("Password reset successfully", status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response("User not found", status=status.HTTP_404_NOT_FOUND)
+            
+    except Exception as e:
+        return Response(f"admin_reset_user_password failed: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)

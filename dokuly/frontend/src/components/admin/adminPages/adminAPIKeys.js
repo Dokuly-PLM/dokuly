@@ -51,10 +51,12 @@ const AdminAPIKeys = (props) => {
         })
         .finally(() => {
           setLoadingCompVaultKey(false);
+          if (refresh) {
+            setRefresh(false);
+          }
         });
     }
-    setRefresh(false);
-  }, [refresh]);
+  }, [refresh, orgId, loadingCompVaultKey, setIsAuthenticated]);
 
   const { dokulyAPIKeys } = useDokulyAPIKeys(
     orgId,
