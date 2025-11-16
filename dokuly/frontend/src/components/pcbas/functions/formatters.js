@@ -5,13 +5,8 @@ import DokulyImage from "../../dokuly_components/dokulyImage";
 
 export const numberFormatter = (row) => {
   if (row) {
-    const useNumberRevisions = row?.organization?.use_number_revisions || false;
-    if (useNumberRevisions) {
-      // For number revisions, full_part_number already includes the revision with underscore
-      return row?.full_part_number;
-    }
-    // For letter revisions, append the revision to the base part number
-    return `${row?.full_part_number}${row?.revision}`;
+    // full_part_number already contains the properly formatted part number with revision
+    return row?.full_part_number;
   }
   return row?.full_part_number;
 };
@@ -206,13 +201,8 @@ export const partNumberFormatter = (cell, row) => {
             {(() => {
               const part = row?.part;
               if (!part) return "";
-              const useNumberRevisions = part?.organization?.use_number_revisions || false;
-              if (useNumberRevisions) {
-                // For number revisions, full_part_number already includes the revision with underscore
-                return part?.full_part_number;
-              }
-              // For letter revisions, append the revision to the base part number
-              return `${part?.full_part_number}${part?.revision}`;
+              // full_part_number already contains the properly formatted part number with revision
+              return part?.full_part_number;
             })()}
           </h6>
         </Col>

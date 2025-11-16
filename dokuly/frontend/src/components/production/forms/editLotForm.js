@@ -36,15 +36,7 @@ const EditLotForm = ({
           <Form.Control
             type="text"
             className="dokuly-form-input"
-            value={`${(() => {
-              const useNumberRevisions = selectedItem?.organization?.use_number_revisions || false;
-              if (useNumberRevisions) {
-                // For number revisions, full_part_number already includes the revision with underscore
-                return selectedItem.full_part_number;
-              }
-              // For letter revisions, append the revision to the base part number
-              return `${selectedItem.full_part_number}${selectedItem.revision}`;
-            })()} - ${selectedItem.display_name}`}
+            value={`${selectedItem.full_part_number} - ${selectedItem.display_name}`}
             disabled
           />
         </Form.Group>

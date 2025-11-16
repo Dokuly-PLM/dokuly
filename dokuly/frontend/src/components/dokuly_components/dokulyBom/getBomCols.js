@@ -49,19 +49,8 @@ export const getBomTableColumns = ({
           return "";
         }
         if (row?.full_part_number) {
-          // Get organization settings from the column configuration
-          const useNumberRevisions = organization?.use_number_revisions || false;
-          
-          
-          // Check if full_part_number already contains revision (has underscore)
-          const hasUnderscore = row.full_part_number.includes('_');
-          
-          if (useNumberRevisions || hasUnderscore) {
-            // For number revisions or if full_part_number already includes revision, use as-is
-            return row.full_part_number;
-          }
-          // For letter revisions, append the revision to the base part number
-          return `${row.full_part_number}${row.revision}`;
+          // full_part_number already contains the properly formatted part number with revision
+          return row.full_part_number;
         }
         return "Unknown";
       },
@@ -69,34 +58,10 @@ export const getBomTableColumns = ({
       searchValue: (row) => {
         const searchTerms = [];
         
-        // Get organization settings from the column configuration
-        const useNumberRevisions = organization?.use_number_revisions || false;
-        
-        // Add properly formatted part number with revision based on organization settings
+        // Add properly formatted part number with revision
         if (row?.full_part_number) {
-          
-          // Check if full_part_number already contains revision (has underscore)
-          const hasUnderscore = row.full_part_number.includes('_');
-          
-          if (useNumberRevisions || hasUnderscore) {
-            // For number revisions or if full_part_number already includes revision, use as-is
-            searchTerms.push(row.full_part_number);
-          } else {
-            // For letter revisions, append the revision to the base part number
-            const formattedPartNumber = `${row.full_part_number}${row.revision}`;
-            searchTerms.push(formattedPartNumber);
-          }
-        }
-        
-        // Add base part number without revision for better search (only for letter revisions)
-        if (row?.part_number && !(useNumberRevisions || hasUnderscore)) {
-          searchTerms.push(row.part_number.toString());
-        }
-        
-        // For number revisions, don't add separate revision field to search terms
-        // since it's already included in full_part_number
-        if (!(useNumberRevisions || hasUnderscore) && row?.revision) {
-          searchTerms.push(row.revision);
+          // full_part_number already contains the properly formatted part number with revision
+          searchTerms.push(row.full_part_number);
         }
         
         

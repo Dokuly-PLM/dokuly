@@ -157,16 +157,8 @@ const DisplayPart = (props) => {
       }
     } else {
       document.title = (() => {
-        const useNumberRevisions = part?.organization?.use_number_revisions || false;
-        console.log(useNumberRevisions);
-        console.log(part?.full_part_number);
-        console.log(part?.revision);
-        if (useNumberRevisions) {
-          // For number revisions, full_part_number already includes the revision with underscore
-          return part?.full_part_number;
-        }
-        // For letter revisions, append the revision to the base part number
-        return `${part?.full_part_number}${part?.revision}`;
+        // full_part_number already contains the properly formatted part number with revision
+        return part?.full_part_number;
       })();
       if (
         part.alternative_parts != null &&

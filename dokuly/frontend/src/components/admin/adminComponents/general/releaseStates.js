@@ -74,13 +74,8 @@ const ReleaseStates = ({ setRefresh }) => {
         }
         
         // Handle parts, pcbas, and assemblies
-        const useNumberRevisions = row?.organization?.use_number_revisions || false;
-        if (useNumberRevisions) {
-          // For number revisions, full_part_number already includes the revision with underscore
-          return row.full_part_number;
-        }
-        // For letter revisions, append the revision to the base part number
-        return `${row.full_part_number}${row.revision}`;
+        // full_part_number already contains the properly formatted part number with revision
+        return row.full_part_number;
       },
     },
     {

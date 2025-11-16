@@ -121,23 +121,12 @@ const PartNumberEditor = ({
       return "-";
     }
 
-    // Get organization settings from props
-    const useNumberRevisions = organization?.use_number_revisions || false;
-
     // Format part number with proper revision handling based on organization settings
     let formattedPartNumber = "";
     if (row?.full_part_number) {
-      
-      // Check if full_part_number already contains revision (has underscore)
-      const hasUnderscore = row.full_part_number.includes('_');
-      
-      if (useNumberRevisions || hasUnderscore) {
-        // For number revisions or if full_part_number already includes revision, use as-is
-        formattedPartNumber = row.full_part_number;
-      } else {
-        // For letter revisions, append the revision to the base part number
-        formattedPartNumber = `${row.full_part_number}${row.revision}`;
-      }
+
+    formattedPartNumber = row.full_part_number;
+
     } else if (isEditing) {
       formattedPartNumber = "";
     } else {

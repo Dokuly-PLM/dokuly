@@ -15,15 +15,7 @@ const TestData = ({ producedItem }) => {
 
     if (item) {
       getProducedItemMeasurements(
-        (() => {
-          const useNumberRevisions = item?.organization?.use_number_revisions || false;
-          if (useNumberRevisions) {
-            // For number revisions, full_part_number already includes the revision with underscore
-            return item.full_part_number;
-          }
-          // For letter revisions, append the revision to the base part number
-          return `${item.full_part_number}${item.revision}`;
-        })(),
+        item.full_part_number,
         producedItem.serial_number
       )
         .then((res) => {
