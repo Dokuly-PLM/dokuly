@@ -64,7 +64,7 @@ const PcbaForm = (props) => {
 				show={showModal}
 				onHide={() => setShowModal(false)}
 				onConfirm={handleCreateRevision}
-				currentRevision={pcba?.revision}
+				currentRevision={pcba?.formatted_revision}
 				organization={pcba?.organization}
 			/>
 		</div>

@@ -65,7 +65,7 @@ const NewRevision = (props) => {
         show={showModal}
         onHide={() => setShowModal(false)}
         onConfirm={handleCreateRevision}
-        currentRevision={props.document?.revision}
+        currentRevision={props.document?.formatted_revision}
         organization={props.document?.organization}
       />
     </div>
