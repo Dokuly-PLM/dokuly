@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Form, Row, Col, Dropdown, Alert, Button } from "react-bootstrap";
-import { editOrg } from "../../functions/queries";
+import { Form, Row, Col, Dropdown } from "react-bootstrap";
+import { editOrg, previewPartNumberTemplate, previewFormattedRevisionTemplate } from "../../functions/queries";
 import { toast } from "react-toastify";
 import SubmitButton from "../../../dokuly_components/submitButton";
 import CheckBox from "../../../dokuly_components/checkBox";
 import DokulyDropdown from "../../../dokuly_components/dokulyDropdown";
-import axios from "axios";
-import { tokenConfig } from "../../../common/queries";
+import QuestionToolTip from "../../../dokuly_components/questionToolTip";
 
 const RevisionSystemSettings = ({ org, setRefresh }) => {
   const [useNumberRevisions, setUseNumberRevisions] = useState(
@@ -15,73 +14,80 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
   const [revisionFormat, setRevisionFormat] = useState(
     org?.revision_format || "major-minor"
   );
-  const [revisionSeparator, setRevisionSeparator] = useState(
-    org?.revision_separator || "-"
+  const [fullPartNumberTemplate, setFullPartNumberTemplate] = useState(
+    org?.full_part_number_template || "<prefix><part_number><revision>"
+  );
+  const [formattedRevisionTemplate, setFormattedRevisionTemplate] = useState(
+    org?.formatted_revision_template || "<major_revision>"
   );
   const [isUpdating, setIsUpdating] = useState(false);
-  const [corruptedRevisions, setCorruptedRevisions] = useState(null);
-  const [isCheckingCorrupted, setIsCheckingCorrupted] = useState(false);
-  const [isFixingCorrupted, setIsFixingCorrupted] = useState(false);
+  const [previewExamples, setPreviewExamples] = useState([]);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [revisionPreviewExamples, setRevisionPreviewExamples] = useState([]);
+  const [isLoadingRevisionPreview, setIsLoadingRevisionPreview] = useState(false);
 
   // Update state when org prop changes
   useEffect(() => {
     if (org) {
       setUseNumberRevisions(org.use_number_revisions || false);
       setRevisionFormat(org.revision_format || "major-minor");
-      setRevisionSeparator(org.revision_separator || "-");
+      setFullPartNumberTemplate(org.full_part_number_template || "<prefix><part_number><revision>");
+      setFormattedRevisionTemplate(org.formatted_revision_template || "<major_revision>");
     }
   }, [org]);
 
-  const checkCorruptedRevisions = async () => {
-    setIsCheckingCorrupted(true);
-    try {
-      const response = await axios.get("/api/organizations/checkCorruptedRevisions/", tokenConfig());
-      setCorruptedRevisions(response.data);
-      
-      if (response.data.has_corrupted_revisions) {
-        toast.warning(`Found ${response.data.corrupted_count} corrupted items`);
-      } else {
-        toast.success("No corrupted revisions found");
+  // Fetch preview from backend whenever settings change
+  useEffect(() => {
+    const fetchPreview = async () => {
+      setIsLoadingPreview(true);
+      try {
+        const response = await previewPartNumberTemplate({
+          template: fullPartNumberTemplate,
+          use_number_revisions: useNumberRevisions,
+        });
+        
+        if (response.status === 200) {
+          setPreviewExamples(response.data.examples || []);
+        }
+      } catch (error) {
+        console.error('Error fetching template preview:', error);
+        setPreviewExamples([]);
+      } finally {
+        setIsLoadingPreview(false);
       }
-    } catch (error) {
-      console.error("Error checking corrupted revisions:", error);
-      if (error.response?.status === 401) {
-        toast.error("Authentication required. Please log in again.");
-      } else if (error.response?.status === 403) {
-        toast.error("Insufficient permissions to check for corrupted revisions.");
-      } else {
-        toast.error(`Failed to check for corrupted revisions: ${error.response?.data?.detail || error.message}`);
-      }
-    } finally {
-      setIsCheckingCorrupted(false);
-    }
-  };
+    };
 
-  const fixCorruptedRevisions = async () => {
-    setIsFixingCorrupted(true);
-    try {
-      const response = await axios.post("/api/organizations/fixCorruptedRevisions/", {}, tokenConfig());
-      
-      if (response.data.success) {
-        toast.success(response.data.message);
-        setCorruptedRevisions(null);
-        setRefresh(true);
-      } else {
-        toast.error("Failed to fix corrupted revisions.");
+    // Debounce the preview fetch
+    const timeoutId = setTimeout(fetchPreview, 300);
+    return () => clearTimeout(timeoutId);
+  }, [fullPartNumberTemplate, useNumberRevisions]);
+
+  // Fetch formatted revision preview from backend whenever settings change
+  useEffect(() => {
+    const fetchRevisionPreview = async () => {
+      setIsLoadingRevisionPreview(true);
+      try {
+        const response = await previewFormattedRevisionTemplate({
+          template: formattedRevisionTemplate,
+          use_number_revisions: useNumberRevisions,
+          revision_format: revisionFormat,
+        });
+        
+        if (response.status === 200) {
+          setRevisionPreviewExamples(response.data.examples || []);
+        }
+      } catch (error) {
+        console.error('Error fetching revision template preview:', error);
+        setRevisionPreviewExamples([]);
+      } finally {
+        setIsLoadingRevisionPreview(false);
       }
-    } catch (error) {
-      console.error("Error fixing corrupted revisions:", error);
-      if (error.response?.status === 401) {
-        toast.error("Authentication required. Please log in again.");
-      } else if (error.response?.status === 403) {
-        toast.error("Insufficient permissions to fix corrupted revisions.");
-      } else {
-        toast.error(`Failed to fix corrupted revisions: ${error.response?.data?.detail || error.message}`);
-      }
-    } finally {
-      setIsFixingCorrupted(false);
-    }
-  };
+    };
+
+    // Debounce the preview fetch
+    const timeoutId = setTimeout(fetchRevisionPreview, 300);
+    return () => clearTimeout(timeoutId);
+  }, [formattedRevisionTemplate, useNumberRevisions, revisionFormat]);
 
   const handleSave = async () => {
     setIsUpdating(true);
@@ -89,7 +95,8 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
       const data = {
         use_number_revisions: useNumberRevisions,
         revision_format: revisionFormat,
-        revision_separator: revisionSeparator,
+        full_part_number_template: fullPartNumberTemplate,
+        formatted_revision_template: formattedRevisionTemplate,
       };
 
       const response = await editOrg(org.id, data);
@@ -113,13 +120,92 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
   const handleReset = () => {
     setUseNumberRevisions(org?.use_number_revisions || false);
     setRevisionFormat(org?.revision_format || "major-minor");
-    setRevisionSeparator(org?.revision_separator || "-");
+    setFullPartNumberTemplate(org?.full_part_number_template || "<prefix><part_number><revision>");
+    setFormattedRevisionTemplate(org?.formatted_revision_template || "<major_revision>");
   };
 
   const hasChanges = 
     useNumberRevisions !== (org?.use_number_revisions || false) ||
     revisionFormat !== (org?.revision_format || "major-minor") ||
-    revisionSeparator !== (org?.revision_separator || "-");
+    fullPartNumberTemplate !== (org?.full_part_number_template || "<prefix><part_number><revision>") ||
+    formattedRevisionTemplate !== (org?.formatted_revision_template || "<major_revision>");
+
+  // Available template keywords
+  const availableKeywords = [
+    { keyword: '<prefix>', description: 'Part type (PRT, ASM, PCBA)' },
+    { keyword: '<part_number>', description: 'Numeric part number' },
+    { keyword: '<major_revision>', description: 'Major revision (A, B, C or 0, 1, 2)' },
+    { keyword: '<minor_revision>', description: 'Minor revision (A, B, C or 0, 1, 2)' },
+    { keyword: '<revision>', description: 'Major Revision (A, B, C or 0, 1, 2)' },
+    { keyword: '<project_number>', description: 'Project number (if applicable)' },
+    { keyword: '<day>', description: 'Day of creation (01-31)' },
+    { keyword: '<month>', description: 'Month of creation (01-12)' },
+    { keyword: '<year>', description: 'Year of creation (e.g., 2025)' },
+  ];
+
+  // Helper function to render template with highlighted keywords
+  const renderTemplateWithHighlights = (template) => {
+    if (!template) return null;
+    
+    const keywords = availableKeywords.map(k => k.keyword);
+    const parts = [];
+    let lastIndex = 0;
+    
+    // Find all keyword matches and their positions
+    const matches = [];
+    keywords.forEach(keyword => {
+      let index = template.indexOf(keyword);
+      while (index !== -1) {
+        matches.push({ keyword, index });
+        index = template.indexOf(keyword, index + 1);
+      }
+    });
+    
+    // Sort matches by position
+    matches.sort((a, b) => a.index - b.index);
+    
+    // Build the rendered output
+    matches.forEach(({ keyword, index }) => {
+      // Add text before the keyword
+      if (index > lastIndex) {
+        parts.push(
+          <span key={`text-${lastIndex}`}>
+            {template.substring(lastIndex, index)}
+          </span>
+        );
+      }
+      
+      // Add the highlighted keyword
+      parts.push(
+        <span
+          key={`keyword-${index}`}
+          style={{
+            backgroundColor: '#155216',
+            color: '#ffffff',
+            padding: '2px 4px',
+            borderRadius: '3px',
+            fontFamily: 'monospace',
+            fontSize: '0.9em',
+          }}
+        >
+          {keyword}
+        </span>
+      );
+      
+      lastIndex = index + keyword.length;
+    });
+    
+    // Add remaining text
+    if (lastIndex < template.length) {
+      parts.push(
+        <span key={`text-${lastIndex}`}>
+          {template.substring(lastIndex)}
+        </span>
+      );
+    }
+    
+    return <div style={{ fontFamily: 'monospace', fontSize: '1em' }}>{parts}</div>;
+  };
 
   return (
     <div className="card-body rounded bg-white">
@@ -127,56 +213,9 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
         <b>Revision System Settings</b>
       </h3>
       <p className="text-muted mb-3">
-        Configure how revisions are displayed and managed for parts, assemblies, and PCBAs.
+        Configure how revisions are displayed and managed for parts, assemblies, PCBAs, and documents. 
+        Use the template to control the exact formatting including separators.
       </p>
-      
-      {/* Corrupted Revisions Alert */}
-      {corruptedRevisions && corruptedRevisions.has_corrupted_revisions && (
-        <Alert variant="warning" className="mb-3">
-          <Alert.Heading>Corrupted Revision Data Detected</Alert.Heading>
-          <p>
-            We found {corruptedRevisions.corrupted_count} items with corrupted full part numbers. 
-            This can happen when migrating from letter to number revisions.
-          </p>
-          {corruptedRevisions.corrupted_items.length > 0 && (
-            <div className="mb-3">
-              <strong>Examples:</strong>
-              <ul className="mb-0">
-                {corruptedRevisions.corrupted_items.map((item, index) => (
-                  <li key={index}>
-                    <code>{item.current}</code> → <code>{item.correct}</code>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <Button 
-            variant="warning" 
-            size="sm" 
-            onClick={fixCorruptedRevisions}
-            disabled={isFixingCorrupted}
-          >
-            {isFixingCorrupted ? "Fixing..." : "Fix Corrupted Revisions"}
-          </Button>
-        </Alert>
-      )}
-      
-      {/* Check for corrupted revisions button */}
-      {useNumberRevisions && (
-        <div className="mb-3">
-          <Button 
-            variant="outline-secondary" 
-            size="sm" 
-            onClick={checkCorruptedRevisions}
-            disabled={isCheckingCorrupted}
-          >
-            {isCheckingCorrupted ? "Checking..." : "Check for Corrupted Revisions"}
-          </Button>
-          <small className="text-muted d-block mt-1">
-            Check if any parts have corrupted full part numbers from previous migrations.
-          </small>
-        </div>
-      )}
         
         <Form>
           <Row>
@@ -189,103 +228,204 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                   onChange={(e) => setUseNumberRevisions(e.target.checked)}
                 />
                 <Form.Text className="text-muted">
-                  When enabled, revisions will use numbers (1, 2, 3...) instead of letters (A, B, C...). Existing letter revisions will be treated as major revisions.
+                  When enabled, revisions will use numbers (1, 2, 3...) instead of letters (A, B, C...).
                 </Form.Text>
               </Form.Group>
             </Col>
           </Row>
 
-          {useNumberRevisions && (
-            <Row>
-              <Col md={12}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Revision Format</Form.Label>
-                  <DokulyDropdown
-                    title={revisionFormat === "major-only" ? "Major Only (1, 2, 3...)" : "Major-Minor (1-0, 1-1, 2-0...)"}
-                    variant="outline-secondary"
-                    disabled={!useNumberRevisions}
-                  >
-                    {({ closeDropdown }) => (
-                      <>
-                        <Dropdown.Item
-                          onClick={() => {
-                            setRevisionFormat("major-only");
-                            closeDropdown();
-                          }}
-                          active={revisionFormat === "major-only"}
-                        >
-                          Major Only (1, 2, 3...)
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => {
-                            setRevisionFormat("major-minor");
-                            closeDropdown();
-                          }}
-                          active={revisionFormat === "major-minor"}
-                        >
-                          Major-Minor (1-0, 1-1, 2-0...)
-                        </Dropdown.Item>
-                      </>
-                    )}
-                  </DokulyDropdown>
-                  <Form.Text className="text-muted">
-                    Choose the format for number-based revisions. Major-minor format allows for more granular versioning.
-                  </Form.Text>
-                </Form.Group>
-              </Col>
-            </Row>
-          )}
+          <Row>
+            <Col md={12}>
+              <Form.Group className="mb-3">
+                <Form.Label>Revision Format</Form.Label>
+                <DokulyDropdown
+                  title={
+                    revisionFormat === "major-only" 
+                      ? useNumberRevisions ? "Major Only (0, 1, 2...)" : "Major Only (A, B, C...)"
+                      : useNumberRevisions ? "Major-Minor (0-0, 0-1, 1-0...)" : "Major-Minor (A-A, A-B, B-A...)"
+                  }
+                  variant="outline-secondary"
+                >
+                  {({ closeDropdown }) => (
+                    <>
+                      <Dropdown.Item
+                        onClick={() => {
+                          setRevisionFormat("major-only");
+                          closeDropdown();
+                        }}
+                        active={revisionFormat === "major-only"}
+                      >
+                        {useNumberRevisions ? "Major Only (0, 1, 2...)" : "Major Only (A, B, C...)"}
+                      </Dropdown.Item>
+                      <Dropdown.Item
+                        onClick={() => {
+                          setRevisionFormat("major-minor");
+                          closeDropdown();
+                        }}
+                        active={revisionFormat === "major-minor"}
+                      >
+                        {useNumberRevisions ? "Major-Minor (0-0, 0-1, 1-0...)" : "Major-Minor (A-A, A-B, B-A...)"}
+                      </Dropdown.Item>
+                    </>
+                  )}
+                </DokulyDropdown>
+                <Form.Text className="text-muted">
+                  Choose the format for {useNumberRevisions ? "number" : "letter"}-based revisions. Major-minor format allows for more granular versioning with sub-revisions.
+                </Form.Text>
+              </Form.Group>
+            </Col>
+          </Row>
 
-          {useNumberRevisions && revisionFormat === "major-minor" && (
-            <Row>
-              <Col md={12}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Major-Minor Separator</Form.Label>
-                  <DokulyDropdown
-                    title={revisionSeparator === "-" ? "Dash (1-0, 1-1, 2-0...)" : "Dot (1.0, 1.1, 2.0...)"}
-                    variant="outline-secondary"
-                    disabled={!useNumberRevisions || revisionFormat !== "major-minor"}
-                  >
-                    {({ closeDropdown }) => (
-                      <>
-                        <Dropdown.Item
-                          onClick={() => {
-                            setRevisionSeparator("-");
-                            closeDropdown();
-                          }}
-                          active={revisionSeparator === "-"}
-                        >
-                          Dash (1-0, 1-1, 2-0...)
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => {
-                            setRevisionSeparator(".");
-                            closeDropdown();
-                          }}
-                          active={revisionSeparator === "."}
-                        >
-                          Dot (1.0, 1.1, 2.0...)
-                        </Dropdown.Item>
-                      </>
-                    )}
-                  </DokulyDropdown>
-                  <Form.Text className="text-muted">
-                    Choose the separator between major and minor revision numbers.
+          <Row>
+            <Col md={12}>
+              <Form.Group className="mb-3">
+                <Form.Label>
+                  Part Number Template 
+                  <QuestionToolTip
+                    placement="right"
+                    optionalHelpText={
+                      "Configure how full part numbers are formatted. Available variables:\n" +
+                      "• <prefix> - Part type (PRT, ASM, PCBA, DOC)\n" +
+                      "• <part_number> - Numeric part number\n" +
+                      "• <major_revision> - Major revision (A, B, C or 0, 1, 2)\n" +
+                      "• <minor_revision> - Minor revision (A, B, C or 0, 1, 2)\n" +
+                      "• <revision> - Complete revision string (includes separator)\n" +
+                      "• <project_number> - Project number from associated project\n" +
+                      "• <day> - Day from creation date (01-31)\n" +
+                      "• <month> - Month from creation date (01-12)\n" +
+                      "• <year> - Year from creation date (e.g., 2025)\n\n" +
+                      "Example: '<prefix><part_number>-<revision>' → 'PRT10001-A-0'"
+                    }
+                  />
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  value={fullPartNumberTemplate}
+                  onChange={(e) => setFullPartNumberTemplate(e.target.value)}
+                  placeholder="<prefix><part_number><revision>"
+                  style={{ fontFamily: 'monospace' }}
+                />
+                <Form.Text className="text-muted d-block mt-2">
+                  Preview: {renderTemplateWithHighlights(fullPartNumberTemplate)}
+                </Form.Text>
+                {isLoadingPreview ? (
+                  <Form.Text className="text-muted d-block mt-2">
+                    Loading examples...
                   </Form.Text>
-                </Form.Group>
-              </Col>
-            </Row>
-          )}
+                ) : previewExamples.length > 0 ? (
+                  <div className="mt-2">
+                    <Form.Text className="text-muted d-block">
+                      <strong>Examples:</strong>
+                    </Form.Text>
+                    {previewExamples.map((example, index) => (
+                      <Form.Text key={index} className="text-muted d-block" style={{ marginLeft: '1rem' }}>
+                        • {example.description}: <strong style={{ fontFamily: 'monospace' }}>{example.formatted}</strong>
+                      </Form.Text>
+                    ))}
+                  </div>
+                ) : null}
+              </Form.Group>
+            </Col>
+          </Row>
+
+          <Row>
+            <Col md={12}>
+              <Form.Group className="mb-3">
+                <Form.Label>
+                  Standalone Revision Template 
+                  <QuestionToolTip
+                    placement="right"
+                    optionalHelpText={
+                      "Configure how standalone revisions are displayed (separate from full part numbers). Available variables:\n" +
+                      "• <major_revision> - Major revision (A, B, C or 0, 1, 2)\n" +
+                      "• <minor_revision> - Minor revision (A, B, C or 0, 1, 2)\n\n" +
+                      "Common examples:\n" +
+                      "• '<major_revision>' → 'A' or '0'\n" +
+                      "• '<major_revision>-<minor_revision>' → 'A-0' or '0-1'\n" +
+                      "• 'Rev <major_revision>' → 'Rev A' or 'Rev 0'\n" +
+                      "• 'v<major_revision>.<minor_revision>' → 'vA.0' or 'v0.1'"
+                    }
+                  />
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  value={formattedRevisionTemplate}
+                  onChange={(e) => setFormattedRevisionTemplate(e.target.value)}
+                  placeholder="<major_revision>"
+                  style={{ fontFamily: 'monospace' }}
+                />
+                <Form.Text className="text-muted d-block mt-2">
+                  This controls how revisions are displayed in standalone contexts (e.g., revision columns in tables).
+                </Form.Text>
+                <Form.Text className="text-muted d-block mt-2">
+                  Preview: {renderTemplateWithHighlights(formattedRevisionTemplate)}
+                </Form.Text>
+                {isLoadingRevisionPreview ? (
+                  <Form.Text className="text-muted d-block mt-2">
+                    Loading examples...
+                  </Form.Text>
+                ) : revisionPreviewExamples.length > 0 ? (
+                  <div className="mt-2">
+                    <Form.Text className="text-muted d-block">
+                      <strong>Examples:</strong>
+                    </Form.Text>
+                    {revisionPreviewExamples.map((example, index) => (
+                      <Form.Text key={index} className="text-muted d-block" style={{ marginLeft: '1rem' }}>
+                        • {example.description}: <strong style={{ fontFamily: 'monospace' }}>{example.formatted}</strong>
+                      </Form.Text>
+                    ))}
+                  </div>
+                ) : null}
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Available Keywords Reference - applies to both templates above */}
+          <Row>
+            <Col md={12}>
+              <div className="mt-3 mb-4">
+                <details>
+                  <summary style={{ cursor: 'pointer', color: 'black', fontWeight: 'bold' }}>
+                    Available Template Keywords
+                  </summary>
+                  <div className="mt-2 p-2" style={{ backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
+                    {availableKeywords.map((kw, index) => (
+                      <div key={index} className="mb-2">
+                        <code style={{ 
+                          backgroundColor: '#155216', 
+                          color: 'white', 
+                          padding: '2px 6px', 
+                          borderRadius: '4px',
+                          fontFamily: 'monospace'
+                        }}>
+                          {kw.keyword}
+                        </code>
+                        <span className="ms-2 text-muted">{kw.description}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
+            </Col>
+          </Row>
 
           <Row>
             <Col md={12}>
               <div className="alert alert-info">
-                <strong>Note:</strong> When you save these settings:
+                <strong>Current Configuration:</strong>
                 <ul className="mb-0 mt-2">
-                  <li>Existing letter revisions (A, B, C...) will be automatically converted to numbers (1, 2, 3...)</li>
-                  <li>Part numbers will display with underscore separator (e.g., PRT1234_1 instead of PRT1234A)</li>
-                  <li>This change affects all parts, assemblies, and PCBAs in your organization</li>
-                  <li>The data migration will run automatically when you click "Save Settings"</li>
+                  <li>
+                    <strong>Revision Type:</strong> {useNumberRevisions ? "Number-based" : "Letter-based"}
+                  </li>
+                  <li>
+                    <strong>Format:</strong> {revisionFormat === "major-only" ? "Major only" : "Major-minor"}
+                  </li>
+                  <li>
+                    <strong>Part Number Template:</strong> {renderTemplateWithHighlights(fullPartNumberTemplate)}
+                  </li>
+                  <li>
+                    <strong>Standalone Revision Template:</strong> {renderTemplateWithHighlights(formattedRevisionTemplate)}
+                  </li>
                 </ul>
               </div>
             </Col>

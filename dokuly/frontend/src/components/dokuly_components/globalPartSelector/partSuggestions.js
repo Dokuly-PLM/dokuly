@@ -35,17 +35,7 @@ export const PartSuggestions = ({
             formattedProjectTitle = `- ${project_title}`;
           }
 
-          const combinedText = `${(() => {
-            const useNumberRevisions = organization?.use_number_revisions || false;
-            if (useNumberRevisions) {
-              // For number revisions, full_part_number already includes the revision with underscore
-              return full_part_number;
-            }
-            // For letter revisions, append the revision to the base part number
-            return `${full_part_number}${revision}`;
-          })()}, ${display_name} ${formattedProjectTitle}`;
-
-          return (
+        const combinedText = `${full_part_number}, ${display_name} ${formattedProjectTitle}`;          return (
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
             <li
               key={`${full_part_number}-${revision}`}

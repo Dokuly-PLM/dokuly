@@ -16,7 +16,6 @@ from django.core.files.base import ContentFile
 from assembly_bom.models import Assembly_bom
 from documents.models import MarkdownText, Reference_List
 from projects.views import check_project_access
-from pcbas.views import is_latest_revision
 from part_numbers.methods import get_next_part_number
 from assembly_bom.utilityFuncitons import cloneBom
 from profiles.utilityFunctions import (
@@ -32,7 +31,7 @@ from django.contrib.postgres.search import SearchVector
 from profiles.models import Profile
 from profiles.serializers import ProfileSerializer
 from django.contrib.auth.models import User
-from pcbas.viewUtilities import increment_revision
+from organizations.revision_utils import build_full_part_number, build_formatted_revision, increment_revision_counters
 from projects.models import Project
 from projects.viewsIssues import link_issues_on_new_object_revision
 from projects.viewsTags import check_for_and_create_new_tags
@@ -95,6 +94,10 @@ def create_new_assembly(request, **kwargs):
         assembly_entry.is_latest_revision = True
         assembly_entry.is_archived = False
         
+        # Initialize revision counters - both start at 0 for first revision
+        assembly_entry.revision_count_major = 0
+        assembly_entry.revision_count_minor = 0
+        
         # Get organization_id from user profile or API key for revision system
         organization_id = None
         if APIAndProjectAccess.has_validated_key(request):
@@ -103,33 +106,6 @@ def create_new_assembly(request, **kwargs):
                 organization_id = org_id
         elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
             organization_id = request.user.profile.organization_id
-        
-        # Set initial revision based on organization settings
-        from organizations.revision_utils import get_organization_revision_settings
-        if organization_id:
-            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
-            if use_number_revisions:
-                if revision_format == "major-minor":
-                    assembly_entry.revision = f"1{separator}0"
-                else:
-                    assembly_entry.revision = "1"
-            else:
-                assembly_entry.revision = "A"
-        else:
-            assembly_entry.revision = "A"
-        
-        # Format full_part_number based on organization revision settings
-        if organization_id:
-            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
-            if use_number_revisions:
-                # For number revisions, use underscore separator
-                assembly_entry.full_part_number = f"ASM{assembly_entry.part_number}_{assembly_entry.revision}"
-            else:
-                # For letter revisions, use direct concatenation
-                assembly_entry.full_part_number = f"ASM{assembly_entry.part_number}{assembly_entry.revision}"
-        else:
-            # Default to letter revision format
-            assembly_entry.full_part_number = f"ASM{assembly_entry.part_number}{assembly_entry.revision}"
 
         if "display_name" in data:
             assembly_entry.display_name = data["display_name"]
@@ -148,6 +124,28 @@ def create_new_assembly(request, **kwargs):
                 pass
 
         assembly_entry.external_part_number = data.get("external_part_number", "")
+        assembly_entry.save()
+
+        assembly_entry.full_part_number = build_full_part_number(
+            organization_id=organization_id,
+            prefix="ASM",
+            part_number=assembly_entry.part_number,
+            revision_count_major=assembly_entry.revision_count_major,
+            revision_count_minor=assembly_entry.revision_count_minor,
+            project_number=assembly_entry.project.project_number if assembly_entry.project else None,
+            created_at=assembly_entry.created_at
+        )
+
+        assembly_entry.formatted_revision = build_formatted_revision(
+            organization_id=organization_id,
+            prefix="ASM",
+            part_number=assembly_entry.part_number,
+            revision_count_major=assembly_entry.revision_count_major,
+            revision_count_minor=assembly_entry.revision_count_minor,
+            project_number=assembly_entry.project.project_number if assembly_entry.project else None,
+            created_at=assembly_entry.created_at
+        )
+
         assembly_entry.save()
 
         # Ensure every new assembly has a BOM.
@@ -394,22 +392,8 @@ def new_revision(request, pk, **kwargs):
             
             # Get revision type from request data (default to "major" for backward compatibility)
             revision_type = data.get('revision_type', 'major')
-            
-            newRevision.revision = increment_revision(current_asm.revision, organization_id, revision_type)
-            
-            # Format full_part_number based on organization revision settings
-            from organizations.revision_utils import get_organization_revision_settings
-            if organization_id:
-                use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
-                if use_number_revisions:
-                    # For number revisions, use underscore separator
-                    newRevision.full_part_number = f"ASM{current_asm.part_number}_{newRevision.revision}"
-                else:
-                    # For letter revisions, use direct concatenation
-                    newRevision.full_part_number = f"ASM{current_asm.part_number}{newRevision.revision}"
-            else:
-                # Default to letter revision format
-                newRevision.full_part_number = f"ASM{current_asm.part_number}{newRevision.revision}"
+            newRevision.revision_count_major, newRevision.revision_count_minor = increment_revision_counters(current_asm.revision_count_major, current_asm.revision_count_minor, revision_type == 'major')
+
             if APIAndProjectAccess.has_validated_key(request):
                 if "created_by" in data:
                     newRevision.created_by = User.objects.get(
@@ -457,6 +441,28 @@ def new_revision(request, pk, **kwargs):
             # Set revision_notes from request data if provided
             if "revision_notes" in data:
                 newRevision.revision_notes = data["revision_notes"]
+
+            newRevision.save()
+
+            newRevision.full_part_number = build_full_part_number(
+                organization_id=organization_id,
+                prefix="ASM",
+                part_number=newRevision.part_number,
+                revision_count_major=newRevision.revision_count_major,
+                revision_count_minor=newRevision.revision_count_minor,
+                project_number=newRevision.project.project_number if newRevision.project else None,
+                created_at=newRevision.created_at
+            )
+
+            newRevision.formatted_revision = build_formatted_revision(
+                organization_id=organization_id,
+                prefix="ASM",
+                part_number=newRevision.part_number,
+                revision_count_major=newRevision.revision_count_major,
+                revision_count_minor=newRevision.revision_count_minor,
+                project_number=newRevision.project.project_number if newRevision.project else None,
+                created_at=newRevision.created_at
+            )
 
             newRevision.save()
 
@@ -785,7 +791,7 @@ def get_revisions(request, part_number):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def is_latest_revision(part_number, revision):
+def is_latest_revision(part_number, revision_count_major, revision_count_minor):
     """Check if the current item is the latest revision."""
     items = Assembly.objects.filter(
         part_number=part_number).exclude(is_archived=True)
@@ -793,18 +799,12 @@ def is_latest_revision(part_number, revision):
     if len(items) == 1:
         return True
 
-    def first_is_greater(first, second):
-        """Returns True if rev_one is greatest."""
-        if len(second) > len(first):
-            return False
-
-        for index, letter in enumerate(second):
-            if letter >= first[index]:
-                return False
-        return True
-
     for item in items:
-        if first_is_greater(item.revision, revision):
+        # If any item has a higher major revision, this is not the latest
+        if item.revision_count_major > revision_count_major:
+            return False
+        # If any item has the same major but higher minor, this is not the latest
+        if item.revision_count_major == revision_count_major and item.revision_count_minor > revision_count_minor:
             return False
     return True
 
@@ -815,5 +815,5 @@ def batch_process_is_latest_revision_by_part_number(part_number):
         part_number=part_number).exclude(is_archived=True)
     for item in items:
         item.is_latest_revision = is_latest_revision(
-            item.part_number, item.revision)
+            item.part_number, item.revision_count_major, item.revision_count_minor)
         item.save()

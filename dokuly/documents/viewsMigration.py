@@ -49,7 +49,6 @@ from .viewUtilities import (
     assemble_full_document_number,
     assemble_full_document_number_no_prefix_db_call,
 )
-from pcbas.viewUtilities import increment_revision
 from django.db.models import F, Case, When, Value, CharField
 from django.db import transaction
 import re

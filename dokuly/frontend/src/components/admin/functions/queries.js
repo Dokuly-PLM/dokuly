@@ -1500,3 +1500,28 @@ export const refreshPaddleSubscriptions = (useToast) => {
     error: "An error occurred",
   });
 };
+
+/**
+ * Preview how a part number template will be formatted.
+ * @param {Object} data - Object containing template, use_number_revisions, revision_format
+ * @return {Promise<AxiosResponse<any>>} Response with example formatted part numbers
+ */
+export const previewPartNumberTemplate = (data) => {
+  const promise = axios.post(
+    "api/organizations/previewPartNumberTemplate/",
+    data,
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+export const previewFormattedRevisionTemplate = (data) => {
+  const promise = axios.post(
+    "api/organizations/previewFormattedRevisionTemplate/",
+    data,
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};

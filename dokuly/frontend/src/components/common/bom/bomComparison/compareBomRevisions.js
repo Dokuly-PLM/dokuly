@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { toast } from "react-toastify";
 
-import { compareRevisionStrings } from "./functions/compareRevisionStrings";
 import { getBomItemsById } from "../functions/queries";
 import { getLinkedParts } from "../functions/queries";
 import { buildBomObject } from "../functions/buildBomObject";
@@ -13,6 +12,26 @@ function limit_caracters(text, limit) {
     return text;
   }
   return `${text.substring(0, limit)}...`;
+}
+
+/**
+ * Compare two items based on their revision counters.
+ * @param {Object} a - First item with revision_count_major and revision_count_minor
+ * @param {Object} b - Second item with revision_count_major and revision_count_minor
+ * @returns {number} - Negative if a < b, positive if a > b, 0 if equal
+ */
+function compareRevisionCounters(a, b) {
+  const majorA = a.revision_count_major ?? 0;
+  const majorB = b.revision_count_major ?? 0;
+  
+  if (majorA !== majorB) {
+    return majorA - majorB;
+  }
+  
+  const minorA = a.revision_count_minor ?? 0;
+  const minorB = b.revision_count_minor ?? 0;
+  
+  return minorA - minorB;
 }
 
 /**
@@ -35,15 +54,18 @@ export default function BomComparisonTable({
     return "";
   }
 
-  // Sort the items based on revision
-  const sortedItems = items.sort((a, b) =>
-    compareRevisionStrings(a.revision, b.revision),
-  );
+  // Sort the items based on revision counters
+  const sortedItems = items.sort((a, b) => compareRevisionCounters(a, b));
 
-  // Find the current revision index
-  const currentRevisionIndex = sortedItems.findIndex(
-    (item) => item.revision === current_revision,
-  );
+  // Find the current revision index using revision counters
+  const currentRevisionIndex = sortedItems.findIndex((item) => {
+    const currentMajor = parseInt(current_revision?.split('-')[0] || '0', 10);
+    const currentMinor = parseInt(current_revision?.split('-')[1] || '0', 10);
+    return (
+      item.revision_count_major === currentMajor &&
+      item.revision_count_minor === currentMinor
+    );
+  });
 
   // Default comparison revision is the one before the current, if possible
   const defaultComparisonIndex =
@@ -175,7 +197,6 @@ export default function BomComparisonTable({
                     }
                   >
                     {item.full_part_number}
-                    {item.revision}
                   </td>
                 );
               })}
@@ -195,8 +216,8 @@ export default function BomComparisonTable({
     sortedItems[comparisonRevisionIndex],
   ].filter(Boolean); // Filter out any undefined values
 
-  // Sort the filtered items alphabetically by revision
-  filteredItems.sort((a, b) => compareRevisionStrings(a.revision, b.revision));
+  // Sort the filtered items by revision counters
+  filteredItems.sort((a, b) => compareRevisionCounters(a, b));
 
   function render_headers() {
     return (
@@ -206,15 +227,15 @@ export default function BomComparisonTable({
         {filteredItems.map((item) => (
           <th scope="col" key={item.id}>
             {(() => {
-              const useNumberRevisions = item?.organization?.use_number_revisions || false;
-              const formattedPartNumber = useNumberRevisions 
-                ? item.full_part_number 
-                : `${item.full_part_number}${item.revision}`;
+              const formattedPartNumber = item.full_part_number;
               
-              if (item.revision === sortedItems[currentRevisionIndex].revision) {
+              // Compare using revision counters instead of deprecated revision field
+              const isCurrent = 
+                item.revision_count_major === sortedItems[currentRevisionIndex]?.revision_count_major &&
+                item.revision_count_minor === sortedItems[currentRevisionIndex]?.revision_count_minor;
+              
+              if (isCurrent) {
                 return `${formattedPartNumber} (Current)`;
-              } else if (item.revision === sortedItems[comparisonRevisionIndex].revision) {
-                return formattedPartNumber;
               } else {
                 return formattedPartNumber;
               }
@@ -243,6 +264,11 @@ export default function BomComparisonTable({
       ) {
         // Lighter orange
         rowColor = "#ffe7d3";
+      } else if (
+        differences.some((item) => item.change === "quantity_changed")
+      ) {
+        // Lighter yellow
+        rowColor = "#fff9e6";
       }
 
       return (
@@ -274,15 +300,7 @@ export default function BomComparisonTable({
                   onKeyUp={() => {}}
                   key={index}
                 >
-                  <b>{`${(() => {
-                    const useNumberRevisions = item?.organization?.use_number_revisions || false;
-                    if (useNumberRevisions) {
-                      // For number revisions, full_part_number already includes the revision with underscore
-                      return item.full_part_number;
-                    }
-                    // For letter revisions, append the revision to the base part number
-                    return `${item.full_part_number}${item.revision}`;
-                  })()}:`}</b>{" "}
+                  <b>{`${item.full_part_number}:`}</b>{" "}
                   {limit_caracters(item.display_name, 30)}
                 </td>
               );
@@ -304,12 +322,22 @@ export default function BomComparisonTable({
             )}
             {differences.some((item) => item.change === "revision_changed") && (
               <>
-                {differences[0].revision}
+                {`${differences[0].revision_count_major ?? 0}-${differences[0].revision_count_minor ?? 0}`}
                 <img
                   src="../../../static/icons/arrow-right.svg"
                   alt="Revision changed"
                 />
-                {differences[1].revision}
+                {`${differences[1].revision_count_major ?? 0}-${differences[1].revision_count_minor ?? 0}`}
+              </>
+            )}
+            {differences.some((item) => item.change === "quantity_changed") && (
+              <>
+                Qty: {differences[0].quantity ?? 1}
+                <img
+                  src="../../../static/icons/arrow-right.svg"
+                  alt="Quantity changed"
+                />
+                {differences[1].quantity ?? 1}
               </>
             )}
           </td>
@@ -330,7 +358,7 @@ export default function BomComparisonTable({
       <table
         className="table table-bordered table-sm"
         onMouseOver={() => {}}
-        onfocus={() => {}}
+        onFocus={() => {}}
       >
         <thead>{render_headers()}</thead>
         <tbody>{render_body(bom_differences)}</tbody>

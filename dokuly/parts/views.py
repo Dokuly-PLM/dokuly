@@ -28,7 +28,6 @@ from .serializers import (
     SimpleAsmSerializer,
 )
 from assemblies.models import Assembly
-from pcbas.viewUtilities import increment_revision
 from documents.models import MarkdownText, Reference_List
 from projects.models import Project
 
@@ -56,7 +55,7 @@ from profiles.utilityFunctions import (
 
 from projects.viewsTags import check_for_and_create_new_tags
 from parts.viewUtilities import copy_markdown_tabs_to_new_revision
-
+from organizations.revision_utils import build_full_part_number, build_formatted_revision, increment_revision_counters
 
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
@@ -889,6 +888,10 @@ def create_new_part(request, **kwargs):
         new_part.release_state = "Draft"
         new_part.is_latest_revision = True
         
+        # Initialize revision counters - both start at 0 for first revision
+        new_part.revision_count_major = 0
+        new_part.revision_count_minor = 0
+        
         # Get organization_id from user profile or API key for revision system
         organization_id = None
         if APIAndProjectAccess.has_validated_key(request):
@@ -898,19 +901,7 @@ def create_new_part(request, **kwargs):
         elif hasattr(user, 'profile') and user.profile.organization_id:
             organization_id = user.profile.organization_id
         
-        # Set initial revision based on organization settings
-        from organizations.revision_utils import get_organization_revision_settings
-        if organization_id:
-            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
-            if use_number_revisions:
-                if revision_format == "major-minor":
-                    new_part.revision = f"1{separator}0"
-                else:
-                    new_part.revision = "1"
-            else:
-                new_part.revision = "A"
-        else:
-            new_part.revision = "A"
+        
         new_part.display_name = data["display_name"]
         new_part.internal = data["internal"]
         if "description" in data:
@@ -927,24 +918,6 @@ def create_new_part(request, **kwargs):
             new_part.manufacturer = data["manufacturer"]
         if "mpn" in data:
             new_part.mpn = data["mpn"]
-
-        prefix = "PRT"
-        if "part_type" in data:
-            new_part.part_type_id = data["part_type"]
-            prefix = new_part.part_type.prefix
-        
-        # Format full_part_number based on organization revision settings
-        if organization_id:
-            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
-            if use_number_revisions:
-                # For number revisions, use underscore separator
-                new_part.full_part_number = f"{prefix}{new_part.part_number}_{new_part.revision}"
-            else:
-                # For letter revisions, use direct concatenation
-                new_part.full_part_number = f"{prefix}{new_part.part_number}{new_part.revision}"
-        else:
-            # Default to letter revision format
-            new_part.full_part_number = f"{prefix}{new_part.part_number}{new_part.revision}"
 
         if "unit" in data:
             new_part.unit = data["unit"]
@@ -983,6 +956,37 @@ def create_new_part(request, **kwargs):
             if data["urls"] != None:
                 new_part.component_vault_id = int(data["component_vault_id"])
 
+
+        prefix = "PRT"
+        if "part_type" in data:
+            new_part.part_type_id = data["part_type"]
+            prefix = new_part.part_type.prefix
+
+        # Save first to populate created_at (auto_now_add field)
+        new_part.save()
+        
+        # Now build full part number with the populated created_at
+        new_part.full_part_number = build_full_part_number(
+            organization_id=organization_id,
+            prefix=prefix,
+            part_number=new_part.part_number,
+            revision_count_major=new_part.revision_count_major,
+            revision_count_minor=new_part.revision_count_minor,
+            project_number=new_part.project.project_number if new_part.project else None,
+            created_at=new_part.created_at
+        )
+
+        new_part.formatted_revision = build_formatted_revision(
+            organization_id=organization_id,
+            prefix=prefix,
+            part_number=new_part.part_number,
+            revision_count_major=new_part.revision_count_major,
+            revision_count_minor=new_part.revision_count_minor,
+            project_number=new_part.project.project_number if new_part.project else None,
+            created_at=new_part.created_at
+        )
+
+        # Save again with the full part number
         new_part.save()
         serializer = PartSerializer(new_part, many=False)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1325,10 +1329,7 @@ def new_revision(request, pk, **kwargs):
     new_part_rev.part_number = old_part_rev.part_number
     new_part_rev.part_type = old_part_rev.part_type
 
-    # Get prefix - default to "PRT" if part_type is None
-    prefix = "PRT"
-    if old_part_rev.part_type and old_part_rev.part_type.prefix:
-        prefix = old_part_rev.part_type.prefix
+    
     
     # Get organization_id from user profile or API key for revision system
     organization_id = None
@@ -1341,22 +1342,8 @@ def new_revision(request, pk, **kwargs):
     
     # Get revision type from request data (default to "major" for backward compatibility)
     revision_type = request.data.get('revision_type', 'major')
+    new_part_rev.revision_count_major, new_part_rev.revision_count_minor = increment_revision_counters(old_part_rev.revision_count_major, old_part_rev.revision_count_minor, revision_type == 'major')
     
-    new_part_rev.revision = increment_revision(old_part_rev.revision, organization_id, revision_type)
-    
-    # Format full_part_number based on organization revision settings
-    from organizations.revision_utils import get_organization_revision_settings
-    if organization_id:
-        use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
-        if use_number_revisions:
-            # For number revisions, use underscore separator between part number and revision
-            new_part_rev.full_part_number = f"{prefix}{new_part_rev.part_number}_{new_part_rev.revision}"
-        else:
-            # For letter revisions, use direct concatenation
-            new_part_rev.full_part_number = f"{prefix}{new_part_rev.part_number}{new_part_rev.revision}"
-    else:
-        # Default to letter revision format
-        new_part_rev.full_part_number = f"{prefix}{new_part_rev.part_number}{new_part_rev.revision}"
 
     new_part_rev.created_by = old_part_rev.created_by
     new_part_rev.display_name = old_part_rev.display_name
@@ -1423,6 +1410,37 @@ def new_revision(request, pk, **kwargs):
     if "revision_notes" in request.data:
         new_part_rev.revision_notes = request.data["revision_notes"]
 
+
+    # Get prefix - default to "PRT" if part_type is None
+    prefix = "PRT"
+    if old_part_rev.part_type and old_part_rev.part_type.prefix:
+        prefix = old_part_rev.part_type.prefix
+
+    # Save first to populate created_at (auto_now_add field)
+    new_part_rev.save()
+    
+    # Now build full part number with the populated created_at
+    new_part_rev.full_part_number = build_full_part_number(
+        organization_id=organization_id,
+        prefix=prefix,
+        part_number=new_part_rev.part_number,
+        revision_count_major=new_part_rev.revision_count_major,
+        revision_count_minor=new_part_rev.revision_count_minor,
+        project_number=new_part_rev.project.project_number if new_part_rev.project else None,
+        created_at=new_part_rev.created_at
+    )
+
+    new_part_rev.formatted_revision = build_formatted_revision(
+        organization_id=organization_id,
+        prefix=prefix,
+        part_number=new_part_rev.part_number,
+        revision_count_major=new_part_rev.revision_count_major,
+        revision_count_minor=new_part_rev.revision_count_minor,
+        project_number=new_part_rev.project.project_number if new_part_rev.project else None,
+        created_at=new_part_rev.created_at
+    )
+
+    # Save again with the full part number
     new_part_rev.save()
 
     copy_markdown_tabs_to_new_revision(old_part_rev, new_part_rev)
@@ -1555,7 +1573,7 @@ def get_revisions(request, part_number):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def is_latest_revision(part_number, revision):
+def is_latest_revision(part_number, revision_count_major, revision_count_minor):
     """Check if the current item is the latest revision."""
     items = Part.objects.filter(
         part_number=part_number).exclude(is_archived=True)
@@ -1563,18 +1581,12 @@ def is_latest_revision(part_number, revision):
     if len(items) == 1:
         return True
 
-    def first_is_greater(first, second):
-        """Returns True if rev_one is greatest."""
-        if len(second) > len(first):
-            return False
-
-        for index, letter in enumerate(second):
-            if letter >= first[index]:
-                return False
-        return True
-
     for item in items:
-        if first_is_greater(item.revision, revision):
+        # If any item has a higher major revision, this is not the latest
+        if item.revision_count_major > revision_count_major:
+            return False
+        # If any item has the same major but higher minor, this is not the latest
+        if item.revision_count_major == revision_count_major and item.revision_count_minor > revision_count_minor:
             return False
     return True
 
@@ -1662,7 +1674,7 @@ def batch_process_is_latest_revision_by_part_number(part_number):
         part_number=part_number).exclude(is_archived=True)
     for item in items:
         item.is_latest_revision = is_latest_revision(
-            item.part_number, item.revision)
+            item.part_number, item.revision_count_major, item.revision_count_minor)
         item.save()
 
 

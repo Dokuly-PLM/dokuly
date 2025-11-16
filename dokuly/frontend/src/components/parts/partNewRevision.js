@@ -57,7 +57,7 @@ export const PartNewRevision = (props) => {
         show={showModal}
         onHide={() => setShowModal(false)}
         onConfirm={handleCreateRevision}
-        currentRevision={props.part?.revision}
+        currentRevision={props.part?.formatted_revision}
         organization={props.part?.organization}
       />
     </React.Fragment>

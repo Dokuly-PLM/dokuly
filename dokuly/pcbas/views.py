@@ -1,5 +1,5 @@
 from purchasing.priceUtilities import copy_price_to_new_revision
-from .viewUtilities import increment_revision
+from organizations.revision_utils import build_full_part_number, build_formatted_revision, increment_revision_counters
 from django.contrib.auth.decorators import login_required
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes, permission_classes
@@ -37,27 +37,33 @@ from projects.viewsTags import check_for_and_create_new_tags
 from parts.viewUtilities import copy_markdown_tabs_to_new_revision
 
 
-def is_latest_revision(part_number, revision):
-    """Check if the current item is the latest revision."""
+def is_latest_revision(part_number, revision_count_major, revision_count_minor):
+    """
+    Check if the current item is the latest revision.
+    
+    Args:
+        part_number: The part number to check
+        revision_count_major: Major revision count of the current item
+        revision_count_minor: Minor revision count of the current item
+    
+    Returns:
+        True if this is the latest revision, False otherwise
+    """
     items = Pcba.objects.filter(
         part_number=part_number).exclude(is_archived=True)
 
     if len(items) == 1:
         return True
 
-    def first_is_greater(first, second):
-        """Returns True if rev_one is greatest."""
-        if len(second) > len(first):
-            return False
-
-        for index, letter in enumerate(second):
-            if letter >= first[index]:
-                return False
-        return True
-
+    # Check if any other item has a higher revision
     for item in items:
-        if first_is_greater(item.revision, revision):
+        # If another item has a higher major revision, current is not latest
+        if item.revision_count_major > revision_count_major:
             return False
+        # If same major but higher minor, current is not latest
+        if item.revision_count_major == revision_count_major and item.revision_count_minor > revision_count_minor:
+            return False
+    
     return True
 
 
@@ -92,8 +98,8 @@ def fetch_single_pcba(request, pk, **kwargs):
 
     data = serializer.data
 
-    data["latest_revision"] = is_latest_revision(
-        pcba.part_number, pcba.revision)
+    data["latest_revision"] = pcba.is_latest_revision
+
     if data["project"] != None:
         project = Project.objects.get(pk=data["project"])
         if project.customer != None:
@@ -138,8 +144,8 @@ def fetch_pcba_by_revision_and_part_number(request, **kwargs):
 
     data = serializer.data
 
-    data["latest_revision"] = is_latest_revision(
-        pcba.part_number, pcba.revision)
+    data["latest_revision"] = pcba.is_latest_revision
+    
     if data["project"] != None:
         project = Project.objects.get(pk=data["project"])
         if project.customer != None:
@@ -305,6 +311,7 @@ def new_revision(request, pk, **kwargs):
     new_pcba.created_by = old_pcba.created_by
     new_pcba.part_number = old_pcba.part_number
     new_pcba.external_part_number = old_pcba.external_part_number
+    
     # Get organization_id from user profile or API key for revision system
     organization_id = None
     if APIAndProjectAccess.has_validated_key(request):
@@ -316,25 +323,32 @@ def new_revision(request, pk, **kwargs):
     
     # Get revision type from request data (default to "major" for backward compatibility)
     revision_type = request.data.get('revision_type', 'major')
-    
-    new_pcba.revision = increment_revision(old_pcba.revision, organization_id, revision_type)
-    
-    # Format full_part_number based on organization revision settings
-    from organizations.revision_utils import get_organization_revision_settings
-    if organization_id:
-        use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
-        if use_number_revisions:
-            # For number revisions, use underscore separator
-            new_pcba.full_part_number = f"PCBA{old_pcba.part_number}_{new_pcba.revision}"
-        else:
-            # For letter revisions, use direct concatenation
-            new_pcba.full_part_number = f"PCBA{old_pcba.part_number}{new_pcba.revision}"
-    else:
-        # Default to letter revision format
-        new_pcba.full_part_number = f"PCBA{old_pcba.part_number}{new_pcba.revision}"
+    new_pcba.revision_count_major, new_pcba.revision_count_minor = increment_revision_counters(old_pcba.revision_count_major, old_pcba.revision_count_minor, revision_type == 'major')    
 
-    new_pcba.price = old_pcba.price
-    new_pcba.currency = old_pcba.currency
+    new_pcba.save()
+
+    new_pcba.full_part_number = build_full_part_number(
+        organization_id=organization_id,
+        prefix="PCBA",
+        part_number=new_pcba.part_number,
+        revision_count_major=new_pcba.revision_count_major,
+        revision_count_minor=new_pcba.revision_count_minor,
+        project_number=new_pcba.project.project_number if new_pcba.project else None,
+        created_at=new_pcba.created_at
+    )
+
+    new_pcba.formatted_revision = build_formatted_revision(
+        organization_id=organization_id,
+        prefix="PCBA",
+        part_number=new_pcba.part_number,
+        revision_count_major=new_pcba.revision_count_major,
+        revision_count_minor=new_pcba.revision_count_minor,
+        project_number=new_pcba.project.project_number if new_pcba.project else None,
+        created_at=new_pcba.created_at
+    )
+
+    new_pcba.price = old_pcba.price       #TODO are these deprecated?
+    new_pcba.currency = old_pcba.currency #TODO are these deprecated?
     new_pcba.save()
 
     copy_bom_to_new_revision = True
@@ -598,6 +612,10 @@ def create_new_pcba(request, **kwargs):
         pcba.part_number = get_next_part_number()
         pcba.external_part_number = data.get("external_part_number", "")
         
+        # Initialize revision counters - both start at 0 for first revision
+        pcba.revision_count_major = 0
+        pcba.revision_count_minor = 0
+        
         # Get organization_id from user profile or API key for revision system
         organization_id = None
         if APIAndProjectAccess.has_validated_key(request):
@@ -607,32 +625,6 @@ def create_new_pcba(request, **kwargs):
         elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
             organization_id = request.user.profile.organization_id
         
-        # Set initial revision based on organization settings
-        from organizations.revision_utils import get_organization_revision_settings
-        if organization_id:
-            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
-            if use_number_revisions:
-                if revision_format == "major-minor":
-                    pcba.revision = f"1{separator}0"
-                else:
-                    pcba.revision = "1"
-            else:
-                pcba.revision = "A"
-        else:
-            pcba.revision = "A"
-        
-        # Format full_part_number based on organization revision settings
-        if organization_id:
-            use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
-            if use_number_revisions:
-                # For number revisions, use underscore separator
-                pcba.full_part_number = f"PCBA{pcba.part_number}_{pcba.revision}"
-            else:
-                # For letter revisions, use direct concatenation
-                pcba.full_part_number = f"PCBA{pcba.part_number}{pcba.revision}"
-        else:
-            # Default to letter revision format
-            pcba.full_part_number = f"PCBA{pcba.part_number}{pcba.revision}"
 
         if APIAndProjectAccess.has_validated_key(request):
             if "created_by" in data:
@@ -640,6 +632,28 @@ def create_new_pcba(request, **kwargs):
                 pcba.created_by = user
         else:
             pcba.created_by = request.user
+        pcba.save()
+
+        pcba.full_part_number = build_full_part_number(
+            organization_id=organization_id,
+            prefix="PCBA",
+            part_number=pcba.part_number,
+            revision_count_major=pcba.revision_count_major,
+            revision_count_minor=pcba.revision_count_minor,
+            project_number=pcba.project.project_number if pcba.project else None,
+            created_at=pcba.created_at
+        )
+
+        pcba.formatted_revision = build_formatted_revision(
+            organization_id=organization_id,
+            prefix="PCBA",
+            part_number=pcba.part_number,
+            revision_count_major=pcba.revision_count_major,
+            revision_count_minor=pcba.revision_count_minor,
+            project_number=pcba.project.project_number if pcba.project else None,
+            created_at=pcba.created_at
+        )
+
         pcba.save()
 
         # Create new assembly bom
@@ -835,5 +849,5 @@ def batch_process_is_latest_revision_by_part_number(part_number):
         part_number=part_number).exclude(is_archived=True)
     for item in items:
         item.is_latest_revision = is_latest_revision(
-            item.part_number, item.revision)
+            item.part_number, item.revision_count_major, item.revision_count_minor)
         item.save()

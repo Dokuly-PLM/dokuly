@@ -63,7 +63,6 @@ class PartSerializer(serializers.ModelSerializer):
                     return {
                         'use_number_revisions': org.use_number_revisions,
                         'revision_format': org.revision_format,
-                        'revision_separator': org.revision_separator
                     }
             except:
                 pass
@@ -85,7 +84,9 @@ class PartSerializerNoAlternate(serializers.ModelSerializer):
             "part_number",
             "full_part_number",
             "display_name",
-            "revision",
+            "formatted_revision",
+            "revision_count_major",
+            "revision_count_minor",
             "part_type",
             "release_state",
             "released_date",
@@ -121,7 +122,6 @@ class PartSerializerNoAlternate(serializers.ModelSerializer):
                     return {
                         'use_number_revisions': org.use_number_revisions,
                         'revision_format': org.revision_format,
-                        'revision_separator': org.revision_separator
                     }
             except:
                 pass
@@ -170,7 +170,6 @@ class PartTableSerializer(serializers.ModelSerializer):
                     return {
                         'use_number_revisions': org.use_number_revisions,
                         'revision_format': org.revision_format,
-                        'revision_separator': org.revision_separator
                     }
             except:
                 pass

@@ -12,7 +12,7 @@ class SerialNumber(models.Model):
     # Basic data fields
     assembly = models.ForeignKey(
         Assembly, on_delete=models.SET_NULL, null=True)
-    revision = models.CharField(max_length=2, blank=True, null=True)
+    revision = models.CharField(max_length=2, blank=True, null=True)    #TODO this must be updated to support custom revision formats
     
     # Custom serial identifier
     serial_number = models.CharField(max_length=6, blank=True, null=True)

@@ -22,6 +22,25 @@ class ProtectionLevelSerializer(serializers.ModelSerializer):
 
 class DocumentSerializer(serializers.ModelSerializer):
     tags = DocumentTagSerializer(many=True)
+    organization = serializers.SerializerMethodField()
+
+    def get_organization(self, obj):
+        """Get organization revision settings for the current user."""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            try:
+                from profiles.models import Profile
+                profile = Profile.objects.get(user=request.user)
+                if profile.organization_id:
+                    from organizations.models import Organization
+                    org = Organization.objects.get(id=profile.organization_id)
+                    return {
+                        'use_number_revisions': org.use_number_revisions,
+                        'revision_format': org.revision_format,
+                    }
+            except:
+                pass
+        return None
 
     class Meta:
         model = Document
@@ -48,9 +67,13 @@ class DocumentTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = ['id', 'title',
+                  'part_number',
                   'full_doc_number', 'release_state',
                   'released_date', 'project',
-                  'last_updated', 'revision',
+                  'last_updated',
+                  'formatted_revision',
+                  'revision_count_major',
+                  'revision_count_minor',
                   'is_latest_revision', 'is_archived', 'tags']
 
 

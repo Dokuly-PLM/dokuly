@@ -250,7 +250,7 @@ const AsmNewRevision = (props) => {
             setShowModal(false);
           });
         }}
-        currentRevision={props?.asm?.revision}
+        currentRevision={props?.asm?.formatted_revision}
         organization={props?.asm?.organization}
       />
     </div>

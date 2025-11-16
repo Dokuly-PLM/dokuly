@@ -28,7 +28,6 @@ from organizations.utils import (cancel_paddle_subscription,
                                  update_organization_users,
                                  update_paddle_subscription_count,
                                  update_subscriptions_from_paddle)
-from organizations.management.commands.migrate_revisions_to_numbers import fix_corrupted_revisions
 
 
 def validate_token(token):
@@ -245,7 +244,8 @@ def update_organization(request, id):
             "billing_address",
             "use_number_revisions",
             "revision_format",
-            "revision_separator",
+            "full_part_number_template",
+            "formatted_revision_template",
         ]:
             if field in data:
                 setattr(organization, field, data[field])
@@ -270,21 +270,11 @@ def update_organization(request, id):
             revision_settings_changed = True
         if "revision_format" in data and organization.revision_format != data["revision_format"]:
             revision_settings_changed = True
-        if "revision_separator" in data and organization.revision_separator != data["revision_separator"]:
-            revision_settings_changed = True
 
         organization.save()
         
-        # Trigger revision migration if settings changed
-        if revision_settings_changed and organization.use_number_revisions:
-            from organizations.management.commands.migrate_revisions_to_numbers import migrate_organization_revisions
-            try:
-                migrate_organization_revisions(organization.id)
-            except Exception as e:
-                # Log the error but don't fail the organization update
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Failed to migrate revisions for organization {organization.id}: {e}")
+        # Note: Revision settings only affect newly created items going forward
+        # Existing items retain their original part number format
         
         Profile.objects.update(organization_id=organization.id)
         update_currency_pairs()    # Update the currency pairs
@@ -525,27 +515,167 @@ def check_corrupted_revisions(request):
 @api_view(["POST"])
 @renderer_classes([JSONRenderer])
 @permission_classes([IsAuthenticated])
-def fix_corrupted_revisions_api(request):
-    """Fix corrupted full_part_number values for the organization."""
+def preview_part_number_template(request):
+    """
+    Preview how a part number template will be formatted.
+    
+    Request body:
+        template: str - The template string (e.g., "<prefix><part_number><revision>")
+        use_number_revisions: bool - Whether to use number-based revisions
+    
+    Returns:
+        examples: list - List of example formatted part numbers for different scenarios
+    """
+    from organizations.revision_utils import build_full_part_number_from_template
+    from datetime import datetime
+    
     try:
-        user_profile = get_object_or_404(Profile, user=request.user)
-        org_id = user_profile.organization_id
+        template = request.data.get('template', '<prefix><part_number><revision>')
+        use_number_revisions = request.data.get('use_number_revisions', False)
         
-        if org_id is None:
-            return Response("No connected organization found", status=status.HTTP_204_NO_CONTENT)
+        # Create sample datetime for date-based variables
+        sample_date = datetime(2025, 1, 15, 10, 30, 0)  # Jan 15, 2025
         
-        # Check if user has admin/owner permissions
-        if not check_permissions_owner(request.user):
-            return Response("Insufficient permissions", status=status.HTTP_403_FORBIDDEN)
+        # Generate examples for different scenarios
+        examples = []
         
-        # Run the fix
-        total_fixed = fix_corrupted_revisions(org_id, dry_run=False)
+        # Example 1: PRT, first revision
+        examples.append({
+            'description': 'Part - First revision',
+            'formatted': build_full_part_number_from_template(
+                template=template,
+                prefix='PRT',
+                part_number='10001',
+                revision_count_major=0,
+                revision_count_minor=0,
+                use_number_revisions=use_number_revisions,
+                project_number='PRJ001',
+                created_at=sample_date,
+            )
+        })
+        
+        # Example 2: PCBA, second major revision
+        examples.append({
+            'description': 'PCBA - Second major revision',
+            'formatted': build_full_part_number_from_template(
+                template=template,
+                prefix='PCBA',
+                part_number='20045',
+                revision_count_major=1,
+                revision_count_minor=0,
+                use_number_revisions=use_number_revisions,
+                project_number='PRJ042',
+                created_at=sample_date,
+            )
+        })
+        
+        # Example 3: ASM, with minor revision
+        examples.append({
+            'description': 'Assembly - With minor revision',
+            'formatted': build_full_part_number_from_template(
+                template=template,
+                prefix='ASM',
+                part_number='30012',
+                revision_count_major=0,
+                revision_count_minor=2,
+                use_number_revisions=use_number_revisions,
+                project_number='PRJ100',
+                created_at=sample_date,
+            )
+        })
         
         return Response({
-            "success": True,
-            "message": f"Successfully fixed {total_fixed} items with corrupted full_part_number values",
-            "total_fixed": total_fixed
+            'examples': examples,
+            'template': template,
+            'settings': {
+                'use_number_revisions': use_number_revisions,
+            }
         })
         
     except Exception as e:
-        return Response(f"Error fixing corrupted revisions: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {'error': f'Error previewing template: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+@api_view(['POST'])
+@renderer_classes([JSONRenderer])
+@login_required(login_url="/login")
+def preview_formatted_revision_template(request):
+    """
+    Preview how a formatted revision template will be displayed.
+    
+    Request body:
+        template: str - The template string (e.g., "<major_revision>-<minor_revision>")
+        use_number_revisions: bool - Whether to use number-based revisions
+        revision_format: str - "major-only" or "major-minor"
+    
+    Returns:
+        examples: list - List of example formatted revisions for different scenarios
+    """
+    from organizations.revision_utils import build_full_part_number_from_template
+    
+    try:
+        template = request.data.get('template', '<major_revision>')
+        use_number_revisions = request.data.get('use_number_revisions', False)
+        revision_format = request.data.get('revision_format', 'major-minor')
+        
+        # Generate examples for different scenarios
+        examples = []
+        
+        # Example 1: First revision
+        examples.append({
+            'description': 'First revision',
+            'formatted': build_full_part_number_from_template(
+                template=template,
+                prefix='',
+                part_number='',
+                revision_count_major=0,
+                revision_count_minor=0,
+                use_number_revisions=use_number_revisions,
+            )
+        })
+        
+        # Example 2: Second minor revision (only if major-minor format)
+        if revision_format == 'major-minor':
+            examples.append({
+                'description': 'Second minor revision',
+                'formatted': build_full_part_number_from_template(
+                    template=template,
+                    prefix='',
+                    part_number='',
+                    revision_count_major=0,
+                    revision_count_minor=1,
+                    use_number_revisions=use_number_revisions,
+                )
+            })
+        
+        # Example 3: Second major revision
+        examples.append({
+            'description': 'Second major revision',
+            'formatted': build_full_part_number_from_template(
+                template=template,
+                prefix='',
+                part_number='',
+                revision_count_major=1,
+                revision_count_minor=0,
+                use_number_revisions=use_number_revisions,
+            )
+        })
+        
+        return Response({
+            'examples': examples,
+            'template': template,
+            'settings': {
+                'use_number_revisions': use_number_revisions,
+                'revision_format': revision_format,
+            }
+        })
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Error previewing template: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+

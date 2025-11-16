@@ -55,7 +55,9 @@ class PcbaTableSerializer(serializers.ModelSerializer):
             "part_number",
             "full_part_number",
             "display_name",
-            "revision",
+            "formatted_revision",
+            "revision_count_major",
+            "revision_count_minor",
             "release_state",
             "released_date",
             "last_updated",
@@ -79,7 +81,6 @@ class PcbaTableSerializer(serializers.ModelSerializer):
                     return {
                         'use_number_revisions': org.use_number_revisions,
                         'revision_format': org.revision_format,
-                        'revision_separator': org.revision_separator
                     }
             except:
                 pass
@@ -106,7 +107,6 @@ class PcbaSerializerFull(serializers.ModelSerializer):
                     return {
                         'use_number_revisions': org.use_number_revisions,
                         'revision_format': org.revision_format,
-                        'revision_separator': org.revision_separator
                     }
             except:
                 pass

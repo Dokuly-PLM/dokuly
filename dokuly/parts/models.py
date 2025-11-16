@@ -19,6 +19,9 @@ class Part(models.Model):
     # Implement full part number field to remove logic from front-end.
     # The complete part number of a document. e.g. PRT1234.
     full_part_number = models.CharField(null=True, blank=True, max_length=50)
+    
+    # Formatted revision field based on organization template (e.g., "A", "1", "A-0", "1-0")
+    formatted_revision = models.CharField(null=True, blank=True, max_length=20)
 
     # Basic information fields
     display_name = models.CharField(max_length=150, blank=True)
@@ -60,8 +63,13 @@ class Part(models.Model):
     # This can be any document, like design description, requirement specification etc.
     reference_list_id = models.IntegerField(default=-1, blank=True)
 
-    # Internal parts, extra part information
-    revision = models.CharField(max_length=10, blank=True, null=True)
+    # The primary revision counters. These are unrelated to formatting, and number/lettering style.
+    revision_count_major = models.IntegerField(blank=True, null=True, default=0)
+    revision_count_minor = models.IntegerField(blank=True, null=True, default=0)
+
+    # This is the old revision field kept for compatibility.
+    revision = models.CharField(max_length=10, blank=True, null=True)  # DEPRECATED
+    # Indicates if this is the latest revision of the part. It is used to quickly query for the latest revision without needing to sort through all revisions.
     is_latest_revision = models.BooleanField(default=False, blank=True)
 
     model_url = models.CharField(max_length=500, blank=True, null=True)

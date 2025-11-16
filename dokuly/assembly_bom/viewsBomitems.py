@@ -261,7 +261,9 @@ def match_bom_items_with_parts(request, bomId):
 
             # Extract the full part number and revision
             full_part_number_with_revision = bom_item.temporary_mpn
-            revision = full_part_number_with_revision[-1]  # Last letter is revision
+            print("Warning: `match_bom_items_with_parts` The regex pattern may not match all revision formats.")
+
+            revision = full_part_number_with_revision[-1]  # Last letter is revision #TODO this is no longer valid for all the custom revision formats
             full_part_number = full_part_number_with_revision[:-1]
 
             # Attempt to match with Part

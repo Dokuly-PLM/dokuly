@@ -59,7 +59,8 @@ export function compareBoms(boms) {
           item_missing: false,
           designator: "",
           full_part_number: "",
-          revision: "",
+          revision_count_major: 0,
+          revision_count_minor: 0,
           dnm: false,
           quantity: 1,
           assembly: null,
@@ -94,6 +95,15 @@ export function compareBoms(boms) {
     const item1 = items[0];
     const item2 = items[1];
 
+    // Helper function to check if revisions are different
+    const revisionsAreDifferent = (item1, item2) => {
+      const major1 = item1.revision_count_major ?? 0;
+      const minor1 = item1.revision_count_minor ?? 0;
+      const major2 = item2.revision_count_major ?? 0;
+      const minor2 = item2.revision_count_minor ?? 0;
+      return major1 !== major2 || minor1 !== minor2;
+    };
+
     if (
       (item1.item_missing || item1.dnm === true) &&
       !item2.item_missing &&
@@ -110,7 +120,7 @@ export function compareBoms(boms) {
       !item1.item_missing &&
       !item2.item_missing &&
       item1.full_part_number === item2.full_part_number &&
-      item1.revision !== item2.revision
+      revisionsAreDifferent(item1, item2)
     ) {
       item1.change = "revision_changed";
       item2.change = "revision_changed";
@@ -125,7 +135,17 @@ export function compareBoms(boms) {
       !item1.item_missing &&
       !item2.item_missing &&
       item1.full_part_number === item2.full_part_number &&
-      item1.revision === item2.revision
+      !revisionsAreDifferent(item1, item2) &&
+      item1.quantity !== item2.quantity
+    ) {
+      item1.change = "quantity_changed";
+      item2.change = "quantity_changed";
+    } else if (
+      !item1.item_missing &&
+      !item2.item_missing &&
+      item1.full_part_number === item2.full_part_number &&
+      !revisionsAreDifferent(item1, item2) &&
+      item1.quantity === item2.quantity
     ) {
       delete differences[designator];
     }

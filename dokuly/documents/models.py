@@ -19,6 +19,9 @@ class Document(models.Model):
 
     title = models.CharField(max_length=1000)
 
+    # Unique part number from the centralized PartNumber table (same as parts, assemblies, PCBAs)
+    part_number = models.IntegerField(default=-1, blank=True, null=True)
+
     # Document type is dummy field now. Data is set in document views,
     # see edit_document_info for references.
     # Keeping it here to minimize refactoring of frontend variables
@@ -28,6 +31,9 @@ class Document(models.Model):
     document_number = models.CharField(max_length=20, blank=True, null=True)
     # The complete document number of a document. e.g. TN100103-2A
     full_doc_number = models.CharField(null=True, blank=True, max_length=50)
+    
+    # Formatted revision field based on organization template (e.g., "A", "1", "A-0", "1-0")
+    formatted_revision = models.CharField(null=True, blank=True, max_length=20)
 
     # id pointing to the selected prefix for the document
     # TODO: Need to change this to a foreign key to the prefix table
@@ -48,7 +54,15 @@ class Document(models.Model):
     )
 
     document_supplier = models.CharField(max_length=50, blank=True, null=True)
-    revision = models.CharField(max_length=2, blank=True, null=True)
+
+    # The primary revision counters. These are unrelated to formatting, and number/lettering style.
+    revision_count_major = models.IntegerField(blank=True, null=True, default=0)
+    revision_count_minor = models.IntegerField(blank=True, null=True, default=0)
+
+    # This is the old revision field kept for compatibility.
+    revision = models.CharField(max_length=10, blank=True, null=True)  # DEPRECATED
+
+    # Indicates if this is the latest revision of the document. It is used to quickly query for the latest revision without needing to sort through all revisions.
     is_latest_revision = models.BooleanField(blank=True, null=True)
 
     # ID of the preceding document revision. # TODO can we consider not using linked lists?
