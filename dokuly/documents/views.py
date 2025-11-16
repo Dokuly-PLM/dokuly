@@ -1642,7 +1642,7 @@ def get_revisions(request, documentId):
         )
 
 
-def is_latest_revision(document_number, project_id, revision):
+def is_latest_revision(document_number, project_id, revision_count_major, revision_count_minor):
     """Check if the current item is the latest revision."""
     items = Document.objects.filter(
         document_number=document_number, project__id=project_id
@@ -1651,18 +1651,12 @@ def is_latest_revision(document_number, project_id, revision):
     if len(items) == 1:
         return True
 
-    def first_is_greater(first, second):
-        """Returns True if rev_one is greatest."""
-        if len(second) > len(first):
-            return False
-
-        for index, letter in enumerate(second):
-            if letter >= first[index]:
-                return False
-        return True
-
     for item in items:
-        if first_is_greater(item.revision, revision):
+        # If any item has a higher major revision, this is not the latest
+        if item.revision_count_major > revision_count_major:
+            return False
+        # If any item has the same major but higher minor, this is not the latest
+        if item.revision_count_major == revision_count_major and item.revision_count_minor > revision_count_minor:
             return False
     return True
 
@@ -1674,6 +1668,6 @@ def batch_process_is_latest_revision_by_doc_number(project_id, document_number):
     ).exclude(is_archived=True)
     for item in items:
         item.is_latest_revision = is_latest_revision(
-            item.document_number, item.project.id, item.revision
+            item.document_number, item.project.id, item.revision_count_major, item.revision_count_minor
         )
         item.save()

@@ -1536,7 +1536,7 @@ def get_revisions(request, part_number):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def is_latest_revision(part_number, revision):
+def is_latest_revision(part_number, revision_count_major, revision_count_minor):
     """Check if the current item is the latest revision."""
     items = Part.objects.filter(
         part_number=part_number).exclude(is_archived=True)
@@ -1544,18 +1544,12 @@ def is_latest_revision(part_number, revision):
     if len(items) == 1:
         return True
 
-    def first_is_greater(first, second):
-        """Returns True if rev_one is greatest."""
-        if len(second) > len(first):
-            return False
-
-        for index, letter in enumerate(second):
-            if letter >= first[index]:
-                return False
-        return True
-
     for item in items:
-        if first_is_greater(item.revision, revision):
+        # If any item has a higher major revision, this is not the latest
+        if item.revision_count_major > revision_count_major:
+            return False
+        # If any item has the same major but higher minor, this is not the latest
+        if item.revision_count_major == revision_count_major and item.revision_count_minor > revision_count_minor:
             return False
     return True
 
@@ -1643,7 +1637,7 @@ def batch_process_is_latest_revision_by_part_number(part_number):
         part_number=part_number).exclude(is_archived=True)
     for item in items:
         item.is_latest_revision = is_latest_revision(
-            item.part_number, item.revision)
+            item.part_number, item.revision_count_major, item.revision_count_minor)
         item.save()
 
 

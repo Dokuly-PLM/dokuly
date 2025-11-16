@@ -37,27 +37,33 @@ from projects.viewsTags import check_for_and_create_new_tags
 from parts.viewUtilities import copy_markdown_tabs_to_new_revision
 
 
-def is_latest_revision(part_number, revision):
-    """Check if the current item is the latest revision."""
+def is_latest_revision(part_number, revision_count_major, revision_count_minor):
+    """
+    Check if the current item is the latest revision.
+    
+    Args:
+        part_number: The part number to check
+        revision_count_major: Major revision count of the current item
+        revision_count_minor: Minor revision count of the current item
+    
+    Returns:
+        True if this is the latest revision, False otherwise
+    """
     items = Pcba.objects.filter(
         part_number=part_number).exclude(is_archived=True)
 
     if len(items) == 1:
         return True
 
-    def first_is_greater(first, second):
-        """Returns True if rev_one is greatest."""
-        if len(second) > len(first):
-            return False
-
-        for index, letter in enumerate(second):
-            if letter >= first[index]:
-                return False
-        return True
-
+    # Check if any other item has a higher revision
     for item in items:
-        if first_is_greater(item.revision, revision):
+        # If another item has a higher major revision, current is not latest
+        if item.revision_count_major > revision_count_major:
             return False
+        # If same major but higher minor, current is not latest
+        if item.revision_count_major == revision_count_major and item.revision_count_minor > revision_count_minor:
+            return False
+    
     return True
 
 
@@ -92,8 +98,8 @@ def fetch_single_pcba(request, pk, **kwargs):
 
     data = serializer.data
 
-    data["latest_revision"] = is_latest_revision(
-        pcba.part_number, pcba.revision)
+    data["latest_revision"] = pcba.is_latest_revision
+
     if data["project"] != None:
         project = Project.objects.get(pk=data["project"])
         if project.customer != None:
@@ -138,8 +144,8 @@ def fetch_pcba_by_revision_and_part_number(request, **kwargs):
 
     data = serializer.data
 
-    data["latest_revision"] = is_latest_revision(
-        pcba.part_number, pcba.revision)
+    data["latest_revision"] = pcba.is_latest_revision
+    
     if data["project"] != None:
         project = Project.objects.get(pk=data["project"])
         if project.customer != None:
@@ -815,5 +821,5 @@ def batch_process_is_latest_revision_by_part_number(part_number):
         part_number=part_number).exclude(is_archived=True)
     for item in items:
         item.is_latest_revision = is_latest_revision(
-            item.part_number, item.revision)
+            item.part_number, item.revision_count_major, item.revision_count_minor)
         item.save()
