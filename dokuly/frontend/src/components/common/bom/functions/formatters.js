@@ -11,7 +11,7 @@ export const partNumberFormatter = (cell, row) => {
       <span>
         {row?.type || "Unknown"}
         {row?.part_number}
-        {row?.revision}
+        {row?.formatted_revision}
       </span>
     );
   }
