@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from organizations.revision_utils import increment_revision_counters
+from organizations.revision_utils import increment_revision_counters, build_formatted_revision
 from part_numbers.methods import get_next_part_number
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, renderer_classes
@@ -26,6 +26,8 @@ from parts.models import Part
 from documents.pdfProcessor import process_pdf, find_referenced_items
 from projects.models import Project
 from customers.models import Customer
+
+
 from django.contrib.auth.models import User
 from django.db import transaction
 
@@ -100,7 +102,7 @@ def get_document_number(document, projects, customers, prefixes):
         + str(project)
         + "-"
         + str(document["document_number"])
-        + str(document["revision"])
+        + str(document["formatted_revision"])
     )
     return document_number
 
@@ -211,14 +213,37 @@ def create_new_document(request, **kwargs):
                 document.created_by = User.objects.get(id=data["created_by"])
         else:
             document.created_by = request.user
+            
         document.document_number = document_number
         document.is_latest_revision = True
         document.summary = ""
         prefix = Document_Prefix.objects.get(pk=data["prefix_id"])
         customer_id = document.project.customer.customer_id
         project_number = document.project.project_number
+
+
+        # Get organization_id from user profile or API key for revision system
+        organization_id = None
+        if APIAndProjectAccess.has_validated_key(request):
+            org_id = APIAndProjectAccess.get_organization_id(request)
+            if org_id != -1:
+                organization_id = org_id
+        elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
+            organization_id = request.user.profile.organization_id
+
+        document.save()
+
+        document.formatted_revision = build_formatted_revision(
+            organization_id=organization_id,
+            prefix=prefix.prefix,
+            part_number=document.part_number,
+            revision_count_major=document.revision_count_major,
+            revision_count_minor=document.revision_count_minor,
+            project_number=document.project.project_number if document.project else None,
+            created_at=document.created_at
+        )
         
-        document.full_doc_number = f"{prefix.prefix}{customer_id}{project_number}-{document_number}"#{revision_str}"  # TODO fix parsing
+        document.full_doc_number = f"{prefix.prefix}{customer_id}{project_number}-{document_number}{document.formatted_revision}"  # TODO fix parsing
         document.save()
 
         if "template_id" in data and data["template_id"] not in (
@@ -316,34 +341,6 @@ def edit_document_info(request, documentId):
 
     document.save()
 
-    if "autoGenNum" in data:
-        if data["autoGenNum"] in ["true", True]:
-            document = Document.objects.select_related("project__customer").get(
-                id=documentId
-            )
-            project = document.project
-            customer = project.customer
-
-            if "prefix_id" in data and data["prefix_id"] != -1:
-                prefix = Document_Prefix.objects.get(id=data["prefix_id"])
-                pre = prefix.prefix
-            else:
-                pre = document.document_type
-
-            if "duplicate_num" in data and data["duplicate_num"] == 1:
-                numberOfDocsInProject = (
-                    Document.objects.filter(project=project).count() + 1
-                )
-                fullNumber = f"{pre}{customer.customer_id}{project.project_number}-{numberOfDocsInProject}{document.revision}"
-                Document.objects.filter(id=documentId).update(
-                    full_doc_number=fullNumber, document_number=numberOfDocsInProject
-                )
-            else:
-                fullNumber = f"{pre}{customer.customer_id}{project.project_number}-{document.document_number}{document.revision}"
-                Document.objects.filter(id=documentId).update(
-                    full_doc_number=fullNumber,
-                )
-
     if "no_data_return" in data and data.get("no_data_return", False) == True:
         return Response("Document updated", status=status.HTTP_200_OK)
 
@@ -416,7 +413,7 @@ def auto_gen_doc_number(request, documentId):
         + str(project.project_number)
         + "-"
         + str(document.document_number)
-        + str(document.revision)
+        + str(document.formatted_revision)
     )
     Document.objects.filter(id=documentId).update(full_doc_number=fullNumber)
     newDocument = Document.objects.get(id=documentId)
@@ -504,7 +501,7 @@ def get_latest_revisions(request, **kwargs):
             "released_date",
             "project",
             "last_updated",
-            "revision",
+            "formatted_revision",
             "is_latest_revision",
             "is_archived",
             "tags"
@@ -557,7 +554,7 @@ def get_latest_revisions_first_25(request):
             "released_date",
             "project",
             "last_updated",
-            "revision",
+            "formatted_revision",
             "is_latest_revision",
             "is_archived",
         )
@@ -750,7 +747,7 @@ def archive_document(request, pk):
                     + str(project.project_number)
                     + "-"
                     + str(document.document_number)
-                    + str(document.revision)
+                    + str(document.formatted_revision)
                 )
             else:
                 fullNumber = (
@@ -758,7 +755,7 @@ def archive_document(request, pk):
                     + "!!!"
                     + "-"
                     + str(document.document_number)
-                    + str(document.revision)
+                    + str(document.formatted_revision)
                 )
         if document.prefix_id != -1 and document.prefix_id != None:
             prefix = Document_Prefix.objects.get(id=document.prefix_id)
@@ -919,9 +916,21 @@ def auto_new_revision(request, pk, **kwargs):
 
         link_issues_on_new_object_revision('documents', old_revision, new_revision)
 
+
+        new_revision.formatted_revision = build_formatted_revision(
+            organization_id=organization_id,
+            prefix=new_revision.get_prefix_string(),
+            part_number=new_revision.part_number,
+            revision_count_major=new_revision.revision_count_major,
+            revision_count_minor=new_revision.revision_count_minor,
+            project_number=new_revision.project.project_number if new_revision.project else None,
+            created_at=new_revision.created_at
+        )
+
         projects = Project.objects.filter()
         customers = Customer.objects.all()
         prefixes = Document_Prefix.objects.all()
+
         # TODO DocumentSerializer runs twice in this view.
         document_ser = DocumentSerializer(new_revision, many=False)
         new_revision.full_doc_number = get_document_number(
@@ -985,7 +994,7 @@ def admin_get_archived(request):
                     + str(project.project_number)
                     + "-"
                     + str(document.document_number)
-                    + str(document.revision)
+                    + str(document.formatted_revision)
                 )
             elif document.part != None:
                 part = Part.objects.get(id=document.part.id)
@@ -994,7 +1003,7 @@ def admin_get_archived(request):
                     + str(part.part_number)
                     + "-"
                     + str(document.document_number)
-                    + str(document.revision)
+                    + str(document.formatted_revision)
                 )
             elif document.assembly != None:
                 asm = Assembly.objects.get(id=document.assembly.id)
@@ -1003,7 +1012,7 @@ def admin_get_archived(request):
                     + str(asm.part_number)
                     + "-"
                     + str(document.document_number)
-                    + str(document.revision)
+                    + str(document.formatted_revision)
                 )
             else:
                 fullNumber = (
@@ -1011,7 +1020,7 @@ def admin_get_archived(request):
                     + "!!!"
                     + "-"
                     + str(document.document_number)
-                    + str(document.revision)
+                    + str(document.formatted_revision)
                 )
         if document.prefix_id != -1 and document.prefix_id != None:
             prefix = Document_Prefix.objects.get(id=document.prefix_id)
@@ -1052,7 +1061,7 @@ def fetch_document_number(request, documentId):
         + str(project.project_number)
         + "-"
         + str(document.document_number)
-        + str(document.revision)
+        + str(document.formatted_revision)
     )
     return Response(document_number, status=status.HTTP_200_OK)
 
