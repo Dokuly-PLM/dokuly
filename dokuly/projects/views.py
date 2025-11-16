@@ -75,22 +75,6 @@ def get_project_with_customer(request, project_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def get_next_project_number(all_cutsomer_projects):
-    """Increment project number."""
-    if len(all_cutsomer_projects) == 0:
-        return 100
-
-    highest_number = 99
-    for project in all_cutsomer_projects:
-        if project.project_number == None:
-            continue
-
-        if highest_number < project.project_number:
-            highest_number = project.project_number
-
-    return highest_number + 1
-
-
 @api_view(("GET",))
 @renderer_classes((JSONRenderer,))
 @login_required(login_url="/login")
