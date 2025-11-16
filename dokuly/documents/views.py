@@ -218,8 +218,7 @@ def create_new_document(request, **kwargs):
         document.is_latest_revision = True
         document.summary = ""
         prefix = Document_Prefix.objects.get(pk=data["prefix_id"])
-        customer_id = document.project.customer.customer_id
-        project_number = document.project.project_number
+        full_project_number = document.project.full_project_number
 
 
         # Get organization_id from user profile or API key for revision system
@@ -234,11 +233,11 @@ def create_new_document(request, **kwargs):
             part_number=document.part_number,
             revision_count_major=document.revision_count_major,
             revision_count_minor=document.revision_count_minor,
-            project_number=document.project.project_number if document.project else None,
+            project_number=document.project.full_project_number if document.project else None,
             created_at=document.created_at
         )
         
-        document.full_doc_number = f"{prefix.prefix}{customer_id}{project_number}-{document_number}{document.formatted_revision}"  # TODO fix parsing
+        document.full_doc_number = f"{prefix.prefix}{full_project_number}-{document_number}{document.formatted_revision}"  # TODO fix parsing
         document.save()
 
         if "template_id" in data and data["template_id"] not in (
@@ -404,8 +403,7 @@ def auto_gen_doc_number(request, documentId):
     project = Project.objects.get(id=data["project"])
     fullNumber = (
         str(pre)
-        + str(customer.customer_id)
-        + str(project.project_number)
+        + str(project.full_project_number)
         + "-"
         + str(document.document_number)
         + str(document.formatted_revision)
@@ -738,8 +736,7 @@ def archive_document(request, pk):
                 customer = Customer.objects.get(id=project.customer.id)
                 fullNumber = (
                     str(pre)
-                    + str(customer.customer_id)
-                    + str(project.project_number)
+                    + str(project.full_project_number)
                     + "-"
                     + str(document.document_number)
                     + str(document.formatted_revision)
@@ -982,8 +979,7 @@ def admin_get_archived(request):
                 customer = Customer.objects.get(id=project.customer.id)
                 fullNumber = (
                     str(pre)
-                    + str(customer.customer_id)
-                    + str(project.project_number)
+                    + str(project.full_project_number)
                     + "-"
                     + str(document.document_number)
                     + str(document.formatted_revision)
@@ -1049,8 +1045,7 @@ def fetch_document_number(request, documentId):
     customer = Customer.objects.get(id=project.customer.id)
     document_number = (
         str(pre)
-        + str(customer.customer_id)
-        + str(project.project_number)
+        + str(project.full_project_number)
         + "-"
         + str(document.document_number)
         + str(document.formatted_revision)

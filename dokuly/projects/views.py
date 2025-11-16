@@ -52,11 +52,11 @@ def get_project(request, project_id):
     serializer = ProjectSerializerWithCustomer(project)
 
     data = serializer.data
+    # Always set full_number from full_project_number
+    data["full_number"] = str(data["full_project_number"]) if data.get("full_project_number") else ""
+    
     if data and "customer" in data and data["customer"]:
-        data["full_number"] = data["full_project_number"]
         data["customer_name"] = data['customer']['name']
-    else:
-        data["full_number"] = str(data["full_project_number"])
 
     return Response(data, status=status.HTTP_200_OK)
 
@@ -298,12 +298,14 @@ def admin_get_projects_with_project_number(request):
 
     if len(serializerProject.data) != 0:
         for project in serializerProject.data:
+            # Always set full_number from full_project_number
+            project["full_number"] = str(project["full_project_number"]) if project.get("full_project_number") else ""
+            
             if project["customer"] != None and project["customer"] != "":
                 try:
                     customer = next(
                         (x for x in customers if x.id == project["customer"]), None
                     )
-                    project["full_number"] = project["full_project_number"]
                     project["customer_name"] = customer.name
                 except Customer.DoesNotExist:
                     customer = ""
@@ -326,12 +328,14 @@ def get_projects_with_project_number(request):
 
     if len(serializerProject.data) != 0:
         for project in serializerProject.data:
+            # Always set full_number from full_project_number
+            project["full_number"] = str(project["full_project_number"]) if project.get("full_project_number") else ""
+            
             if project["customer"] != None and project["customer"] != "":
                 try:
                     customer = next(
                         (x for x in customers if x.id == project["customer"]), None
                     )
-                    project["full_number"] = project["full_project_number"]
                     project["customer_name"] = customer.name
                 except Customer.DoesNotExist:
                     customer = ""
