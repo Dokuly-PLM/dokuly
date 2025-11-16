@@ -62,47 +62,32 @@ from profiles.utilityFunctions import (
 from projects.viewsTags import check_for_and_create_new_tags
 
 
-def get_document_number(document, projects, customers, prefixes):
+def get_document_number(document, projects, prefixes):
     """Build document number by stitching fields from necessary tables."""
-    project = ""
-    customer = ""
+    full_project_number = ""
     prefix = ""
-    if document["project"] != None:
-        try:
-            project_obj = next(
-                (i for i in projects if i.id == document["project"]), None
-            )
-            if project_obj != None:
-                project = project_obj.project_number
-                try:
-                    customer_obj = next(
-                        (x for x in customers if x.id ==
-                         project_obj.customer.id), None
-                    )
-                    if customer_obj != None:
-                        customer = customer_obj.customer_id
-                except Customer.DoesNotExist:
-                    customer = ""
-        except Project.DoesNotExist:
-            project = ""
-    if document["prefix_id"] != None and document["prefix_id"] != -1:
-        try:
-            prefix_obj = next(
-                (i for i in prefixes if i.id == document["prefix_id"]), None
-            )
-            if prefix_obj != None:
-                prefix = prefix_obj.prefix
-        except Document_Prefix.DoesNotExist:
-            prefix = ""
+    
+    # Get project number
+    if document.get("project"):
+        project_obj = next(
+            (proj for proj in projects if proj.id == document["project"]), None
+        )
+        if project_obj and project_obj.full_project_number:
+            full_project_number = str(project_obj.full_project_number)
+    
+    # Get prefix
+    if document.get("prefix_id") and document["prefix_id"] != -1:
+        prefix_obj = next(
+            (pref for pref in prefixes if pref.id == document["prefix_id"]), None
+        )
+        prefix = prefix_obj.prefix if prefix_obj else ""
     else:
-        prefix = document["document_type"]
+        prefix = document.get("document_type", "")
+    
+    # Build full document number
     document_number = (
-        str(prefix)
-        + str(customer)
-        + str(project)
-        + "-"
-        + str(document["document_number"])
-        + str(document["formatted_revision"])
+        f"{prefix}{full_project_number}-"
+        f"{document['document_number']}{document['formatted_revision']}"
     )
     return document_number
 
@@ -912,18 +897,17 @@ def auto_new_revision(request, pk, **kwargs):
             part_number=new_revision.part_number,
             revision_count_major=new_revision.revision_count_major,
             revision_count_minor=new_revision.revision_count_minor,
-            project_number=new_revision.project.project_number if new_revision.project else None,
+            project_number=new_revision.project.full_project_number if new_revision.project else None,
             created_at=new_revision.created_at
         )
 
         projects = Project.objects.filter()
-        customers = Customer.objects.all()
         prefixes = Document_Prefix.objects.all()
 
         # TODO DocumentSerializer runs twice in this view.
         document_ser = DocumentSerializer(new_revision, many=False)
         new_revision.full_doc_number = get_document_number(
-            document_ser.data, projects, customers, prefixes
+            document_ser.data, projects, prefixes
         )  # TODO slim down
         new_revision.save()
 
@@ -1300,7 +1284,7 @@ def get_reference_documents(request, referenceListId):
             project = ""
         if doc["full_doc_number"] == None or doc["full_doc_number"] == "":
             document_number = get_document_number(
-                doc, projects, customers, prefixes)
+                doc, projects, prefixes)
 
         document_dict_list.append(
             {

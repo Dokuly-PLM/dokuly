@@ -132,7 +132,7 @@ def create_new_assembly(request, **kwargs):
             part_number=assembly_entry.part_number,
             revision_count_major=assembly_entry.revision_count_major,
             revision_count_minor=assembly_entry.revision_count_minor,
-            project_number=assembly_entry.project.project_number if assembly_entry.project else None,
+            project_number=assembly_entry.project.full_project_number if assembly_entry.project else None,
             created_at=assembly_entry.created_at
         )
 
@@ -142,7 +142,7 @@ def create_new_assembly(request, **kwargs):
             part_number=assembly_entry.part_number,
             revision_count_major=assembly_entry.revision_count_major,
             revision_count_minor=assembly_entry.revision_count_minor,
-            project_number=assembly_entry.project.project_number if assembly_entry.project else None,
+            project_number=assembly_entry.project.full_project_number if assembly_entry.project else None,
             created_at=assembly_entry.created_at
         )
 
@@ -450,7 +450,7 @@ def new_revision(request, pk, **kwargs):
                 part_number=newRevision.part_number,
                 revision_count_major=newRevision.revision_count_major,
                 revision_count_minor=newRevision.revision_count_minor,
-                project_number=newRevision.project.project_number if newRevision.project else None,
+                project_number=newRevision.project.full_project_number if newRevision.project else None,
                 created_at=newRevision.created_at
             )
 
@@ -460,7 +460,7 @@ def new_revision(request, pk, **kwargs):
                 part_number=newRevision.part_number,
                 revision_count_major=newRevision.revision_count_major,
                 revision_count_minor=newRevision.revision_count_minor,
-                project_number=newRevision.project.project_number if newRevision.project else None,
+                project_number=newRevision.project.full_project_number if newRevision.project else None,
                 created_at=newRevision.created_at
             )
 

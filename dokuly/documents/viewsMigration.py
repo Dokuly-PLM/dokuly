@@ -156,7 +156,7 @@ def bulk_upload_documents(request, **kwargs):
 
                     document = Document(
                         title=title,
-                        full_doc_number=f"{document_prefix.prefix}{customer.customer_id}{project.project_number}-{document_number}A",  # Revision A
+                        full_doc_number=f"{document_prefix.prefix}{project.full_project_number}-{document_number}A",  # Revision A
                         description=description,
                         created_by=user,
                         project=project,

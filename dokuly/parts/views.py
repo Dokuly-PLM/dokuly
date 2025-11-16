@@ -972,7 +972,7 @@ def create_new_part(request, **kwargs):
             part_number=new_part.part_number,
             revision_count_major=new_part.revision_count_major,
             revision_count_minor=new_part.revision_count_minor,
-            project_number=new_part.project.project_number if new_part.project else None,
+            project_number=new_part.project.full_project_number if new_part.project else None,
             created_at=new_part.created_at
         )
 
@@ -982,7 +982,7 @@ def create_new_part(request, **kwargs):
             part_number=new_part.part_number,
             revision_count_major=new_part.revision_count_major,
             revision_count_minor=new_part.revision_count_minor,
-            project_number=new_part.project.project_number if new_part.project else None,
+            project_number=new_part.project.full_project_number if new_part.project else None,
             created_at=new_part.created_at
         )
 
@@ -1426,7 +1426,7 @@ def new_revision(request, pk, **kwargs):
         part_number=new_part_rev.part_number,
         revision_count_major=new_part_rev.revision_count_major,
         revision_count_minor=new_part_rev.revision_count_minor,
-        project_number=new_part_rev.project.project_number if new_part_rev.project else None,
+        project_number=new_part_rev.project.full_project_number if new_part_rev.project else None,
         created_at=new_part_rev.created_at
     )
 
@@ -1436,7 +1436,7 @@ def new_revision(request, pk, **kwargs):
         part_number=new_part_rev.part_number,
         revision_count_major=new_part_rev.revision_count_major,
         revision_count_minor=new_part_rev.revision_count_minor,
-        project_number=new_part_rev.project.project_number if new_part_rev.project else None,
+        project_number=new_part_rev.project.full_project_number if new_part_rev.project else None,
         created_at=new_part_rev.created_at
     )
 

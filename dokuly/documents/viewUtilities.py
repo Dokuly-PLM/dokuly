@@ -143,7 +143,7 @@ def assemble_full_document_number(entry, document, project, customer, part, asse
         else:
             pre = document.document_type
         if project != None:
-            fullNumber = f"{pre}{customer.customer_id}{project.project_number}-{document.document_number}{document.revision}"
+            fullNumber = f"{pre}{project.full_project_number}-{document.document_number}{document.revision}"
         else:
             fullNumber = f"{pre}??-{document.document_number}{document.revision}"
     return fullNumber
@@ -156,7 +156,7 @@ def assemble_full_document_number_no_prefix_db_call(entry, document, project, cu
     pre = prefix if prefix else ""
 
     if project is not None:
-        fullNumber = f"{pre}{customer.customer_id}{project.project_number}-{document.document_number}{document.revision}"
+        fullNumber = f"{pre}{project.full_project_number}-{document.document_number}{document.revision}"
     else:
         fullNumber = f"{pre}??-{document.document_number}{document.revision}"
     return fullNumber
