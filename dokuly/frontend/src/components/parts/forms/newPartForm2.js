@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Button, Col, Row } from "react-bootstrap";
-import { getActiveProjectByCustomer } from "../../projects/functions/queries";
+import { getActiveProjectByCustomer, fetchProjects } from "../../projects/functions/queries";
 import { get_active_customers } from "../../customers/funcitons/queries";
+import { fetchOrg } from "../../admin/functions/queries";
 import SubmitButton from "../../dokuly_components/submitButton";
 import { usePartTypes } from "../partTypes/usePartTypes";
 import DokulyModal from "../../dokuly_components/dokulyModal";
@@ -45,8 +46,18 @@ const PartNewForm = (props) => {
   const [externalPartNumber, setExternalPartNumber] = useState("");
 
   const [showModal, setShowModal] = useState(false);
+  const [organization, setOrganization] = useState(null);
 
   const partTypes = usePartTypes();
+
+  useEffect(() => {
+    // Fetch organization settings
+    fetchOrg().then((res) => {
+      if (res.status === 200) {
+        setOrganization(res.data);
+      }
+    });
+  }, []);
 
   const enter_part_information = (suggestion) => {
     if (suggestion == null) {
@@ -85,18 +96,13 @@ const PartNewForm = (props) => {
   };
 
   useEffect(() => {
-    if (
-      selected_customer_id !== null &&
-      selected_customer_id !== undefined &&
-      selected_customer_id !== -1
-    ) {
-      getActiveProjectByCustomer(selected_customer_id).then((res) => {
-        if (res !== undefined) {
-          setProjects(res.data);
-        }
-      });
-    }
-  }, [selected_customer_id]);
+    // Always load all active projects
+    fetchProjects().then((res) => {
+      if (res?.status === 200) {
+        setProjects(res.data);
+      }
+    });
+  }, [organization]);
 
   const [isCtrlDown, setIsCtrlDown] = useState(false);
 
@@ -206,29 +212,6 @@ const PartNewForm = (props) => {
         externalPartNumber={externalPartNumber}
         setExternalPartNumber={setExternalPartNumber}
       />
-
-      <div className="form-group">
-        <label>Customer *</label>
-        <select
-          className="form-control"
-          name="customer"
-          type="number"
-          onChange={(e) => setSelectedCustomerId(e.target.value)}
-        >
-          <option value="">Choose customer</option>
-          {active_customers == null
-            ? ""
-            : active_customers
-                .sort((a, b) => (a.customer_id > b.customer_id ? 1 : -1))
-                .map((customer) => {
-                  return (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </option>
-                  );
-                })}
-        </select>
-      </div>
 
       <div className="form-group">
         <label htmlFor="project">Project *</label>

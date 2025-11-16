@@ -53,9 +53,10 @@ def get_project(request, project_id):
 
     data = serializer.data
     if data and "customer" in data and data["customer"]:
-        fullNumber = f"{data['customer']['customer_id']}{data['project_number']}"
-        data["full_number"] = fullNumber
+        data["full_number"] = data["full_project_number"]
         data["customer_name"] = data['customer']['name']
+    else:
+        data["full_number"] = str(data["full_project_number"])
 
     return Response(data, status=status.HTTP_200_OK)
 
@@ -90,6 +91,79 @@ def get_next_project_number(all_cutsomer_projects):
     return highest_number + 1
 
 
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
+def get_next_available_project_number(request):
+    """Returns the lowest available full project number for the user's organization."""
+    try:
+        user = request.user
+        permission, response = check_user_auth_and_app_permission(request, "projects")
+        if not permission:
+            return response
+        
+        # Get user's organization
+        user_profile = Profile.objects.get(user=user)
+        if not user_profile.organization_id or user_profile.organization_id == -1:
+            return Response({"full_project_number": 100}, status=status.HTTP_200_OK)
+        
+        organization = Organization.objects.get(id=user_profile.organization_id)
+        
+        # Get all projects in the organization, ordered by full_project_number
+        all_projects = Project.objects.filter(
+            organization=organization
+        ).order_by('full_project_number')
+        
+        # Find the lowest available number starting from 100
+        next_number = 100
+        for project in all_projects:
+            if project.full_project_number is None:
+                continue
+            if project.full_project_number == next_number:
+                next_number += 1
+            elif project.full_project_number > next_number:
+                break
+        
+        return Response({"full_project_number": next_number}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
+def check_project_number_exists(request):
+    """Checks if a full project number already exists in the user's organization."""
+    try:
+        user = request.user
+        permission, response = check_user_auth_and_app_permission(request, "projects")
+        if not permission:
+            return response
+        
+        data = request.data
+        if "full_project_number" not in data:
+            return Response("full_project_number is required", status=status.HTTP_400_BAD_REQUEST)
+        
+        full_project_number = data["full_project_number"]
+        
+        # Get user's organization
+        user_profile = Profile.objects.get(user=user)
+        if not user_profile.organization_id or user_profile.organization_id == -1:
+            return Response({"exists": False}, status=status.HTTP_200_OK)
+
+        organization = Organization.objects.get(id=user_profile.organization_id)
+
+        # Check if project number exists
+        exists = Project.objects.filter(
+            organization=organization,
+            full_project_number=full_project_number
+        ).exists()
+        
+        return Response({"exists": exists}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 @login_required(login_url="/login")
@@ -111,14 +185,18 @@ def new_project(request):
             serializer = ProjectSerializer(res, many=True)
             return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
-        currentProjects = Project.objects.filter(customer__id=data["customer"])
-
         project = Project()
         project.id = None
         project.title = data["title"]
-        project.customer_id = data["customer"]
+        if "customer" in data:
+            project.customer_id = data.get("customer")
+
         project.description = data["description"]
-        project.project_number = get_next_project_number(currentProjects)
+        
+        # Handle project number - use provided number
+        if "full_project_number" in data and data["full_project_number"]:
+            project.full_project_number = int(data["full_project_number"])
+        
         project.is_active = True
         project.project_owner = Profile.objects.get(user=user)
         
@@ -225,11 +303,7 @@ def admin_get_projects_with_project_number(request):
                     customer = next(
                         (x for x in customers if x.id == project["customer"]), None
                     )
-                    # customer = Customer.objects.get(pk=project['customer'])
-                    fullNumber = str(customer.customer_id) + str(
-                        project["project_number"]
-                    )
-                    project["full_number"] = fullNumber
+                    project["full_number"] = project["full_project_number"]
                     project["customer_name"] = customer.name
                 except Customer.DoesNotExist:
                     customer = ""
@@ -257,14 +331,11 @@ def get_projects_with_project_number(request):
                     customer = next(
                         (x for x in customers if x.id == project["customer"]), None
                     )
-                    # customer = Customer.objects.get(pk=project['customer'])
-                    fullNumber = str(customer.customer_id) + str(
-                        project["project_number"]
-                    )
-                    project["full_number"] = fullNumber
+                    project["full_number"] = project["full_project_number"]
                     project["customer_name"] = customer.name
                 except Customer.DoesNotExist:
                     customer = ""
+
         return Response(serializerProject.data, status=status.HTTP_200_OK)
     return Response("No data found", status=status.HTTP_400_BAD_REQUEST)
 

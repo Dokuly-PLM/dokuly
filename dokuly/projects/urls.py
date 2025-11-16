@@ -23,6 +23,8 @@ urlpatterns = [
          views.get_active_projects_by_cystomer),
     path('api/projects/get/ProjectsByCustomer/<int:customerId>/',
          views.get_projects_by_customer),
+    path('api/projects/get/nextAvailableProjectNumber/', views.get_next_available_project_number),
+    path('api/projects/post/checkProjectNumberExists/', views.check_project_number_exists),
     # Admin Views:
     path('api/projects/get/fullNumbered/',
          views.admin_get_projects_with_project_number),

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { createNewAssembly } from "../functions/queries";
 import { get_active_customers } from "../../customers/funcitons/queries";
-import { getActiveProjectByCustomer } from "../../projects/functions/queries";
+import { getActiveProjectByCustomer, fetchProjects } from "../../projects/functions/queries";
+import { fetchOrg } from "../../admin/functions/queries";
 import { propTypes } from "react-bootstrap/esm/Image";
 import SubmitButton from "../../dokuly_components/submitButton";
 import { toast } from "react-toastify";
@@ -21,20 +22,25 @@ const NewAssemblyForm = (props) => {
   const [selected_project_id, setSelectedProjectId] = useState(-1);
 
   const [externalPartNumber, setExternalPartNumber] = useState("");
+  const [organization, setOrganization] = useState(null);
 
   useEffect(() => {
-    if (
-      selected_customer_id !== null &&
-      selected_customer_id !== undefined &&
-      selected_customer_id !== -1
-    ) {
-      getActiveProjectByCustomer(selected_customer_id).then((res) => {
-        if (res.status === 200) {
-          setProjects(res.data);
-        }
-      });
-    }
-  }, [selected_customer_id]);
+    // Fetch organization settings
+    fetchOrg().then((res) => {
+      if (res.status === 200) {
+        setOrganization(res.data);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    // Always load all active projects
+    fetchProjects().then((res) => {
+      if (res?.status === 200) {
+        setProjects(res.data);
+      }
+    });
+  }, [organization]);
 
   const launchNewAssemblyForm = () => {
     $("#addModal").modal("show");
@@ -154,32 +160,6 @@ const NewAssemblyForm = (props) => {
                 externalPartNumber={externalPartNumber}
                 setExternalPartNumber={setExternalPartNumber}
               />
-
-              <div className="form-group">
-                <label>Customer *</label>
-                <select
-                  className="form-control"
-                  name="customer"
-                  type="number"
-                  //value={selected_customer_name}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                >
-                  <option value="">Choose customer</option>
-                  {active_customers == null
-                    ? ""
-                    : active_customers
-                        .sort((a, b) =>
-                          a.customer_id > b.customer_id ? 1 : -1
-                        )
-                        .map((customer) => {
-                          return (
-                            <option key={customer.id} value={customer.id}>
-                              {customer.name}
-                            </option>
-                          );
-                        })}
-                </select>
-              </div>
 
               <div className="form-group">
                 <label htmlFor="project">Project *</label>

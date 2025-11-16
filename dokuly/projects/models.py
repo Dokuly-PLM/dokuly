@@ -61,7 +61,7 @@ class Project(models.Model):
 
     # DEPRECATED FIELDS - TODO: Remove these fields in future migrations
     # Old NNN project number
-    project_number = models.IntegerField(blank=True) # DEPRECATED
+    project_number = models.IntegerField(blank=True, null=True) # DEPRECATED
 
 
 class Gantt(models.Model):
