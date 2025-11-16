@@ -1515,3 +1515,13 @@ export const previewPartNumberTemplate = (data) => {
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+export const previewFormattedRevisionTemplate = (data) => {
+  const promise = axios.post(
+    "api/organizations/previewFormattedRevisionTemplate/",
+    data,
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};

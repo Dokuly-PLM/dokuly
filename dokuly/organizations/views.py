@@ -600,3 +600,85 @@ def preview_part_number_template(request):
             {'error': f'Error previewing template: {str(e)}'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+@api_view(['POST'])
+@renderer_classes([JSONRenderer])
+@login_required(login_url="/login")
+def preview_formatted_revision_template(request):
+    """
+    Preview how a formatted revision template will be displayed.
+    
+    Request body:
+        template: str - The template string (e.g., "<major_revision>-<minor_revision>")
+        use_number_revisions: bool - Whether to use number-based revisions
+        revision_format: str - "major-only" or "major-minor"
+    
+    Returns:
+        examples: list - List of example formatted revisions for different scenarios
+    """
+    from organizations.revision_utils import build_full_part_number_from_template
+    
+    try:
+        template = request.data.get('template', '<major_revision>')
+        use_number_revisions = request.data.get('use_number_revisions', False)
+        revision_format = request.data.get('revision_format', 'major-minor')
+        
+        # Generate examples for different scenarios
+        examples = []
+        
+        # Example 1: First revision
+        examples.append({
+            'description': 'First revision',
+            'formatted': build_full_part_number_from_template(
+                template=template,
+                prefix='',
+                part_number='',
+                revision_count_major=0,
+                revision_count_minor=0,
+                use_number_revisions=use_number_revisions,
+            )
+        })
+        
+        # Example 2: Second minor revision (only if major-minor format)
+        if revision_format == 'major-minor':
+            examples.append({
+                'description': 'Second minor revision',
+                'formatted': build_full_part_number_from_template(
+                    template=template,
+                    prefix='',
+                    part_number='',
+                    revision_count_major=0,
+                    revision_count_minor=1,
+                    use_number_revisions=use_number_revisions,
+                )
+            })
+        
+        # Example 3: Second major revision
+        examples.append({
+            'description': 'Second major revision',
+            'formatted': build_full_part_number_from_template(
+                template=template,
+                prefix='',
+                part_number='',
+                revision_count_major=1,
+                revision_count_minor=0,
+                use_number_revisions=use_number_revisions,
+            )
+        })
+        
+        return Response({
+            'examples': examples,
+            'template': template,
+            'settings': {
+                'use_number_revisions': use_number_revisions,
+                'revision_format': revision_format,
+            }
+        })
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Error previewing template: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+

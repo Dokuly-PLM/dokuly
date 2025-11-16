@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Form, Row, Col, Dropdown } from "react-bootstrap";
-import { editOrg, previewPartNumberTemplate } from "../../functions/queries";
+import { editOrg, previewPartNumberTemplate, previewFormattedRevisionTemplate } from "../../functions/queries";
 import { toast } from "react-toastify";
 import SubmitButton from "../../../dokuly_components/submitButton";
 import CheckBox from "../../../dokuly_components/checkBox";
@@ -17,9 +17,14 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
   const [fullPartNumberTemplate, setFullPartNumberTemplate] = useState(
     org?.full_part_number_template || "<prefix><part_number><revision>"
   );
+  const [formattedRevisionTemplate, setFormattedRevisionTemplate] = useState(
+    org?.formatted_revision_template || "<major_revision>"
+  );
   const [isUpdating, setIsUpdating] = useState(false);
   const [previewExamples, setPreviewExamples] = useState([]);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [revisionPreviewExamples, setRevisionPreviewExamples] = useState([]);
+  const [isLoadingRevisionPreview, setIsLoadingRevisionPreview] = useState(false);
 
   // Update state when org prop changes
   useEffect(() => {
@@ -27,6 +32,7 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
       setUseNumberRevisions(org.use_number_revisions || false);
       setRevisionFormat(org.revision_format || "major-minor");
       setFullPartNumberTemplate(org.full_part_number_template || "<prefix><part_number><revision>");
+      setFormattedRevisionTemplate(org.formatted_revision_template || "<major_revision>");
     }
   }, [org]);
 
@@ -56,6 +62,33 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
     return () => clearTimeout(timeoutId);
   }, [fullPartNumberTemplate, useNumberRevisions]);
 
+  // Fetch formatted revision preview from backend whenever settings change
+  useEffect(() => {
+    const fetchRevisionPreview = async () => {
+      setIsLoadingRevisionPreview(true);
+      try {
+        const response = await previewFormattedRevisionTemplate({
+          template: formattedRevisionTemplate,
+          use_number_revisions: useNumberRevisions,
+          revision_format: revisionFormat,
+        });
+        
+        if (response.status === 200) {
+          setRevisionPreviewExamples(response.data.examples || []);
+        }
+      } catch (error) {
+        console.error('Error fetching revision template preview:', error);
+        setRevisionPreviewExamples([]);
+      } finally {
+        setIsLoadingRevisionPreview(false);
+      }
+    };
+
+    // Debounce the preview fetch
+    const timeoutId = setTimeout(fetchRevisionPreview, 300);
+    return () => clearTimeout(timeoutId);
+  }, [formattedRevisionTemplate, useNumberRevisions, revisionFormat]);
+
   const handleSave = async () => {
     setIsUpdating(true);
     try {
@@ -63,6 +96,7 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
         use_number_revisions: useNumberRevisions,
         revision_format: revisionFormat,
         full_part_number_template: fullPartNumberTemplate,
+        formatted_revision_template: formattedRevisionTemplate,
       };
 
       const response = await editOrg(org.id, data);
@@ -87,19 +121,21 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
     setUseNumberRevisions(org?.use_number_revisions || false);
     setRevisionFormat(org?.revision_format || "major-minor");
     setFullPartNumberTemplate(org?.full_part_number_template || "<prefix><part_number><revision>");
+    setFormattedRevisionTemplate(org?.formatted_revision_template || "<major_revision>");
   };
 
   const hasChanges = 
     useNumberRevisions !== (org?.use_number_revisions || false) ||
     revisionFormat !== (org?.revision_format || "major-minor") ||
-    fullPartNumberTemplate !== (org?.full_part_number_template || "<prefix><part_number><revision>");
+    fullPartNumberTemplate !== (org?.full_part_number_template || "<prefix><part_number><revision>") ||
+    formattedRevisionTemplate !== (org?.formatted_revision_template || "<major_revision>");
 
   // Available template keywords
   const availableKeywords = [
     { keyword: '<prefix>', description: 'Part type (PRT, ASM, PCBA)' },
     { keyword: '<part_number>', description: 'Numeric part number' },
     { keyword: '<major_revision>', description: 'Major revision (A, B, C or 0, 1, 2)' },
-    { keyword: '<minor_revision>', description: 'Minor revision (0, 1, 2)' },
+    { keyword: '<minor_revision>', description: 'Minor revision (A, B, C or 0, 1, 2)' },
     { keyword: '<revision>', description: 'Major Revision (A, B, C or 0, 1, 2)' },
     { keyword: '<project_number>', description: 'Project number (if applicable)' },
     { keyword: '<day>', description: 'Day of creation (01-31)' },
@@ -252,7 +288,7 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                       "• <prefix> - Part type (PRT, ASM, PCBA, DOC)\n" +
                       "• <part_number> - Numeric part number\n" +
                       "• <major_revision> - Major revision (A, B, C or 0, 1, 2)\n" +
-                      "• <minor_revision> - Minor revision (0, 1, 2)\n" +
+                      "• <minor_revision> - Minor revision (A, B, C or 0, 1, 2)\n" +
                       "• <revision> - Complete revision string (includes separator)\n" +
                       "• <project_number> - Project number from associated project\n" +
                       "• <day> - Day from creation date (01-31)\n" +
@@ -288,32 +324,88 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                     ))}
                   </div>
                 ) : null}
-                
-                {/* Available Keywords Reference */}
-                <div className="mt-3">
-                  <details>
-                    <summary style={{ cursor: 'pointer', color: 'black', fontWeight: 'bold' }}>
-                      Available Template Keywords
-                    </summary>
-                    <div className="mt-2 p-2" style={{ backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-                      {availableKeywords.map((kw, index) => (
-                        <div key={index} className="mb-2">
-                          <code style={{ 
-                            backgroundColor: '#155216', 
-                            color: 'white', 
-                            padding: '2px 6px', 
-                            borderRadius: '4px',
-                            fontFamily: 'monospace'
-                          }}>
-                            {kw.keyword}
-                          </code>
-                          <span className="ms-2 text-muted">{kw.description}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-                </div>
               </Form.Group>
+            </Col>
+          </Row>
+
+          <Row>
+            <Col md={12}>
+              <Form.Group className="mb-3">
+                <Form.Label>
+                  Standalone Revision Template 
+                  <QuestionToolTip
+                    placement="right"
+                    optionalHelpText={
+                      "Configure how standalone revisions are displayed (separate from full part numbers). Available variables:\n" +
+                      "• <major_revision> - Major revision (A, B, C or 0, 1, 2)\n" +
+                      "• <minor_revision> - Minor revision (A, B, C or 0, 1, 2)\n\n" +
+                      "Common examples:\n" +
+                      "• '<major_revision>' → 'A' or '0'\n" +
+                      "• '<major_revision>-<minor_revision>' → 'A-0' or '0-1'\n" +
+                      "• 'Rev <major_revision>' → 'Rev A' or 'Rev 0'\n" +
+                      "• 'v<major_revision>.<minor_revision>' → 'vA.0' or 'v0.1'"
+                    }
+                  />
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  value={formattedRevisionTemplate}
+                  onChange={(e) => setFormattedRevisionTemplate(e.target.value)}
+                  placeholder="<major_revision>"
+                  style={{ fontFamily: 'monospace' }}
+                />
+                <Form.Text className="text-muted d-block mt-2">
+                  This controls how revisions are displayed in standalone contexts (e.g., revision columns in tables).
+                </Form.Text>
+                <Form.Text className="text-muted d-block mt-2">
+                  Preview: {renderTemplateWithHighlights(formattedRevisionTemplate)}
+                </Form.Text>
+                {isLoadingRevisionPreview ? (
+                  <Form.Text className="text-muted d-block mt-2">
+                    Loading examples...
+                  </Form.Text>
+                ) : revisionPreviewExamples.length > 0 ? (
+                  <div className="mt-2">
+                    <Form.Text className="text-muted d-block">
+                      <strong>Examples:</strong>
+                    </Form.Text>
+                    {revisionPreviewExamples.map((example, index) => (
+                      <Form.Text key={index} className="text-muted d-block" style={{ marginLeft: '1rem' }}>
+                        • {example.description}: <strong style={{ fontFamily: 'monospace' }}>{example.formatted}</strong>
+                      </Form.Text>
+                    ))}
+                  </div>
+                ) : null}
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Available Keywords Reference - applies to both templates above */}
+          <Row>
+            <Col md={12}>
+              <div className="mt-3 mb-4">
+                <details>
+                  <summary style={{ cursor: 'pointer', color: 'black', fontWeight: 'bold' }}>
+                    Available Template Keywords
+                  </summary>
+                  <div className="mt-2 p-2" style={{ backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
+                    {availableKeywords.map((kw, index) => (
+                      <div key={index} className="mb-2">
+                        <code style={{ 
+                          backgroundColor: '#155216', 
+                          color: 'white', 
+                          padding: '2px 6px', 
+                          borderRadius: '4px',
+                          fontFamily: 'monospace'
+                        }}>
+                          {kw.keyword}
+                        </code>
+                        <span className="ms-2 text-muted">{kw.description}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
             </Col>
           </Row>
 
@@ -329,7 +421,10 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                     <strong>Format:</strong> {revisionFormat === "major-only" ? "Major only" : "Major-minor"}
                   </li>
                   <li>
-                    <strong>Template:</strong> {renderTemplateWithHighlights(fullPartNumberTemplate)}
+                    <strong>Part Number Template:</strong> {renderTemplateWithHighlights(fullPartNumberTemplate)}
+                  </li>
+                  <li>
+                    <strong>Standalone Revision Template:</strong> {renderTemplateWithHighlights(formattedRevisionTemplate)}
                   </li>
                 </ul>
               </div>
