@@ -1422,7 +1422,7 @@ export const archiveLocation = async (id) => {
 
 export const fetchAPIKeyFromOrg = () => {
   const promise = axios.get(
-    "api/organizations/fetchCompVaultApiKey/",
+    "api/organizations/get/byUserId/",
     tokenConfig(),
   );
   const dataPromise = promise.then((res) => res);

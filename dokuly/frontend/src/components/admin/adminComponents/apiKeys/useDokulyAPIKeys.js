@@ -28,7 +28,7 @@ function useDokulyAPIKeys(orgId, setLoading, setIsAuthenticated, refresh) {
           setLoading(false);
         });
     }
-  }, [orgId, refresh]); // Dependencies for useEffect
+  }, [orgId, refresh, setLoading, setIsAuthenticated]); // Dependencies for useEffect
 
   return { dokulyAPIKeys };
 }
