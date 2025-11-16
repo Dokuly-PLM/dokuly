@@ -218,7 +218,7 @@ def process_pdf(
                 date = datetime_to_iso_string(rev.last_updated)
 
                 return {
-                    "revision": rev.revision,
+                    "revision": rev.formatted_revision,  # Use formatted_revision
                     "rev_author": rev_author,
                     "rev_notes": rev.revision_notes,
                     "released_date": date,
