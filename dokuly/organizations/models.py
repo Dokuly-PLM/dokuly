@@ -28,11 +28,6 @@ class Organization(models.Model):
     max_allowed_active_viewer_users = models.IntegerField(default=3, blank=True)
 
     # ND managed fields, for customer and cost management
-    stripe_subscription_ids = ArrayField(
-        models.CharField(null=True, blank=True, max_length=500), null=True, blank=True
-    )
-    current_system_cost = models.IntegerField(null=True, blank=True)
-    max_allowed_active_users = models.IntegerField(default=1, blank=True)
     current_storage_size = models.BigIntegerField(
         blank=True, default=1
     )  # Saved as bytes
@@ -67,7 +62,13 @@ class Organization(models.Model):
     requirement_is_enabled = models.BooleanField(default=True, blank=True)
     production_is_enabled = models.BooleanField(default=False, blank=True)
 
-    # Revision system settings
+    # Part numbering and revision settings
+    full_part_number_template = models.CharField(
+        max_length=100,
+        default="<prefix><part_number><revision>",
+        blank=True,
+        help_text="Template for formatting full part numbers. Use <prefix>, <part_number>, <major_revision>, <minor_revision>"
+    )
     use_number_revisions = models.BooleanField(default=False, blank=True)
     revision_format = models.CharField(
         max_length=20, 
@@ -79,7 +80,24 @@ class Organization(models.Model):
         blank=True,
         help_text="Format for revisions. Applies to both letter (A, B vs A-0, A-1) and number (1, 2 vs 1-0, 1-1) systems."
     )
-    revision_separator = models.CharField(
+    
+    delivery_address = models.CharField(max_length=1000, blank=True, null=True)
+    postal_code = models.CharField(max_length=1000, blank=True, null=True)
+    country = models.CharField(max_length=1000, blank=True, null=True)
+    billing_address = models.CharField(max_length=1000, blank=True, null=True)
+
+    #-----------------------------------------------------------------------------------------------------------------------
+    #DEPRECATED
+
+    # Component Vault
+    component_vault_api_key = encrypt(  
+        models.CharField(null=True, blank=True, max_length=1024) # DEPRECATED #TODO delete field
+    )
+
+    stripe_subscription_ids = ArrayField(
+        models.CharField(null=True, blank=True, max_length=500), null=True, blank=True  # DEPRECATED
+    )
+    revision_separator = models.CharField(  # DEPRECATED
         max_length=5,
         default="-",
         choices=[
@@ -89,16 +107,9 @@ class Organization(models.Model):
         blank=True,
         help_text="Separator between major and minor revisions (e.g., A-0 or A.0, 1-0 or 1.0)"
     )
+    current_system_cost = models.IntegerField(null=True, blank=True)  # DEPRECATED
+    max_allowed_active_users = models.IntegerField(default=1, blank=True)  # DEPRECATED
 
-    delivery_address = models.CharField(max_length=1000, blank=True, null=True)
-    postal_code = models.CharField(max_length=1000, blank=True, null=True)
-    country = models.CharField(max_length=1000, blank=True, null=True)
-    billing_address = models.CharField(max_length=1000, blank=True, null=True)
-
-    # Component Vault
-    component_vault_api_key = encrypt(
-        models.CharField(null=True, blank=True, max_length=1024) # DEPRECATED
-    )
 
 
 class Subscription(models.Model):

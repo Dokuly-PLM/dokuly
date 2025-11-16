@@ -26,7 +26,6 @@ from .serializers import (
     SimpleAsmSerializer,
 )
 from assemblies.models import Assembly
-from pcbas.viewUtilities import increment_revision
 from documents.models import MarkdownText, Reference_List
 from projects.models import Project
 
