@@ -17,6 +17,9 @@ class Project(models.Model):
     project_number = models.IntegerField(blank=True)
 
     # References
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, null=True, blank=True
+    )
     customer = models.ForeignKey(
         "customers.Customer", on_delete=models.SET_NULL, null=True, blank=True
     )

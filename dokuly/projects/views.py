@@ -16,6 +16,7 @@ from profiles.views import check_permissions_standard
 from django.contrib.auth.models import User
 from profiles.models import Profile
 from customers.models import Customer
+from organizations.models import Organization
 from profiles.views import check_permissions_ownership, check_permissions_standard, check_permissions_admin, check_user_auth_and_app_permission
 from organizations.views import get_subscription_type
 from django.db.models.query import QuerySet
@@ -120,6 +121,14 @@ def new_project(request):
         project.project_number = get_next_project_number(currentProjects)
         project.is_active = True
         project.project_owner = Profile.objects.get(user=user)
+        
+        # Automatically set the organization from the user's profile
+        try:
+            user_profile = Profile.objects.get(user=user)
+            if user_profile.organization_id and user_profile.organization_id != -1:
+                project.organization = Organization.objects.get(id=user_profile.organization_id)
+        except (Profile.DoesNotExist, Organization.DoesNotExist):
+            pass
 
         if "start_date" in data:
             project.start_date = data["start_date"]

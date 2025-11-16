@@ -294,6 +294,7 @@ def manage_active_modules(request):
     with transaction.atomic():
         for field in [
             "time_tracking_is_enabled",
+            "customer_is_enabled",
             "document_is_enabled",
             "pcba_is_enabled",
             "assembly_is_enabled",
