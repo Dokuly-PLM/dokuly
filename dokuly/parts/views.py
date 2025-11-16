@@ -1605,13 +1605,8 @@ def global_part_search(request):
         # Common filter for project membership or no project
         project_filter = Q(project__project_members=user) | Q(project__isnull=True)
 
-        # Concatenate full_part_number and revision for searching
-        full_part_number_with_revision = Concat(F('full_part_number'), F('revision'))
-
         # Query Parts, PCBAs, and Assemblies
-        part_results = Part.objects.annotate(
-            full_part_number_with_revision=full_part_number_with_revision
-        ).filter(
+        part_results = Part.objects.filter(
             project_filter
             & Q(is_archived=False)
             & (
@@ -1620,33 +1615,26 @@ def global_part_search(request):
                 | Q(description__icontains=query)
                 | Q(manufacturer__icontains=query)
                 | Q(mpn__icontains=query)
-                | Q(full_part_number_with_revision__icontains=query)
             )
         )
 
-        pcba_results = Pcba.objects.annotate(
-            full_part_number_with_revision=full_part_number_with_revision
-        ).filter(
+        pcba_results = Pcba.objects.filter(
             project_filter
             & Q(is_archived=False)
             & (
                 Q(full_part_number__icontains=query)
                 | Q(display_name__icontains=query)
                 | Q(description__icontains=query)
-                | Q(full_part_number_with_revision__icontains=query)
             )
         )
 
-        assembly_results = Assembly.objects.annotate(
-            full_part_number_with_revision=full_part_number_with_revision
-        ).filter(
+        assembly_results = Assembly.objects.filter(
             project_filter
             & Q(is_archived=False)
             & (
                 Q(full_part_number__icontains=query)
                 | Q(display_name__icontains=query)
                 | Q(description__icontains=query)
-                | Q(full_part_number_with_revision__icontains=query)
             )
         )
 

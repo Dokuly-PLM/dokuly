@@ -43,8 +43,9 @@ const PartNumberEditor = ({
   const editorRef = useRef(null);
   const inputRef = useRef(null);
 
-  const searchTerm = row.full_part_number
-    ? row.full_part_number
+  // Use part_number (raw number) to search for all revisions, not full_part_number
+  const searchTerm = row.part_number
+    ? row.part_number.toString()
     : row.temporary_mpn;
 
   useEffect(() => {

@@ -58,12 +58,17 @@ const GlobalPartSelection = ({ setSelectedItem, searchTerm = "", organization })
         return partComparison;
       }
 
-      const revA = a?.revision?.toString() || "";
-      const revB = b?.revision?.toString() || "";
-      return revA.localeCompare(revB, undefined, {
-        numeric: true,
-        sensitivity: "base",
-      });
+      // Sort by revision counters (major, then minor)
+      const majorA = a?.revision_count_major ?? 0;
+      const majorB = b?.revision_count_major ?? 0;
+      
+      if (majorA !== majorB) {
+        return majorA - majorB;
+      }
+      
+      const minorA = a?.revision_count_minor ?? 0;
+      const minorB = b?.revision_count_minor ?? 0;
+      return minorA - minorB;
     }) || [];
 
   return (
