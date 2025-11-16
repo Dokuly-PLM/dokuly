@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import { toast } from "react-toastify";
 import { updateDoc, archiveDocument } from "../functions/queries";
+import { fetchProtectionLevels } from "../../admin/functions/queries";
 import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import FileUpload from "../../dokuly_components/fileUpload/fileUpload";
 import DokulyModal from "../../dokuly_components/dokulyModal";
@@ -19,6 +20,8 @@ const DocumentEditForm = (props) => {
   const [is_approved_for_release, setIsApprovedForRelease] = useState(false);
   const [file, setFile] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [protectionLevels, setProtectionLevels] = useState([]);
+  const [selected_protection_level_id, setSelectedProtectionLevelId] = useState("");
 
   useEffect(() => {
     setTitle(props.document?.title);
@@ -35,7 +38,16 @@ const DocumentEditForm = (props) => {
       setRevisionTable(props.document?.revision_table);
     setSharedDocumentLink(props.document?.shared_document_link);
     setReleaseState(props.document?.release_state);
+    setSelectedProtectionLevelId(props.document?.protection_level || "");
   }, [props.document]);
+
+  useEffect(() => {
+    fetchProtectionLevels().then((res) => {
+      if (res.status === 200) {
+        setProtectionLevels(res.data);
+      }
+    });
+  }, []);
 
   const tooltip = (
     <Tooltip id="tooltip" className="dokuly-tooltip">
@@ -59,6 +71,9 @@ const DocumentEditForm = (props) => {
     data.append("shared_document_link", shared_document_link);
     data.append("release_state", release_state);
     data.append("is_approved_for_release", is_approved_for_release);
+    if (selected_protection_level_id) {
+      data.append("protection_level", selected_protection_level_id);
+    }
 
     // Sort file by file extension.
     if (file != null) {
@@ -168,6 +183,25 @@ const DocumentEditForm = (props) => {
               }}
               value={description}
             />
+          </div>
+
+          <div className="form-group">
+            <label>Protection Level</label>
+            <select
+              className="form-control"
+              name="protection_level"
+              value={selected_protection_level_id}
+              onChange={(e) => {
+                setSelectedProtectionLevelId(e.target.value);
+              }}
+            >
+              <option value="">Select protection level</option>
+              {protectionLevels.map((level) => (
+                <option key={level.id} value={level.id}>
+                  {level.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">

@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { editPrefix, fetchPrefixes } from "../../functions/queries";
 import DocumentPrefixForm from "./documentPrefixForm";
 import DokulyTable from "../../../dokuly_components/dokulyTable/dokulyTable";
+import EditButton from "../../../dokuly_components/editButton";
 
 const DocumentPrefixes = (props) => {
   const [refresh, setRefresh] = useState(false);
@@ -55,6 +56,7 @@ const DocumentPrefixes = (props) => {
   const columns = [
     { key: "display_name", header: "Display Name" },
     { key: "prefix", header: "Prefix" },
+    { key: "description", header: "Description" },
     {
       key: "archive",
       header: "Archived",
@@ -63,12 +65,12 @@ const DocumentPrefixes = (props) => {
       key: "actions",
       header: "Actions",
       formatter: (row) => (
-        <button
-          className="btn dokuly-btn-transparent btn-sm"
+        <EditButton
           onClick={() => handleEditPrefix(row)}
-        >
-          Edit
-        </button>
+          buttonText="Edit"
+          textSize="14px"
+          iconSize="20px"
+        />
       ),
     },
   ];
