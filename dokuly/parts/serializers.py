@@ -212,6 +212,7 @@ class PartThumbnailTitleSerializer(serializers.ModelSerializer):
             "id",
             "display_name",
             "thumbnail",
+            "part_number",
             "full_part_number",
             "project",
             "formatted_revision",
@@ -347,6 +348,7 @@ class GlobalSearchPartSerializer(serializers.ModelSerializer):
         model = Part
         fields = [
             "id",
+            "part_number",
             "full_part_number",
             "mpn",
             "formatted_revision",
@@ -376,6 +378,7 @@ class GlobalSearchPcbaSerializer(serializers.ModelSerializer):
         model = Pcba
         fields = [
             "id",
+            "part_number",
             "full_part_number",
             "formatted_revision",
             "revision_count_major",
@@ -403,6 +406,7 @@ class GlobalSearchAssemblySerializer(serializers.ModelSerializer):
         model = Assembly
         fields = [
             "id",
+            "part_number",
             "full_part_number",
             "formatted_revision",
             "revision_count_major",
