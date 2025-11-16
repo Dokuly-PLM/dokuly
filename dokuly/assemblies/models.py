@@ -24,7 +24,15 @@ class Assembly(models.Model):
     # Assembly basic data fields
     display_name = models.CharField(max_length=150, blank=True)
     description = models.TextField(max_length=500, blank=True)
-    revision = models.CharField(max_length=10)
+
+    # The primary revision counters. These are unrelated to formatting, and number/lettering style.
+    revision_count_major = models.IntegerField(blank=True, null=True, default=0)
+    revision_count_minor = models.IntegerField(blank=True, null=True, default=0)
+
+    # This is the old revision field kept for compatibility.
+    revision = models.CharField(max_length=10, blank=True, null=True)
+
+    # Indicates if this is the latest revision of the assembly. It is used to quickly query for the latest revision without needing to sort through all revisions.
     is_latest_revision = models.BooleanField(default=False, blank=True)
 
     release_state = models.CharField(max_length=50, blank=True)

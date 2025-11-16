@@ -269,6 +269,13 @@ def process_pdf(
 
 
 def extract_number_items(matched_number):
+    """
+    Extract the different items from a matched document number.
+    """
+    # make warning here as the regex may not match all revision formats
+
+    print("Warning: The regex pattern may not match all revision formats.")
+
     pattern = r"([A-Z]{2,4})(\d{3})(\d{3})-(\d{1,3})([A-Z]{1,3})"
     matches = re.match(pattern, matched_number)
 
