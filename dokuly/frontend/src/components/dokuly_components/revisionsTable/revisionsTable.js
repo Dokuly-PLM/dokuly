@@ -36,11 +36,26 @@ const RevisionsTable = ({ item, app, setRevisionListParent = () => {} }) => {
   // Configuration for the DokulyTable columns
   const columns = [
     {
-      key: "revision",
+      key: "formatted_revision",
       header: "Revision",
       includeInCsv: true,
       sort: true,
       maxWidth: "30px",
+      // Custom sort function to use the hidden revision counters
+      sortFunction: (a, b, order) => {
+        const majorA = a.revision_count_major ?? 0;
+        const majorB = b.revision_count_major ?? 0;
+        const minorA = a.revision_count_minor ?? 0;
+        const minorB = b.revision_count_minor ?? 0;
+        
+        // First compare major revisions
+        if (majorA !== majorB) {
+          return order === "asc" ? majorA - majorB : majorB - majorA;
+        }
+        // If major is equal, compare minor revisions
+        return order === "asc" ? minorA - minorB : minorB - minorA;
+      },
+      csvFormatter: (row) => row?.formatted_revision || row?.revision || "",
     },
     {
       key: "thumbnail",

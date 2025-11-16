@@ -31,6 +31,12 @@ const sortData = (data, column, order) => {
   if (!column) return data;
 
   return data.sort((a, b) => {
+    // If column has a custom sortFunction, use it
+    if (column.sortFunction && typeof column.sortFunction === 'function') {
+      return column.sortFunction(a, b, order);
+    }
+
+    // Otherwise use default alphanumeric sort
     const aValue = a[column.key];
     const bValue = b[column.key];
 

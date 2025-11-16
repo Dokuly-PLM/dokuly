@@ -50,7 +50,10 @@ class DocumentTableSerializer(serializers.ModelSerializer):
         fields = ['id', 'title',
                   'full_doc_number', 'release_state',
                   'released_date', 'project',
-                  'last_updated', 'revision',
+                  'last_updated',
+                  'formatted_revision',
+                  'revision_count_major',
+                  'revision_count_minor',
                   'is_latest_revision', 'is_archived', 'tags']
 
 
