@@ -55,7 +55,7 @@ from profiles.utilityFunctions import (
 
 from projects.viewsTags import check_for_and_create_new_tags
 from parts.viewUtilities import copy_markdown_tabs_to_new_revision
-from organizations.revision_utils import build_full_part_number, increment_revision_counters
+from organizations.revision_utils import build_full_part_number, build_formatted_revision, increment_revision_counters
 
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
@@ -976,6 +976,16 @@ def create_new_part(request, **kwargs):
             created_at=new_part.created_at
         )
 
+        new_part.formatted_revision = build_formatted_revision(
+            organization_id=organization_id,
+            prefix=prefix,
+            part_number=new_part.part_number,
+            revision_count_major=new_part.revision_count_major,
+            revision_count_minor=new_part.revision_count_minor,
+            project_number=new_part.project.project_number if new_part.project else None,
+            created_at=new_part.created_at
+        )
+
         # Save again with the full part number
         new_part.save()
         serializer = PartSerializer(new_part, many=False)
@@ -1411,6 +1421,16 @@ def new_revision(request, pk, **kwargs):
     
     # Now build full part number with the populated created_at
     new_part_rev.full_part_number = build_full_part_number(
+        organization_id=organization_id,
+        prefix=prefix,
+        part_number=new_part_rev.part_number,
+        revision_count_major=new_part_rev.revision_count_major,
+        revision_count_minor=new_part_rev.revision_count_minor,
+        project_number=new_part_rev.project.project_number if new_part_rev.project else None,
+        created_at=new_part_rev.created_at
+    )
+
+    new_part_rev.formatted_revision = build_formatted_revision(
         organization_id=organization_id,
         prefix=prefix,
         part_number=new_part_rev.part_number,

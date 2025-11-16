@@ -246,6 +246,7 @@ def update_organization(request, id):
             "revision_format",
             "revision_separator",
             "full_part_number_template",
+            "formatted_revision_template",
         ]:
             if field in data:
                 setattr(organization, field, data[field])

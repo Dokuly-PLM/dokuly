@@ -28,6 +28,9 @@ class Document(models.Model):
     document_number = models.CharField(max_length=20, blank=True, null=True)
     # The complete document number of a document. e.g. TN100103-2A
     full_doc_number = models.CharField(null=True, blank=True, max_length=50)
+    
+    # Formatted revision field based on organization template (e.g., "A", "1", "A-0", "1-0")
+    formatted_revision = models.CharField(null=True, blank=True, max_length=20)
 
     # id pointing to the selected prefix for the document
     # TODO: Need to change this to a foreign key to the prefix table
@@ -54,7 +57,7 @@ class Document(models.Model):
     revision_count_minor = models.IntegerField(blank=True, null=True, default=0)
 
     # This is the old revision field kept for compatibility.
-    revision = models.CharField(max_length=10, blank=True, null=True)
+    revision = models.CharField(max_length=10, blank=True, null=True)  # DEPRECATED
 
     # Indicates if this is the latest revision of the document. It is used to quickly query for the latest revision without needing to sort through all revisions.
     is_latest_revision = models.BooleanField(blank=True, null=True)

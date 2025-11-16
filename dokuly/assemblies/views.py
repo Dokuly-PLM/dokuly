@@ -31,7 +31,7 @@ from django.contrib.postgres.search import SearchVector
 from profiles.models import Profile
 from profiles.serializers import ProfileSerializer
 from django.contrib.auth.models import User
-from organizations.revision_utils import build_full_part_number, increment_revision_counters
+from organizations.revision_utils import build_full_part_number, build_formatted_revision, increment_revision_counters
 from projects.models import Project
 from projects.viewsIssues import link_issues_on_new_object_revision
 from projects.viewsTags import check_for_and_create_new_tags
@@ -127,6 +127,16 @@ def create_new_assembly(request, **kwargs):
         assembly_entry.save()
 
         assembly_entry.full_part_number = build_full_part_number(
+            organization_id=organization_id,
+            prefix="ASM",
+            part_number=assembly_entry.part_number,
+            revision_count_major=assembly_entry.revision_count_major,
+            revision_count_minor=assembly_entry.revision_count_minor,
+            project_number=assembly_entry.project.project_number if assembly_entry.project else None,
+            created_at=assembly_entry.created_at
+        )
+
+        assembly_entry.formatted_revision = build_formatted_revision(
             organization_id=organization_id,
             prefix="ASM",
             part_number=assembly_entry.part_number,
@@ -443,7 +453,17 @@ def new_revision(request, pk, **kwargs):
                 project_number=newRevision.project.project_number if newRevision.project else None,
                 created_at=newRevision.created_at
             )
-            
+
+            newRevision.formatted_revision = build_formatted_revision(
+                organization_id=organization_id,
+                prefix="ASM",
+                part_number=newRevision.part_number,
+                revision_count_major=newRevision.revision_count_major,
+                revision_count_minor=newRevision.revision_count_minor,
+                project_number=newRevision.project.project_number if newRevision.project else None,
+                created_at=newRevision.created_at
+            )
+
             newRevision.save()
 
             copy_markdown_tabs_to_new_revision(current_asm, newRevision)

@@ -20,13 +20,16 @@ class Pcba(models.Model):
     part_number = models.IntegerField(blank=True, null=True)
     # The complete part number of a pcba. e.g. PCBA1234.
     full_part_number = models.CharField(null=True, blank=True, max_length=50)
+    
+    # Formatted revision field based on organization template (e.g., "A", "1", "A-0", "1-0")
+    formatted_revision = models.CharField(null=True, blank=True, max_length=20)
 
-    # The primary revision counters. These are unrelated to formatting, and number/lettering style.
+    # The primary revision counters. These are unrelated to formatting, and number/lettering style.
     revision_count_major = models.IntegerField(blank=True, null=True, default=0)
     revision_count_minor = models.IntegerField(blank=True, null=True, default=0)
 
     # This is the old revision field kept for compatibility.
-    revision = models.CharField(max_length=10, blank=True, null=True)
+    revision = models.CharField(max_length=10, blank=True, null=True)  # DEPRECATED
     # Indicates if this is the latest revision of the pcba. It is used to quickly query for the latest revision without needing to sort through all revisions.
     is_latest_revision = models.BooleanField(default=False, blank=True)
 

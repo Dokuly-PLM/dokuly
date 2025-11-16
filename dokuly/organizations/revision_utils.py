@@ -144,6 +144,65 @@ def build_full_part_number(
     )
 
 
+def build_formatted_revision(
+    organization_id: int,
+    prefix: str,
+    part_number: str,
+    revision_count_major: int,
+    revision_count_minor: int,
+    project_number: Optional[str] = None,
+    created_at: Optional[object] = None,
+) -> str:
+    """
+    Build a full part number using organization settings and template.
+    
+    This is a convenience wrapper around build_full_part_number_from_template
+    that automatically fetches the organization's template and revision settings.
+    
+    Args:
+        organization_id: Organization ID to fetch settings from
+        prefix: Part type prefix (e.g., "PRT", "ASM", "PCBA", "DOC")
+        part_number: The numeric part number (e.g., "1234")
+        revision_count_major: Major revision count (0-indexed)
+        revision_count_minor: Minor revision count (0-indexed)
+        project_number: Optional project number for template variable
+        created_at: Optional datetime for date-based template variables
+    
+    Returns:
+        Formatted full part number according to organization template
+    
+    Examples:
+        # Organization has template: "<prefix><part_number> Rev. <major_revision>"
+        # Letter revisions, major-only format
+        build_full_part_number(org_id, "PRT", "1234", 0, 0)
+        # -> "PRT1234 Rev. A"
+        
+        # Organization has template: "<prefix><part_number><major_revision>-<minor_revision>"
+        # Number revisions, major-minor format
+        build_full_part_number(org_id, "PCBA", "5678", 1, 2)
+        # -> "PCBA56781-2"
+    """
+    try:
+        org = Organization.objects.get(id=organization_id)
+        template = org.formatted_revision_template
+        use_number_revisions = org.use_number_revisions
+    except Organization.DoesNotExist:
+        # Fallback to defaults
+        template = "<major_revision>"
+        use_number_revisions = False
+    
+    return build_full_part_number_from_template(
+        template=template,
+        prefix=prefix,
+        part_number=part_number,
+        revision_count_major=revision_count_major,
+        revision_count_minor=revision_count_minor,
+        use_number_revisions=use_number_revisions,
+        project_number=project_number,
+        created_at=created_at,
+    )
+
+
 def build_full_part_number_from_template(
     template: str,
     prefix: str,

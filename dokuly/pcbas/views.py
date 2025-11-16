@@ -1,5 +1,5 @@
 from purchasing.priceUtilities import copy_price_to_new_revision
-from organizations.revision_utils import build_full_part_number, increment_revision_counters
+from organizations.revision_utils import build_full_part_number, build_formatted_revision, increment_revision_counters
 from django.contrib.auth.decorators import login_required
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes, permission_classes
@@ -337,6 +337,16 @@ def new_revision(request, pk, **kwargs):
         created_at=new_pcba.created_at
     )
 
+    new_pcba.formatted_revision = build_formatted_revision(
+        organization_id=organization_id,
+        prefix="PCBA",
+        part_number=new_pcba.part_number,
+        revision_count_major=new_pcba.revision_count_major,
+        revision_count_minor=new_pcba.revision_count_minor,
+        project_number=new_pcba.project.project_number if new_pcba.project else None,
+        created_at=new_pcba.created_at
+    )
+
     new_pcba.price = old_pcba.price       #TODO are these deprecated?
     new_pcba.currency = old_pcba.currency #TODO are these deprecated?
     new_pcba.save()
@@ -625,6 +635,16 @@ def create_new_pcba(request, **kwargs):
         pcba.save()
 
         pcba.full_part_number = build_full_part_number(
+            organization_id=organization_id,
+            prefix="PCBA",
+            part_number=pcba.part_number,
+            revision_count_major=pcba.revision_count_major,
+            revision_count_minor=pcba.revision_count_minor,
+            project_number=pcba.project.project_number if pcba.project else None,
+            created_at=pcba.created_at
+        )
+
+        pcba.formatted_revision = build_formatted_revision(
             organization_id=organization_id,
             prefix="PCBA",
             part_number=pcba.part_number,
