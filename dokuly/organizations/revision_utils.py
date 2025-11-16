@@ -217,48 +217,17 @@ def increment_letter_major_only(old_revision: str) -> str:
         return chr(ord(old_revision) + 1)
 
 
-
-def increment_revision(old_revision: str, organization_id: Optional[int] = None, revision_type: str = "major") -> str:
+def increment_revision_counters(major_count: int, minor_count: int, increment_major=True):
+    """Inclrement revision counters
     """
-    Smart revision incrementing that handles both letter and number systems.
-    
-    Args:
-        old_revision: Current revision string
-        organization_id: Organization ID to determine revision system
-        revision_type: "major" or "minor"
-    
-    Returns:
-        New revision string
-    """
-    if not old_revision:
-        return "A"  # Default to letter system for backward compatibility
-    
-    # Check if we should use number revisions
-    if organization_id:
-        use_number_revisions, revision_format, separator = get_organization_revision_settings(organization_id)
-        if use_number_revisions:
-            return increment_number_revision(old_revision, revision_format, separator, revision_type)
-        else:
-            # Letter-based revisions
-            if revision_format == "major-only":
-                # Only major revisions, ignore revision_type
-                return increment_letter_major_only(old_revision)
-            else:
-                # Major-minor format with configurable separator
-                return increment_letter_revision(old_revision, separator, revision_type)
-    
-    # Default letter-based incrementing for backward compatibility (no separator support)
-    # This path is only used when organization_id is not provided
-    if old_revision[-1] == "Z" and len(old_revision) == 1:
-        return "AA"
-    elif old_revision[-1] == "Z":
-        new_letter = chr(ord(old_revision[-2]) + 1)
-        return old_revision[0:-2] + new_letter + "A"
-    elif len(old_revision) > 1:
-        new_letter = chr(ord(old_revision[-1]) + 1)
-        return old_revision[0:-1] + new_letter
-    else:
-        return chr(ord(old_revision) + 1)
+    if increment_major == 'major':
+        revision_count_major = major_count + 1
+        revision_count_minor = 0  # Reset minor on major increment
+    else:  # minor
+        revision_count_major = major_count
+        revision_count_minor = minor_count + 1
+        
+    return revision_count_major, revision_count_minor
 
 
 def format_revision_display(full_part_number: str, revision: str, organization_id: Optional[int] = None) -> str:
