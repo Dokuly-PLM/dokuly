@@ -210,25 +210,6 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                     }
                   </li>
                 </ul>
-                {hasChanges && (
-                  <>
-                    <hr />
-                    <strong>Note:</strong> Changing these settings will affect how new revisions are created:
-                    <ul className="mb-0 mt-2">
-                      {useNumberRevisions !== (org?.use_number_revisions || false) && (
-                        <li>Switching between letter and number systems requires a data migration</li>
-                      )}
-                      {revisionFormat !== (org?.revision_format || "major-minor") && (
-                        <li>
-                          {revisionFormat === "major-minor" 
-                            ? "Enabling major-minor format allows creating sub-revisions (e.g., 1-0, 1-1)" 
-                            : "Disabling major-minor format will only allow major revisions (e.g., 1, 2, 3)"}
-                        </li>
-                      )}
-                      <li>This change affects all parts, assemblies, PCBAs, and documents in your organization</li>
-                    </ul>
-                  </>
-                )}
               </div>
             </Col>
           </Row>

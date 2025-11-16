@@ -274,16 +274,8 @@ def update_organization(request, id):
 
         organization.save()
         
-        # Trigger revision migration if settings changed
-        if revision_settings_changed and organization.use_number_revisions:
-            from organizations.management.commands.migrate_revisions_to_numbers import migrate_organization_revisions
-            try:
-                migrate_organization_revisions(organization.id)
-            except Exception as e:
-                # Log the error but don't fail the organization update
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Failed to migrate revisions for organization {organization.id}: {e}")
+        # Note: Revision settings only affect newly created items going forward
+        # Existing items retain their original part number format
         
         Profile.objects.update(organization_id=organization.id)
         update_currency_pairs()    # Update the currency pairs
