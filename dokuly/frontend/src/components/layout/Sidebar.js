@@ -164,7 +164,8 @@ const Sidebar = (props) => {
         isAppAllowed("timesheet") &&
         loadAdminPages()}
 
-      {isAppAllowed("customers") && (
+      {organization?.customer_is_enabled !== false &&
+        isAppAllowed("customers") && (
         <li
           className={`nav-item mt-2 ${
             location.pathname.startsWith("/customers") ? "nav-item-active" : ""

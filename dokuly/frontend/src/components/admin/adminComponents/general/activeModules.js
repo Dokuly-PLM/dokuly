@@ -14,6 +14,7 @@ const ActiveModules = ({ org, setRefresh }) => {
       label: "Time Tracking",
       isEnabled: "time_tracking_is_enabled",
     },
+    { id: "customer", label: "Customer", isEnabled: "customer_is_enabled" },
     { id: "document", label: "Document", isEnabled: "document_is_enabled" },
     { id: "pcba", label: "PCBA", isEnabled: "pcba_is_enabled" },
     { id: "assembly", label: "Assembly", isEnabled: "assembly_is_enabled" },
