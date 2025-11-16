@@ -280,6 +280,34 @@ export const updateUserProfile = (userId, data) => {
 };
 
 /**
+ * Admin-only function to reset a user's password without requiring email.
+ * This is useful for deployments without an email server configured.
+ * @param {number} userId - The ID of the user whose password to reset.
+ * @param {string} password - The new password (must be at least 8 characters).
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ *
+ * @example
+ * adminResetUserPassword(userId, "newPassword123")
+ *   .then((res) => {
+ *     if(res.status === 200) {
+ *       toast.success("Password reset successfully");
+ *     }
+ *   })
+ *   .catch((err) => {
+ *     toast.error("Failed to reset password");
+ *   });
+ */
+export const adminResetUserPassword = (userId, password) => {
+  const promise = axios.put(
+    `api/profiles/admin/resetPassword/${userId}/`,
+    { password },
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
  * An axios wrapper function, can be used in any react component.
  * PUT query to update a user profile's active status
  * @param {JSON} data - Query payload.

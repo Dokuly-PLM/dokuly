@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { updateUserProfile, alterAllowedApps } from "../../functions/queries";
+import { updateUserProfile, alterAllowedApps, adminResetUserPassword } from "../../functions/queries";
 import { toast } from "react-toastify";
 import SubmitButton from "../../../dokuly_components/submitButton";
 
@@ -20,6 +20,9 @@ const EditUserProfile = (props) => {
   const [subscriptionCounts, setSubscriptionCounts] = useState({});
   const [userCounts, setUserCounts] = useState({});
   const [refresh, setRefresh] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
 
   const clearStates = () => {
     setFirstName("");
@@ -29,6 +32,9 @@ const EditUserProfile = (props) => {
     setWorkEmail("");
     setIsActive("");
     setPersonalEmail("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowPasswordReset(false);
   };
 
   const loadStates = (user) => {
@@ -186,6 +192,36 @@ const EditUserProfile = (props) => {
     }
   };
 
+  const handlePasswordReset = () => {
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    adminResetUserPassword(user.user, newPassword)
+      .then((res) => {
+        if (res.status === 200) {
+          toast.success("Password reset successfully");
+          setNewPassword("");
+          setConfirmPassword("");
+          setShowPasswordReset(false);
+        }
+      })
+      .catch((err) => {
+        if (err?.response?.status === 403) {
+          toast.error("Only Admin or Owner can reset passwords");
+        } else if (err?.response?.status === 404) {
+          toast.error("User not found");
+        } else {
+          toast.error("Failed to reset password");
+        }
+      });
+  };
+
   return (
     <div>
       <div
@@ -252,7 +288,7 @@ const EditUserProfile = (props) => {
                 </div>
               </div>
               <div className="form-group">
-                <label>Work email</label>
+                <label>Email</label>
                 <input
                   className="form-control"
                   type="text"
@@ -318,6 +354,60 @@ const EditUserProfile = (props) => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div className="form-group mt-3">
+                <div className="d-flex align-items-center justify-content-between">
+                  <label className="mb-0">Reset Password</label>
+                  <button
+                    type="button"
+                    className="btn btn-sm dokuly-btn-primary"
+                    onClick={() => setShowPasswordReset(!showPasswordReset)}
+                  >
+                    {showPasswordReset ? "Cancel" : "Reset Password"}
+                  </button>
+                </div>
+                {showPasswordReset && (
+                  <div className="mt-2" style={{ marginLeft: "0.5rem" }}>
+                    <div className="form-group">
+                      <label className="small">New Password</label>
+                      <input
+                        className="form-control"
+                        type="password"
+                        placeholder="Enter new password (min 8 characters)"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="small">Confirm Password</label>
+                      <input
+                        className={`form-control ${
+                          confirmPassword && newPassword !== confirmPassword
+                            ? "is-invalid"
+                            : ""
+                        }`}
+                        type="password"
+                        placeholder="Confirm new password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                      {confirmPassword && newPassword !== confirmPassword && (
+                        <div className="invalid-feedback">
+                          Passwords do not match
+                        </div>
+                      )}
+                    </div>
+                    <SubmitButton
+                      onClick={handlePasswordReset}
+                      type="button"
+                      className="btn dokuly-btn-primary btn-sm"
+                      disabled={!newPassword || !confirmPassword}
+                    >
+                      Set New Password
+                    </SubmitButton>
+                  </div>
+                )}
               </div>
             </div>
             <div className="modal-footer float-left">

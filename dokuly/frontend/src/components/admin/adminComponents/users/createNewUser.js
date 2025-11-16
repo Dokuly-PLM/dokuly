@@ -155,12 +155,12 @@ const CreateNewUser = (props) => {
                 />
               </div>
               <div className="col">
-                <label>Work email*</label>
+                <label>Email*</label>
                 <input
                   className="form-control"
                   type="text"
                   name="workemail"
-                  placeholder="Work Email..."
+                  placeholder="Email..."
                   onChange={(e) => {
                     if (e.target.value.length > 50) {
                       toast.info("Max length 50");
