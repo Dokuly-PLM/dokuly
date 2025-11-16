@@ -21,7 +21,8 @@ const RevisionTypeModal = ({
   };
 
   // Show minor revision option if major-minor format is enabled (for both letter and number systems)
-  const showMinorOption = (organization?.revision_format || "major-minor") === "major-minor";
+  // Default to "major-only" if organization or revision_format is not set
+  const showMinorOption = organization?.revision_format === "major-minor";
 
   const radioStyle = {
     accentColor: '#165216ff'

@@ -567,7 +567,7 @@ def get_document(request, pk, **kwargs):
         user = request.user
         if APIAndProjectAccess.has_validated_key(request):
             document = get_object_or_404(Document, id=pk)
-            serializer = DocumentSerializer(document, many=False)
+            serializer = DocumentSerializer(document, many=False, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             document = get_object_or_404(
@@ -579,7 +579,7 @@ def get_document(request, pk, **kwargs):
                 return Response("Document is archived.",
                                 status=status.HTTP_204_NO_CONTENT)
 
-            serializer = DocumentSerializer(document, many=False)
+            serializer = DocumentSerializer(document, many=False, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(

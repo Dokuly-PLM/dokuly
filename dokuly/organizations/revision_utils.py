@@ -478,7 +478,7 @@ def increment_letter_major_only(old_revision: str) -> str:
 def increment_revision_counters(major_count: int, minor_count: int, increment_major=True):
     """Inclrement revision counters
     """
-    if increment_major == 'major':
+    if increment_major:
         revision_count_major = major_count + 1
         revision_count_minor = 0  # Reset minor on major increment
     else:  # minor
