@@ -7,6 +7,70 @@ from django.db import models
 from organizations.models import Organization
 
 
+def format_revision_count(revision_count: int, use_number_revisions: bool, start_at_one: bool=False) -> str:
+    """
+    Format a revision count as either a number or letter.
+    
+    Args:
+        count: The revision count (0-indexed, where 0 = first revision)
+        use_number_revisions: If True, return number; if False, convert to letter
+        start_at_one: If True and using number revisions, formatted revision starts at 1 instead of 0.
+    
+    Returns:
+        Formatted revision string
+    
+    Examples:
+        format_revision_count(0, False) -> "A"
+        format_revision_count(0, True) -> "0"
+        format_revision_count(1, False) -> "B"
+        format_revision_count(1, True) -> "1"
+        format_revision_count(25, False) -> "Z"
+        format_revision_count(26, False) -> "AA"
+        format_revision_count(27, False) -> "AB"
+    """
+    if use_number_revisions:
+        if start_at_one:
+            return str(revision_count + 1)
+        return str(revision_count)
+    else:
+        # Convert to letter (A, B, C, ..., Z, AA, AB, ...)
+        return _convert_count_to_letter(revision_count)
+
+
+def _convert_count_to_letter(revision_count: int) -> str:
+    """
+    Convert a 0-indexed count to letter representation.
+    
+    Args:
+        count: 0-indexed count (0=A, 1=B, ..., 25=Z, 26=AA, 27=AB, ...)
+    
+    Returns:
+        Letter string representation
+    
+    Examples:
+        0 -> "A"
+        1 -> "B"
+        25 -> "Z"
+        26 -> "AA"
+        27 -> "AB"
+        51 -> "AZ"
+        52 -> "BA"
+    """
+    if revision_count < 0:
+        return "A"
+    
+    result = ""
+    # Add 1 to make it 1-indexed for the algorithm
+    revision_count += 1
+    
+    while revision_count > 0:
+        revision_count -= 1  # Adjust for 0-based indexing in modulo
+        result = chr(ord('A') + (revision_count % 26)) + result
+        revision_count //= 26
+    
+    return result if result else "A"
+
+
 def get_organization_revision_settings(organization_id: int) -> Tuple[bool, str, str]:
     """
     Get revision system settings for an organization.
@@ -19,6 +83,109 @@ def get_organization_revision_settings(organization_id: int) -> Tuple[bool, str,
         return org.use_number_revisions, org.revision_format, org.revision_separator
     except Organization.DoesNotExist:
         return False, "major-minor", "-"
+
+
+def build_full_part_number(
+    organization_id: int,
+    prefix: str,
+    part_number: str,
+    revision_count_major: int,
+    revision_count_minor: int,
+) -> str:
+    """
+    Build a full part number using organization settings and template.
+    
+    This is a convenience wrapper around build_full_part_number_from_template
+    that automatically fetches the organization's template and revision settings.
+    
+    Args:
+        organization_id: Organization ID to fetch settings from
+        prefix: Part type prefix (e.g., "PRT", "ASM", "PCBA", "DOC")
+        part_number: The numeric part number (e.g., "1234")
+        revision_count_major: Major revision count (0-indexed)
+        revision_count_minor: Minor revision count (0-indexed)
+    
+    Returns:
+        Formatted full part number according to organization template
+    
+    Examples:
+        # Organization has template: "<prefix><part_number> Rev. <major_revision>"
+        # Letter revisions, major-only format
+        build_full_part_number(org_id, "PRT", "1234", 0, 0)
+        # -> "PRT1234 Rev. A"
+        
+        # Organization has template: "<prefix><part_number><major_revision>-<minor_revision>"
+        # Number revisions, major-minor format
+        build_full_part_number(org_id, "PCBA", "5678", 1, 2)
+        # -> "PCBA56781-2"
+    """
+    try:
+        org = Organization.objects.get(id=organization_id)
+        template = org.full_part_number_template
+        use_number_revisions = org.use_number_revisions
+    except Organization.DoesNotExist:
+        # Fallback to defaults
+        template = "<prefix><part_number><major_revision>"
+        use_number_revisions = False
+    
+    return build_full_part_number_from_template(
+        template=template,
+        prefix=prefix,
+        part_number=part_number,
+        revision_count_major=revision_count_major,
+        revision_count_minor=revision_count_minor,
+        use_number_revisions=use_number_revisions,
+    )
+
+
+def build_full_part_number_from_template(
+    template: str,
+    prefix: str,
+    part_number: str,
+    revision_count_major: int,
+    revision_count_minor: int,
+    use_number_revisions: bool,
+) -> str:
+    """
+    Build a full part number from a template and revision counts.
+    
+    Args:
+        template: Template string with variables like "<prefix><part_number><revision>"
+        prefix: Part type prefix (e.g., "PRT", "ASM", "PCBA", "DOC")
+        part_number: The numeric part number (e.g., "1234")
+        revision_count_major: Major revision count (0-indexed)
+        revision_count_minor: Minor revision count (0-indexed)
+        use_number_revisions: Whether to use numbers (True) or letters (False)
+    
+    Returns:
+        Formatted full part number
+    
+    Examples:
+        # Template: "<prefix><part_number> Rev. <major_revision>"
+        # PRT, 1234, major=1, minor=0, letters, major-only
+        # -> "PRT1234 Rev. B"
+        
+        # Template: "<part_number>-<major_revision>.<minor_revision>"
+        # (blank), 1234, major=0, minor=2, numbers, major-minor
+        # -> "1234-0.2"
+    """
+    # Convert inputs to strings to ensure replace() works
+    prefix_str = str(prefix) if prefix else ""
+    part_number_str = str(part_number) if part_number else ""
+    
+    # Format individual revision components
+    major_formatted = format_revision_count(revision_count_major, use_number_revisions)
+    minor_formatted = format_revision_count(revision_count_minor, use_number_revisions)
+    
+    # Replace template variables
+    result = template
+    result = result.replace("<prefix>", prefix_str)
+    result = result.replace("<part_number>", part_number_str)
+    result = result.replace("<revision>", major_formatted)
+    result = result.replace("<major_revision>", major_formatted)
+    result = result.replace("<minor_revision>", minor_formatted)
+    
+    return result
 
 
 def convert_letter_to_number_revision(letter_revision: str, separator: str = "-") -> str:

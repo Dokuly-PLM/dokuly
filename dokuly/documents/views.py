@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from organizations.revision_utils import increment_revision_counters
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer
@@ -50,7 +51,6 @@ from .viewUtilities import (
     assemble_full_document_number,
     assemble_full_document_number_no_prefix_db_call,
 )
-from pcbas.viewUtilities import increment_revision
 from django.db.models import F, Case, When, Value, CharField
 from projects.viewsIssues import link_issues_on_new_object_revision
 from profiles.utilityFunctions import (
@@ -185,7 +185,11 @@ def create_new_document(request, **kwargs):
             document.protection_level_id = data["protection_level"]
 
         document.prefix_id = data["prefix_id"]
-        document.revision = "A"
+        
+        # Initialize revision counters - both start at 0 for first revision
+        document.revision_count_major = 0
+        document.revision_count_minor = 0
+        
         document.release_state = "Draft"
         document.is_archived = False
         if APIAndProjectAccess.has_validated_key(request):
@@ -209,7 +213,8 @@ def create_new_document(request, **kwargs):
         prefix = Document_Prefix.objects.get(pk=data["prefix_id"])
         customer_id = document.project.customer.customer_id
         project_number = document.project.project_number
-        document.full_doc_number = f"{prefix.prefix}{customer_id}{project_number}-{document_number}{document.revision}"
+        
+        document.full_doc_number = f"{prefix.prefix}{customer_id}{project_number}-{document_number}"#{revision_str}"  # TODO fix parsing
         document.save()
 
         if "template_id" in data and data["template_id"] not in (
@@ -855,9 +860,7 @@ def auto_new_revision(request, pk, **kwargs):
         if user == None:
             return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
 
-        # Get revision type from request data, default to 'major'
         data = request.data
-        revision_type = data.get('revision_type', 'major')
 
         # Copy over old revision
         old_revision = Document.objects.get(id=pk)
@@ -878,7 +881,12 @@ def auto_new_revision(request, pk, **kwargs):
         if old_revision.project:
             organization_id = old_revision.project.organization_id
         
-        new_revision.revision = increment_revision(old_revision.revision, organization_id, revision_type)
+
+
+        # Get revision type from request data (default to "major" for backward compatibility)
+        revision_type = request.data.get('revision_type', 'major')
+        new_revision.revision_count_major, new_revision.revision_count_minor = increment_revision_counters(old_revision.revision_count_major, old_revision.revision_count_minor, revision_type == 'major')
+        
         new_revision.created_by = old_revision.created_by
         # new_revision.revision_author = request.user.id # TODO see models.py
         new_revision.previoius_revision_id = pk

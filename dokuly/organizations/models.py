@@ -69,6 +69,12 @@ class Organization(models.Model):
         blank=True,
         help_text="Template for formatting full part numbers. Use <prefix>, <part_number>, <major_revision>, <minor_revision>"
     )
+    #formatted_revision_template = models.CharField(
+    #    max_length=100,
+    #    default="<major_revision>",
+    #    blank=True,
+    #    help_text="Template for formatting formatted_revision field. Use <major_revision>, <minor_revision>"
+    #)
     use_number_revisions = models.BooleanField(default=False, blank=True)
     revision_format = models.CharField(
         max_length=20, 
