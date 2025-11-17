@@ -301,6 +301,11 @@ const EditPartForm = (props) => {
           title="Alternative to thumbnail. Image is loaded from the URL."
         />
       </div>
+
+      <ExternalPartNumberFormGroup
+        externalPartNumber={externalPartNumber}
+        setExternalPartNumber={setExternalPartNumber}
+      />
     </div>
   );
 

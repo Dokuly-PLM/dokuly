@@ -1,4 +1,3 @@
-import React from "react";
 import QuestionToolTip from "../../dokuly_components/questionToolTip";
 import { toast } from "react-toastify";
 
@@ -9,8 +8,7 @@ const ExternalPartNumberFormGroup = ({
 }) => {
   const defaultToolTip = tooltipText
     ? tooltipText
-    : "(Optional) Use this field to enter your external part number that might \
-              differentiate from the dokuly internal part numbers.";
+    : "(Optional) Use this field to enter any external part number, for example from your ERP.";
 
   return (
     <div className="form-group">

@@ -4,9 +4,7 @@ import { Col, Row } from "react-bootstrap";
 
 import { PartNewRevision } from "./partNewRevision";
 import { fetchAltParts, fetchPart } from "./functions/queries";
-import InventoryCard from "./overViewCards/inventoryCard";
 
-import UpdateBackorder from "./overViewCards/updateBackorder";
 import PartSpecs from "./partSpecifications/partSpecs";
 
 import ReferenceDocumentsTable from "../documents/referenceDocuments/referenceDocumentComponent";
@@ -67,11 +65,6 @@ const DisplayPart = (props) => {
   );
 
   const [partAlts, setPartAlts] = useState(null);
-  const [stockArr, setStockArr] = useState(
-    props?.location?.state?.stock !== undefined
-      ? props?.location?.state?.stock
-      : null
-  );
 
   // Edit part states
   const [refresh, setRefresh] = useState(false);
@@ -297,13 +290,7 @@ const DisplayPart = (props) => {
                     setRefresh={setRefresh}
                   />
                 </div>
-                <Row>
-                  {/* <Errata item={part} app={"parts"} setRefresh={setRefresh} /> */}
-                </Row>
               </React.Fragment>
-              {/* <div className="row">
-                <InventoryCard part={part} stock={stockArr} />
-              </div> */}
             </div>
           </div>
         </>

@@ -20,6 +20,7 @@ from assemblies.models import Assembly
 from django.db.models import Q
 
 
+#TODO is this deprecated?
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
