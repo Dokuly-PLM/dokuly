@@ -322,6 +322,11 @@ const PartNewForm = (props) => {
           title="A URL to a web-hosted datasheet."
         />
       </div>
+
+      <ExternalPartNumberFormGroup
+        externalPartNumber={externalPartNumber}
+        setExternalPartNumber={setExternalPartNumber}
+      />
     </div>
   );
 
