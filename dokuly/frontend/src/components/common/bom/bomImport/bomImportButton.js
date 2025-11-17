@@ -41,6 +41,7 @@ const BomImportButton = ({
   const [quantity, setQuantity] = useState("");
   const [dnmColumn, setDnmColumn] = useState("");
   const [bomIgnoreColumn, setBomIgnoreColumn] = useState("");
+  const [delimiter, setDelimiter] = useState("auto");
 
   const [file, setFile] = useState(null);
   const [csvData, setCsvData] = useState([]);
@@ -55,18 +56,31 @@ const BomImportButton = ({
       (file.type.toLowerCase() === "text/csv" ||
         file.name.toLowerCase().endsWith(".csv"))
     ) {
+      // Determine the delimiter to use
+      let delimiterConfig = "";
+      if (delimiter === "comma") {
+        delimiterConfig = ",";
+      } else if (delimiter === "semicolon") {
+        delimiterConfig = ";";
+      } else if (delimiter === "tab") {
+        delimiterConfig = "\t";
+      } else if (delimiter === "pipe") {
+        delimiterConfig = "|";
+      }
+      // If delimiter is "auto" or any other value, delimiterConfig remains ""
+
       Papa.parse(file, {
         complete: (result) => {
           processCSVData(result);
         },
         header: true,
-        delimiter: "", // Auto-detect delimiter (comma, semicolon, tab, etc.)
+        delimiter: delimiterConfig, // Auto-detect delimiter (comma, semicolon, tab, etc.)
         skipEmptyLines: true,
       });
     } else {
       toast.error("Please upload a CSV file.");
     }
-  }, [file]);
+  }, [file, delimiter]);
 
   const processCSVData = (result) => {
     if (result.data.length > 0) {
@@ -138,6 +152,7 @@ const BomImportButton = ({
     setQuantity("");
     setDnmColumn("");
     setBomIgnoreColumn("");
+    setDelimiter("auto");
   };
 
   const filter_ignored_rows = (data, bomIgnoreColumn) => {
@@ -264,11 +279,34 @@ const BomImportButton = ({
           </Modal.Header>
           <Modal.Body>
             {0 === headers.length && (
-              <Row>
-                <Col>
-                  <FileUpload file={file} setFile={setFile} />
-                </Col>
-              </Row>
+              <>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="delimiterSelect">
+                      <Form.Label>CSV Delimiter</Form.Label>
+                      <Form.Control
+                        as="select"
+                        value={delimiter}
+                        onChange={(e) => setDelimiter(e.target.value)}
+                      >
+                        <option value="auto">Auto-detect</option>
+                        <option value="comma">Comma (,)</option>
+                        <option value="semicolon">Semicolon (;)</option>
+                        <option value="tab">Tab</option>
+                        <option value="pipe">Pipe (|)</option>
+                      </Form.Control>
+                      <small className="form-text text-muted">
+                        If auto-detection fails, manually select the delimiter used in your CSV file.
+                      </small>
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <FileUpload file={file} setFile={setFile} />
+                  </Col>
+                </Row>
+              </>
             )}
 
             <Row>
