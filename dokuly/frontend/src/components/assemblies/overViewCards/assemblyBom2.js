@@ -29,7 +29,8 @@ const AssemblyBom = ({ assembly, organization, refreshBomIssues }) => {
         <BomComparisonTable
           items={assemblyRevisions}
           app={"assemblies"}
-          current_revision={assembly?.revision}
+          current_revision_major={assembly?.revision_count_major}
+          current_revision_minor={assembly?.revision_count_minor}
           setShowBomDifferenceTable={setShowBomDifferenceTable}
         />
       )}

@@ -29,7 +29,8 @@ const PcbaBom = ({ pcba, organization, refreshBomIssues = () => {} }) => {
         <BomComparisonTable
           items={pcbaRevisions}
           app={"pcbas"}
-          current_revision={pcba?.revision}
+          current_revision_major={pcba?.revision_count_major}
+          current_revision_minor={pcba?.revision_count_minor}
           setShowBomDifferenceTable={setShowBomDifferenceTable}
         />
       )}
