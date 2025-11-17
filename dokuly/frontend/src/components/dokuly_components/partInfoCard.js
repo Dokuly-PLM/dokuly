@@ -161,7 +161,7 @@ const PartInformationCard = ({
           />
         )}
         <Col className="col-md-6 col-lg-10 col-xl-10">
-          {project !== null && project !== undefined && (
+          {project !== null && project !== undefined && project?.id > 0 && (
             <Row
               onClick={() => navigate(`/projects/${project?.id}`)}
               style={{ cursor: "pointer" }}
