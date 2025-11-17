@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 
 import { get_active_customers } from "../customers/funcitons/queries";
-import { getActiveProjectByCustomer } from "../projects/functions/queries";
-import { fetchPrefixes, fetchProtectionLevels } from "../admin/functions/queries";
+import { getActiveProjectByCustomer, fetchProjects } from "../projects/functions/queries";
+import { fetchPrefixes, fetchProtectionLevels, fetchOrg } from "../admin/functions/queries";
 import { createNewDocument } from "./functions/queries";
 import DokulyModal from "../dokuly_components/dokulyModal";
 
@@ -26,6 +26,7 @@ const NewDocumentForm = (props) => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
+  const [organization, setOrganization] = useState(null);
 
   useEffect(() => {
     fetchPrefixes().then((res) => {
@@ -42,21 +43,32 @@ const NewDocumentForm = (props) => {
         }
       }
     });
+    // Fetch organization settings
+    fetchOrg().then((res) => {
+      if (res.status === 200) {
+        setOrganization(res.data);
+      }
+    });
   }, []);
 
   useEffect(() => {
-    if (
-      selected_customer_id !== null &&
-      selected_customer_id !== undefined &&
-      selected_customer_id !== -1
-    ) {
-      getActiveProjectByCustomer(selected_customer_id).then((res) => {
-        if (res !== undefined) {
+    // Load projects based on customer module setting
+    if (organization?.customer_is_enabled === false) {
+      // If customer module is disabled, load all active projects
+      fetchProjects().then((res) => {
+        if (res?.status === 200) {
+          setProjects(res.data);
+        }
+      });
+    } else {
+      // If customer module is enabled, still load all projects
+      fetchProjects().then((res) => {
+        if (res?.status === 200) {
           setProjects(res.data);
         }
       });
     }
-  }, [selected_customer_id]);
+  }, [organization]);
 
   const launchNewDocumentForm = () => {
     setShowModal(true);
@@ -149,29 +161,6 @@ const NewDocumentForm = (props) => {
             }}
             value={description}
           />
-        </div>
-
-        <div className="form-group">
-          <label>Customer *</label>
-          <select
-            className="form-control"
-            name="customer"
-            type="number"
-            onChange={(e) => setSelectedCustomerId(e.target.value)}
-          >
-            <option value="">Choose customer</option>
-            {active_customers == null
-              ? ""
-              : active_customers
-                  .sort((a, b) => (a.customer_id > b.customer_id ? 1 : -1))
-                  .map((customer) => {
-                    return (
-                      <option key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </option>
-                    );
-                  })}
-          </select>
         </div>
 
         <div className="form-group">

@@ -333,7 +333,7 @@ def new_revision(request, pk, **kwargs):
         part_number=new_pcba.part_number,
         revision_count_major=new_pcba.revision_count_major,
         revision_count_minor=new_pcba.revision_count_minor,
-        project_number=new_pcba.project.project_number if new_pcba.project else None,
+        project_number=new_pcba.project.full_project_number if new_pcba.project else None,
         created_at=new_pcba.created_at
     )
 
@@ -343,7 +343,7 @@ def new_revision(request, pk, **kwargs):
         part_number=new_pcba.part_number,
         revision_count_major=new_pcba.revision_count_major,
         revision_count_minor=new_pcba.revision_count_minor,
-        project_number=new_pcba.project.project_number if new_pcba.project else None,
+        project_number=new_pcba.project.full_project_number if new_pcba.project else None,
         created_at=new_pcba.created_at
     )
 
@@ -640,7 +640,7 @@ def create_new_pcba(request, **kwargs):
             part_number=pcba.part_number,
             revision_count_major=pcba.revision_count_major,
             revision_count_minor=pcba.revision_count_minor,
-            project_number=pcba.project.project_number if pcba.project else None,
+            project_number=pcba.project.full_project_number if pcba.project else None,
             created_at=pcba.created_at
         )
 
@@ -650,7 +650,7 @@ def create_new_pcba(request, **kwargs):
             part_number=pcba.part_number,
             revision_count_major=pcba.revision_count_major,
             revision_count_minor=pcba.revision_count_minor,
-            project_number=pcba.project.project_number if pcba.project else None,
+            project_number=pcba.project.full_project_number if pcba.project else None,
             created_at=pcba.created_at
         )
 

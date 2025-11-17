@@ -14,9 +14,14 @@ class Project(models.Model):
     # Basic data fields
     title = models.CharField(max_length=500, blank=True)
     description = models.TextField(default="", blank=True)
-    project_number = models.IntegerField(blank=True)
+
+    # This is the new full project number, unique across all projects.
+    full_project_number = models.IntegerField(blank=True, null=True, unique=True)
 
     # References
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, null=True, blank=True
+    )
     customer = models.ForeignKey(
         "customers.Customer", on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -52,6 +57,11 @@ class Project(models.Model):
     notify_project_owner_on_item_state_change_to_review = models.BooleanField(default=True)
     notify_project_owner_on_item_passed_review = models.BooleanField(default=True)
     notify_project_owner_on_item_released = models.BooleanField(default=True)
+
+
+    # DEPRECATED FIELDS - TODO: Remove these fields in future migrations
+    # Old NNN project number
+    project_number = models.IntegerField(blank=True, null=True) # DEPRECATED
 
 
 class Gantt(models.Model):

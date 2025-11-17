@@ -17,8 +17,21 @@ export default function ProjectsTable() {
   const [customers, setCustomers] = useState([]);
   const [projects, setProjecs] = useState([]);
   const [filtered_projects, setFilteredProjects] = useState([]);
+  const [organization, setOrganization] = useState(null);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Fetch organization settings
+    const storedOrg = localStorage.getItem("organization");
+    if (storedOrg) {
+      try {
+        setOrganization(JSON.parse(storedOrg));
+      } catch (e) {
+        localStorage.removeItem("organization");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // check local storage for cached customers
@@ -156,10 +169,10 @@ export default function ProjectsTable() {
       key: "title",
       header: "Project name",
     },
-    {
+    ...(organization?.customer_is_enabled !== false ? [{
       key: "customer_name",
       header: "Customer",
-    },
+    }] : []),
     {
       key: "is_active",
       header: "Active",
@@ -188,64 +201,68 @@ export default function ProjectsTable() {
       <NewProjectForm setRefresh={setRefresh} />
       <div className="card rounded p-3">
         <div className="row">
-          <div className="input-group p-3">
-            <div className="input-group-prepend">
-              <label className="input-group-text">Customer:&nbsp;</label>
-            </div>
-            <select
-              className="custom-select flex-grow-1"
-              name="selected_customer_id"
-              value={selected_customer_id}
-              onChange={(e) => {
-                setSelectedCustomerId(e.target.value);
-              }}
-            >
-              <option value={""}>All</option>
-              {customers
-                .filter((customer) => {
-                  if (show_inactive_customers !== true) {
-                    if (
-                      customer?.is_active === true ||
-                      customer?.is_active === null
-                    ) {
-                      return customer;
-                    } else {
-                      return "";
-                    }
-                  } else {
-                    return customer;
-                  }
-                })
-                .sort(function (a, b) {
-                  if (a.customer_id < b.customer_id) {
-                    return -1;
-                  } else {
-                    return 1;
-                  }
-                })
-                .map((customer) => {
-                  return (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.customer_id} - {customer.name}
-                    </option>
-                  );
-                })}
-            </select>
-          </div>
-          <div className="form-check mb-3 ml-4">
-            <input
-              className="dokuly-checkbox"
-              name="show_inactive_customers"
-              type="checkbox"
-              onChange={() => {
-                setShowInactiveCustomers(toggle);
-              }}
-              checked={show_inactive_customers}
-            />
-            <label className="form-check-label ml-1" htmlFor="flexCheckDefault">
-              Show inactive customers
-            </label>
-          </div>
+          {organization?.customer_is_enabled !== false && (
+            <>
+              <div className="input-group p-3">
+                <div className="input-group-prepend">
+                  <label className="input-group-text">Customer:&nbsp;</label>
+                </div>
+                <select
+                  className="custom-select flex-grow-1"
+                  name="selected_customer_id"
+                  value={selected_customer_id}
+                  onChange={(e) => {
+                    setSelectedCustomerId(e.target.value);
+                  }}
+                >
+                  <option value={""}>All</option>
+                  {customers
+                    .filter((customer) => {
+                      if (show_inactive_customers !== true) {
+                        if (
+                          customer?.is_active === true ||
+                          customer?.is_active === null
+                        ) {
+                          return customer;
+                        } else {
+                          return "";
+                        }
+                      } else {
+                        return customer;
+                      }
+                    })
+                    .sort(function (a, b) {
+                      if (a.customer_id < b.customer_id) {
+                        return -1;
+                      } else {
+                        return 1;
+                      }
+                    })
+                    .map((customer) => {
+                      return (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.customer_id} - {customer.name}
+                        </option>
+                      );
+                    })}
+                </select>
+              </div>
+              <div className="form-check mb-3 ml-4">
+                <input
+                  className="dokuly-checkbox"
+                  name="show_inactive_customers"
+                  type="checkbox"
+                  onChange={() => {
+                    setShowInactiveCustomers(toggle);
+                  }}
+                  checked={show_inactive_customers}
+                />
+                <label className="form-check-label ml-1" htmlFor="flexCheckDefault">
+                  Show inactive customers
+                </label>
+              </div>
+            </>
+          )}
 
           <div className="form-check mb-3 ml-4">
             <input

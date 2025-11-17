@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { get_active_customers } from "../../customers/funcitons/queries";
 
 import { editProject } from "../../admin/functions/queries";
+import { fetchOrg } from "../../admin/functions/queries";
 import SubmitButton from "../../dokuly_components/submitButton";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 
@@ -14,10 +15,29 @@ const ProjectEditForm = (props) => {
   const [description, setDescription] = useState("");
   const [active_customers, setActiveCustomers] = useState([]);
   const [selected_customer_id, setSelectedCustomerId] = useState("");
+  const [organization, setOrganization] = useState(null);
   const [project, setProject] = useState(
     props.project == null || props.project === undefined ? null : props.project,
   );
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    // Fetch organization settings
+    const storedOrg = localStorage.getItem("organization");
+    if (storedOrg) {
+      try {
+        setOrganization(JSON.parse(storedOrg));
+      } catch (e) {
+        localStorage.removeItem("organization");
+      }
+    }
+    fetchOrg().then((res) => {
+      if (res.status === 200) {
+        localStorage.setItem("organization", JSON.stringify(res.data));
+        setOrganization(res.data);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     setProjectName(project?.title);
@@ -46,7 +66,9 @@ const ProjectEditForm = (props) => {
   };
 
   function onSubmit() {
-    if (selected_customer_id === "") {
+    // Only require customer selection if customer module is enabled
+    if (organization?.customer_is_enabled !== false && selected_customer_id === "") {
+      alert("Please select a customer");
       return;
     }
 
@@ -55,7 +77,7 @@ const ProjectEditForm = (props) => {
     const data = {
       title: project_name,
       is_active: is_active,
-      customer: parseInt(selected_customer_id),
+      customer: selected_customer_id ? parseInt(selected_customer_id) : null,
     };
 
     editProject(project.id, data).then((res) => {
@@ -123,27 +145,29 @@ const ProjectEditForm = (props) => {
           />
         </div>
 
-        <div className="form-group">
-          <label>Customer</label>
-          <select
-            className="form-control"
-            name="customer"
-            type="number"
-            value={selected_customer_id}
-            onChange={(e) => setSelectedCustomerId(e.target.value)}
-          >
-            <option value="">Choose customer</option>
-            {active_customers == null
-              ? ""
-              : active_customers
-                  .sort((a, b) => (a.customer_id > b.customer_id ? 1 : -1))
-                  .map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </option>
-                  ))}
-          </select>
-        </div>
+        {organization?.customer_is_enabled !== false && (
+          <div className="form-group">
+            <label>Customer</label>
+            <select
+              className="form-control"
+              name="customer"
+              type="number"
+              value={selected_customer_id}
+              onChange={(e) => setSelectedCustomerId(e.target.value)}
+            >
+              <option value="">Choose customer</option>
+              {active_customers == null
+                ? ""
+                : active_customers
+                    .sort((a, b) => (a.customer_id > b.customer_id ? 1 : -1))
+                    .map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.name}
+                      </option>
+                    ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <div className="form-group">

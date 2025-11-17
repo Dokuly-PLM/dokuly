@@ -2,6 +2,25 @@ import React from "react";
 import axios from "axios";
 import { tokenConfig } from "../../../configs/auth";
 
+export const getNextAvailableProjectNumber = () => {
+  const promise = axios.get(
+    "api/projects/get/nextAvailableProjectNumber/",
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+export const checkProjectNumberExists = (projectNumber) => {
+  const promise = axios.post(
+    "api/projects/post/checkProjectNumberExists/",
+    { full_project_number: projectNumber },
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
 export const getProjectName = (id) => {
   const promise = axios.get(
     `api/projects/get/projectName/${id}/`,
