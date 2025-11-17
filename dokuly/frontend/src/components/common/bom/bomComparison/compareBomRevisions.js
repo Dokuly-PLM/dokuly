@@ -45,7 +45,8 @@ function compareRevisionCounters(a, b) {
 export default function BomComparisonTable({
   items,
   app,
-  current_revision = "", // Optional, if not provided, the latest revision will be used
+  current_revision_major = 0, // Optional, if not provided, the latest revision will be used
+  current_revision_minor = 0, // Optional, if not provided, the latest revision will be used
   designator_header = "F/N",
   setShowBomDifferenceTable, // This is a function that sets the state of showBomTable in the parent component.
 }) {
@@ -59,11 +60,9 @@ export default function BomComparisonTable({
 
   // Find the current revision index using revision counters
   const currentRevisionIndex = sortedItems.findIndex((item) => {
-    const currentMajor = parseInt(current_revision?.split('-')[0] || '0', 10);
-    const currentMinor = parseInt(current_revision?.split('-')[1] || '0', 10);
     return (
-      item.revision_count_major === currentMajor &&
-      item.revision_count_minor === currentMinor
+      item.revision_count_major === current_revision_major &&
+      item.revision_count_minor === current_revision_minor
     );
   });
 
@@ -227,7 +226,6 @@ export default function BomComparisonTable({
         {filteredItems.map((item) => (
           <th scope="col" key={item.id}>
             {(() => {
-              const formattedPartNumber = item.full_part_number;
               
               // Compare using revision counters instead of deprecated revision field
               const isCurrent = 
@@ -235,9 +233,9 @@ export default function BomComparisonTable({
                 item.revision_count_minor === sortedItems[currentRevisionIndex]?.revision_count_minor;
               
               if (isCurrent) {
-                return `${formattedPartNumber} (Current)`;
+                return `${item.formatted_revision} (Current)`;
               } else {
-                return formattedPartNumber;
+                return item.formatted_revision;
               }
             })()}
           </th>
