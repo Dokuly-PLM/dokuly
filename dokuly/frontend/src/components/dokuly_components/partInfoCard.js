@@ -13,7 +13,6 @@ import DokulyCard from "./dokulyCard";
 import CardTitle from "./cardTitle";
 import { getName } from "country-list";
 import ReactCountryFlag from "react-country-flag";
-import { updatePartField } from "../parts/functions/utilities";
 import DokulyTags from "./dokulyTags/dokulyTags";
 
 const renderAdditionalFields = (additionalFields) => {
@@ -161,7 +160,7 @@ const PartInformationCard = ({
           />
         )}
         <Col className="col-md-6 col-lg-10 col-xl-10">
-          {project !== null && project !== undefined && (
+          {project !== null && project !== undefined && project?.id > 0 && (
             <Row
               onClick={() => navigate(`/projects/${project?.id}`)}
               style={{ cursor: "pointer" }}
