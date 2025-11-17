@@ -13,7 +13,6 @@ import DokulyCard from "./dokulyCard";
 import CardTitle from "./cardTitle";
 import { getName } from "country-list";
 import ReactCountryFlag from "react-country-flag";
-import { updatePartField } from "../parts/functions/utilities";
 import DokulyTags from "./dokulyTags/dokulyTags";
 
 const renderAdditionalFields = (additionalFields) => {
