@@ -60,6 +60,8 @@ const BomImportButton = ({
           processCSVData(result);
         },
         header: true,
+        delimiter: "", // Auto-detect delimiter (comma, semicolon, tab, etc.)
+        skipEmptyLines: true,
       });
     } else {
       toast.error("Please upload a CSV file.");
