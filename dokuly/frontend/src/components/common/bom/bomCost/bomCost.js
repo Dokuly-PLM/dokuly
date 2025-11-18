@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 
 import { getBomCost } from "../functions/queries";
 import PriceVsQuantityChart from "./priceVsQuantityChart";
+import useCurrencyConversions from "../../hooks/useCurrencyConversions";
 
 
 const BomCost = ({ refresh, app = "", id = -1 }) => {
@@ -10,6 +11,8 @@ const BomCost = ({ refresh, app = "", id = -1 }) => {
   const [currency, setCurrency] = useState("");
   const [partsMissingPrice, setPartsMissingPrice] = useState([]);
   const [priceBreakQuantitites, setPriceBreakQuantitites] = useState([]);
+
+  const { updatedAt } = useCurrencyConversions(currency);
 
   useEffect(() => {
     if (!(id > 0 && app)) {
@@ -37,7 +40,11 @@ const BomCost = ({ refresh, app = "", id = -1 }) => {
     <React.Fragment>
       {
         priceBreaks.length > 0 ? (
-          <PriceVsQuantityChart priceBreaks={priceBreaks} currency={currency} />
+          <PriceVsQuantityChart 
+            priceBreaks={priceBreaks} 
+            currency={currency} 
+            updatedAt={updatedAt}
+          />
         ) : ("")
       }
       {partsMissingPrice.length > 0 && (
