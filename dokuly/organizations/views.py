@@ -358,14 +358,32 @@ def update_currency_pairs():
     if settings.CURRENCY_API == None or settings.CURRENCY_API == "":
         data = {"USD": 1}
         return data
-    url = f"{settings.CURRENCY_API}{from_currency}"
-    response = requests.get(url)
-    data = response.json()
-    organization.currency_update_time = datetime.now(timezone.utc)
-    organization.currency_conversion_rates = data["conversion_rates"]
-    organization.save()
-    print("Currency pairs updated with the following currency: " + organization.currency)
-    return data["conversion_rates"]
+    
+    try:
+        url = f"{settings.CURRENCY_API}{from_currency}"
+        response = requests.get(url, timeout=5)  # Add timeout to prevent hanging
+        response.raise_for_status()  # Raise exception for bad status codes
+        data = response.json()
+        
+        # Validate that we got the expected data structure
+        if "conversion_rates" not in data:
+            raise ValueError("Invalid API response: missing conversion_rates")
+        
+        organization.currency_update_time = datetime.now(timezone.utc)
+        organization.currency_conversion_rates = data["conversion_rates"]
+        organization.save()
+        return data["conversion_rates"]
+    
+    except (requests.RequestException, ValueError, KeyError) as e:
+        # Log the error
+        print(f"Failed to update currency pairs: {str(e)}")
+        
+        # Return cached value if available
+        if organization.currency_conversion_rates:
+            return organization.currency_conversion_rates
+        
+        # Fallback to a basic rate if no cache exists
+        return {from_currency: 1}
 
 
 @api_view(("GET",))
@@ -375,12 +393,16 @@ def get_currency_pairs(request):
     """A separate view to fetch the currency pairs."""
     organization = Organization.objects.get(
         id=request.user.profile.organization_id)
+    
+    # If we have cached rates and the update fails, return cached rates
     if organization.currency_update_time == None:
-        return Response(update_currency_pairs(), status=status.HTTP_200_OK)
-    if organization.currency_update_time < datetime.now(timezone.utc) - timedelta(
-        hours=24
-    ):
-        return Response(update_currency_pairs(), status=status.HTTP_200_OK)
+        rates = update_currency_pairs()
+        return Response(rates, status=status.HTTP_200_OK)
+    
+    if organization.currency_update_time < datetime.now(timezone.utc) - timedelta(hours=24):
+        rates = update_currency_pairs()
+        return Response(rates, status=status.HTTP_200_OK)
+    
     return Response(organization.currency_conversion_rates, status=status.HTTP_200_OK)
 
 
