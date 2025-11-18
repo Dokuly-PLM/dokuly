@@ -865,19 +865,9 @@ def create_new_part(request, **kwargs):
             )
     data = request.data
     try:
-        # Check if a part with the same mpn and manufacturer already exists
-        if data.get("internal") == False or not data.get("internal"):
-            existing_parts = Part.objects.filter(
-                Q(mpn=data["mpn"]) & Q(manufacturer=data["manufacturer"])
-            ).exclude(is_archived=True)
-            if existing_parts.exists():
-                serializer = PartSerializerNoAlternate(
-                    existing_parts.first(), many=False
-                )
-                return Response(
-                    serializer.data, status=status.HTTP_208_ALREADY_REPORTED
-                )
-
+        # Allow duplicate MPNs - different suppliers may use the same MPN,
+        # and users should be able to create placeholder parts with no MPN
+        
         new_part = Part()
         if APIAndProjectAccess.has_validated_key(request):
             if "created_by" in data:

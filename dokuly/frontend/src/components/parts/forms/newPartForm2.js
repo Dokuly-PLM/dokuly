@@ -167,8 +167,6 @@ const PartNewForm = (props) => {
             props?.dnm
           );
         }
-      } else if (res.status === 208) {
-        toast.error("MPN already exists in the database");
       }
     });
     setShowModal(false);
@@ -259,7 +257,7 @@ const PartNewForm = (props) => {
     <div>
       <div style={{ position: "relative" }}>
         <div className="form-group mb-2">
-          <label>Manufacturer Part Number *</label>
+          <label>Manufacturer Part Number</label>
           <Row>
             <Col>
               <input
@@ -436,8 +434,7 @@ const PartNewForm = (props) => {
               partType === null ||
               partType === undefined ||
               display_name === "" ||
-              (is_internal === true && selected_project_id === -1) ||
-              (is_internal === false && mpn === "")
+              (is_internal === true && selected_project_id === -1)
             }
             onClick={() => {
               onSubmit();

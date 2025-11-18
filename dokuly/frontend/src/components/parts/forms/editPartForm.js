@@ -158,6 +158,19 @@ const EditPartForm = (props) => {
   ];
 
   function onSubmit() {
+    // Check if this is a placeholder part (external part with no MPN)
+    const isPlaceholderPart = is_internal === false && (!mpn || mpn.trim() === "");
+    
+    // Warn if trying to release a placeholder part
+    if (isPlaceholderPart && release_state === "Released") {
+      if (!confirm(
+        "Warning: This part has no MPN.\n\n" +
+        "Are you sure you want to release this part?"
+      )) {
+        return;
+      }
+    }
+
     const data = {
       display_name: display_name,
       release_state: release_state,
@@ -261,6 +274,18 @@ const EditPartForm = (props) => {
           }}
           value={mpn}
         />
+        {(!mpn || mpn.trim() === "") && (
+          <small className="form-text text-danger">
+            <img
+              src="../../static/icons/alert-triangle.svg"
+              alt="danger"
+              width="16"
+              height="16"
+              style={{ marginRight: "4px" }}
+            />
+            <strong>Placeholder Part:</strong> This part has no MPN and cannot be released until an MPN is added.
+          </small>
+        )}
       </div>
 
       <div className="form-group">
@@ -402,9 +427,9 @@ const EditPartForm = (props) => {
             <SubmitButton
               type="submit"
               disabled={
-                display_name === "" ||
-                (is_internal === false &&
-                  (mpn === "" || mpn === undefined || mpn === null))
+                display_name === ""// ||
+                //(is_internal === false &&
+                //  (mpn === "" || mpn === undefined || mpn === null))
               }
               onClick={() => {
                 onSubmit();
