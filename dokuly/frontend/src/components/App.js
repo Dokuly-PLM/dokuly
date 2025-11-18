@@ -196,6 +196,7 @@ function App() {
     "/adminPage/releaseManagement",
     "/adminPage/locations",
     "/adminPage/api",
+    "/adminPage/rules",
     // add other paths as needed
   ];
 
