@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import ApexCharts from "react-apexcharts";
 import { Col, Modal, Button } from "react-bootstrap";
+import moment from "moment";
 import DokulyModal from "../../../dokuly_components/dokulyModal";
 
-const PriceVsQuantityChart = ({ priceBreaks, currency }) => {
+const PriceVsQuantityChart = ({ priceBreaks, currency, updatedAt }) => {
   const [chartOptions, setChartOptions] = useState({
     series: [
       {
@@ -64,6 +65,12 @@ const PriceVsQuantityChart = ({ priceBreaks, currency }) => {
   });
 
   const [showModal, setShowModal] = useState(false);
+
+  // Helper function to format the time ago
+  const formatTimeAgo = (timestamp) => {
+    if (!timestamp) return null;
+    return moment(timestamp).fromNow();
+  };
 
   useEffect(() => {
     const seriesData = priceBreaks.map((pb) => ({
@@ -144,7 +151,11 @@ const PriceVsQuantityChart = ({ priceBreaks, currency }) => {
             height={240}
           />
           <p className="text-muted">
-            <small>The per-unit BOM cost by production quantity.</small>
+            <small>
+              {updatedAt && (
+                <> Currency rates updated {formatTimeAgo(updatedAt)}.</>
+              )}
+            </small>
           </p>
         </div>
       </Col>

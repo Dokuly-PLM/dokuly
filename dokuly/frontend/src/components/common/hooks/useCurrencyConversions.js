@@ -14,6 +14,7 @@ function useCurrencyConversions(currency) {
   const [currencyPairs, setCurrencyPairs] = useState([]);
   const [currencyKeys, setCurrencyKeys] = useState([]);
   const [conversionRate, setConversionRate] = useState({});
+  const [updatedAt, setUpdatedAt] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,12 +24,18 @@ function useCurrencyConversions(currency) {
     try {
       const res = await getCurrencyConversions();
       if (res?.data) {
-        setCurrencyPairs(res.data);
-        setCurrencyKeys(Object.keys(res.data));
-        setConversionRate(res.data);
+        // Handle both old format (direct object) and new format (with rates/updated_at)
+        const rates = res.data.rates || res.data;
+        const timestamp = res.data.updated_at || null;
+        
+        setCurrencyPairs(rates);
+        setCurrencyKeys(Object.keys(rates));
+        setConversionRate(rates);
+        setUpdatedAt(timestamp);
 
         const dataToCache = {
-          data: res.data,
+          data: rates,
+          updated_at: timestamp,
           timestamp: new Date().getTime(),
         };
 
@@ -57,6 +64,7 @@ function useCurrencyConversions(currency) {
             setCurrencyPairs(parsedData.data);
             setCurrencyKeys(Object.keys(parsedData.data));
             setConversionRate(parsedData.data);
+            setUpdatedAt(parsedData.updated_at || null);
             setLoading(false);
             return true;
           }
@@ -80,6 +88,7 @@ function useCurrencyConversions(currency) {
     currencyPairs,
     currencyKeys,
     conversionRate,
+    updatedAt,
     fetchCurrencyConversions,
     loading,
     error,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Card, Col, Row, Form, Button } from "react-bootstrap";
+import moment from "moment";
 import DokulyTable from "../../dokuly_components/dokulyTable/dokulyTable";
 import GenericDropdownSelector from "../../dokuly_components/dokulyTable/components/genericDropdownSelector";
 import NumericFieldEditor from "../../dokuly_components/dokulyTable/components/numericFieldEditor";
@@ -32,6 +33,7 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
     currencyPairs,
     currencyKeys,
     conversionRate,
+    updatedAt,
     fetchCurrencyConversions,
     loading: loadingCurrency,
     error: errorCurrency,
@@ -212,7 +214,7 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
 
   return (
     <DokulyCard>
-      <CardTitle titleText={`Price per ${unit}`} />
+      <CardTitle titleText={`Price per ${unit}`} optionalHelpText={"The per-unit BOM cost by production quantity.Minimum order quantities are used in calculation."} />
       <Row className="mb-2">
         <Col>
           <AddPrice

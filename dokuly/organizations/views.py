@@ -397,13 +397,24 @@ def get_currency_pairs(request):
     # If we have cached rates and the update fails, return cached rates
     if organization.currency_update_time == None:
         rates = update_currency_pairs()
-        return Response(rates, status=status.HTTP_200_OK)
+        return Response({
+            "rates": rates,
+            "updated_at": organization.currency_update_time.isoformat() if organization.currency_update_time else None
+        }, status=status.HTTP_200_OK)
     
     if organization.currency_update_time < datetime.now(timezone.utc) - timedelta(hours=24):
         rates = update_currency_pairs()
-        return Response(rates, status=status.HTTP_200_OK)
+        # Refresh organization to get updated timestamp
+        organization.refresh_from_db()
+        return Response({
+            "rates": rates,
+            "updated_at": organization.currency_update_time.isoformat() if organization.currency_update_time else None
+        }, status=status.HTTP_200_OK)
     
-    return Response(organization.currency_conversion_rates, status=status.HTTP_200_OK)
+    return Response({
+        "rates": organization.currency_conversion_rates,
+        "updated_at": organization.currency_update_time.isoformat() if organization.currency_update_time else None
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(("GET",))
