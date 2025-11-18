@@ -1605,6 +1605,7 @@ def global_part_search(request):
                 | Q(description__icontains=query)
                 | Q(manufacturer__icontains=query)
                 | Q(mpn__icontains=query)
+                | Q(external_part_number__icontains=query)
             )
         )
 
@@ -1615,6 +1616,7 @@ def global_part_search(request):
                 Q(full_part_number__icontains=query)
                 | Q(display_name__icontains=query)
                 | Q(description__icontains=query)
+                | Q(external_part_number__icontains=query)
             )
         )
 
@@ -1625,6 +1627,7 @@ def global_part_search(request):
                 Q(full_part_number__icontains=query)
                 | Q(display_name__icontains=query)
                 | Q(description__icontains=query)
+                | Q(external_part_number__icontains=query)
             )
         )
 
