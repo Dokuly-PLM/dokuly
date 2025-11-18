@@ -427,9 +427,9 @@ const EditPartForm = (props) => {
             <SubmitButton
               type="submit"
               disabled={
-                display_name === "" ||
-                (is_internal === false &&
-                  (mpn === "" || mpn === undefined || mpn === null))
+                display_name === ""// ||
+                //(is_internal === false &&
+                //  (mpn === "" || mpn === undefined || mpn === null))
               }
               onClick={() => {
                 onSubmit();
