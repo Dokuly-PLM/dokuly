@@ -87,13 +87,14 @@ def get_rules_for_item(user, project=None):
     return None
 
 
-def user_can_override(user, rules):
+def user_can_override(user, rules, project=None):
     """
     Check if user has permission to override release rules.
     
     Args:
         user: The requesting user
         rules: Rules object
+        project: Optional project object to check project ownership
         
     Returns:
         Boolean indicating if user can override
@@ -110,8 +111,11 @@ def user_can_override(user, rules):
         return True  # All users can override
     
     if permission == 'Project Owner':
-        # TODO: Check if user is project owner
-        # For now, allow if Admin or Owner
+        # Check if user is project owner for this specific project
+        if project and project.project_owner:
+            if project.project_owner.id == user_profile.id:
+                return True
+        # Also allow if Admin or Owner
         return user_profile.role in ['Admin', 'Owner']
     
     if permission == 'Admin':
@@ -312,6 +316,7 @@ def check_assembly_rules(request, assembly_id):
             'has_active_rules': True,
             'all_rules_passed': all_passed,
             'override_permission': rules.override_permission,
+            'can_override': user_can_override(request.user, rules, project),
             'rules_checks': rules_checks,
         }, status=status.HTTP_200_OK)
         
@@ -394,6 +399,7 @@ def check_pcba_rules(request, pcba_id):
             'has_active_rules': True,
             'all_rules_passed': all_passed,
             'override_permission': rules.override_permission,
+            'can_override': user_can_override(request.user, rules, project),
             'rules_checks': rules_checks,
         }, status=status.HTTP_200_OK)
         
@@ -437,6 +443,7 @@ def check_part_rules(request, part_id):
             'has_active_rules': True,
             'all_rules_passed': is_reviewed,
             'override_permission': rules.override_permission,
+            'can_override': user_can_override(request.user, rules, project),
             'rules_checks': [{
                 'rule': 'require_review_on_part',
                 'description': 'Part must be reviewed before release',
@@ -484,6 +491,7 @@ def check_document_rules(request, document_id):
             'has_active_rules': True,
             'all_rules_passed': is_reviewed,
             'override_permission': rules.override_permission,
+            'can_override': user_can_override(request.user, rules, project),
             'rules_checks': [{
                 'rule': 'require_review_on_document',
                 'description': 'Document must be reviewed before release',

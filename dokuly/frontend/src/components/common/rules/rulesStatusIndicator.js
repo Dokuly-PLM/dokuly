@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { checkAssemblyRules, checkPcbaRules, checkPartRules, checkDocumentRules } from "./queries";
-import useProfile from "../hooks/useProfile";
 
 /**
  * Component to display rules validation status
@@ -15,7 +14,6 @@ import useProfile from "../hooks/useProfile";
 const RulesStatusIndicator = ({ itemType, itemId, projectId = null, onStatusChange, setOverride }) => {
   const [loading, setLoading] = useState(true);
   const [rulesStatus, setRulesStatus] = useState(null);
-  const [profile] = useProfile();
 
   useEffect(() => {
     if (itemId) {
@@ -79,28 +77,6 @@ const RulesStatusIndicator = ({ itemType, itemId, projectId = null, onStatusChan
     return null;
   }
 
-  // Check if user has permission to override
-  const canOverride = () => {
-    if (!profile || !rulesStatus) return false;
-    
-    const userRole = profile.role || '';
-    const requiredPermission = rulesStatus.override_permission || 'Owner';
-    
-    // Role hierarchy: Owner > Admin > Project Owner > User > Viewer
-    const roleHierarchy = {
-      'Owner': 4,
-      'Admin': 3,
-      'Project Owner': 2,
-      'User': 1,
-      'Viewer': 0
-    };
-    
-    const userLevel = roleHierarchy[userRole] || 0;
-    const requiredLevel = roleHierarchy[requiredPermission] || 4;
-    
-    return userLevel >= requiredLevel;
-  };
-
   const handleOverride = (checked) => {
     if (setOverride) {
       setOverride(checked);
@@ -140,7 +116,7 @@ const RulesStatusIndicator = ({ itemType, itemId, projectId = null, onStatusChan
       {!rulesStatus.all_rules_passed && (
         <div className="alert alert-warning mt-3 mb-0" role="alert">
           <small>
-            {canOverride() ? (
+            {rulesStatus.can_override ? (
               <div className="d-flex align-items-center">
                 <input
                   className="form-check-input dokuly-checkbox me-2"
