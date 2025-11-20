@@ -24,6 +24,7 @@ const DocumentEditForm = (props) => {
   const [protectionLevels, setProtectionLevels] = useState([]);
   const [selected_protection_level_id, setSelectedProtectionLevelId] = useState("");
   const [rulesStatus, setRulesStatus] = useState(null);
+  const [rulesOverride, setRulesOverride] = useState(false);
 
   useEffect(() => {
     setTitle(props.document?.title);
@@ -63,16 +64,6 @@ const DocumentEditForm = (props) => {
   };
 
   function onSubmit() {
-    // Check if trying to release with broken rules
-    if (release_state === "Released" && rulesStatus && !rulesStatus.all_rules_passed) {
-      if (!confirm(
-        "Warning: This document does not meet all release rules.\n\n" +
-        "Are you sure you want to release it anyway?"
-      )) {
-        return;
-      }
-    }
-    
     setShowModal(false);
     const data = new FormData();
     data.append("title", title);
@@ -265,6 +256,7 @@ const DocumentEditForm = (props) => {
             itemId={props.document?.id}
             projectId={props.document?.project}
             onStatusChange={setRulesStatus}
+            setOverride={setRulesOverride}
           />
 
           <div className="form-group">
@@ -304,6 +296,13 @@ const DocumentEditForm = (props) => {
               onClick={() => onSubmit()}
               className="btn dokuly-bg-primary"
               type="button"
+              disabled={
+                title === "" ||
+                (release_state === "Released" && 
+                 rulesStatus && 
+                 !rulesStatus.all_rules_passed && 
+                 !rulesOverride)
+              }
             >
               Submit
             </button>

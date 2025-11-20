@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { checkAssemblyRules, checkPcbaRules, checkPartRules, checkDocumentRules } from "./queries";
+import useProfile from "../hooks/useProfile";
 
 /**
  * Component to display rules validation status
@@ -9,10 +10,12 @@ import { checkAssemblyRules, checkPcbaRules, checkPartRules, checkDocumentRules 
  * @param {number} itemId - ID of the item to check
  * @param {number} projectId - Project ID (optional, will use org rules if not provided)
  * @param {function} onStatusChange - Optional callback when rules status changes
+ * @param {function} setOverride - Callback to set override state in parent component
  */
-const RulesStatusIndicator = ({ itemType, itemId, projectId = null, onStatusChange }) => {
+const RulesStatusIndicator = ({ itemType, itemId, projectId = null, onStatusChange, setOverride }) => {
   const [loading, setLoading] = useState(true);
   const [rulesStatus, setRulesStatus] = useState(null);
+  const [profile] = useProfile();
 
   useEffect(() => {
     if (itemId) {
@@ -76,6 +79,34 @@ const RulesStatusIndicator = ({ itemType, itemId, projectId = null, onStatusChan
     return null;
   }
 
+  // Check if user has permission to override
+  const canOverride = () => {
+    if (!profile || !rulesStatus) return false;
+    
+    const userRole = profile.role || '';
+    const requiredPermission = rulesStatus.override_permission || 'Owner';
+    
+    // Role hierarchy: Owner > Admin > Project Owner > User > Viewer
+    const roleHierarchy = {
+      'Owner': 4,
+      'Admin': 3,
+      'Project Owner': 2,
+      'User': 1,
+      'Viewer': 0
+    };
+    
+    const userLevel = roleHierarchy[userRole] || 0;
+    const requiredLevel = roleHierarchy[requiredPermission] || 4;
+    
+    return userLevel >= requiredLevel;
+  };
+
+  const handleOverride = (checked) => {
+    if (setOverride) {
+      setOverride(checked);
+    }
+  };
+
   return (
     <div className="mt-3 p-3 border rounded bg-light">
       <h6 className="mb-3">Active Rules</h6>
@@ -109,7 +140,23 @@ const RulesStatusIndicator = ({ itemType, itemId, projectId = null, onStatusChan
       {!rulesStatus.all_rules_passed && (
         <div className="alert alert-warning mt-3 mb-0" role="alert">
           <small>
-            <strong>Note:</strong> {rulesStatus.override_permission} or higher can override these rules during release.
+            {canOverride() ? (
+              <div className="d-flex align-items-center">
+                <input
+                  className="form-check-input dokuly-checkbox me-2"
+                  type="checkbox"
+                  onChange={(e) => handleOverride(e.target.checked)}
+                  id="override-rules-checkbox"
+                />
+                <label className="form-check-label mb-0" htmlFor="override-rules-checkbox">
+                  <strong>Override rules</strong> and allow release anyway
+                </label>
+              </div>
+            ) : (
+              <span>
+                <strong>Note:</strong> {rulesStatus.override_permission} or higher can override these rules during release.
+              </span>
+            )}
           </small>
         </div>
       )}

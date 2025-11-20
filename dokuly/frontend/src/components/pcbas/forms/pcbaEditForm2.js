@@ -17,6 +17,7 @@ const PcbaForm = (props) => {
   const [showModal, setShowModal] = useState(false);
   const [externalPartNumber, setExternalPartNumber] = useState("");
   const [rulesStatus, setRulesStatus] = useState(null);
+  const [rulesOverride, setRulesOverride] = useState(false);
 
   useEffect(() => {
     setDisplayName(props.pcba?.display_name);
@@ -31,16 +32,6 @@ const PcbaForm = (props) => {
   };
 
   function onSubmit() {
-    // Check if trying to release with broken rules
-    if (release_state === "Released" && rulesStatus && !rulesStatus.all_rules_passed) {
-      if (!confirm(
-        "Warning: This PCBA does not meet all release rules.\n\n" +
-        "Are you sure you want to release it anyway?"
-      )) {
-        return;
-      }
-    }
-
     const data = {
       display_name: display_name,
       description: description,
@@ -191,15 +182,24 @@ const PcbaForm = (props) => {
             itemId={props.pcba?.id}
             projectId={props.pcba?.project}
             onStatusChange={setRulesStatus}
+            setOverride={setRulesOverride}
           />
 
           <div className="form-group mt-3">
             <SubmitButton
               onClick={onSubmit}
-              disabled={display_name === ""}
+              disabled={
+                display_name === "" ||
+                (release_state === "Released" && 
+                 rulesStatus && 
+                 !rulesStatus.all_rules_passed && 
+                 !rulesOverride)
+              }
               className="btn dokuly-bg-primary"
               disabledTooltip={
-                "Mandatory fields must be entered. Mandatory fields are marked with *"
+                display_name === ""
+                  ? "Mandatory fields must be entered. Mandatory fields are marked with *"
+                  : "Rules must be satisfied or overridden before releasing"
               }
             >
               Submit

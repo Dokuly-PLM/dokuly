@@ -47,6 +47,8 @@ const EditPartForm = (props) => {
   const [exportCollapsed, setExportCollapsed] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
+  const [rulesStatus, setRulesStatus] = useState(null);
+  const [rulesOverride, setRulesOverride] = useState(false);
 
   const partTypes = usePartTypes();
 
@@ -428,21 +430,27 @@ const EditPartForm = (props) => {
             itemType="part"
             itemId={props.part?.id}
             projectId={props.part?.project}
+            onStatusChange={setRulesStatus}
+            setOverride={setRulesOverride}
           />
 
           <div className="form-group mt-3 d-flex align-items-center">
             <SubmitButton
               type="submit"
               disabled={
-                display_name === ""// ||
-                //(is_internal === false &&
-                //  (mpn === "" || mpn === undefined || mpn === null))
+                display_name === "" ||
+                (release_state === "Released" && 
+                 rulesStatus && 
+                 !rulesStatus.all_rules_passed && 
+                 !rulesOverride)
               }
               onClick={() => {
                 onSubmit();
               }}
               disabledTooltip={
-                "Mandatory fields must be entered. Mandatory fields are marked with *"
+                display_name === "" 
+                  ? "Mandatory fields must be entered. Mandatory fields are marked with *"
+                  : "Rules must be satisfied or overridden before releasing"
               }
             >
               Submit
