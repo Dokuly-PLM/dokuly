@@ -14,6 +14,10 @@ const AdminRules = ({ setRefresh }) => {
   // State for release rules
   const [requireReleasedBomItemsAssembly, setRequireReleasedBomItemsAssembly] = useState(false);
   const [requireReleasedBomItemsPCBA, setRequireReleasedBomItemsPCBA] = useState(false);
+  const [requireReviewOnPart, setRequireReviewOnPart] = useState(false);
+  const [requireReviewOnPcba, setRequireReviewOnPcba] = useState(false);
+  const [requireReviewOnAssembly, setRequireReviewOnAssembly] = useState(false);
+  const [requireReviewOnDocument, setRequireReviewOnDocument] = useState(false);
   const [overridePermission, setOverridePermission] = useState("Admin");
 
   const sections = [
@@ -36,6 +40,10 @@ const AdminRules = ({ setRefresh }) => {
           setRulesId(res.data.id);
           setRequireReleasedBomItemsAssembly(res.data.require_released_bom_items_assembly || false);
           setRequireReleasedBomItemsPCBA(res.data.require_released_bom_items_pcba || false);
+          setRequireReviewOnPart(res.data.require_review_on_part || false);
+          setRequireReviewOnPcba(res.data.require_review_on_pcba || false);
+          setRequireReviewOnAssembly(res.data.require_review_on_assembly || false);
+          setRequireReviewOnDocument(res.data.require_review_on_document || false);
           setOverridePermission(res.data.override_permission || "Admin");
         }
         setLoading(false);
@@ -51,6 +59,10 @@ const AdminRules = ({ setRefresh }) => {
     const data = {
       require_released_bom_items_assembly: requireReleasedBomItemsAssembly,
       require_released_bom_items_pcba: requireReleasedBomItemsPCBA,
+      require_review_on_part: requireReviewOnPart,
+      require_review_on_pcba: requireReviewOnPcba,
+      require_review_on_assembly: requireReviewOnAssembly,
+      require_review_on_document: requireReviewOnDocument,
       override_permission: overridePermission,
     };
 
@@ -141,6 +153,34 @@ const AdminRules = ({ setRefresh }) => {
                   value={requireReleasedBomItemsPCBA}
                   onChange={setRequireReleasedBomItemsPCBA}
                   id="requireReleasedBomItemsPCBA"
+                />
+              </div>
+
+              <div className="mt-4">
+                <h6>Review Requirements</h6>
+                <DokulyCheckFormGroup
+                  label="Require review approval before releasing Part"
+                  value={requireReviewOnPart}
+                  onChange={setRequireReviewOnPart}
+                  id="requireReviewOnPart"
+                />
+                <DokulyCheckFormGroup
+                  label="Require review approval before releasing PCBA"
+                  value={requireReviewOnPcba}
+                  onChange={setRequireReviewOnPcba}
+                  id="requireReviewOnPcba"
+                />
+                <DokulyCheckFormGroup
+                  label="Require review approval before releasing Assembly"
+                  value={requireReviewOnAssembly}
+                  onChange={setRequireReviewOnAssembly}
+                  id="requireReviewOnAssembly"
+                />
+                <DokulyCheckFormGroup
+                  label="Require review approval before releasing Document"
+                  value={requireReviewOnDocument}
+                  onChange={setRequireReviewOnDocument}
+                  id="requireReviewOnDocument"
                 />
               </div>
 

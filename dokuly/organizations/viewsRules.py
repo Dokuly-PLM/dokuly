@@ -145,6 +145,10 @@ def fetch_organization_rules(request):
             defaults={
                 'require_released_bom_items_assembly': False,
                 'require_released_bom_items_pcba': False,
+                'require_review_on_part': False,
+                'require_review_on_pcba': False,
+                'require_review_on_assembly': False,
+                'require_review_on_document': False,
                 'override_permission': 'Admin',
             }
         )
@@ -182,6 +186,10 @@ def update_organization_rules(request):
             defaults={
                 'require_released_bom_items_assembly': False,
                 'require_released_bom_items_pcba': False,
+                'require_review_on_part': False,
+                'require_review_on_pcba': False,
+                'require_review_on_assembly': False,
+                'require_review_on_document': False,
                 'override_permission': 'Admin',
             }
         )
@@ -194,6 +202,18 @@ def update_organization_rules(request):
         
         if 'require_released_bom_items_pcba' in data:
             rules.require_released_bom_items_pcba = data['require_released_bom_items_pcba']
+        
+        if 'require_review_on_part' in data:
+            rules.require_review_on_part = data['require_review_on_part']
+        
+        if 'require_review_on_pcba' in data:
+            rules.require_review_on_pcba = data['require_review_on_pcba']
+        
+        if 'require_review_on_assembly' in data:
+            rules.require_review_on_assembly = data['require_review_on_assembly']
+        
+        if 'require_review_on_document' in data:
+            rules.require_review_on_document = data['require_review_on_document']
         
         if 'override_permission' in data:
             # Validate permission choice
@@ -242,44 +262,57 @@ def check_assembly_rules(request, assembly_id):
         # Get applicable rules
         rules = get_rules_for_item(request.user, project)
         
-        if not rules or not rules.require_released_bom_items_assembly:
+        has_active_rules = rules and (rules.require_released_bom_items_assembly or rules.require_review_on_assembly)
+        
+        if not has_active_rules:
             return Response({
                 'has_active_rules': False,
                 'all_rules_passed': True,
                 'rules_checks': [],
             }, status=status.HTTP_200_OK)
         
-        # Get the BOM for this assembly
-        try:
-            assembly_bom = Assembly_bom.objects.get(assembly_id=assembly_id)
-            bom_items = Bom_item.objects.filter(bom=assembly_bom)
-        except Assembly_bom.DoesNotExist:
-            # No BOM exists yet - no items to check
-            return Response({
-                'has_active_rules': True,
-                'all_rules_passed': True,
-                'override_permission': rules.override_permission,
-                'rules_checks': [{
+        rules_checks = []
+        all_passed = True
+        
+        # Check review requirement
+        if rules.require_review_on_assembly:
+            is_reviewed = assembly.quality_assurance is not None
+            if not is_reviewed:
+                all_passed = False
+            rules_checks.append({
+                'rule': 'require_review_on_assembly',
+                'description': 'Assembly must be reviewed before release',
+                'passed': is_reviewed,
+            })
+        
+        # Check BOM items if required
+        if rules.require_released_bom_items_assembly:
+            try:
+                assembly_bom = Assembly_bom.objects.get(assembly_id=assembly_id)
+                bom_items = Bom_item.objects.filter(bom=assembly_bom)
+                bom_passed, unreleased_items, total_count, released_count = check_bom_items_released(bom_items)
+                if not bom_passed:
+                    all_passed = False
+                rules_checks.append({
+                    'rule': 'require_released_bom_items_assembly',
+                    'description': f'All BOM items must be released ({released_count}/{total_count} released)',
+                    'passed': bom_passed,
+                    'unreleased_items': unreleased_items,
+                })
+            except Assembly_bom.DoesNotExist:
+                # No BOM - this passes the BOM check
+                rules_checks.append({
                     'rule': 'require_released_bom_items_assembly',
                     'description': 'No BOM found for this assembly',
                     'passed': True,
                     'unreleased_items': [],
-                }],
-            }, status=status.HTTP_200_OK)
-        
-        # Check if all BOM items are released
-        all_passed, unreleased_items, total_count, released_count = check_bom_items_released(bom_items)
+                })
         
         return Response({
             'has_active_rules': True,
             'all_rules_passed': all_passed,
             'override_permission': rules.override_permission,
-            'rules_checks': [{
-                'rule': 'require_released_bom_items_assembly',
-                'description': f'All BOM items must be released ({released_count}/{total_count} released)',
-                'passed': all_passed,
-                'unreleased_items': unreleased_items,
-            }],
+            'rules_checks': rules_checks,
         }, status=status.HTTP_200_OK)
         
     except Assembly.DoesNotExist:
@@ -311,44 +344,57 @@ def check_pcba_rules(request, pcba_id):
         # Get applicable rules
         rules = get_rules_for_item(request.user, project)
         
-        if not rules or not rules.require_released_bom_items_pcba:
+        has_active_rules = rules and (rules.require_released_bom_items_pcba or rules.require_review_on_pcba)
+        
+        if not has_active_rules:
             return Response({
                 'has_active_rules': False,
                 'all_rules_passed': True,
                 'rules_checks': [],
             }, status=status.HTTP_200_OK)
         
-        # Get the BOM for this PCBA
-        try:
-            pcba_bom = Assembly_bom.objects.get(pcba=pcba)
-            bom_items = Bom_item.objects.filter(bom=pcba_bom)
-        except Assembly_bom.DoesNotExist:
-            # No BOM exists yet - no items to check
-            return Response({
-                'has_active_rules': True,
-                'all_rules_passed': True,
-                'override_permission': rules.override_permission,
-                'rules_checks': [{
+        rules_checks = []
+        all_passed = True
+        
+        # Check review requirement
+        if rules.require_review_on_pcba:
+            is_reviewed = pcba.quality_assurance is not None
+            if not is_reviewed:
+                all_passed = False
+            rules_checks.append({
+                'rule': 'require_review_on_pcba',
+                'description': 'PCBA must be reviewed before release',
+                'passed': is_reviewed,
+            })
+        
+        # Check BOM items if required
+        if rules.require_released_bom_items_pcba:
+            try:
+                pcba_bom = Assembly_bom.objects.get(pcba=pcba)
+                bom_items = Bom_item.objects.filter(bom=pcba_bom)
+                bom_passed, unreleased_items, total_count, released_count = check_bom_items_released(bom_items)
+                if not bom_passed:
+                    all_passed = False
+                rules_checks.append({
+                    'rule': 'require_released_bom_items_pcba',
+                    'description': f'All BOM items must be released ({released_count}/{total_count} released)',
+                    'passed': bom_passed,
+                    'unreleased_items': unreleased_items,
+                })
+            except Assembly_bom.DoesNotExist:
+                # No BOM - this passes the BOM check
+                rules_checks.append({
                     'rule': 'require_released_bom_items_pcba',
                     'description': 'No BOM found for this PCBA',
                     'passed': True,
                     'unreleased_items': [],
-                }],
-            }, status=status.HTTP_200_OK)
-        
-        # Check if all BOM items are released
-        all_passed, unreleased_items, total_count, released_count = check_bom_items_released(bom_items)
+                })
         
         return Response({
             'has_active_rules': True,
             'all_rules_passed': all_passed,
             'override_permission': rules.override_permission,
-            'rules_checks': [{
-                'rule': 'require_released_bom_items_pcba',
-                'description': f'All BOM items must be released ({released_count}/{total_count} released)',
-                'passed': all_passed,
-                'unreleased_items': unreleased_items,
-            }],
+            'rules_checks': rules_checks,
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
@@ -359,17 +405,43 @@ def check_pcba_rules(request, pcba_id):
 @renderer_classes([JSONRenderer])
 @login_required(login_url="/login")
 def check_part_rules(request, part_id):
-    """Check if a part meets release rules requirements. Placeholder for future rules."""
+    """Check if a part meets release rules requirements."""
     try:
         from parts.models import Part
+        from projects.models import Project
         
         part = get_object_or_404(Part, id=part_id)
         
-        # Placeholder - no part-specific rules yet
+        # Get project from query params or part
+        project_id = request.GET.get('project_id')
+        project = None
+        if project_id:
+            project = get_object_or_404(Project, id=project_id)
+        elif part.project:
+            project = part.project
+        
+        # Get applicable rules
+        rules = get_rules_for_item(request.user, project)
+        
+        if not rules or not rules.require_review_on_part:
+            return Response({
+                'has_active_rules': False,
+                'all_rules_passed': True,
+                'rules_checks': [],
+            }, status=status.HTTP_200_OK)
+        
+        # Check review requirement
+        is_reviewed = part.quality_assurance is not None
+        
         return Response({
-            'has_active_rules': False,
-            'all_rules_passed': True,
-            'rules_checks': [],
+            'has_active_rules': True,
+            'all_rules_passed': is_reviewed,
+            'override_permission': rules.override_permission,
+            'rules_checks': [{
+                'rule': 'require_review_on_part',
+                'description': 'Part must be reviewed before release',
+                'passed': is_reviewed,
+            }],
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
@@ -380,17 +452,43 @@ def check_part_rules(request, part_id):
 @renderer_classes([JSONRenderer])
 @login_required(login_url="/login")
 def check_document_rules(request, document_id):
-    """Check if a document meets release rules requirements. Placeholder for future rules."""
+    """Check if a document meets release rules requirements."""
     try:
         from documents.models import Document
+        from projects.models import Project
         
         document = get_object_or_404(Document, id=document_id)
         
-        # Placeholder - no document-specific rules yet
+        # Get project from query params or document
+        project_id = request.GET.get('project_id')
+        project = None
+        if project_id:
+            project = get_object_or_404(Project, id=project_id)
+        elif document.project:
+            project = document.project
+        
+        # Get applicable rules
+        rules = get_rules_for_item(request.user, project)
+        
+        if not rules or not rules.require_review_on_document:
+            return Response({
+                'has_active_rules': False,
+                'all_rules_passed': True,
+                'rules_checks': [],
+            }, status=status.HTTP_200_OK)
+        
+        # Check review requirement
+        is_reviewed = document.quality_assurance is not None
+        
         return Response({
-            'has_active_rules': False,
-            'all_rules_passed': True,
-            'rules_checks': [],
+            'has_active_rules': True,
+            'all_rules_passed': is_reviewed,
+            'override_permission': rules.override_permission,
+            'rules_checks': [{
+                'rule': 'require_review_on_document',
+                'description': 'Document must be reviewed before release',
+                'passed': is_reviewed,
+            }],
         }, status=status.HTTP_200_OK)
         
     except Exception as e:

@@ -203,6 +203,31 @@ class Rules(models.Model):
         help_text="Require all BOM items to be released before releasing a PCBA"
     )
     
+    # Review requirements
+    require_review_on_part = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require review approval before releasing a Part"
+    )
+    
+    require_review_on_pcba = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require review approval before releasing a PCBA"
+    )
+    
+    require_review_on_assembly = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require review approval before releasing an Assembly"
+    )
+    
+    require_review_on_document = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require review approval before releasing a Document"
+    )
+    
     # Override permissions - choices: Owner, Admin, User, Project Owner
     PERMISSION_CHOICES = [
         ('Owner', 'Owner'),
