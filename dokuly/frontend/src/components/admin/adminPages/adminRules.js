@@ -4,64 +4,29 @@ import DokulyCard from "../../dokuly_components/dokulyCard";
 import DokulyCheckFormGroup from "../../dokuly_components/dokulyCheckFormGroup";
 
 const AdminRules = ({ setRefresh }) => {
-  const [activeSection, setActiveSection] = useState("suppliers");
+  const [activeSection, setActiveSection] = useState("releaseRules");
 
-  // State for all checkboxes
-  const [warnFlaggedSuppliers, setWarnFlaggedSuppliers] = useState(false);
-  const [blockFlaggedSuppliers, setBlockFlaggedSuppliers] = useState(false);
-  const [warnMissingSupplier, setWarnMissingSupplier] = useState(false);
-  const [warnRestrictedCountry, setWarnRestrictedCountry] = useState(false);
-  const [blockRestrictedCountry, setBlockRestrictedCountry] = useState(false);
-  const [warnMissingMPN, setWarnMissingMPN] = useState(false);
-  const [blockMissingMPN, setBlockMissingMPN] = useState(false);
-  const [checkBOMCompliance, setCheckBOMCompliance] = useState(false);
-  const [cascadeWarnings, setCascadeWarnings] = useState(false);
-  const [logOverrides, setLogOverrides] = useState(true);
-  const [requireOverrideReason, setRequireOverrideReason] = useState(false);
+  // State for release rules
+  const [requireReleasedBomItemsAssembly, setRequireReleasedBomItemsAssembly] = useState(false);
+  const [requireReleasedBomItemsPCBA, setRequireReleasedBomItemsPCBA] = useState(false);
+  const [overridePermission, setOverridePermission] = useState("Admin");
 
   const sections = [
-    { id: "suppliers", title: "Suppliers & Manufacturers", icon: "factory" },
-    { id: "countryOfOrigin", title: "Country of Origin", icon: "map" },
-    { id: "partValidation", title: "Part Validation", icon: "puzzle" },
-    { id: "releaseRules", title: "Release Rules", icon: "clipboard-check" },
+    { id: "suppliers", title: "Suppliers & Manufacturers", icon: "factory", disabled: true },
+    { id: "countryOfOrigin", title: "Country of Origin", icon: "map", disabled: true },
+    { id: "partValidation", title: "Part Validation", icon: "puzzle", disabled: true },
+    { id: "releaseRules", title: "Release Rules", icon: "clipboard-check", disabled: false },
   ];
 
   const renderSuppliers = () => {
     return (
       <DokulyCard title="Suppliers & Manufacturers Rules">
         <div className="p-3">
-          <h5>Flagged Suppliers & Manufacturers</h5>
+          <h5>Coming Soon</h5>
           <p className="text-muted">
             Configure suppliers and manufacturers that require warnings or blocking.
+            This feature is under development.
           </p>
-          
-          <div className="mt-4">
-            <h6>Settings</h6>
-            <DokulyCheckFormGroup
-              label="Warn when using flagged suppliers"
-              value={warnFlaggedSuppliers}
-              onChange={setWarnFlaggedSuppliers}
-              id="warnFlaggedSuppliers"
-            />
-            <DokulyCheckFormGroup
-              label="Block release with flagged suppliers (with override)"
-              value={blockFlaggedSuppliers}
-              onChange={setBlockFlaggedSuppliers}
-              id="blockFlaggedSuppliers"
-            />
-            <DokulyCheckFormGroup
-              label="Warn when supplier is missing"
-              value={warnMissingSupplier}
-              onChange={setWarnMissingSupplier}
-              id="warnMissingSupplier"
-            />
-          </div>
-
-          <div className="mt-4">
-            <button className="btn dokuly-bg-primary text-white">
-              Manage Flagged Suppliers
-            </button>
-          </div>
         </div>
       </DokulyCard>
     );
@@ -71,32 +36,11 @@ const AdminRules = ({ setRefresh }) => {
     return (
       <DokulyCard title="Country of Origin Rules">
         <div className="p-3">
-          <h5>Restricted Countries</h5>
+          <h5>Coming Soon</h5>
           <p className="text-muted">
             Configure countries of origin that require warnings or blocking.
+            This feature is under development.
           </p>
-          
-          <div className="mt-4">
-            <h6>Settings</h6>
-            <DokulyCheckFormGroup
-              label="Warn when parts from restricted countries are used"
-              value={warnRestrictedCountry}
-              onChange={setWarnRestrictedCountry}
-              id="warnRestrictedCountry"
-            />
-            <DokulyCheckFormGroup
-              label="Block release with parts from restricted countries (with override)"
-              value={blockRestrictedCountry}
-              onChange={setBlockRestrictedCountry}
-              id="blockRestrictedCountry"
-            />
-          </div>
-
-          <div className="mt-4">
-            <button className="btn dokuly-bg-primary text-white">
-              Manage Restricted Countries
-            </button>
-          </div>
         </div>
       </DokulyCard>
     );
@@ -106,42 +50,11 @@ const AdminRules = ({ setRefresh }) => {
     return (
       <DokulyCard title="Part Validation Rules">
         <div className="p-3">
-          <h5>Part Requirements</h5>
+          <h5>Coming Soon</h5>
           <p className="text-muted">
             Configure validation rules for parts, PCBAs, and assemblies.
+            This feature is under development.
           </p>
-          
-          <div className="mt-4">
-            <h6>MPN Requirements</h6>
-            <DokulyCheckFormGroup
-              label="Warn when MPN is missing (placeholder parts)"
-              value={warnMissingMPN}
-              onChange={setWarnMissingMPN}
-              id="warnMissingMPN"
-            />
-            <DokulyCheckFormGroup
-              label="Block release when MPN is missing (with override)"
-              value={blockMissingMPN}
-              onChange={setBlockMissingMPN}
-              id="blockMissingMPN"
-            />
-          </div>
-
-          <div className="mt-4">
-            <h6>Assembly Validation</h6>
-            <DokulyCheckFormGroup
-              label="Check BOM items for compliance issues"
-              value={checkBOMCompliance}
-              onChange={setCheckBOMCompliance}
-              id="checkBOMCompliance"
-            />
-            <DokulyCheckFormGroup
-              label="Show warnings from BOM items in assembly overview"
-              value={cascadeWarnings}
-              onChange={setCascadeWarnings}
-              id="cascadeWarnings"
-            />
-          </div>
         </div>
       </DokulyCard>
     );
@@ -153,35 +66,43 @@ const AdminRules = ({ setRefresh }) => {
         <div className="p-3">
           <h5>Release Process Rules</h5>
           <p className="text-muted">
-            Configure what can block or warn during the release process.
+            Configure requirements for releasing assemblies and PCBAs.
           </p>
           
           <div className="mt-4">
-            <h6>Override Permissions</h6>
-            <div className="form-group">
-              <label>Roles that can override blocking rules:</label>
-              <select className="form-control" multiple>
-                <option value="admin">Admin</option>
-                <option value="owner">Owner</option>
-                <option value="qa">Quality Assurance</option>
-              </select>
-            </div>
+            <h6>BOM Item Requirements</h6>
+            <DokulyCheckFormGroup
+              label="Require all BOM items to be released before releasing Assembly"
+              value={requireReleasedBomItemsAssembly}
+              onChange={setRequireReleasedBomItemsAssembly}
+              id="requireReleasedBomItemsAssembly"
+            />
+            <DokulyCheckFormGroup
+              label="Require all BOM items to be released before releasing PCBA"
+              value={requireReleasedBomItemsPCBA}
+              onChange={setRequireReleasedBomItemsPCBA}
+              id="requireReleasedBomItemsPCBA"
+            />
           </div>
 
           <div className="mt-4">
-            <h6>Audit Trail</h6>
-            <DokulyCheckFormGroup
-              label="Log all compliance rule overrides"
-              value={logOverrides}
-              onChange={setLogOverrides}
-              id="logOverrides"
-            />
-            <DokulyCheckFormGroup
-              label="Require reason when overriding rules"
-              value={requireOverrideReason}
-              onChange={setRequireOverrideReason}
-              id="requireOverrideReason"
-            />
+            <h6>Override Permissions</h6>
+            <div className="form-group">
+              <label>Who can override these rules:</label>
+              <select 
+                className="form-control" 
+                value={overridePermission}
+                onChange={(e) => setOverridePermission(e.target.value)}
+              >
+                <option value="Owner">Owner</option>
+                <option value="Admin">Admin</option>
+                <option value="Project Owner">Project Owner</option>
+                <option value="User">User</option>
+              </select>
+              <small className="text-muted">
+                Selected role and above can override release rules when needed.
+              </small>
+            </div>
           </div>
         </div>
       </DokulyCard>
@@ -218,8 +139,13 @@ const AdminRules = ({ setRefresh }) => {
                     key={section.id}
                     className={`list-group-item list-group-item-action ${
                       activeSection === section.id ? "dokuly-bg-primary text-white" : ""
-                    }`}
-                    onClick={() => setActiveSection(section.id)}
+                    } ${section.disabled ? "disabled" : ""}`}
+                    onClick={() => !section.disabled && setActiveSection(section.id)}
+                    disabled={section.disabled}
+                    style={{
+                      cursor: section.disabled ? "not-allowed" : "pointer",
+                      opacity: section.disabled ? 0.6 : 1
+                    }}
                   >
                     <img
                       src={`../../static/icons/${section.icon}.svg`}
@@ -233,6 +159,9 @@ const AdminRules = ({ setRefresh }) => {
                       }}
                     />
                     {section.title}
+                    {section.disabled && (
+                      <span className="badge bg-warning text-dark ms-2">Coming Soon</span>
+                    )}
                   </button>
                 ))}
               </div>
