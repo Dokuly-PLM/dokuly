@@ -12,8 +12,9 @@ from .serializers import (
     OrgComponentVaultAPIKeySerializer,
     OrganizationManagerSerializer,
     SubscriptionSerializer,
+    RulesSerializer,
 )
-from .models import Organization, Subscription
+from .models import Organization, Subscription, Rules
 from django.contrib.auth.decorators import login_required
 import os
 import uuid

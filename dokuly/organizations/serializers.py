@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Organization, Subscription
+from .models import Organization, Subscription, Rules
 
 
 class CustomerOrganizationSerializer(serializers.ModelSerializer):
@@ -31,4 +31,10 @@ class OrganizationManagerSerializer(serializers.ModelSerializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
+        fields = '__all__'
+
+
+class RulesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rules
         fields = '__all__'

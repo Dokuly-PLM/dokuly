@@ -7,6 +7,7 @@ import { fetchProtectionLevels } from "../../admin/functions/queries";
 import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import FileUpload from "../../dokuly_components/fileUpload/fileUpload";
 import DokulyModal from "../../dokuly_components/dokulyModal";
+import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 
 const DocumentEditForm = (props) => {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ const DocumentEditForm = (props) => {
   const [showModal, setShowModal] = useState(false);
   const [protectionLevels, setProtectionLevels] = useState([]);
   const [selected_protection_level_id, setSelectedProtectionLevelId] = useState("");
+  const [rulesStatus, setRulesStatus] = useState(null);
+  const [rulesOverride, setRulesOverride] = useState(false);
 
   useEffect(() => {
     setTitle(props.document?.title);
@@ -248,6 +251,14 @@ const DocumentEditForm = (props) => {
             quality_assurance={props?.document?.quality_assurance}
           />
 
+          <RulesStatusIndicator 
+            itemType="document"
+            itemId={props.document?.id}
+            projectId={props.document?.project}
+            onStatusChange={setRulesStatus}
+            setOverride={setRulesOverride}
+          />
+
           <div className="form-group">
             <div className="input-group m-3">
               <input
@@ -285,6 +296,13 @@ const DocumentEditForm = (props) => {
               onClick={() => onSubmit()}
               className="btn dokuly-bg-primary"
               type="button"
+              disabled={
+                title === "" ||
+                (release_state === "Released" && 
+                 rulesStatus && 
+                 !rulesStatus.all_rules_passed && 
+                 !rulesOverride)
+              }
             >
               Submit
             </button>

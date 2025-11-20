@@ -22,6 +22,7 @@ import { verifyCheckoutSession } from "./functions/queries";
 import AdminAPIKeys from "./adminPages/adminAPIKeys";
 import { AuthContext } from "../App";
 import AdminReleaseManagement from "./adminPages/adminReleaseManagement";
+import AdminRules from "./adminPages/adminRules";
 
 const AdminDash = () => {
   const [refresh, setRefresh] = useState(false);
@@ -67,6 +68,8 @@ const AdminDash = () => {
       newActiveTab = "locations";
     } else if (path.includes("/adminPage/api")) {
       newActiveTab = "api";
+    } else if (path.includes("/adminPage/rules")) {
+      newActiveTab = "rules";
     } else if (path.includes("/adminPage/inventory")) {
       newActiveTab = "inventory";
     } else if (path.includes("/adminPage/archive")) {
@@ -345,6 +348,15 @@ const AdminDash = () => {
                 >
                   API keys
                 </a>
+                <a
+                  style={{ cursor: "pointer" }}
+                  className={`nav-item nav-link ${
+                    activeTab === "rules" ? "active" : ""
+                  }`}
+                  onClick={() => handleNavigate("rules")}
+                >
+                  Rules
+                </a>
               </div>
             </nav>
           </div>
@@ -392,6 +404,7 @@ const AdminDash = () => {
             )}
             {activeTab === "locations" && <AdminLocations />}
             {activeTab === "api" && <AdminAPIKeys />}
+            {activeTab === "rules" && <AdminRules setRefresh={setRefresh} />}
           </div>
         </div>
       ) : { refresh } ? (

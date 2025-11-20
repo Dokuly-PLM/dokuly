@@ -1553,3 +1553,24 @@ export const previewFormattedRevisionTemplate = (data) => {
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+/**
+ * Fetch organization rules.
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ */
+export const fetchOrganizationRules = () => {
+  const promise = axios.get("api/rules/get/", tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Update organization rules.
+ * @param {Object} data - Rules data to update.
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ */
+export const updateOrganizationRules = (data) => {
+  const promise = axios.put("api/rules/update/", data, tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
