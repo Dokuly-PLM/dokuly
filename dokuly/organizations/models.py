@@ -165,3 +165,79 @@ class OrganizationAPIKey(AbstractAPIKey):
     #                 "Updating the 'organization' field is not allowed.")
     #         # M2M field check is handled via signals or in view logic because of its nature
     #     super().save(*args, **kwargs)
+
+
+class Rules(models.Model):
+    """
+    Release rules configuration for an organization or project.
+    Controls what requirements must be met before releasing assemblies and PCBAs.
+    """
+    
+    # Link to organization (required) or project (optional for project-specific overrides)
+    organization = models.OneToOneField(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="rules",
+        null=True,
+        blank=True
+    )
+    
+    project = models.OneToOneField(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="rules",
+        null=True,
+        blank=True
+    )
+    
+    # Release requirements
+    require_released_bom_items_assembly = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require all BOM items to be released before releasing an Assembly"
+    )
+    
+    require_released_bom_items_pcba = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require all BOM items to be released before releasing a PCBA"
+    )
+    
+    # Override permissions - choices: Owner, Admin, User, Project Owner
+    PERMISSION_CHOICES = [
+        ('Owner', 'Owner'),
+        ('Admin', 'Admin'),
+        ('Project Owner', 'Project Owner'),
+        ('User', 'User'),
+    ]
+    
+    override_permission = models.CharField(
+        max_length=20,
+        choices=PERMISSION_CHOICES,
+        default='Admin',
+        blank=True,
+        help_text="Minimum role required to override release rules"
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Release Rules"
+        verbose_name_plural = "Release Rules"
+        # Ensure either organization or project is set, but not both
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(organization__isnull=False, project__isnull=True) | 
+                      models.Q(organization__isnull=True, project__isnull=False),
+                name='release_rules_org_or_project'
+            )
+        ]
+    
+    def __str__(self):
+        if self.organization:
+            return f"Release Rules for {self.organization.name}"
+        elif self.project:
+            return f"Release Rules for Project {self.project.title}"
+        return "Release Rules"
