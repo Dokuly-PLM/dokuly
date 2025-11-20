@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Row, Col, Card } from "react-bootstrap";
 import DokulyCard from "../../dokuly_components/dokulyCard";
 import DokulyCheckFormGroup from "../../dokuly_components/dokulyCheckFormGroup";
+import SubmitButton from "../../dokuly_components/submitButton";
+import { fetchOrganizationRules, updateOrganizationRules } from "../functions/queries";
+import { toast } from "react-toastify";
 
 const AdminRules = ({ setRefresh }) => {
   const [activeSection, setActiveSection] = useState("releaseRules");
+  const [loading, setLoading] = useState(true);
+  const [rulesId, setRulesId] = useState(null);
 
   // State for release rules
   const [requireReleasedBomItemsAssembly, setRequireReleasedBomItemsAssembly] = useState(false);
@@ -17,6 +22,52 @@ const AdminRules = ({ setRefresh }) => {
     { id: "partValidation", title: "Part Validation", icon: "puzzle", disabled: true },
     { id: "releaseRules", title: "Release Rules", icon: "clipboard-check", disabled: false },
   ];
+
+  // Load rules on component mount
+  useEffect(() => {
+    loadRules();
+  }, []);
+
+  const loadRules = () => {
+    setLoading(true);
+    fetchOrganizationRules()
+      .then((res) => {
+        if (res.status === 200 && res.data) {
+          setRulesId(res.data.id);
+          setRequireReleasedBomItemsAssembly(res.data.require_released_bom_items_assembly || false);
+          setRequireReleasedBomItemsPCBA(res.data.require_released_bom_items_pcba || false);
+          setOverridePermission(res.data.override_permission || "Admin");
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error loading rules:", err);
+        toast.error("Failed to load rules");
+        setLoading(false);
+      });
+  };
+
+  const handleSubmit = () => {
+    const data = {
+      require_released_bom_items_assembly: requireReleasedBomItemsAssembly,
+      require_released_bom_items_pcba: requireReleasedBomItemsPCBA,
+      override_permission: overridePermission,
+    };
+
+    updateOrganizationRules(data)
+      .then((res) => {
+        if (res.status === 200) {
+          toast.success("Rules updated successfully");
+          if (setRefresh) {
+            setRefresh(true);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Error updating rules:", err);
+        toast.error("Failed to update rules");
+      });
+  };
 
   const renderSuppliers = () => {
     return (
@@ -69,41 +120,61 @@ const AdminRules = ({ setRefresh }) => {
             Configure requirements for releasing assemblies and PCBAs.
           </p>
           
-          <div className="mt-4">
-            <h6>BOM Item Requirements</h6>
-            <DokulyCheckFormGroup
-              label="Require all BOM items to be released before releasing Assembly"
-              value={requireReleasedBomItemsAssembly}
-              onChange={setRequireReleasedBomItemsAssembly}
-              id="requireReleasedBomItemsAssembly"
-            />
-            <DokulyCheckFormGroup
-              label="Require all BOM items to be released before releasing PCBA"
-              value={requireReleasedBomItemsPCBA}
-              onChange={setRequireReleasedBomItemsPCBA}
-              id="requireReleasedBomItemsPCBA"
-            />
-          </div>
-
-          <div className="mt-4">
-            <h6>Override Permissions</h6>
-            <div className="form-group">
-              <label>Who can override these rules:</label>
-              <select 
-                className="form-control" 
-                value={overridePermission}
-                onChange={(e) => setOverridePermission(e.target.value)}
-              >
-                <option value="Owner">Owner</option>
-                <option value="Admin">Admin</option>
-                <option value="Project Owner">Project Owner</option>
-                <option value="User">User</option>
-              </select>
-              <small className="text-muted">
-                Selected role and above can override release rules when needed.
-              </small>
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border" role="status">
+                <span className="sr-only">Loading...</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="mt-4">
+                <h6>BOM Item Requirements</h6>
+                <DokulyCheckFormGroup
+                  label="Require all BOM items to be released before releasing Assembly"
+                  value={requireReleasedBomItemsAssembly}
+                  onChange={setRequireReleasedBomItemsAssembly}
+                  id="requireReleasedBomItemsAssembly"
+                />
+                <DokulyCheckFormGroup
+                  label="Require all BOM items to be released before releasing PCBA"
+                  value={requireReleasedBomItemsPCBA}
+                  onChange={setRequireReleasedBomItemsPCBA}
+                  id="requireReleasedBomItemsPCBA"
+                />
+              </div>
+
+              <div className="mt-4">
+                <h6>Override Permissions</h6>
+                <div className="form-group">
+                  <label>Who can override these rules:</label>
+                  <select 
+                    className="form-control" 
+                    value={overridePermission}
+                    onChange={(e) => setOverridePermission(e.target.value)}
+                  >
+                    <option value="Owner">Owner</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Project Owner">Project Owner</option>
+                    <option value="User">User</option>
+                  </select>
+                  <small className="text-muted">
+                    Selected role and above can override release rules when needed.
+                  </small>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <SubmitButton 
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  disabledTooltip="Loading..."
+                >
+                  Save Rules
+                </SubmitButton>
+              </div>
+            </>
+          )}
         </div>
       </DokulyCard>
     );

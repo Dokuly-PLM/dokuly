@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework import routers
 from . import views
 from . import viewsApiKey
+from . import viewsRules
 
 # URL Configuration
 urlpatterns = [
@@ -32,6 +33,9 @@ urlpatterns = [
     path("api/organizations/deleteAPIKey/<str:key_id>/",
          viewsApiKey.delete_api_key),
 
+    # Rules management
+    path("api/organizations/rules/get/", viewsRules.fetch_organization_rules),
+    path("api/organizations/rules/update/", viewsRules.update_organization_rules),
     
     # Revision system fixes
     path("api/organizations/checkCorruptedRevisions/", views.check_corrupted_revisions),
