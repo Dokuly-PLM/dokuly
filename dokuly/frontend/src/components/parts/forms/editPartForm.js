@@ -13,6 +13,7 @@ import ReactCountryFlag from "react-country-flag";
 import FlagSelect, {
   generateCountryList,
 } from "../../dokuly_components/dokulyForm/functions/generateCountryList";
+import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 
 const EditPartForm = (props) => {
   const navigate = useNavigate();
@@ -421,6 +422,12 @@ const EditPartForm = (props) => {
             is_approved_for_release={is_approved_for_release}
             setIsApprovedForRelease={setIsApprovedForRelease}
             quality_assurance={props.part?.quality_assurance}
+          />
+
+          <RulesStatusIndicator 
+            itemType="part"
+            itemId={props.part?.id}
+            projectId={props.part?.project}
           />
 
           <div className="form-group mt-3 d-flex align-items-center">

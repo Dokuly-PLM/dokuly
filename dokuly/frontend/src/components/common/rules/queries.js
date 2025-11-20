@@ -9,8 +9,8 @@ import { tokenConfig } from "../../../configs/auth";
  */
 export const checkAssemblyRules = (assemblyId, projectId = null) => {
   const url = projectId 
-    ? `api/organizations/rules/check/assembly/${assemblyId}/?project_id=${projectId}`
-    : `api/organizations/rules/check/assembly/${assemblyId}/`;
+    ? `api/rules/check/assembly/${assemblyId}/?project_id=${projectId}`
+    : `api/rules/check/assembly/${assemblyId}/`;
   const promise = axios.get(url, tokenConfig());
   return promise.then((res) => res);
 };
@@ -23,8 +23,8 @@ export const checkAssemblyRules = (assemblyId, projectId = null) => {
  */
 export const checkPcbaRules = (pcbaId, projectId = null) => {
   const url = projectId 
-    ? `api/organizations/rules/check/pcba/${pcbaId}/?project_id=${projectId}`
-    : `api/organizations/rules/check/pcba/${pcbaId}/`;
+    ? `api/rules/check/pcba/${pcbaId}/?project_id=${projectId}`
+    : `api/rules/check/pcba/${pcbaId}/`;
   const promise = axios.get(url, tokenConfig());
   return promise.then((res) => res);
 };
@@ -37,8 +37,8 @@ export const checkPcbaRules = (pcbaId, projectId = null) => {
  */
 export const checkPartRules = (partId, projectId = null) => {
   const url = projectId 
-    ? `api/organizations/rules/check/part/${partId}/?project_id=${projectId}`
-    : `api/organizations/rules/check/part/${partId}/`;
+    ? `api/rules/check/part/${partId}/?project_id=${projectId}`
+    : `api/rules/check/part/${partId}/`;
   const promise = axios.get(url, tokenConfig());
   return promise.then((res) => res);
 };
@@ -51,8 +51,8 @@ export const checkPartRules = (partId, projectId = null) => {
  */
 export const checkDocumentRules = (documentId, projectId = null) => {
   const url = projectId 
-    ? `api/organizations/rules/check/document/${documentId}/?project_id=${projectId}`
-    : `api/organizations/rules/check/document/${documentId}/`;
+    ? `api/rules/check/document/${documentId}/?project_id=${projectId}`
+    : `api/rules/check/document/${documentId}/`;
   const promise = axios.get(url, tokenConfig());
   return promise.then((res) => res);
 };

@@ -15,9 +15,9 @@ class Assembly_bom(models.Model):
     """
 
     # This field specifies which assembly this BOM variant belongs to.
-    assembly_id = models.IntegerField(null=True, blank=True)
+    assembly_id = models.IntegerField(null=True, blank=True)                             # TODO change to one to one field
     # This field specifies which PCBA this BOM variant belongs to.
-    pcba = models.ForeignKey(Pcba, on_delete=models.SET_NULL, blank=True, null=True)
+    pcba = models.ForeignKey(Pcba, on_delete=models.SET_NULL, blank=True, null=True)     # TODO change to one to one field
 
     # Basic assembly_bom data
     bom_name = models.TextField(null=True, blank=True, max_length=50)

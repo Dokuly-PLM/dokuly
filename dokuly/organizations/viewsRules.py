@@ -4,9 +4,58 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from profiles.models import Profile
 from .models import Organization, Rules
 from .serializers import RulesSerializer
+
+
+def check_bom_items_released(bom_items):
+    """
+    Check if all BOM items have released parts, assemblies, or PCBAs.
+    Uses database queries for efficiency.
+    
+    Args:
+        bom_items: QuerySet of Bom_item objects
+        
+    Returns:
+        tuple: (all_passed: bool, unreleased_items: list, total_count: int, released_count: int)
+    """
+    total_count = bom_items.count()
+    
+    # Query for unreleased items - items where the related part/assembly/pcba exists and is NOT released
+    unreleased_bom_items = bom_items.filter(
+        Q(part__isnull=False) & ~Q(part__release_state='Released') |
+        Q(assembly__isnull=False) & ~Q(assembly__release_state='Released') |
+        Q(pcba__isnull=False) & ~Q(pcba__release_state='Released')
+    ).select_related('part', 'assembly', 'pcba')
+    
+    # Build the unreleased items list
+    unreleased_items = []
+    for bom_item in unreleased_bom_items:
+        if bom_item.part and bom_item.part.release_state != 'Released':
+            unreleased_items.append({
+                'type': 'Part',
+                'part_number': bom_item.part.full_part_number,
+                'display_name': bom_item.part.display_name,
+            })
+        elif bom_item.assembly and bom_item.assembly.release_state != 'Released':
+            unreleased_items.append({
+                'type': 'Assembly',
+                'part_number': bom_item.assembly.full_part_number,
+                'display_name': bom_item.assembly.display_name,
+            })
+        elif bom_item.pcba and bom_item.pcba.release_state != 'Released':
+            unreleased_items.append({
+                'type': 'PCBA',
+                'part_number': bom_item.pcba.full_part_number,
+                'display_name': bom_item.pcba.display_name,
+            })
+    
+    released_count = total_count - len(unreleased_items)
+    all_passed = len(unreleased_items) == 0
+    
+    return all_passed, unreleased_items, total_count, released_count
 
 
 def get_rules_for_item(user, project=None):
@@ -178,6 +227,7 @@ def check_assembly_rules(request, assembly_id):
     try:
         from assemblies.models import Assembly
         from projects.models import Project
+        from assembly_bom.models import Assembly_bom, Bom_item
         
         assembly = get_object_or_404(Assembly, id=assembly_id)
         
@@ -199,18 +249,26 @@ def check_assembly_rules(request, assembly_id):
                 'rules_checks': [],
             }, status=status.HTTP_200_OK)
         
+        # Get the BOM for this assembly
+        try:
+            assembly_bom = Assembly_bom.objects.get(assembly_id=assembly_id)
+            bom_items = Bom_item.objects.filter(bom=assembly_bom)
+        except Assembly_bom.DoesNotExist:
+            # No BOM exists yet - no items to check
+            return Response({
+                'has_active_rules': True,
+                'all_rules_passed': True,
+                'override_permission': rules.override_permission,
+                'rules_checks': [{
+                    'rule': 'require_released_bom_items_assembly',
+                    'description': 'No BOM found for this assembly',
+                    'passed': True,
+                    'unreleased_items': [],
+                }],
+            }, status=status.HTTP_200_OK)
+        
         # Check if all BOM items are released
-        bom_items = assembly.assembly_bom_items.all()
-        unreleased_items = []
-        
-        for bom_item in bom_items:
-            if bom_item.part and bom_item.part.release_state != 'Released':
-                unreleased_items.append({
-                    'part_number': bom_item.part.full_part_number,
-                    'display_name': bom_item.part.display_name,
-                })
-        
-        all_passed = len(unreleased_items) == 0
+        all_passed, unreleased_items, total_count, released_count = check_bom_items_released(bom_items)
         
         return Response({
             'has_active_rules': True,
@@ -218,7 +276,7 @@ def check_assembly_rules(request, assembly_id):
             'override_permission': rules.override_permission,
             'rules_checks': [{
                 'rule': 'require_released_bom_items_assembly',
-                'description': f'All BOM items must be released ({len(bom_items) - len(unreleased_items)}/{len(bom_items)} released)',
+                'description': f'All BOM items must be released ({released_count}/{total_count} released)',
                 'passed': all_passed,
                 'unreleased_items': unreleased_items,
             }],
@@ -238,6 +296,7 @@ def check_pcba_rules(request, pcba_id):
     try:
         from pcbas.models import Pcba
         from projects.models import Project
+        from assembly_bom.models import Assembly_bom, Bom_item
         
         pcba = get_object_or_404(Pcba, id=pcba_id)
         
@@ -259,18 +318,26 @@ def check_pcba_rules(request, pcba_id):
                 'rules_checks': [],
             }, status=status.HTTP_200_OK)
         
+        # Get the BOM for this PCBA
+        try:
+            pcba_bom = Assembly_bom.objects.get(pcba=pcba)
+            bom_items = Bom_item.objects.filter(bom=pcba_bom)
+        except Assembly_bom.DoesNotExist:
+            # No BOM exists yet - no items to check
+            return Response({
+                'has_active_rules': True,
+                'all_rules_passed': True,
+                'override_permission': rules.override_permission,
+                'rules_checks': [{
+                    'rule': 'require_released_bom_items_pcba',
+                    'description': 'No BOM found for this PCBA',
+                    'passed': True,
+                    'unreleased_items': [],
+                }],
+            }, status=status.HTTP_200_OK)
+        
         # Check if all BOM items are released
-        bom_items = pcba.pcba_bom_items.all()
-        unreleased_items = []
-        
-        for bom_item in bom_items:
-            if bom_item.part and bom_item.part.release_state != 'Released':
-                unreleased_items.append({
-                    'part_number': bom_item.part.full_part_number,
-                    'display_name': bom_item.part.display_name,
-                })
-        
-        all_passed = len(unreleased_items) == 0
+        all_passed, unreleased_items, total_count, released_count = check_bom_items_released(bom_items)
         
         return Response({
             'has_active_rules': True,
@@ -278,7 +345,7 @@ def check_pcba_rules(request, pcba_id):
             'override_permission': rules.override_permission,
             'rules_checks': [{
                 'rule': 'require_released_bom_items_pcba',
-                'description': f'All BOM items must be released ({len(bom_items) - len(unreleased_items)}/{len(bom_items)} released)',
+                'description': f'All BOM items must be released ({released_count}/{total_count} released)',
                 'passed': all_passed,
                 'unreleased_items': unreleased_items,
             }],

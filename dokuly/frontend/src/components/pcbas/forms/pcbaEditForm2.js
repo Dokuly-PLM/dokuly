@@ -5,6 +5,7 @@ import SubmitButton from "../../dokuly_components/submitButton";
 import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
+import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 
 const PcbaForm = (props) => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const PcbaForm = (props) => {
   const [attributes, setAttributes] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [externalPartNumber, setExternalPartNumber] = useState("");
+  const [rulesStatus, setRulesStatus] = useState(null);
 
   useEffect(() => {
     setDisplayName(props.pcba?.display_name);
@@ -29,6 +31,16 @@ const PcbaForm = (props) => {
   };
 
   function onSubmit() {
+    // Check if trying to release with broken rules
+    if (release_state === "Released" && rulesStatus && !rulesStatus.all_rules_passed) {
+      if (!confirm(
+        "Warning: This PCBA does not meet all release rules.\n\n" +
+        "Are you sure you want to release it anyway?"
+      )) {
+        return;
+      }
+    }
+
     const data = {
       display_name: display_name,
       description: description,
@@ -172,6 +184,13 @@ const PcbaForm = (props) => {
             is_approved_for_release={is_approved_for_release}
             setIsApprovedForRelease={setIsApprovedForRelease}
             quality_assurance={props?.pcba?.quality_assurance}
+          />
+
+          <RulesStatusIndicator 
+            itemType="pcba"
+            itemId={props.pcba?.id}
+            projectId={props.pcba?.project}
+            onStatusChange={setRulesStatus}
           />
 
           <div className="form-group mt-3">

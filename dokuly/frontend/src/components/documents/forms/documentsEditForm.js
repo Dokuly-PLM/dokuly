@@ -7,6 +7,7 @@ import { fetchProtectionLevels } from "../../admin/functions/queries";
 import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import FileUpload from "../../dokuly_components/fileUpload/fileUpload";
 import DokulyModal from "../../dokuly_components/dokulyModal";
+import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 
 const DocumentEditForm = (props) => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const DocumentEditForm = (props) => {
   const [showModal, setShowModal] = useState(false);
   const [protectionLevels, setProtectionLevels] = useState([]);
   const [selected_protection_level_id, setSelectedProtectionLevelId] = useState("");
+  const [rulesStatus, setRulesStatus] = useState(null);
 
   useEffect(() => {
     setTitle(props.document?.title);
@@ -61,6 +63,16 @@ const DocumentEditForm = (props) => {
   };
 
   function onSubmit() {
+    // Check if trying to release with broken rules
+    if (release_state === "Released" && rulesStatus && !rulesStatus.all_rules_passed) {
+      if (!confirm(
+        "Warning: This document does not meet all release rules.\n\n" +
+        "Are you sure you want to release it anyway?"
+      )) {
+        return;
+      }
+    }
+    
     setShowModal(false);
     const data = new FormData();
     data.append("title", title);
@@ -246,6 +258,13 @@ const DocumentEditForm = (props) => {
             is_approved_for_release={is_approved_for_release}
             setIsApprovedForRelease={setIsApprovedForRelease}
             quality_assurance={props?.document?.quality_assurance}
+          />
+
+          <RulesStatusIndicator 
+            itemType="document"
+            itemId={props.document?.id}
+            projectId={props.document?.project}
+            onStatusChange={setRulesStatus}
           />
 
           <div className="form-group">

@@ -1559,7 +1559,7 @@ export const previewFormattedRevisionTemplate = (data) => {
  * @return {Promise<AxiosResponse<any>>} The axios data promise.
  */
 export const fetchOrganizationRules = () => {
-  const promise = axios.get("api/organizations/rules/get/", tokenConfig());
+  const promise = axios.get("api/rules/get/", tokenConfig());
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
@@ -1570,7 +1570,7 @@ export const fetchOrganizationRules = () => {
  * @return {Promise<AxiosResponse<any>>} The axios data promise.
  */
 export const updateOrganizationRules = (data) => {
-  const promise = axios.put("api/organizations/rules/update/", data, tokenConfig());
+  const promise = axios.put("api/rules/update/", data, tokenConfig());
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };

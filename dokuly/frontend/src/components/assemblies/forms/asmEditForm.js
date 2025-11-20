@@ -6,6 +6,7 @@ import SubmitButton from "../../dokuly_components/submitButton";
 import { toast } from "react-toastify";
 import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
+import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 
 const AsmEditForm = (props) => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const AsmEditForm = (props) => {
   const [model_url, setModelUrl] = useState("");
   const [description, setDescription] = useState("");
   const [externalPartNumber, setExternalPartNumber] = useState("");
+  const [rulesStatus, setRulesStatus] = useState(null);
 
   const editAsm = () => {
     loadStates(props?.asm);
@@ -66,6 +68,17 @@ const AsmEditForm = (props) => {
       toast.error("Invalid description");
       return;
     }
+    
+    // Check if trying to release with broken rules
+    if (release_state === "Released" && rulesStatus && !rulesStatus.all_rules_passed) {
+      if (!confirm(
+        "Warning: This assembly does not meet all release rules.\n\n" +
+        "Are you sure you want to release it anyway?"
+      )) {
+        return;
+      }
+    }
+    
     const data = {
       display_name: display_name,
       release_state: release_state,
@@ -180,6 +193,13 @@ const AsmEditForm = (props) => {
                 is_approved_for_release={is_approved_for_release}
                 setIsApprovedForRelease={setIsApprovedForRelease}
                 quality_assurance={props?.asm?.quality_assurance}
+              />
+
+              <RulesStatusIndicator 
+                itemType="assembly"
+                itemId={props.asm?.id}
+                projectId={props.asm?.project}
+                onStatusChange={setRulesStatus}
               />
 
               <div className="mt-4">
