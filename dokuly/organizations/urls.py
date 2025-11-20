@@ -36,6 +36,10 @@ urlpatterns = [
     # Rules management
     path("api/organizations/rules/get/", viewsRules.fetch_organization_rules),
     path("api/organizations/rules/update/", viewsRules.update_organization_rules),
+    path("api/organizations/rules/check/assembly/<int:assembly_id>/", viewsRules.check_assembly_rules),
+    path("api/organizations/rules/check/pcba/<int:pcba_id>/", viewsRules.check_pcba_rules),
+    path("api/organizations/rules/check/part/<int:part_id>/", viewsRules.check_part_rules),
+    path("api/organizations/rules/check/document/<int:document_id>/", viewsRules.check_document_rules),
     
     # Revision system fixes
     path("api/organizations/checkCorruptedRevisions/", views.check_corrupted_revisions),

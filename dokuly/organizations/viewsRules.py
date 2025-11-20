@@ -9,6 +9,71 @@ from .models import Organization, Rules
 from .serializers import RulesSerializer
 
 
+def get_rules_for_item(user, project=None):
+    """
+    Get rules for an item, checking project first, then organization.
+    
+    Args:
+        user: The requesting user
+        project: Optional project object
+        
+    Returns:
+        Rules object or None
+    """
+    # Check for project-specific rules first
+    if project and hasattr(project, 'release_rules'):
+        return project.release_rules
+    
+    # Fall back to organization rules
+    user_profile = get_object_or_404(Profile, user=user)
+    org_id = user_profile.organization_id
+    
+    if org_id:
+        organization = get_object_or_404(Organization, id=org_id)
+        try:
+            return Rules.objects.get(organization=organization)
+        except Rules.DoesNotExist:
+            return None
+    
+    return None
+
+
+def user_can_override(user, rules):
+    """
+    Check if user has permission to override release rules.
+    
+    Args:
+        user: The requesting user
+        rules: Rules object
+        
+    Returns:
+        Boolean indicating if user can override
+    """
+    if not rules:
+        return True
+    
+    user_profile = get_object_or_404(Profile, user=user)
+    
+    # Map permission levels to role checks
+    permission = rules.override_permission
+    
+    if permission == 'User':
+        return True  # All users can override
+    
+    if permission == 'Project Owner':
+        # TODO: Check if user is project owner
+        # For now, allow if Admin or Owner
+        return user_profile.role in ['Admin', 'Owner']
+    
+    if permission == 'Admin':
+        return user_profile.role in ['Admin', 'Owner']
+    
+    if permission == 'Owner':
+        return user_profile.role == 'Owner'
+    
+    return False
+
+
 @api_view(["GET"])
 @renderer_classes([JSONRenderer])
 @login_required(login_url="/login")
@@ -101,5 +166,165 @@ def update_organization_rules(request):
         return Response("User profile not found", status=status.HTTP_404_NOT_FOUND)
     except Organization.DoesNotExist:
         return Response("Organization not found", status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@renderer_classes([JSONRenderer])
+@login_required(login_url="/login")
+def check_assembly_rules(request, assembly_id):
+    """Check if an assembly meets release rules requirements."""
+    try:
+        from assemblies.models import Assembly
+        from projects.models import Project
+        
+        assembly = get_object_or_404(Assembly, id=assembly_id)
+        
+        # Get project from query params or assembly
+        project_id = request.GET.get('project_id')
+        project = None
+        if project_id:
+            project = get_object_or_404(Project, id=project_id)
+        elif assembly.project:
+            project = assembly.project
+        
+        # Get applicable rules
+        rules = get_rules_for_item(request.user, project)
+        
+        if not rules or not rules.require_released_bom_items_assembly:
+            return Response({
+                'has_active_rules': False,
+                'all_rules_passed': True,
+                'rules_checks': [],
+            }, status=status.HTTP_200_OK)
+        
+        # Check if all BOM items are released
+        bom_items = assembly.assembly_bom_items.all()
+        unreleased_items = []
+        
+        for bom_item in bom_items:
+            if bom_item.part and bom_item.part.release_state != 'Released':
+                unreleased_items.append({
+                    'part_number': bom_item.part.full_part_number,
+                    'display_name': bom_item.part.display_name,
+                })
+        
+        all_passed = len(unreleased_items) == 0
+        
+        return Response({
+            'has_active_rules': True,
+            'all_rules_passed': all_passed,
+            'override_permission': rules.override_permission,
+            'rules_checks': [{
+                'rule': 'require_released_bom_items_assembly',
+                'description': f'All BOM items must be released ({len(bom_items) - len(unreleased_items)}/{len(bom_items)} released)',
+                'passed': all_passed,
+                'unreleased_items': unreleased_items,
+            }],
+        }, status=status.HTTP_200_OK)
+        
+    except Assembly.DoesNotExist:
+        return Response("Assembly not found", status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@renderer_classes([JSONRenderer])
+@login_required(login_url="/login")
+def check_pcba_rules(request, pcba_id):
+    """Check if a PCBA meets release rules requirements."""
+    try:
+        from pcbas.models import Pcba
+        from projects.models import Project
+        
+        pcba = get_object_or_404(Pcba, id=pcba_id)
+        
+        # Get project from query params or pcba
+        project_id = request.GET.get('project_id')
+        project = None
+        if project_id:
+            project = get_object_or_404(Project, id=project_id)
+        elif pcba.project:
+            project = pcba.project
+        
+        # Get applicable rules
+        rules = get_rules_for_item(request.user, project)
+        
+        if not rules or not rules.require_released_bom_items_pcba:
+            return Response({
+                'has_active_rules': False,
+                'all_rules_passed': True,
+                'rules_checks': [],
+            }, status=status.HTTP_200_OK)
+        
+        # Check if all BOM items are released
+        bom_items = pcba.pcba_bom_items.all()
+        unreleased_items = []
+        
+        for bom_item in bom_items:
+            if bom_item.part and bom_item.part.release_state != 'Released':
+                unreleased_items.append({
+                    'part_number': bom_item.part.full_part_number,
+                    'display_name': bom_item.part.display_name,
+                })
+        
+        all_passed = len(unreleased_items) == 0
+        
+        return Response({
+            'has_active_rules': True,
+            'all_rules_passed': all_passed,
+            'override_permission': rules.override_permission,
+            'rules_checks': [{
+                'rule': 'require_released_bom_items_pcba',
+                'description': f'All BOM items must be released ({len(bom_items) - len(unreleased_items)}/{len(bom_items)} released)',
+                'passed': all_passed,
+                'unreleased_items': unreleased_items,
+            }],
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@renderer_classes([JSONRenderer])
+@login_required(login_url="/login")
+def check_part_rules(request, part_id):
+    """Check if a part meets release rules requirements. Placeholder for future rules."""
+    try:
+        from parts.models import Part
+        
+        part = get_object_or_404(Part, id=part_id)
+        
+        # Placeholder - no part-specific rules yet
+        return Response({
+            'has_active_rules': False,
+            'all_rules_passed': True,
+            'rules_checks': [],
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@renderer_classes([JSONRenderer])
+@login_required(login_url="/login")
+def check_document_rules(request, document_id):
+    """Check if a document meets release rules requirements. Placeholder for future rules."""
+    try:
+        from documents.models import Document
+        
+        document = get_object_or_404(Document, id=document_id)
+        
+        # Placeholder - no document-specific rules yet
+        return Response({
+            'has_active_rules': False,
+            'all_rules_passed': True,
+            'rules_checks': [],
+        }, status=status.HTTP_200_OK)
+        
     except Exception as e:
         return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
