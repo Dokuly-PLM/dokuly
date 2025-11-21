@@ -308,7 +308,7 @@ export default function PartsTable(props) {
               showColumnFilters={true}
               showFilterChips={true}
               showSavedViews={true}
-              defaultSort={{ columnNumber: 6, order: "desc" }}
+              defaultSort={{ columnNumber: 7, order: "desc" }}
             />
           ) : (
             <>

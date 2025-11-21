@@ -125,25 +125,6 @@ function DokulyTableContents({
     updateTableSetting("textSize", newSize); // Persist to localStorage
   };
 
-  // Get default columns from settings or use column defaults
-  const getDefaultColumns = () => {
-    if (tableSettings.defaultColumns && Array.isArray(tableSettings.defaultColumns)) {
-      // Create a map of columns by key for quick lookup
-      const columnsMap = new Map(columns.map((col) => [col.key, col]));
-      
-      // Restore columns in the saved order
-      const savedCols = tableSettings.defaultColumns
-        .map((key) => columnsMap.get(key))
-        .filter((col) => col !== undefined); // Filter out any columns that no longer exist
-      
-      if (savedCols.length > 0) {
-        return savedCols;
-      }
-    }
-    // Use column defaultShowColumn property
-    return columns.filter((col) => col.defaultShowColumn !== false);
-  };
-
   const [selectedColumns, setSelectedColumns] = useState(() => {
     // Initialize with column defaults first (will be updated by useEffect if settings exist)
     return columns.filter((col) => col.defaultShowColumn !== false);
