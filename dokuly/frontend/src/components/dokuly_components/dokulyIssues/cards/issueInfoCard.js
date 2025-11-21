@@ -2,13 +2,11 @@ import React from "react";
 import DokulyCard from "../../dokulyCard";
 import { Col, Container, Row } from "react-bootstrap";
 import CardTitle from "../../cardTitle";
-import EditButton from "../../editButton";
 import { useNavigate } from "react-router";
-import AddButton from "../../AddButton";
 import { appToModelName } from "../issuesTable";
-import { toast } from "react-toastify";
-import { closeIssue, reopenIssue } from "../functions/queries";
 import DokulyTags from "../../dokulyTags/dokulyTags";
+import DokulyImage from "../../dokulyImage";
+import { formatCloudImageUri } from "../../../pcbas/functions/productionHelpers";
 
 export const getIssueProject = (issue, returnObject = false) => {
   if (issue?.parts && issue.parts.length > 0) {
@@ -36,7 +34,6 @@ export const getIssueProject = (issue, returnObject = false) => {
 
 const IssueInfoCard = ({
   issue,
-  openModal,
   app,
   setRefresh,
   updateItemField = () => {},
@@ -97,58 +94,6 @@ const IssueInfoCard = ({
     return "Not linked";
   };
 
-  const handleCloseIssue = (issue) => {
-    if (!confirm("Are you sure you want to close this issue?")) {
-      return;
-    }
-    // Find max revision in the issue
-    const maxRevisionObject = issue[app].reduce((maxObj, item) => {
-      return item.revision > maxObj.revision ? item : maxObj;
-    }, issue[app][0]);
-
-    if (!maxRevisionObject) {
-      toast.error("No revision found for this issue.");
-      return;
-    }
-    const data = {
-      object_id: maxRevisionObject?.id, // This is the "closed_in" id field.
-      app: app,
-    };
-    closeIssue(issue?.id, data).then((res) => {
-      if (res.status === 200) {
-        toast.success("Issue closed successfully.");
-        setRefresh(true);
-      } else {
-        toast.error("Failed to close issue.");
-      }
-    });
-  };
-
-  const handleReopenIssue = (issue) => {
-    // Find max revision in the issue
-    const maxRevisionObject = issue[app].reduce((maxObj, item) => {
-      return item.revision > maxObj.revision ? item : maxObj;
-    }, issue[app][0]);
-
-    if (!maxRevisionObject) {
-      toast.error("No revision found for this issue.");
-      return;
-    }
-    const data = { object_id: maxRevisionObject?.id, app: app };
-    reopenIssue(issue?.id, data)
-      .then((res) => {
-        if (res.status === 200) {
-          toast.success("Issue re-opened successfully.");
-          setRefresh(true);
-        } else {
-          toast.error("Failed to re-open issue.");
-        }
-      })
-      .catch((error) => {
-        toast.error("Failed to re-open issue.");
-      });
-  };
-
   const changeField = (key, value) => {
     if (issue?.id == null) {
       return;
@@ -165,22 +110,70 @@ const IssueInfoCard = ({
     changeField("tags", newTags);
   };
 
+  // Get the first linked item's thumbnail and display name
+  const getAffectedItemInfo = (issue) => {
+    if (!issue || !issue[app] || issue[app].length === 0) {
+      return null;
+    }
+    const firstItem = issue[app][0];
+    return {
+      thumbnail: firstItem.thumbnail,
+      display_name: firstItem.display_name,
+      full_part_number:
+        app === "documents"
+          ? firstItem.full_doc_number
+          : firstItem.full_part_number,
+      revision: app !== "documents" ? firstItem.revision : null,
+    };
+  };
+
+  const affectedItem = getAffectedItemInfo(issue);
+
   return (
     <DokulyCard>
       <CardTitle titleText={"Information"} />
       <hr />
+
       <Container fluid style={{ marginTop: "-0.5rem" }}>
-        <Row>
-          <Col>
-            <EditButton buttonText="Edit" onClick={() => openModal(true)} />
-          </Col>
-        </Row>
-        <Row className="mt-3">
-          <Col xs="6" sm="6" md="6" lg="4" xl="6">
-            <b>Title:</b>
-          </Col>
-          <Col>{issue?.title ?? ""}</Col>
-        </Row>
+        {affectedItem && (
+          
+            <Row 
+              className="mb-3 align-items-center"
+              onClick={() => navigateToRelatedPart(issue[app][0].id)}
+              style={{ cursor: "pointer" }}
+            >
+              <Col xs="auto">
+              {affectedItem.thumbnail && (
+                <DokulyImage
+                  src={formatCloudImageUri(affectedItem.thumbnail)}
+                  alt="Thumbnail"
+                  style={{
+                    maxWidth: "60px",
+                    maxHeight: "60px",
+                    objectFit: "contain",
+                    display: "block",
+                  }}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "";
+                  }}
+                />
+              )}
+            </Col>
+            <Col>
+              <div style={{ fontSize: "14px" }}>
+                <div style={{ fontWeight: "600" }}>
+                  {affectedItem.full_part_number}
+                </div>
+                <div style={{ fontSize: "13px", color: "#666" }}>
+                  {affectedItem.display_name}
+                </div>
+              </div>
+            </Col>
+          </Row>
+        )}
+        
+
         <Row
           style={{
             border: `2px solid ${backgroundColor}`,
@@ -194,41 +187,9 @@ const IssueInfoCard = ({
           </Col>
           <Col>{issue?.criticality ?? ""}</Col>
         </Row>
-        <Row>
-          <Col xs="6" sm="6" md="6" lg="4" xl="6">
-            <b>Project:</b>
-          </Col>
-          <Col>{getIssueProject(issue)}</Col>
-        </Row>
-        <Row>
-          <Col xs="6" sm="6" md="6" lg="4" xl="6">
-            <b>Linked to:</b>
-          </Col>
-          <Col>{formatLinks(issue)}</Col>
-        </Row>
-        <Row>
-          <Col xs="6" sm="6" md="6" lg="4" xl="6">
-            <b>Status:</b>
-          </Col>
-          <Col>{formatStatus(issue)}</Col>
-        </Row>
-        <Row>
-          <Col xs="6" sm="6" md="6" lg="4" xl="6">
-            {formatStatus(issue, true) ? (
-              <AddButton
-                onClick={() => handleReopenIssue(issue)}
-                buttonText={"Re-open Issue"}
-                imgSrc={"../../../static/icons/refresh.svg"}
-              />
-            ) : (
-              <AddButton
-                onClick={() => handleCloseIssue(issue)}
-                buttonText={"Close Issue"}
-                imgSrc={"../../../static/icons/circle-check.svg"}
-              />
-            )}
-          </Col>
-        </Row>
+
+        <hr />
+
         <Row className="mt-2 align-items-top">
           <Col className="col-lg-6 col-xl-6">
             <b>Tags</b>

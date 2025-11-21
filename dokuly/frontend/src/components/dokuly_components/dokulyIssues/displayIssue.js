@@ -8,7 +8,10 @@ import IssueDescriptionCard from "./cards/issueDescriptionCard";
 import { toast } from "react-toastify";
 import { Col, Row } from "react-bootstrap";
 import EditIssueForm from "./forms/editIssueForm";
-import { editIssue } from "./functions/queries";
+import { editIssue, closeIssue, reopenIssue } from "./functions/queries";
+import { appToModelName } from "./issuesTable";
+import AddButton from "../AddButton";
+import EditButton from "../editButton";
 
 const DisplayIssue = () => {
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
@@ -75,10 +78,84 @@ const DisplayIssue = () => {
     if (!issue.title) {
       return "";
     }
-    if (issue?.title?.length < 50) {
-      return issue.title;
+    return issue.title;
+  };
+
+  const formatStatus = (issue, returnBool) => {
+    if (!app || !issue[app]) {
+      return returnBool ? false : "Not linked";
     }
-    return `${issue.title.substring(0, 50)}...`;
+    const modelName = appToModelName[app];
+    const statusKey = `closed_in_${modelName}`;
+
+    if (returnBool) {
+      return issue[statusKey] !== null;
+    }
+    return issue[statusKey] ? "Closed" : "Open";
+  };
+
+  const handleCloseIssue = () => {
+    if (!confirm("Are you sure you want to close this issue?")) {
+      return;
+    }
+    const maxRevisionObject = issue[app].reduce((maxObj, item) => {
+      return item.revision > maxObj.revision ? item : maxObj;
+    }, issue[app][0]);
+
+    if (!maxRevisionObject) {
+      toast.error("No revision found for this issue.");
+      return;
+    }
+    const data = {
+      object_id: maxRevisionObject?.id,
+      app: app,
+    };
+    closeIssue(issue?.id, data).then((res) => {
+      if (res.status === 200) {
+        toast.success("Issue closed successfully.");
+        refreshIssue();
+      } else {
+        toast.error("Failed to close issue.");
+      }
+    });
+  };
+
+  const handleReopenIssue = () => {
+    const maxRevisionObject = issue[app].reduce((maxObj, item) => {
+      return item.revision > maxObj.revision ? item : maxObj;
+    }, issue[app][0]);
+
+    if (!maxRevisionObject) {
+      toast.error("No revision found for this issue.");
+      return;
+    }
+    const data = { object_id: maxRevisionObject?.id, app: app };
+    reopenIssue(issue?.id, data)
+      .then((res) => {
+        if (res.status === 200) {
+          toast.success("Issue re-opened successfully.");
+          refreshIssue();
+        } else {
+          toast.error("Failed to re-open issue.");
+        }
+      })
+      .catch((error) => {
+        toast.error("Failed to re-open issue.");
+      });
+  };
+
+  const getStatusPillStyle = () => {
+    const isClosed = formatStatus(issue, true);
+    return {
+      display: "inline-block",
+      padding: "4px 12px",
+      borderRadius: "12px",
+      fontSize: "14px",
+      fontWeight: "600",
+      marginRight: "1rem",
+      backgroundColor: isClosed ? "#6c757d" : "#28a745",
+      color: "white",
+    };
   };
 
   useEffect(() => {
@@ -113,30 +190,61 @@ const DisplayIssue = () => {
       className="container-fluid mt-2 mainContainerWidth"
       style={{ paddingBottom: "1rem" }}
     >
-      <Heading
-        item_number={`Issue #${issue?.id || ""}`}
-        display_name={formatTitle(issue) ?? ""}
-      />
+      <div style={{ display: "flex", alignItems: "center" }}>
+        {app && issue && (
+          <span style={getStatusPillStyle()}>
+            {formatStatus(issue)}
+          </span>
+        )}
+        <Heading
+          item_number={`Issue #${issue?.id || ""}`}
+          display_name={formatTitle(issue) ?? ""}
+        />
+      </div>
+      <Row >
+        <Col md={4}>
+          <div className="mb-2">
+            <EditButton buttonText="Edit" onClick={() => setOpenModal(true)} />
+          </div>
+        </Col>
+        
+      </Row>
       <Row>
         <Col md={4}>
           {app && (
             <IssueInfoCard
               issue={issue}
-              openModal={setOpenModal}
               app={app}
               setRefresh={refreshIssue}
               updateItemField={updateIssueField}
             />
-          )}
+        )}
         </Col>
         <Col md={8}>
           {app && (
-            <IssueDescriptionCard
-              markdown={description}
-              handleMarkdownSubmit={onEditIssue}
-              app={app}
-              project={getIssueProject(issue, true)}
-            />
+            <>
+              <IssueDescriptionCard
+                markdown={description}
+                handleMarkdownSubmit={onEditIssue}
+                app={app}
+                project={getIssueProject(issue, true)}
+              />
+              <div className="mt-3">
+                {formatStatus(issue, true) ? (
+                  <AddButton
+                    onClick={handleReopenIssue}
+                    buttonText={"Re-open Issue"}
+                    imgSrc={"../../../static/icons/refresh.svg"}
+                  />
+                ) : (
+                  <AddButton
+                    onClick={handleCloseIssue}
+                    buttonText={"Close Issue"}
+                    imgSrc={"../../../static/icons/circle-check.svg"}
+                  />
+                )}
+              </div>
+            </>
           )}
         </Col>
       </Row>
