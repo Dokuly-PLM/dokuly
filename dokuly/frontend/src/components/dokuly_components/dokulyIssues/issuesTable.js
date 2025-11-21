@@ -318,6 +318,7 @@ const IssuesTable = ({
             height={20}
             alt="Has Description"
             src="../../static/icons/file-text.svg"
+            title="There is further description on the issue page"
           />
         ) : (
           "-"
