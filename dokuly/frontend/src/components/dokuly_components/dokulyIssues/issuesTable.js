@@ -25,6 +25,8 @@ import AddButton from "../AddButton";
 import { useNavigate } from "react-router";
 import DokulyTags from "../dokulyTags/dokulyTags";
 import NoDataFound from "../dokulyTable/components/noDataFound";
+import DokulyImage from "../dokulyImage";
+import { formatCloudImageUri } from "../../pcbas/functions/productionHelpers";
 
 export const appToModelName = {
   assemblies: "assembly",
@@ -216,7 +218,7 @@ const IssuesTable = ({
       sortable: true,
       includeInCsv: true,
       defaultShowColumn: true,
-      maxWidth: "50px",
+      maxWidth: "40px",
       formatter: (row) => {
         return (
           <Row className="mx-2 d-flex justify-content-left align-items-center">
@@ -234,13 +236,102 @@ const IssuesTable = ({
       },
     },
     {
+      key: "affected_item",
+      header: "Affected Item",
+      headerTooltip: "Thumbnail and details of the affected BOM item",
+      defaultShowColumn: true,
+      maxWidth: "80px",
+      formatter: (row) => {
+        if (!row?.related_bom_item) {
+          return "-";
+        }
+        const item = row.related_bom_item;
+        
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", ...isCompletedStyle(row) }}>
+            {/* Thumbnail */}
+            <div style={{ 
+              flex: "0 0 50px", 
+              display: "flex", 
+              justifyContent: "center", 
+              alignItems: "center",
+              maxHeight: "50px"
+            }}>
+              {(item?.thumbnail || item?.image_url) ? (
+                <DokulyImage
+                  src={item?.thumbnail ? formatCloudImageUri(item.thumbnail) : item.image_url}
+                  alt="Thumbnail"
+                  style={{
+                    maxWidth: "50px",
+                    maxHeight: "50px",
+                    objectFit: "contain",
+                    display: "block"
+                  }}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "";
+                  }}
+                />
+              ) : null}
+            </div>
+            
+            {/* Part info */}
+            <div style={{ 
+              flex: "1", 
+              display: "flex", 
+              flexDirection: "column",
+              minWidth: 0,
+              fontSize: "12px"
+            }}>
+              <div style={{ 
+                fontWeight: "600",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis"
+              }}>
+                {item?.full_part_number}
+              </div>
+              <div style={{ 
+                fontSize: "11px",
+                color: "#666",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis"
+              }}>
+                {item?.display_name || "-"}
+              </div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: "has_description",
+      header: "",
+      headerTooltip:
+        "The icon represents that the issue has a further description. While the '-' means there is no description.",
+      maxWidth: "20px",
+      formatter: (row) => {
+        return row?.description?.text ? (
+          <img
+            className="icon-dark"
+            height={20}
+            alt="Has Description"
+            src="../../static/icons/file-text.svg"
+          />
+        ) : (
+          "-"
+        );
+      },
+    },
+    {
       key: "title",
       header: "Title",
       headerTooltip: "Issue Title",
       sortable: true,
       includeInCsv: true,
       defaultShowColumn: true,
-      maxWidth: "150px",
+      maxWidth: "200px",
       formatter: (row) => (
         <div style={isCompletedStyle(row)}>
           <TextFieldEditor
@@ -277,25 +368,7 @@ const IssuesTable = ({
         return row.description?.text ? row.description?.text : "";
       },
     },
-    {
-      key: "has_description",
-      header: "",
-      headerTooltip:
-        "The icon represents that the issue has a further description. While the '-' means there is no description.",
-      maxWidth: "20px",
-      formatter: (row) => {
-        return row?.description?.text ? (
-          <img
-            className="icon-dark"
-            height={20}
-            alt="Has Description"
-            src="../../static/icons/file-text.svg"
-          />
-        ) : (
-          "-"
-        );
-      },
-    },
+
     {
       key: "criticality",
       header: "Criticality",
@@ -323,6 +396,7 @@ const IssuesTable = ({
         );
       },
     },
+    /*
     {
       key: "created_by",
       header: "Created By",
@@ -354,7 +428,7 @@ const IssuesTable = ({
           </div>
         );
       },
-    },
+    },*/
     {
       key: "tags",
       header: "Tags",

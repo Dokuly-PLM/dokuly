@@ -121,11 +121,15 @@ def flatten_bom(bom_items, flat_bom=None, visited=None):
             item_id = item.part.id
             revision = item.part.revision
             full_part_number = item.part.full_part_number
+            thumbnail = item.part.thumbnail.id if item.part.thumbnail else None
+            display_name = item.part.display_name if hasattr(item.part, 'display_name') else None
         elif item.pcba:
             app_type = 'pcbas'
             item_id = item.pcba.id
             revision = item.pcba.revision
             full_part_number = item.pcba.full_part_number
+            thumbnail = item.pcba.thumbnail.id if item.pcba.thumbnail else None
+            display_name = item.pcba.display_name if hasattr(item.pcba, 'display_name') else None
             # Recurse to include items from this pcba's bom, if any
             child_bom = Assembly_bom.objects.filter(pcba=item.pcba).first()
             if child_bom:
@@ -136,6 +140,8 @@ def flatten_bom(bom_items, flat_bom=None, visited=None):
             item_id = item.assembly.id
             revision = item.assembly.revision
             full_part_number = item.assembly.full_part_number
+            thumbnail = item.assembly.thumbnail.id if item.assembly.thumbnail else None
+            display_name = item.assembly.display_name if hasattr(item.assembly, 'display_name') else None
             # Recurse to include items from this assembly's bom, if any
             child_bom = Assembly_bom.objects.filter(assembly_id=item.assembly.id).first()
             if child_bom:
@@ -148,7 +154,9 @@ def flatten_bom(bom_items, flat_bom=None, visited=None):
                 'app': app_type,
                 'id': item_id,
                 'revision': revision,
-                'full_part_number': full_part_number
+                'full_part_number': full_part_number,
+                'thumbnail': thumbnail,
+                'display_name': display_name
             }
 
     return flat_bom
