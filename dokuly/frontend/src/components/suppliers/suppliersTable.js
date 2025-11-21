@@ -113,21 +113,16 @@ export default function SupplierTable() {
       header: "Active",
       includeInCsv: true,
       formatter: (row) => {
-        if (
-          row?.is_active !== null &&
-          row?.is_active !== undefined &&
-          row?.is_active === true
-        ) {
-          return (
-            <img
-              src="../../static/icons/check.svg"
-              alt="checked"
-              width="30px"
-              height="30px"
-            />
-          );
-        }
-        return "";
+        return (
+          <input
+            className="dokuly-checkbox"
+            type="checkbox"
+            checked={row?.is_active === true}
+            //disabled={true}
+            style={{ cursor: 'not-allowed', opacity: 0.6 }}
+            readOnly
+          />
+        );
       },
     },
   ];
