@@ -118,6 +118,29 @@ export const getBomTableColumns = ({
       maxWidth: includeSelector ? "400px" : expandPnCol ? "160px" : "800px",
     },
     {
+      key: "external_part_number",
+      header: "External P/N",
+      headerTooltip: "External Part Number",
+      sort: true,
+      formatter: (row) => (
+        <span>{row?.external_part_number || ""}</span>
+      ),
+      csvFormatter: (row) => (row?.external_part_number ? `${row.external_part_number}` : ""),
+      searchValue: (row) => {
+        const searchTerms = [];
+        
+        // Add external part number
+        if (row?.external_part_number) {
+          searchTerms.push(row.external_part_number);
+        }
+        
+        return searchTerms.join(" ");
+      },
+      includeInCsv: true,
+      defaultShowColumn: false,
+      maxWidth: "200px",
+    },
+    {
       key: "mpn",
       header: "MPN",
       headerTooltip: "Manufacturer Part Number",

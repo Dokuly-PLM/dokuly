@@ -595,7 +595,7 @@ def get_bom_items(request, assembly_ids, part_ids, pcba_ids):
             .only(
                 "id", "part_number", "full_part_number", "display_name",
                 "revision", "is_latest_revision", "release_state",
-                "price", "model_url", "thumbnail"
+                "price", "model_url", "thumbnail", "external_part_number"
             )
             .order_by("-revision")
         )
@@ -621,7 +621,8 @@ def get_bom_items(request, assembly_ids, part_ids, pcba_ids):
                 "display_name", "revision", "release_state",
                 "is_latest_revision", "mpn", "image_url",
                 "unit", "git_link", "manufacturer", "datasheet",
-                "part_information", "thumbnail", "is_rohs_compliant"
+                "part_information", "thumbnail", "is_rohs_compliant",
+                "external_part_number"
             )
             .order_by("-revision")
         )
@@ -645,7 +646,7 @@ def get_bom_items(request, assembly_ids, part_ids, pcba_ids):
             .only(
                 "id", "part_number", "full_part_number", "display_name",
                 "revision", "release_state", "is_latest_revision",
-                "thumbnail",
+                "thumbnail", "external_part_number",
             )
             .order_by("-revision")
         )

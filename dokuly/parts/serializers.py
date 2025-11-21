@@ -264,6 +264,7 @@ class SimplePcbaSerializer(serializers.ModelSerializer):
             "release_state",
             "is_latest_revision",
             "thumbnail",
+            "external_part_number",
         )  # Only the necessary fields
 
 
@@ -312,6 +313,7 @@ class BomPartSerializer(serializers.ModelSerializer):
             "part_information",
             "thumbnail",
             "is_rohs_compliant",
+            "external_part_number",
         )
 
 
@@ -331,6 +333,7 @@ class SimpleAsmSerializer(serializers.ModelSerializer):
             "price",
             "model_url",
             "thumbnail",
+            "external_part_number",
         )
 
 
