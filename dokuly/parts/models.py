@@ -14,6 +14,7 @@ class Part(models.Model):
     Can be used to create a standalone library of parts.
     """
 
+    # dokuly unique part number. This defines the part, and is the same across revisions.
     part_number = models.IntegerField(default=-1, blank=True, null=True)
 
     # Implement full part number field to remove logic from front-end.
@@ -41,6 +42,7 @@ class Part(models.Model):
     )  # The person that did the review.
     released_date = models.DateTimeField(null=True, blank=True)
 
+    # Unit of measurement for the part (e.g., pieces, kilograms)
     unit = models.CharField(max_length=20, blank=True, default="pcs", null=True)
 
     # Parts can be coupled to a project, such that access control can be given on a per project basis.
@@ -48,7 +50,6 @@ class Part(models.Model):
 
     internal = models.BooleanField(null=True)
     last_updated = models.DateTimeField(auto_now=True)
-    backorder_quantity = models.IntegerField(blank=True, null=True)
     on_order_quantity = models.IntegerField(blank=True, null=True)
 
     # This field is used to keep track of the number of parts that have been produced.
@@ -67,8 +68,6 @@ class Part(models.Model):
     revision_count_major = models.IntegerField(blank=True, null=True, default=0)
     revision_count_minor = models.IntegerField(blank=True, null=True, default=0)
 
-    # This is the old revision field kept for compatibility.
-    revision = models.CharField(max_length=10, blank=True, null=True)  # DEPRECATED
     # Indicates if this is the latest revision of the part. It is used to quickly query for the latest revision without needing to sort through all revisions.
     is_latest_revision = models.BooleanField(default=False, blank=True)
 
@@ -83,8 +82,10 @@ class Part(models.Model):
     farnell_number = models.CharField(max_length=50, blank=True, null=True)
     manufacturer = models.CharField(max_length=60, blank=True, null=True)
     datasheet = models.CharField(max_length=200, blank=True, null=True)
+    # Lifecycle # TODO change to lifecycle statur
     production_status = models.CharField(max_length=20, blank=True, null=True)
 
+    # Compliance
     is_rohs_compliant = models.BooleanField(default=False, blank=True)
     is_reach_compliant = models.BooleanField(default=False, blank=True)
     is_ul_compliant = models.BooleanField(default=False, blank=True)
@@ -97,9 +98,6 @@ class Part(models.Model):
     estimated_factory_lead_days = models.IntegerField(blank=True, null=True)
 
     # Alternative_parts. Foreign keys to parts which have the same mechanical fit, with the same or greater performance.
-    alternative_parts = ArrayField(
-        models.IntegerField(null=False, blank=True), default=[], blank=True, null=True
-    )
     alternative_parts_v2 = models.ManyToManyField("self",
                                                   symmetrical=False,
                                                   blank=True,
@@ -116,14 +114,10 @@ class Part(models.Model):
         'documents.MarkdownText', on_delete=models.SET_NULL, null=True, blank=True
     )
 
-    # From component vault
-    part_information = models.JSONField(blank=True, null=True)
-    # ID to the connected part on the component vault.
-    component_vault_id = models.IntegerField(blank=True, null=True)
-
     stock = ArrayField(models.JSONField(blank=True, null=True), blank=True, null=True)
     urls = ArrayField(models.JSONField(blank=True, null=True), blank=True, null=True)
 
+    # E.G. part number used in ERP other than dokuly
     external_part_number = models.CharField(max_length=1000, blank=True, null=True)
 
     # Stock data
@@ -139,6 +133,18 @@ class Part(models.Model):
 
     # __________________________________________________________________________________________
     # DEPRECATED fields
+
+    # This is the old revision field kept for compatibility.
+    revision = models.CharField(max_length=10, blank=True, null=True)  # DEPRECATED
+
+    backorder_quantity = models.IntegerField(blank=True, null=True)
+
+    # From component vault
+    part_information = models.JSONField(blank=True, null=True)
+    # ID to the connected part on the component vault.
+    component_vault_id = models.IntegerField(blank=True, null=True)
+
+
     rohs_status_code = models.CharField(max_length=20, blank=True, null=True)
 
     # DEPRECATED
@@ -179,6 +185,10 @@ class Part(models.Model):
     # Defines both col name and value, used to store specs not found with API keys or on 3rd party sites.
     customSpecs = ArrayField(
         models.CharField(max_length=5000, blank=True, null=True), blank=True, null=True
+    )
+
+    alternative_parts = ArrayField(
+        models.IntegerField(null=False, blank=True), default=[], blank=True, null=True
     )
 
     # DEPRECATED.
