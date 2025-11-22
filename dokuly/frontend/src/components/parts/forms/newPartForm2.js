@@ -8,7 +8,7 @@ import SubmitButton from "../../dokuly_components/submitButton";
 import { usePartTypes } from "../partTypes/usePartTypes";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
-import { newPart, searchPartsByMpn } from "../functions/queries";
+import { newPart, searchPartsByMpn, searchNexarParts, checkNexarConfig } from "../functions/queries";
 import PartPeek from "../../common/partPeek";
 
 /**
@@ -51,6 +51,10 @@ const PartNewForm = (props) => {
 
   const [mpnConflicts, setMpnConflicts] = useState([]);
   const [hoveredPart, setHoveredPart] = useState(null);
+  const [nexarResults, setNexarResults] = useState([]);
+  const [isSearchingNexar, setIsSearchingNexar] = useState(false);
+  const [showNexarResults, setShowNexarResults] = useState(false);
+  const [isNexarConfigured, setIsNexarConfigured] = useState(false);
 
   const partTypes = usePartTypes();
 
@@ -60,6 +64,16 @@ const PartNewForm = (props) => {
       if (res.status === 200) {
         setOrganization(res.data);
       }
+    });
+
+    // Check if Nexar is configured
+    checkNexarConfig().then((res) => {
+      if (res.status === 200 && res.data) {
+        setIsNexarConfigured(res.data.configured || false);
+      }
+    }).catch((err) => {
+      console.error("Error checking Nexar config:", err);
+      setIsNexarConfigured(false);
     });
   }, []);
 
@@ -146,14 +160,89 @@ const PartNewForm = (props) => {
     }
 
     try {
+      // Search for local conflicts
       const response = await searchPartsByMpn(mpn.trim());
       if (response.status === 200 && response.data) {
         setMpnConflicts(response.data);
+      }
+
+      // Also search Nexar in background to cache results
+      if (isNexarConfigured) {
+        searchNexarParts(mpn.trim(), 10)
+          .then((nexarResponse) => {
+            if (nexarResponse.status === 200 && nexarResponse.data) {
+              // Results are now cached, don't show them yet
+              setNexarResults(nexarResponse.data.results || []);
+            }
+          })
+          .catch((error) => {
+            console.error("Error pre-caching Nexar results:", error);
+          });
       }
     } catch (error) {
       console.error("Error searching for MPN conflicts:", error);
       setMpnConflicts([]);
     }
+  };
+
+  const handleNexarSearch = async () => {
+    if (!mpn || mpn.trim() === "") {
+      toast.info("Please enter an MPN to search");
+      return;
+    }
+
+    // If we already have results from blur, show them immediately
+    if (nexarResults.length > 0) {
+      setShowNexarResults(true);
+      return;
+    }
+
+    setIsSearchingNexar(true);
+    setShowNexarResults(false);
+    
+    try {
+      const response = await searchNexarParts(mpn.trim(), 10);
+      if (response.status === 200 && response.data) {
+        setNexarResults(response.data.results || []);
+        setShowNexarResults(true);
+        if (response.data.results && response.data.results.length === 0) {
+          toast.info("No results found in Nexar");
+        }
+      }
+    } catch (error) {
+      console.error("Error searching Nexar:", error);
+      toast.error("Failed to search Nexar. Please try again.");
+      setNexarResults([]);
+    } finally {
+      setIsSearchingNexar(false);
+    }
+  };
+
+  const applyNexarResult = (result) => {
+    // Auto-populate form with Nexar data
+    if (result.mpn) setMpn(result.mpn);
+    if (result.manufacturer) setManufacturer(result.manufacturer);
+    if (result.description) setDescription(result.description);
+    if (result.datasheet) setDatasheet(result.datasheet);
+    if (result.image_url) setImageUrl(result.image_url);
+    if (result.display_name && !display_name) {
+      // Only set display_name if user hasn't entered one yet
+      setDisplayName(result.display_name);
+    }
+    
+    // Store Nexar part ID for future reference
+    if (result.nexar_part_id) {
+      // We'll send this when creating the part
+      setPartInformation({
+        ...part_information,
+        nexar_part_id: result.nexar_part_id,
+        category: result.category,
+        manufacturer_id: result.manufacturer_id,
+      });
+    }
+    
+    setShowNexarResults(false);
+    toast.success("Part information imported from Nexar");
   };
 
   const highlightMatch = (text, query) => {
@@ -223,6 +312,8 @@ const PartNewForm = (props) => {
     setIsInternal(false);
     setIsSearchResultSelected(false);
     setMpnConflicts([]);
+    setNexarResults([]);
+    setShowNexarResults(false);
     props?.setRefresh(true);
   }
 
@@ -299,16 +390,39 @@ const PartNewForm = (props) => {
           <label>Manufacturer Part Number</label>
           <Row>
             <Col>
-              <input
-                className="form-control"
-                type="text"
-                name="mpn"
-                onChange={(e) => {
-                  setMpn(e.target.value);
-                }}
-                onBlur={handleMpnBlur}
-                value={mpn || ""}
-              />
+              <div className={isNexarConfigured ? "input-group" : ""}>
+                <input
+                  className="form-control"
+                  type="text"
+                  name="mpn"
+                  onChange={(e) => {
+                    setMpn(e.target.value);
+                  }}
+                  onBlur={handleMpnBlur}
+                  value={mpn || ""}
+                />
+                {isNexarConfigured && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={handleNexarSearch}
+                    disabled={isSearchingNexar || !mpn}
+                    title="Search Nexar"
+                    style={{ borderLeft: "none" }}
+                  >
+                    {isSearchingNexar ? (
+                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                    ) : (
+                      <img
+                        className="icon-dark"
+                        src="../../static/icons/search.svg"
+                        alt="Search Nexar"
+                        style={{ width: "16px", height: "16px" }}
+                      />
+                    )}
+                  </button>
+                )}
+              </div>
             </Col>
           </Row>
         </div>
@@ -342,6 +456,92 @@ const PartNewForm = (props) => {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {showNexarResults && nexarResults.length > 0 && (
+          <div className="alert alert-info" style={{ fontSize: "14px", padding: "10px", marginTop: "10px" }}>
+            <div style={{ marginBottom: "8px", fontWeight: "600" }}>
+              Nexar Results ({nexarResults.length}):
+            </div>
+            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+              {nexarResults.map((result, index) => (
+                <div
+                  key={index}
+                  style={{
+                    padding: "8px",
+                    marginBottom: "6px",
+                    backgroundColor: "white",
+                    border: "1px solid #dee2e6",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => applyNexarResult(result)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#f8f9fa";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "white";
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "start", gap: "8px" }}>
+                    {result.image_url && (
+                      <img
+                        src={result.image_url}
+                        alt="Part"
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          objectFit: "contain",
+                          border: "1px solid #ddd",
+                          borderRadius: "3px",
+                          padding: "2px",
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: "600", fontSize: "13px", color: "#0056b3" }}>
+                        {result.mpn}
+                      </div>
+                      {result.display_name && result.display_name !== result.mpn && (
+                        <div style={{ fontSize: "12px", color: "#333", marginTop: "2px" }}>
+                          {result.display_name}
+                        </div>
+                      )}
+                      <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>
+                        {result.manufacturer}
+                        {result.category && ` • ${result.category}`}
+                      </div>
+                      {result.description && (
+                        <div style={{ fontSize: "11px", color: "#555", marginTop: "4px" }}>
+                          {result.description.length > 100
+                            ? `${result.description.substring(0, 100)}...`
+                            : result.description}
+                        </div>
+                      )}
+                      <div style={{ display: "flex", gap: "12px", marginTop: "4px", fontSize: "11px" }}>
+                        {result.total_avail > 0 && (
+                          <span style={{ color: "#28a745" }}>
+                            Available: {result.total_avail.toLocaleString()}
+                          </span>
+                        )}
+                        {result.min_operating_temp && result.max_operating_temp && (
+                          <span style={{ color: "#666" }}>
+                            Temp: {result.min_operating_temp} to {result.max_operating_temp}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: "8px", fontSize: "11px", color: "#666" }}>
+              Click a result to auto-populate form fields
             </div>
           </div>
         )}

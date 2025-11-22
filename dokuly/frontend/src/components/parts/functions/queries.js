@@ -363,3 +363,20 @@ export const searchPartsByMpn = (mpn) => {
   );
   return promise;
 };
+
+export const searchNexarParts = (mpn, limit = 10) => {
+  const promise = axios.post(
+    "api/parts/nexar/search/",
+    { mpn, limit },
+    tokenConfig()
+  );
+  return promise;
+};
+
+export const checkNexarConfig = () => {
+  const promise = axios.get(
+    "api/parts/nexar/check_config/",
+    tokenConfig()
+  );
+  return promise;
+};
