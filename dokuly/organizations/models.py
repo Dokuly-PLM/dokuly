@@ -84,7 +84,12 @@ class Organization(models.Model):
             ("major-minor", "Major-Minor")
         ],
         blank=True,
-        help_text="Format for revisions. Applies to both letter (A, B vs A-0, A-1) and number (1, 2 vs 1-0, 1-1) systems."
+        help_text="Format for revisions. Applies to both letter (A, B vs A-0, A-1) and number systems. For number systems, the starting value (0 or 1) is controlled by start_major_revision_at_one setting."
+    )
+    start_major_revision_at_one = models.BooleanField(
+        default=False, 
+        blank=True,
+        help_text="When enabled and using number-based revisions, display major revisions starting at 1 instead of 0 (e.g., 1, 2, 3... instead of 0, 1, 2...). Minor revisions always start at 0 regardless of this setting (e.g., 1-0, 1-1, 1-2, 2-0...). Does not affect how revisions are stored in the database."
     )
     
     delivery_address = models.CharField(max_length=1000, blank=True, null=True)

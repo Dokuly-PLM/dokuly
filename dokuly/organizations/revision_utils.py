@@ -21,9 +21,11 @@ def format_revision_count(revision_count: int, use_number_revisions: bool, start
     
     Examples:
         format_revision_count(0, False) -> "A"
-        format_revision_count(0, True) -> "0"
+        format_revision_count(0, True, False) -> "0"  # start_at_one=False (default)
+        format_revision_count(0, True, True) -> "1"    # start_at_one=True
         format_revision_count(1, False) -> "B"
-        format_revision_count(1, True) -> "1"
+        format_revision_count(1, True, False) -> "1"   # start_at_one=False
+        format_revision_count(1, True, True) -> "2"    # start_at_one=True
         format_revision_count(25, False) -> "Z"
         format_revision_count(26, False) -> "AA"
         format_revision_count(27, False) -> "AB"
@@ -127,10 +129,12 @@ def build_full_part_number(
         org = Organization.objects.get(id=organization_id)
         template = org.full_part_number_template
         use_number_revisions = org.use_number_revisions
+        start_at_one = org.start_major_revision_at_one
     except Organization.DoesNotExist:
         # Fallback to defaults
         template = "<prefix><part_number><major_revision>"
         use_number_revisions = False
+        start_at_one = False
     
     return build_full_part_number_from_template(
         template=template,
@@ -139,6 +143,7 @@ def build_full_part_number(
         revision_count_major=revision_count_major,
         revision_count_minor=revision_count_minor,
         use_number_revisions=use_number_revisions,
+        start_at_one=start_at_one,
         project_number=project_number,
         created_at=created_at,
     )
@@ -186,10 +191,12 @@ def build_formatted_revision(
         org = Organization.objects.get(id=organization_id)
         template = org.formatted_revision_template
         use_number_revisions = org.use_number_revisions
+        start_at_one = org.start_major_revision_at_one
     except Organization.DoesNotExist:
         # Fallback to defaults
         template = "<major_revision>"
         use_number_revisions = False
+        start_at_one = False
     
     return build_full_part_number_from_template(
         template=template,
@@ -198,6 +205,7 @@ def build_formatted_revision(
         revision_count_major=revision_count_major,
         revision_count_minor=revision_count_minor,
         use_number_revisions=use_number_revisions,
+        start_at_one=start_at_one,
         project_number=project_number,
         created_at=created_at,
     )
@@ -210,6 +218,7 @@ def build_full_part_number_from_template(
     revision_count_major: int,
     revision_count_minor: int,
     use_number_revisions: bool,
+    start_at_one: bool = False,
     project_number: Optional[str] = None,
     created_at: Optional[object] = None,
 ) -> str:
@@ -248,8 +257,10 @@ def build_full_part_number_from_template(
     project_number_str = str(project_number) if project_number else ""
     
     # Format individual revision components
-    major_formatted = format_revision_count(revision_count_major, use_number_revisions)
-    minor_formatted = format_revision_count(revision_count_minor, use_number_revisions)
+    # Major revision can start at 0 or 1 based on start_at_one setting
+    major_formatted = format_revision_count(revision_count_major, use_number_revisions, start_at_one)
+    # Minor revision always starts at 0, regardless of start_at_one setting
+    minor_formatted = format_revision_count(revision_count_minor, use_number_revisions, False)
     
     # Format date components if created_at is provided
     day_str = ""

@@ -973,10 +973,11 @@ revision_notes = models.CharField(max_length=20000, null=True, blank=True)
 #### **Revision System Features**
 
 **Revision Numbering:**
-- **Number-based revisions**: 1, 2, 3, 4... (configurable per organization)
-- **Major-Minor revisions**: 1-0, 1-1, 2-0, 2-1... (configurable per organization)
+- **Number-based revisions**: Can start at 0 (0, 1, 2, 3...) or 1 (1, 2, 3, 4...) - configurable per organization
+- **Major-Minor revisions**: Major can start at 0 (0-0, 0-1, 1-0...) or 1 (1-0, 1-1, 2-0...). Minor revisions always start at 0
+- **Letter-based revisions**: A, B, C... or A-A, A-B, B-A... (major-minor format)
 - **Custom revision formats**: Dash (-) or dot (.) separators
-- **Organization settings**: `use_number_revisions`, `revision_format`, `revision_separator`
+- **Organization settings**: `use_number_revisions`, `revision_format`, `start_major_revision_at_one`
 
 **Revision States:**
 - **Latest Revision**: `is_latest_revision = True` (only one per entity)
@@ -1056,19 +1057,23 @@ revision_format = models.CharField(
     max_length=20, 
     default="major-minor",
     choices=[
-        ("major-only", "Major Only (1, 2, 3...)"),
-        ("major-minor", "Major-Minor (1-0, 1-1, 2-0...)")
+        ("major-only", "Major Only"),
+        ("major-minor", "Major-Minor")
     ]
 )
-revision_separator = models.CharField(
-    max_length=5,
-    default="-",
-    choices=[
-        ("-", "Dash (1-0, 1-1, 2-0...)"),
-        (".", "Dot (1.0, 1.1, 2.0...)")
-    ]
+start_major_revision_at_one = models.BooleanField(
+    default=False,
+    help_text="When enabled, major revisions display starting at 1 instead of 0. Minor revisions always start at 0."
 )
 ```
+
+**Revision Display Examples:**
+- **Number-based, start at 0, major-only**: 0, 1, 2, 3...
+- **Number-based, start at 1, major-only**: 1, 2, 3, 4...
+- **Number-based, start at 0, major-minor**: 0-0, 0-1, 1-0, 1-1, 2-0...
+- **Number-based, start at 1, major-minor**: 1-0, 1-1, 2-0, 2-1, 3-0...
+- **Letter-based, major-only**: A, B, C, D...
+- **Letter-based, major-minor**: A-A, A-B, B-A, B-B, C-A...
 
 #### **Revision Best Practices**
 
