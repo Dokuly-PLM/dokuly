@@ -1694,3 +1694,47 @@ def update_thumbnail(request, partId, imageId):
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Part.DoesNotExist:
         return Response("Object not found", status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["PUT"])
+@renderer_classes([JSONRenderer])
+def search_parts_by_mpn(request):
+    """Search for parts by MPN (case-insensitive partial match).
+    Returns parts with thumbnail, display_name, full_part_number, and mpn."""
+    user = request.user
+    try:
+        if request.user is None:
+            return Response("Not Authorized", status=status.HTTP_401_UNAUTHORIZED)
+
+        data = request.data
+        mpn_query = data.get("mpn", "").strip()
+
+        if not mpn_query:
+            return Response([], status=status.HTTP_200_OK)
+
+        # Common filter for project membership or no project
+        project_filter = Q(project__project_members=user) | Q(project__isnull=True)
+
+        # Query Parts by MPN (case-insensitive partial match)
+        part_results = Part.objects.filter(
+            project_filter
+            & Q(is_archived=False)
+            & Q(mpn__icontains=mpn_query)
+        ).select_related('thumbnail')[:50]  # Limit to 50 results
+
+        # Serialize the results
+        serialized_parts = []
+        for part in part_results:
+            serialized_parts.append({
+                'id': part.id,
+                'mpn': part.mpn,
+                'full_part_number': part.full_part_number,
+                'display_name': part.display_name,
+                'thumbnail': part.thumbnail.id if part.thumbnail else None,
+                'image_url': part.image_url,
+            })
+
+        return Response(serialized_parts, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response(f"Search failed: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)

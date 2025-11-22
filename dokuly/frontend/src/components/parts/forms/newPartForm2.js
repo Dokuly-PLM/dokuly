@@ -8,7 +8,9 @@ import SubmitButton from "../../dokuly_components/submitButton";
 import { usePartTypes } from "../partTypes/usePartTypes";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
-import { newPart } from "../functions/queries";
+import { newPart, searchPartsByMpn } from "../functions/queries";
+import DokulyImage from "../../dokuly_components/dokulyImage";
+import { formatCloudImageUri } from "../../pcbas/functions/productionHelpers";
 
 /**
  * # Button with form to create a new part.
@@ -47,6 +49,9 @@ const PartNewForm = (props) => {
 
   const [showModal, setShowModal] = useState(false);
   const [organization, setOrganization] = useState(null);
+
+  const [mpnConflicts, setMpnConflicts] = useState([]);
+  const [hoveredPart, setHoveredPart] = useState(null);
 
   const partTypes = usePartTypes();
 
@@ -135,6 +140,40 @@ const PartNewForm = (props) => {
     });
   };
 
+  const handleMpnBlur = async () => {
+    if (!mpn || mpn.trim() === "") {
+      setMpnConflicts([]);
+      return;
+    }
+
+    try {
+      const response = await searchPartsByMpn(mpn.trim());
+      if (response.status === 200 && response.data) {
+        setMpnConflicts(response.data);
+      }
+    } catch (error) {
+      console.error("Error searching for MPN conflicts:", error);
+      setMpnConflicts([]);
+    }
+  };
+
+  const highlightMatch = (text, query) => {
+    if (!text || !query) return text;
+    
+    const index = text.toLowerCase().indexOf(query.toLowerCase());
+    if (index === -1) return text;
+    
+    return (
+      <>
+        {text.substring(0, index)}
+        <span style={{ backgroundColor: "#ffeb3b", fontWeight: "bold" }}>
+          {text.substring(index, index + query.length)}
+        </span>
+        {text.substring(index + query.length)}
+      </>
+    );
+  };
+
   function onSubmit() {
     const data = {
       display_name: display_name,
@@ -184,6 +223,7 @@ const PartNewForm = (props) => {
     setImageUrl("");
     setIsInternal(false);
     setIsSearchResultSelected(false);
+    setMpnConflicts([]);
     props?.setRefresh(true);
   }
 
@@ -267,11 +307,126 @@ const PartNewForm = (props) => {
                 onChange={(e) => {
                   setMpn(e.target.value);
                 }}
+                onBlur={handleMpnBlur}
                 value={mpn || ""}
               />
             </Col>
           </Row>
         </div>
+
+        {mpnConflicts.length > 0 && (
+          <div className="alert alert-warning" style={{ fontSize: "14px", padding: "10px", marginTop: "10px" }}>
+            <div style={{ marginBottom: "8px", fontWeight: "600" }}>
+              Existing parts with similar MPN:
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {mpnConflicts.map((part, index) => (
+                <div
+                  key={part.id}
+                  style={{ position: "relative" }}
+                  onMouseEnter={() => setHoveredPart(part)}
+                  onMouseLeave={() => setHoveredPart(null)}
+                >
+                  <span
+                    style={{
+                      cursor: "pointer",
+                      padding: "2px 4px",
+                      borderRadius: "3px",
+                      backgroundColor: "#fff3cd",
+                      border: "1px solid #ffc107",
+                    }}
+                  >
+                    {highlightMatch(part.mpn, mpn)}
+                  </span>
+                  {hoveredPart?.id === part.id && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 5px)",
+                        left: "0",
+                        backgroundColor: "white",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                        padding: "10px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                        zIndex: 1000,
+                        minWidth: "250px",
+                        maxWidth: "350px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        {/* Thumbnail */}
+                        <div
+                          style={{
+                            flex: "0 0 50px",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            maxHeight: "50px",
+                          }}
+                        >
+                          {(part.thumbnail || part.image_url) ? (
+                            <DokulyImage
+                              src={
+                                part.thumbnail
+                                  ? formatCloudImageUri(part.thumbnail)
+                                  : part.image_url
+                              }
+                              alt="Thumbnail"
+                              style={{
+                                maxWidth: "50px",
+                                maxHeight: "50px",
+                                objectFit: "contain",
+                                display: "block",
+                              }}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "";
+                              }}
+                            />
+                          ) : null}
+                        </div>
+
+                        {/* Part info */}
+                        <div
+                          style={{
+                            flex: "1",
+                            display: "flex",
+                            flexDirection: "column",
+                            minWidth: 0,
+                            fontSize: "12px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontWeight: "600",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {part.full_part_number}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#666",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {part.display_name || "-"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {!showSuggestions ? (

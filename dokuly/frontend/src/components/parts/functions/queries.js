@@ -354,3 +354,12 @@ export const updateThumbnail = (id, imageId) => {
     error: "Failed to update thumbnail",
   });
 };
+
+export const searchPartsByMpn = (mpn) => {
+  const promise = axios.put(
+    "api/parts/search_by_mpn/",
+    { mpn },
+    tokenConfig()
+  );
+  return promise;
+};
