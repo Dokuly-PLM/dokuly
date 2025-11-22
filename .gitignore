@@ -13,6 +13,8 @@ venv/
 /data
 temp/
 /temp
+django_cache/
+dokuly/django_cache/
 .DS_Store
 .env
 database_backup.sql

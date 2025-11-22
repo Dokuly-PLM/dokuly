@@ -7,6 +7,7 @@ from . import (
     viewRender,
     viewsPartTypes,
     viewsPrice,
+    viewsNexar,
 )
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework import renderers
@@ -92,6 +93,10 @@ urlpatterns = [
     path("api/global_part_search/", views.global_part_search),
     # Search parts by MPN
     path("api/parts/search_by_mpn/", views.search_parts_by_mpn),
+    # Nexar integration
+    path("api/parts/nexar/search/", viewsNexar.search_nexar_parts),
+    path("api/parts/nexar/clear_cache/", viewsNexar.clear_nexar_cache),
+    path("api/parts/nexar/check_config/", viewsNexar.check_nexar_config),
     # Common views between parts, PCBAs and assemblies
     path("api/items/edit/releaseState/", views.edit_release_state),
 ]

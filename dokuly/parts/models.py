@@ -85,6 +85,9 @@ class Part(models.Model):
     # Lifecycle # TODO change to lifecycle statur
     production_status = models.CharField(max_length=20, blank=True, null=True)
 
+    # Nexar integration - unique identifier from Nexar API
+    nexar_part_id = models.CharField(max_length=100, blank=True, null=True)
+
     # Compliance
     is_rohs_compliant = models.BooleanField(default=False, blank=True)
     is_reach_compliant = models.BooleanField(default=False, blank=True)
