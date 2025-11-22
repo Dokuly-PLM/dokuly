@@ -9,8 +9,7 @@ import { usePartTypes } from "../partTypes/usePartTypes";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
 import { newPart, searchPartsByMpn } from "../functions/queries";
-import DokulyImage from "../../dokuly_components/dokulyImage";
-import { formatCloudImageUri } from "../../pcbas/functions/productionHelpers";
+import PartPeek from "../../common/partPeek";
 
 /**
  * # Button with form to create a new part.
@@ -339,88 +338,7 @@ const PartNewForm = (props) => {
                     {highlightMatch(part.mpn, mpn)}
                   </span>
                   {hoveredPart?.id === part.id && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "calc(100% + 5px)",
-                        left: "0",
-                        backgroundColor: "white",
-                        border: "1px solid #ddd",
-                        borderRadius: "4px",
-                        padding: "10px",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                        zIndex: 1000,
-                        minWidth: "250px",
-                        maxWidth: "350px",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        {/* Thumbnail */}
-                        <div
-                          style={{
-                            flex: "0 0 50px",
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            maxHeight: "50px",
-                          }}
-                        >
-                          {(part.thumbnail || part.image_url) ? (
-                            <DokulyImage
-                              src={
-                                part.thumbnail
-                                  ? formatCloudImageUri(part.thumbnail)
-                                  : part.image_url
-                              }
-                              alt="Thumbnail"
-                              style={{
-                                maxWidth: "50px",
-                                maxHeight: "50px",
-                                objectFit: "contain",
-                                display: "block",
-                              }}
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "";
-                              }}
-                            />
-                          ) : null}
-                        </div>
-
-                        {/* Part info */}
-                        <div
-                          style={{
-                            flex: "1",
-                            display: "flex",
-                            flexDirection: "column",
-                            minWidth: 0,
-                            fontSize: "12px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontWeight: "600",
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {part.full_part_number}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "11px",
-                              color: "#666",
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {part.display_name || "-"}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <PartPeek item={part} type="part" position="bottom" />
                   )}
                 </div>
               ))}
