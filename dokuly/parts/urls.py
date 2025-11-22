@@ -38,7 +38,6 @@ urlpatterns = [
     path("api/parts/archivePart/<int:pk>/", views.archive_part),
     path("api/parts/put/revisionNotes/<int:partId>/", views.edit_revision_notes),
     path("api/parts/update/errata/<int:partId>/", views.edit_errata),
-    path("api/parts/updateBackorder/<int:partId>/", views.update_backorderQty),
     path("api/parts/update/sellers/<int:partId>/", views.clear_sellers_data),
     path("api/parts/put/partInformation/<int:pk>/",
          views.edit_part_information),

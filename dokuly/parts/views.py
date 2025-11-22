@@ -747,23 +747,6 @@ def edit_errata(request, partId):
 @ api_view(("PUT",))
 @ renderer_classes((JSONRenderer,))
 @ login_required(login_url="/login")
-def update_backorderQty(request, partId):
-    permission, response = check_user_auth_and_app_permission(request, "parts")
-    if not permission:
-        return response
-    data = list(request.data.values())
-    if data == None or data[0] == None:
-        return Response("Invalid input, try again", status=status.HTTP_400_BAD_REQUEST)
-    qty = data[0]
-    Part.objects.filter(id=partId).update(backorder_quantity=qty)
-    updatedPart = Part.objects.get(id=partId)
-    serializer = PartSerializer(updatedPart)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-@ api_view(("PUT",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
 def clear_sellers_data(request, partId):
     permission, response = check_user_auth_and_app_permission(request, "parts")
     if not permission:

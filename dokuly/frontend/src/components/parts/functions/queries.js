@@ -217,20 +217,6 @@ export const removeAlternativePart = (parentId, partID) => {
   return dataPromise;
 };
 
-export const updateBackorder = (partId, part) => {
-  const promise = axios.put(
-    `api/parts/updateBackorder/${partId}/`,
-    part,
-    tokenConfig()
-  );
-  const dataPromise = promise.then((res) => res.data);
-  const error = promise.catch((err) => err);
-  if (error != null) {
-    return error;
-  }
-  return dataPromise;
-};
-
 export const addInventory = (inventory) => {
   const promise = axios.post("api/inventory/addInv/", inventory, tokenConfig());
   const dataPromise = promise.then((res) => res.data);
