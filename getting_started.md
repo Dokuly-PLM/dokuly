@@ -141,11 +141,24 @@ Add currency conversion through a free currency API:
 
 https://www.exchangerate-api.com/docs/pair-conversion-requests
 
+Add the following to the `.env`.
+
 ```ini
 CURRENCY_API = "https://v6.exchangerate-api.com/v6/__YOUR_API_KEY__/latest/"
 ```
 
 <a name="start_dev_on_new_computer"/>
+
+### Nexar Part API
+
+dokuly supports using Nexar API.
+
+Add the following to the `.env`.
+
+```ini
+NEXAR_CLIENT_ID=""
+NEXAR_CLIENT_SECRET=""
+```
 
 ## To start developing on a new computer
 
