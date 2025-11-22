@@ -88,6 +88,20 @@ class Part(models.Model):
     # Nexar integration - unique identifier from Nexar API
     nexar_part_id = models.CharField(max_length=100, blank=True, null=True)
 
+    # Part source - where the part data came from
+    source = models.CharField(
+        max_length=20,
+        choices=[
+            ("digikey", "DigiKey"),
+            ("nexar", "Nexar"),
+            ("manual", "Manual"),
+        ],
+        default="manual",
+        blank=True,
+        null=True,
+        help_text="Source of the part data"
+    )
+
     # Compliance
     is_rohs_compliant = models.BooleanField(default=False, blank=True)
     is_reach_compliant = models.BooleanField(default=False, blank=True)

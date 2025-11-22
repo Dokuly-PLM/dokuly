@@ -3,6 +3,7 @@ from rest_framework import routers
 from . import views
 from . import viewsApiKey
 from . import viewsRules
+from . import viewsIntegrations
 
 # URL Configuration
 urlpatterns = [
@@ -40,6 +41,10 @@ urlpatterns = [
     path("api/rules/check/pcba/<int:pcba_id>/", viewsRules.check_pcba_rules),
     path("api/rules/check/part/<int:part_id>/", viewsRules.check_part_rules),
     path("api/rules/check/document/<int:document_id>/", viewsRules.check_document_rules),
+    
+    # Integration settings
+    path("api/integrations/get/", viewsIntegrations.get_integration_settings),
+    path("api/integrations/update/", viewsIntegrations.update_integration_settings),
     
     # Revision system fixes
     path("api/organizations/checkCorruptedRevisions/", views.check_corrupted_revisions),

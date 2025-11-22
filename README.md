@@ -24,6 +24,7 @@ Some documentation can be found on [github pages](https://dokuly-plm.github.io/d
   - Part-related files and documentation
   - Vendor pricing with price breaks and currency conversion
   - Inventory
+  - DigiKey API integration for part search and automatic data import ([Setup Guide](docs/admin/digikey_setup.md))
 - Documents
   - Document numbering
   - Automatic front page generation

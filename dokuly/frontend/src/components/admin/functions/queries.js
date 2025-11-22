@@ -1574,3 +1574,39 @@ export const updateOrganizationRules = (data) => {
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+/**
+ * Fetch integration settings.
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ */
+export const fetchIntegrationSettings = () => {
+  const promise = axios.get("api/integrations/get/", tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Update integration settings.
+ * @param {Object} data - Integration settings data to update.
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ */
+export const updateIntegrationSettings = (data) => {
+  const promise = axios.put("api/integrations/update/", data, tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Test DigiKey API connection
+ * @param {string} testKeyword - Optional keyword to test search (default: "resistor")
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ */
+export const testDigikeyConnection = (testKeyword = "resistor") => {
+  const promise = axios.post(
+    "api/parts/digikey/test_connection/",
+    { test_keyword: testKeyword },
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};

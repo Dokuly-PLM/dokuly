@@ -44,9 +44,20 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
 
   // Fetching organization currency
   useEffect(() => {
-    getOrganizationCurrency().then((res) => {
-      setOrganizationCurrency(res.data);
-    });
+    getOrganizationCurrency()
+      .then((res) => {
+        if (res && res.data) {
+          setOrganizationCurrency(res.data);
+        } else {
+          console.error("No currency data returned, defaulting to USD");
+          setOrganizationCurrency("USD");
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching organization currency:", err);
+        // Default to USD if API fails
+        setOrganizationCurrency("USD");
+      });
   }, []);
 
   // Fetching latest prices
@@ -64,10 +75,28 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
 
   // Supplier options for dropdown
   useEffect(() => {
-    const formattedSupplierOptions = suppliers.map((supplier) => ({
-      label: supplier.name,
-      value: supplier.id,
-    }));
+    // Filter out the "None" option (which has key: -1 or no id) and any invalid entries
+    const formattedSupplierOptions = suppliers
+      .filter((supplier) => {
+        // Filter out the "None" placeholder option
+        if (supplier.key === -1 || supplier.value === null || supplier.id === null || supplier.id === undefined) {
+          return false;
+        }
+        // Only include suppliers with valid id and name
+        return supplier.id && supplier.name;
+      })
+      .map((supplier) => ({
+        label: supplier.name,
+        value: supplier.id,
+      }));
+    
+    console.log("PriceCard supplier options:", {
+      totalSuppliers: suppliers.length,
+      filteredCount: formattedSupplierOptions.length,
+      suppliers: suppliers.map(s => ({ id: s.id, name: s.name, key: s.key })),
+      options: formattedSupplierOptions
+    });
+    
     setSupplierOptions(formattedSupplierOptions);
   }, [suppliers]);
 
@@ -81,11 +110,11 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
   }, [currencyKeys]);
 
   useEffect(() => {
+    // Allow doneFormatting even if suppliers are empty (suppliers are optional)
     if (
       !doneFormatting &&
       !loadingCurrency &&
       !loadingSuppliers &&
-      supplierOptions.length > 0 &&
       currencyKeysOptions.length > 0
     ) {
       setDoneFormatting(true);
@@ -93,17 +122,53 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
   }, [
     loadingCurrency,
     loadingSuppliers,
-    supplierOptions,
     currencyKeysOptions,
     doneFormatting,
   ]);
 
+  // Debug logging
+  useEffect(() => {
+    console.log("PriceCard loading state:", {
+      loadingSuppliers,
+      loadingCurrency,
+      supplierOptionsLength: supplierOptions.length,
+      currencyKeysOptionsLength: currencyKeysOptions.length,
+      doneFormatting,
+      organizationCurrency,
+      errorCurrency,
+      errorSuppliers,
+    });
+  }, [
+    loadingSuppliers,
+    loadingCurrency,
+    supplierOptions.length,
+    currencyKeysOptions.length,
+    doneFormatting,
+    organizationCurrency,
+    errorCurrency,
+    errorSuppliers,
+  ]);
+
+  // Show error messages if there are issues
+  if (errorCurrency || errorSuppliers) {
+    console.error("PriceCard errors:", { errorCurrency, errorSuppliers });
+  }
+
+  // If currency keys are empty but not loading, set a default
+  useEffect(() => {
+    if (!loadingCurrency && currencyKeysOptions.length === 0 && organizationCurrency) {
+      console.warn("No currency keys available, using default USD");
+      setCurrencyKeysOptions([{ label: "USD", value: "USD" }]);
+    }
+  }, [loadingCurrency, currencyKeysOptions.length, organizationCurrency]);
+
+  // Allow rendering even if suppliers fail to load (they're optional)
+  // If there's an error loading suppliers (403), don't wait for them
   if (
-    loadingSuppliers ||
     loadingCurrency ||
-    supplierOptions.length === 0 ||
+    (loadingSuppliers && !errorSuppliers) || // Only wait if loading and no error
     currencyKeysOptions.length === 0 ||
-    !doneFormatting
+    (!doneFormatting && !errorCurrency) // Only wait for formatting if no currency error
   ) {
     return loadingSpinner();
   }
@@ -172,7 +237,13 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
             setState={(value) =>
               handleEditSave(row.id, { supplier_id: value ? value : null })
             }
-            dropdownValues={supplierOptions}
+            dropdownValues={supplierOptions.length > 0 ? supplierOptions : [
+              { 
+                label: errorSuppliers ? "Suppliers unavailable (permission required)" : "No suppliers available", 
+                value: null,
+                isDisabled: true
+              }
+            ]}
             placeholder="Select supplier"
             borderIfPlaceholder={true}
             borderColor="orange"

@@ -921,6 +921,32 @@ def create_new_part(request, **kwargs):
         if "part_information" in data:
             if data["part_information"] != None:
                 new_part.part_information = data["part_information"]
+        
+        # Set source field (digikey, nexar, or manual)
+        if "source" in data:
+            new_part.source = data["source"]
+        else:
+            new_part.source = "manual"  # Default to manual
+        
+        # Set production_status if provided
+        if "production_status" in data and data["production_status"]:
+            new_part.production_status = data["production_status"]
+        
+        # Set is_rohs_compliant if provided
+        if "is_rohs_compliant" in data:
+            new_part.is_rohs_compliant = data["is_rohs_compliant"]
+        
+        # Set is_reach_compliant if provided
+        if "is_reach_compliant" in data:
+            new_part.is_reach_compliant = data["is_reach_compliant"]
+        
+        # Set export_control_classification_number if provided
+        if "export_control_classification_number" in data and data["export_control_classification_number"]:
+            new_part.export_control_classification_number = data["export_control_classification_number"]
+        
+        # Set estimated_factory_lead_days if provided
+        if "estimated_factory_lead_days" in data and data["estimated_factory_lead_days"] is not None:
+            new_part.estimated_factory_lead_days = data["estimated_factory_lead_days"]
 
         if "urls" in data:
             if data["urls"] != None:

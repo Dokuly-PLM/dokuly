@@ -205,10 +205,28 @@ const SpecificationsTable = (props) => {
       "currency_price",
       "mpn",
       "part_url",
+      "pricing_tiers", // Array of objects, not a simple value
+      "source", // Internal metadata
+      "digikey_part_number", // Internal metadata
+      "digikey_product_id", // Internal metadata
     ];
 
     return Object.keys(partInformation)
-      .filter((key) => !excludedKeys.includes(key) && partInformation[key])
+      .filter((key) => {
+        // Exclude keys in the excluded list
+        if (excludedKeys.includes(key)) return false;
+        
+        const value = partInformation[key];
+        
+        // Exclude null, undefined, empty strings
+        if (!value && value !== 0 && value !== false) return false;
+        
+        // Exclude objects and arrays (they can't be rendered directly)
+        if (typeof value === 'object' && !Array.isArray(value)) return false;
+        if (Array.isArray(value)) return false;
+        
+        return true;
+      })
       .reduce((obj, key) => {
         obj[key] = partInformation[key];
         return obj;

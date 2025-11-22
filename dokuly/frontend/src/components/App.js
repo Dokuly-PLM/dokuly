@@ -197,6 +197,7 @@ function App() {
     "/adminPage/locations",
     "/adminPage/api",
     "/adminPage/rules",
+    "/adminPage/integrations",
     // add other paths as needed
   ];
 

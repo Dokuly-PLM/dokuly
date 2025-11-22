@@ -20,8 +20,8 @@ const renderAdditionalFields = (additionalFields) => {
     .filter(
       ([key, value]) => value !== "" && value !== null && value !== undefined
     )
-    .map(([key, value], index) => (
-      <Row key={index}>
+    .map(([key, value]) => (
+      <Row key={key}>
         <Col className="col-lg-6 col-xl-6">
           <b>{key}:</b>
         </Col>
