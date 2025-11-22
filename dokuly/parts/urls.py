@@ -90,6 +90,8 @@ urlpatterns = [
     ),
     # Global part search (searching among PCBAs, Parts, Assemblies)
     path("api/global_part_search/", views.global_part_search),
+    # Search parts by MPN
+    path("api/parts/search_by_mpn/", views.search_parts_by_mpn),
     # Common views between parts, PCBAs and assemblies
     path("api/items/edit/releaseState/", views.edit_release_state),
 ]

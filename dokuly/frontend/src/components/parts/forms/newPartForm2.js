@@ -8,7 +8,8 @@ import SubmitButton from "../../dokuly_components/submitButton";
 import { usePartTypes } from "../partTypes/usePartTypes";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
-import { newPart } from "../functions/queries";
+import { newPart, searchPartsByMpn } from "../functions/queries";
+import PartPeek from "../../common/partPeek";
 
 /**
  * # Button with form to create a new part.
@@ -47,6 +48,9 @@ const PartNewForm = (props) => {
 
   const [showModal, setShowModal] = useState(false);
   const [organization, setOrganization] = useState(null);
+
+  const [mpnConflicts, setMpnConflicts] = useState([]);
+  const [hoveredPart, setHoveredPart] = useState(null);
 
   const partTypes = usePartTypes();
 
@@ -135,6 +139,40 @@ const PartNewForm = (props) => {
     });
   };
 
+  const handleMpnBlur = async () => {
+    if (!mpn || mpn.trim() === "") {
+      setMpnConflicts([]);
+      return;
+    }
+
+    try {
+      const response = await searchPartsByMpn(mpn.trim());
+      if (response.status === 200 && response.data) {
+        setMpnConflicts(response.data);
+      }
+    } catch (error) {
+      console.error("Error searching for MPN conflicts:", error);
+      setMpnConflicts([]);
+    }
+  };
+
+  const highlightMatch = (text, query) => {
+    if (!text || !query) return text;
+    
+    const index = text.toLowerCase().indexOf(query.toLowerCase());
+    if (index === -1) return text;
+    
+    return (
+      <>
+        {text.substring(0, index)}
+        <span style={{ backgroundColor: "#ffeb3b", fontWeight: "bold" }}>
+          {text.substring(index, index + query.length)}
+        </span>
+        {text.substring(index + query.length)}
+      </>
+    );
+  };
+
   function onSubmit() {
     const data = {
       display_name: display_name,
@@ -184,6 +222,7 @@ const PartNewForm = (props) => {
     setImageUrl("");
     setIsInternal(false);
     setIsSearchResultSelected(false);
+    setMpnConflicts([]);
     props?.setRefresh(true);
   }
 
@@ -267,11 +306,45 @@ const PartNewForm = (props) => {
                 onChange={(e) => {
                   setMpn(e.target.value);
                 }}
+                onBlur={handleMpnBlur}
                 value={mpn || ""}
               />
             </Col>
           </Row>
         </div>
+
+        {mpnConflicts.length > 0 && (
+          <div className="alert alert-warning" style={{ fontSize: "14px", padding: "10px", marginTop: "10px" }}>
+            <div style={{ marginBottom: "8px", fontWeight: "600" }}>
+              Existing parts with similar MPN:
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {mpnConflicts.map((part, index) => (
+                <div
+                  key={part.id}
+                  style={{ position: "relative" }}
+                  onMouseEnter={() => setHoveredPart(part)}
+                  onMouseLeave={() => setHoveredPart(null)}
+                >
+                  <span
+                    style={{
+                      cursor: "pointer",
+                      padding: "2px 4px",
+                      borderRadius: "3px",
+                      backgroundColor: "#fff3cd",
+                      border: "1px solid #ffc107",
+                    }}
+                  >
+                    {highlightMatch(part.mpn, mpn)}
+                  </span>
+                  {hoveredPart?.id === part.id && (
+                    <PartPeek item={part} type="part" position="bottom" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {!showSuggestions ? (
