@@ -222,13 +222,10 @@ const PartNewForm = (props) => {
     // Auto-populate form with Nexar data
     if (result.mpn) setMpn(result.mpn);
     if (result.manufacturer) setManufacturer(result.manufacturer);
-    if (result.description) setDescription(result.description);
+    if (result.description) setDisplayName(result.description); 
     if (result.datasheet) setDatasheet(result.datasheet);
     if (result.image_url) setImageUrl(result.image_url);
-    if (result.display_name && !display_name) {
-      // Only set display_name if user hasn't entered one yet
-      setDisplayName(result.display_name);
-    }
+    if (result.display_name) {}
     
     // Store Nexar part ID for future reference
     if (result.nexar_part_id) {

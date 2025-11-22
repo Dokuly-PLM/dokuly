@@ -14,8 +14,8 @@ from parts.nexar_client import get_nexar_client, is_nexar_configured
 
 logger = logging.getLogger(__name__)
 
-# Cache duration: 30 days in seconds
-CACHE_DURATION = 30 * 24 * 60 * 60  # 2,592,000 seconds
+# Cache duration: 1 day in seconds
+CACHE_DURATION = 24 * 60 * 60  # 86,400 seconds
 
 
 @api_view(["POST"])
@@ -65,7 +65,7 @@ def search_nexar_parts(request):
             nexar_client = get_nexar_client()
             results = nexar_client.search_parts(mpn, limit=limit)
             
-            # Cache the results for 30 days
+            # Cache the results days
             cache.set(cache_key, results, CACHE_DURATION)
             
             return Response({
