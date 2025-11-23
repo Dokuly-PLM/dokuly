@@ -92,6 +92,34 @@ class Organization(models.Model):
         help_text="When enabled and using number-based revisions, display major revisions starting at 1 instead of 0 (e.g., 1, 2, 3... instead of 0, 1, 2...). Minor revisions always start at 0 regardless of this setting (e.g., 1-0, 1-1, 1-2, 2-0...). Does not affect how revisions are stored in the database."
     )
     
+    # Document numbering settings
+    full_document_number_template = models.CharField(
+        max_length=100,
+        default="<prefix><project_number>-<document_number><revision>",
+        blank=True,
+        help_text="Template for formatting full document numbers. Use <prefix>, <project_number>, <part_number>, <document_number>, <major_revision>, <minor_revision>, <revision>, <day>, <month>, <year>"
+    )
+    document_use_number_revisions = models.BooleanField(
+        default=False, 
+        blank=True,
+        help_text="When enabled, documents will use number-based revisions instead of letters (0, 1, 2... instead of A, B, C...)"
+    )
+    document_revision_format = models.CharField(
+        max_length=20, 
+        default="major-minor", 
+        choices=[
+            ("major-only", "Major Only"),
+            ("major-minor", "Major-Minor")
+        ],
+        blank=True,
+        help_text="Format for document revisions. Major-only uses single revisions (A, B, C or 0, 1, 2), while major-minor allows sub-revisions (A-0, A-1 or 0-0, 0-1)"
+    )
+    document_start_major_revision_at_one = models.BooleanField(
+        default=False, 
+        blank=True,
+        help_text="When enabled and using number-based revisions for documents, display major revisions starting at 1 instead of 0 (e.g., 1, 2, 3... instead of 0, 1, 2...). Minor revisions always start at 0 regardless of this setting."
+    )
+    
     delivery_address = models.CharField(max_length=1000, blank=True, null=True)
     postal_code = models.CharField(max_length=1000, blank=True, null=True)
     country = models.CharField(max_length=1000, blank=True, null=True)

@@ -248,6 +248,10 @@ def update_organization(request, id):
             "start_major_revision_at_one",
             "full_part_number_template",
             "formatted_revision_template",
+            "full_document_number_template",
+            "document_use_number_revisions",
+            "document_revision_format",
+            "document_start_major_revision_at_one",
         ]:
             if field in data:
                 setattr(organization, field, data[field])
@@ -714,6 +718,100 @@ def preview_formatted_revision_template(request):
             'settings': {
                 'use_number_revisions': use_number_revisions,
                 'revision_format': revision_format,
+            }
+        })
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Error previewing template: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+@api_view(['POST'])
+@renderer_classes([JSONRenderer])
+@login_required(login_url="/login")
+def preview_document_number_template(request):
+    """
+    Preview how a document number template will be formatted.
+    
+    Request body:
+        template: str - The template string (e.g., "<prefix><project_number>-<document_number><revision>")
+        use_number_revisions: bool - Whether to use number-based revisions
+    
+    Returns:
+        examples: list - List of example formatted document numbers for different scenarios
+    """
+    from organizations.revision_utils import build_full_document_number_from_template
+    from datetime import datetime
+    
+    try:
+        template = request.data.get('template', '<prefix><project_number>-<document_number><revision>')
+        use_number_revisions = request.data.get('use_number_revisions', False)
+        start_at_one = request.data.get('start_major_revision_at_one', False)
+        
+        # Create sample datetime for date-based variables
+        sample_date = datetime(2025, 1, 15, 10, 30, 0)  # Jan 15, 2025
+        
+        # Generate examples for different scenarios
+        examples = []
+        
+        # Example 1: Technical Note, first revision
+        examples.append({
+            'description': 'Technical Note - First revision',
+            'formatted': build_full_document_number_from_template(
+                template=template,
+                prefix='TN',
+                document_number='103',
+                revision_count_major=0,
+                revision_count_minor=0,
+                use_number_revisions=use_number_revisions,
+                start_at_one=start_at_one,
+                project_number='1001',
+                part_number='10001',
+                created_at=sample_date,
+            )
+        })
+        
+        # Example 2: Manual, second major revision
+        examples.append({
+            'description': 'Manual - Second major revision',
+            'formatted': build_full_document_number_from_template(
+                template=template,
+                prefix='MAN',
+                document_number='005',
+                revision_count_major=1,
+                revision_count_minor=0,
+                use_number_revisions=use_number_revisions,
+                start_at_one=start_at_one,
+                project_number='2042',
+                part_number='20045',
+                created_at=sample_date,
+            )
+        })
+        
+        # Example 3: Document, with minor revision
+        examples.append({
+            'description': 'Document - With minor revision',
+            'formatted': build_full_document_number_from_template(
+                template=template,
+                prefix='DOC',
+                document_number='012',
+                revision_count_major=0,
+                revision_count_minor=2,
+                use_number_revisions=use_number_revisions,
+                start_at_one=start_at_one,
+                project_number='3100',
+                part_number='30012',
+                created_at=sample_date,
+            )
+        })
+        
+        return Response({
+            'examples': examples,
+            'template': template,
+            'settings': {
+                'use_number_revisions': use_number_revisions,
             }
         })
         
