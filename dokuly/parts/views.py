@@ -1454,6 +1454,20 @@ def new_revision(request, pk, **kwargs):
 
     notify_on_new_revision(new_revision=new_part_rev, app_name="parts", user=request.user)
 
+    # Execute workflows for revision_created trigger
+    try:
+        from projects.workflowEngine import WorkflowExecutor
+        WorkflowExecutor.execute_workflows(
+            trigger_type='revision_created',
+            entity_type='parts',
+            entity_id=new_part_rev.id,
+            entity_data=new_part_rev,
+            user=request.user
+        )
+    except Exception as e:
+        # Log error but don't fail revision creation
+        print(f"Error executing workflows for part revision: {str(e)}")
+
     serializer = PartSerializer(new_part_rev)
     return Response(serializer.data, status=status.HTTP_200_OK)
 

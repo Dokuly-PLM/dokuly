@@ -24,6 +24,7 @@ import { AuthContext } from "../App";
 import AdminReleaseManagement from "./adminPages/adminReleaseManagement";
 import AdminRules from "./adminPages/adminRules";
 import AdminIntegrations from "./adminPages/adminIntegrations";
+import AdminWorkflows from "./adminPages/adminWorkflows";
 
 const AdminDash = () => {
   const [refresh, setRefresh] = useState(false);
@@ -73,6 +74,8 @@ const AdminDash = () => {
       newActiveTab = "rules";
     } else if (path.includes("/adminPage/integrations")) {
       newActiveTab = "integrations";
+    } else if (path.includes("/adminPage/workflows")) {
+      newActiveTab = "workflows";
     } else if (path.includes("/adminPage/inventory")) {
       newActiveTab = "inventory";
     } else if (path.includes("/adminPage/archive")) {
@@ -369,6 +372,15 @@ const AdminDash = () => {
                 >
                   Integrations
                 </a>
+                <a
+                  style={{ cursor: "pointer" }}
+                  className={`nav-item nav-link ${
+                    activeTab === "workflows" ? "active" : ""
+                  }`}
+                  onClick={() => handleNavigate("workflows")}
+                >
+                  Workflows
+                </a>
               </div>
             </nav>
           </div>
@@ -418,6 +430,7 @@ const AdminDash = () => {
             {activeTab === "api" && <AdminAPIKeys />}
             {activeTab === "rules" && <AdminRules setRefresh={setRefresh} />}
             {activeTab === "integrations" && <AdminIntegrations setRefresh={setRefresh} />}
+            {activeTab === "workflows" && <AdminWorkflows setRefresh={setRefresh} />}
           </div>
         </div>
       ) : { refresh } ? (
