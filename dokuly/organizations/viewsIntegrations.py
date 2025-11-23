@@ -69,6 +69,14 @@ def get_integration_settings(request):
             "has_digikey_credentials": bool(
                 integration_settings.digikey_client_id and 
                 integration_settings.digikey_client_secret
+            ),
+
+            
+            "nexar_client_id": integration_settings.nexar_client_id or "",
+            "nexar_client_secret": "***" if integration_settings.nexar_client_secret else "",
+            "has_nexar_credentials": bool(
+                integration_settings.nexar_client_id and 
+                integration_settings.nexar_client_secret
             )
         }
         
@@ -165,6 +173,20 @@ def update_integration_settings(request):
             else:
                 integration_settings.digikey_supplier = None
         
+        # Update Nexar credentials
+        if "nexar_client_id" in data:
+            client_id = data["nexar_client_id"].strip() if data["nexar_client_id"] else None
+            integration_settings.nexar_client_id = client_id
+        
+        if "nexar_client_secret" in data:
+            # Only update if a new value is provided (not the masked "***")
+            client_secret = data["nexar_client_secret"]
+            if client_secret and client_secret != "***" and client_secret.strip():
+                integration_settings.nexar_client_secret = client_secret.strip()
+            elif not client_secret or client_secret == "***":
+                # Keep existing secret if masked value is provided
+                pass
+        
         integration_settings.save()
         
         # Return updated settings
@@ -180,6 +202,12 @@ def update_integration_settings(request):
             "has_digikey_credentials": bool(
                 integration_settings.digikey_client_id and 
                 integration_settings.digikey_client_secret
+            ),
+            "nexar_client_id": integration_settings.nexar_client_id or "",
+            "nexar_client_secret": "***" if integration_settings.nexar_client_secret else "",
+            "has_nexar_credentials": bool(
+                integration_settings.nexar_client_id and 
+                integration_settings.nexar_client_secret
             )
         }
         

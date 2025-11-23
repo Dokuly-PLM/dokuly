@@ -12,6 +12,27 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def get_nexar_credentials_from_db():
+    """Get Nexar credentials from IntegrationSettings in database"""
+    try:
+        from organizations.models import IntegrationSettings
+        from profiles.models import Profile
+        
+        # Get the first available integration settings
+        # In a multi-tenant system, this would be user-specific
+        integration_settings = IntegrationSettings.objects.first()
+        
+        if integration_settings:
+            return {
+                'client_id': integration_settings.nexar_client_id,
+                'client_secret': integration_settings.nexar_client_secret
+            }
+        return None
+    except Exception as e:
+        logger.warning(f"Could not fetch Nexar credentials from database: {e}")
+        return None
+
+
 class NexarClient:
     """Client for Nexar API with OAuth2 token management"""
     
@@ -20,12 +41,26 @@ class NexarClient:
     TOKEN_CACHE_KEY = "nexar_access_token"
     TOKEN_EXPIRY_KEY = "nexar_token_expiry"
     
-    def __init__(self):
-        self.client_id = os.getenv('NEXAR_CLIENT_ID')
-        self.client_secret = os.getenv('NEXAR_CLIENT_SECRET')
+    def __init__(self, client_id=None, client_secret=None):
+        # Try credentials in this order:
+        # 1. Explicitly passed credentials (for user-specific calls)
+        # 2. Database credentials (IntegrationSettings)
+        
+        if client_id and client_secret:
+            self.client_id = client_id
+            self.client_secret = client_secret
+        else:
+            # Get credentials from database
+            db_creds = get_nexar_credentials_from_db()
+            if db_creds and db_creds['client_id'] and db_creds['client_secret']:
+                self.client_id = db_creds['client_id']
+                self.client_secret = db_creds['client_secret']
+            else:
+                self.client_id = None
+                self.client_secret = None
         
         if not self.client_id or not self.client_secret:
-            raise ValueError("NEXAR_CLIENT_ID and NEXAR_CLIENT_SECRET must be set in environment variables")
+            raise ValueError("Nexar credentials not found. Please configure them in Admin → Settings → Integrations → Nexar")
     
     def get_access_token(self):
         """Get cached access token or fetch a new one"""
@@ -282,8 +317,10 @@ def get_nexar_client():
     return _nexar_client
 
 
+
+
 def is_nexar_configured():
-    """Check if Nexar API credentials are configured"""
-    client_id = os.getenv('NEXAR_CLIENT_ID')
-    client_secret = os.getenv('NEXAR_CLIENT_SECRET')
-    return bool(client_id and client_secret and client_id.strip() and client_secret.strip())
+    """Check if Nexar API credentials are configured in database"""
+    db_creds = get_nexar_credentials_from_db()
+    return bool(db_creds and db_creds['client_id'] and db_creds['client_secret'])
+
