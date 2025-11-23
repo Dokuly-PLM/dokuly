@@ -8,7 +8,7 @@ import SubmitButton from "../../dokuly_components/submitButton";
 import { usePartTypes } from "../partTypes/usePartTypes";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
-import { newPart, searchPartsByMpn, searchNexarParts, checkNexarConfig, searchDigikeyParts, getDigikeyProductDetails, checkDigikeyConfig } from "../functions/queries";
+import { newPart, searchPartsByMpn, searchNexarParts, checkNexarConfig, createPricesFromNexar, searchDigikeyParts, getDigikeyProductDetails, checkDigikeyConfig } from "../functions/queries";
 import { addNewPrice } from "../../common/priceCard/queries";
 import { fetchIntegrationSettings } from "../../admin/functions/queries";
 import PartPeek from "../../common/partPeek";
@@ -264,9 +264,9 @@ const PartNewForm = (props) => {
     if (result.image_url) setImageUrl(result.image_url);
     if (result.display_name) {}
     
-    // Store Nexar part ID for future reference
+    // Store Nexar part ID and seller data for future reference
     if (result.nexar_part_id) {
-      // We'll send this when creating the part
+      // We'll send this when creating the part, including sellers for price creation
       setPartInformation({
         ...part_information,
         source: "nexar",
@@ -274,6 +274,7 @@ const PartNewForm = (props) => {
         category: result.category,
         manufacturer_id: result.manufacturer_id,
         specifications: result.technical_specs || [],
+        sellers: result.sellers || [], // Store seller offers for price creation
       });
     }
     
@@ -547,10 +548,10 @@ const PartNewForm = (props) => {
                 
                 Promise.all(pricePromises)
                   .then((priceResults) => {
-                    console.log(`Successfully created ${priceResults.length} price entries`);
+                    console.log(`Successfully created ${priceResults.length} DigiKey price entries`);
                   })
                   .catch((err) => {
-                    console.error("Error creating prices:", err);
+                    console.error("Error creating DigiKey prices:", err);
                     // Don't show error to user as part was created successfully
                   });
               } else if (part_information?.unit_price) {
@@ -564,10 +565,10 @@ const PartNewForm = (props) => {
                   digikeySupplierId // Use DigiKey supplier from integration settings
                 ).then((priceRes) => {
                   if (priceRes.status === 201) {
-                    console.log("Price created successfully");
+                    console.log("DigiKey price created successfully");
                   }
                 }).catch((err) => {
-                  console.error("Error creating price:", err);
+                  console.error("Error creating DigiKey price:", err);
                 });
               }
             })
@@ -613,11 +614,41 @@ const PartNewForm = (props) => {
             });
         }
         
+        // If part was created from Nexar and has seller offers, create prices automatically
+        if (part_information?.source === "nexar" && part_information?.sellers) {
+          const sellersData = part_information.sellers;
+          
+          if (sellersData.length > 0) {
+            console.log(`Creating prices from ${sellersData.length} Nexar seller offers`);
+            
+            createPricesFromNexar(res.data.id, sellersData)
+              .then((priceRes) => {
+                if (priceRes.status === 200 && priceRes.data) {
+                  const { created, skipped, errors } = priceRes.data;
+                  console.log(`Nexar prices: ${created} created, ${skipped} skipped`);
+                  
+                  if (created > 0) {
+                    toast.success(`Created ${created} price(s) from Nexar sellers`);
+                  }
+                  
+                  if (errors && errors.length > 0) {
+                    console.error("Errors creating some Nexar prices:", errors);
+                  }
+                }
+              })
+              .catch((err) => {
+                console.error("Error creating Nexar prices:", err);
+                // Don't show error to user as part was created successfully
+              });
+          }
+        }
+        
         resetFields();
         props.setRefresh(true);
-        const hasPricing = part_information?.source === "digikey" && 
-                           (part_information?.pricing_tiers?.length > 0 || part_information?.unit_price);
-        toast.success(`Part created${hasPricing ? ` with ${part_information?.pricing_tiers?.length || 1} price tier(s)` : ""}`);
+        const hasPricing = (part_information?.source === "digikey" && 
+                           (part_information?.pricing_tiers?.length > 0 || part_information?.unit_price)) ||
+                           (part_information?.source === "nexar" && part_information?.sellers?.length > 0);
+        toast.success(`Part created${hasPricing ? ` with pricing data` : ""}`);
         if (props?.addSuggestedPartToBom) {
           props?.addSuggestedPartToBom(
             res.data,

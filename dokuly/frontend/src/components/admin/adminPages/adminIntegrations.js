@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Row, Col, Card } from "react-bootstrap";
 import DokulyCard from "../../dokuly_components/dokulyCard";
 import { fetchIntegrationSettings, updateIntegrationSettings, testDigikeyConnection } from "../functions/queries";
-import { getSuppliers } from "../../suppliers/functions/queries";
+import { getSuppliers, updateSupplier } from "../../suppliers/functions/queries";
 import { createSupplier } from "../../suppliers/functions/queries";
 import { toast } from "react-toastify";
 import DigikeySettings from "../adminComponents/integrations/digikeySettings";
@@ -30,8 +30,11 @@ const AdminIntegrations = ({ setRefresh }) => {
   // State for suppliers
   const [suppliers, setSuppliers] = useState([]);
   const [supplierOptions, setSupplierOptions] = useState([]);
-  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
   const [creatingSupplier, setCreatingSupplier] = useState(false);
+  
+  // Nexar supplier mappings: { supplierId: nexarSellerId }
+  const [nexarSupplierMappings, setNexarSupplierMappings] = useState({});
 
   const sections = [
     { id: "digikey", title: "DigiKey", icon: "search", disabled: false },
@@ -58,6 +61,15 @@ const AdminIntegrations = ({ setRefresh }) => {
             value: s.id,
           }));
           setSupplierOptions(options);
+          
+          // Initialize nexarSupplierMappings from loaded suppliers
+          const mappings = {};
+          suppliersList.forEach(s => {
+            if (s.nexar_seller_id) {
+              mappings[s.id] = s.nexar_seller_id;
+            }
+          });
+          setNexarSupplierMappings(mappings);
           
           // Suggest DigiKey supplier if exists (case-insensitive)
           const digikeySupplier = suppliersList.find(s => 
@@ -186,16 +198,28 @@ const AdminIntegrations = ({ setRefresh }) => {
       nexar_client_secret: nexarClientSecret,
     };
 
+    // First save the API credentials
     updateIntegrationSettings(data)
       .then((res) => {
         if (res.status === 200) {
-          toast.success("Nexar settings updated successfully");
-          if (setRefresh) {
-            setRefresh(true);
-          }
-          // Reload to get updated state
-          loadSettings();
+          // Then save supplier mappings
+          const mappingPromises = Object.entries(nexarSupplierMappings).map(([supplierId, nexarSellerId]) => {
+            return updateSupplier(supplierId, { nexar_seller_id: nexarSellerId });
+          });
+
+          return Promise.all(mappingPromises);
+        } else {
+          throw new Error("Failed to update Nexar settings");
         }
+      })
+      .then(() => {
+        toast.success("Nexar settings and supplier mappings updated successfully");
+        if (setRefresh) {
+          setRefresh(true);
+        }
+        // Reload to get updated state
+        loadSettings();
+        loadSuppliers();
       })
       .catch((err) => {
         console.error("Error updating Nexar settings:", err);
@@ -300,6 +324,11 @@ const AdminIntegrations = ({ setRefresh }) => {
         setNexarClientSecret={setNexarClientSecret}
         hasNexarCredentials={hasNexarCredentials}
         handleNexarSubmit={handleNexarSubmit}
+        suppliers={suppliers}
+        supplierOptions={supplierOptions}
+        loadingSuppliers={loadingSuppliers}
+        nexarSupplierMappings={nexarSupplierMappings}
+        setNexarSupplierMappings={setNexarSupplierMappings}
       />
     );
   };

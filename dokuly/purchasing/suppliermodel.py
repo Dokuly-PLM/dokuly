@@ -22,3 +22,12 @@ class Supplier(models.Model):
     default_payment_terms = models.CharField(null=True, blank=True, max_length=1000)
     default_shipping_terms = models.CharField(null=True, blank=True, max_length=1000)
     default_vat = models.FloatField(null=True, blank=True)
+    
+    # Nexar API integration - maps this supplier to a Nexar seller ID
+    # Allows automatic price/stock syncing from Nexar for this supplier
+    # See: https://octopart.com/api/v4/values#sellers for available IDs
+    nexar_seller_id = models.IntegerField(
+        blank=True, 
+        null=True,
+        help_text="Nexar seller ID from the Octopart API (e.g., 459 for DigiKey)"
+    )

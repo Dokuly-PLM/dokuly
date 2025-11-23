@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import DokulyCard from "../../../dokuly_components/dokulyCard";
 import SubmitButton from "../../../dokuly_components/submitButton";
+import GenericDropdownSelector from "../../../dokuly_components/dokulyTable/components/genericDropdownSelector";
+import { getNexarSellers } from "../../../suppliers/functions/queries";
 
 const NexarSettings = ({
   loading,
@@ -10,7 +12,71 @@ const NexarSettings = ({
   setNexarClientSecret,
   hasNexarCredentials,
   handleNexarSubmit,
+  suppliers,
+  supplierOptions,
+  loadingSuppliers,
+  nexarSupplierMappings,
+  setNexarSupplierMappings,
 }) => {
+  const [nexarSellers, setNexarSellers] = useState([]);
+  const [loadingNexarSellers, setLoadingNexarSellers] = useState(false);
+  const [nexarSellersError, setNexarSellersError] = useState(null);
+
+  // Load Nexar sellers when credentials are available
+  useEffect(() => {
+    if (hasNexarCredentials) {
+      loadNexarSellers();
+    }
+  }, [hasNexarCredentials]);
+
+  const loadNexarSellers = () => {
+    setLoadingNexarSellers(true);
+    setNexarSellersError(null);
+    
+    getNexarSellers()
+      .then((res) => {
+        if (res.status === 200 && res.data) {
+          if (Array.isArray(res.data) && res.data.length > 0) {
+            setNexarSellers(res.data);
+          } else {
+            console.warn("Nexar sellers response is empty:", res.data);
+            setNexarSellersError("No Nexar sellers returned from API. The API credentials may be incorrect or the API may be temporarily unavailable.");
+            setNexarSellers([]);
+          }
+        } else {
+          console.error("Unexpected response from Nexar sellers API:", res);
+          setNexarSellersError("Unexpected response from Nexar API. Please check the browser console for details.");
+          setNexarSellers([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error loading Nexar sellers:", err);
+        if (err.response) {
+          console.error("Error response:", err.response.data);
+          setNexarSellersError(`API Error: ${err.response.data?.error || err.response.statusText || 'Unknown error'}`);
+        } else if (err.request) {
+          setNexarSellersError("No response from server. Please check your network connection.");
+        } else {
+          setNexarSellersError("Failed to load Nexar sellers. Please ensure your API credentials are configured correctly.");
+        }
+        setNexarSellers([]);
+      })
+      .finally(() => {
+        setLoadingNexarSellers(false);
+      });
+  };
+
+  const handleSupplierMapping = (supplierId, nexarSellerId) => {
+    setNexarSupplierMappings((prev) => ({
+      ...prev,
+      [supplierId]: nexarSellerId,
+    }));
+  };
+
+  const getMappedCount = () => {
+    return Object.values(nexarSupplierMappings).filter(v => v !== null).length;
+  };
+
   return (
     <DokulyCard title="Nexar Integration Configuration">
       <div className="p-3">
@@ -59,14 +125,93 @@ const NexarSettings = ({
               </div>
             </div>
 
-            <div className="mt-4">
-              <h6>Supplier Mapping (Coming Soon)</h6>
-              <p className="text-muted small">
-                Nexar aggregates pricing from multiple distributors (DigiKey, Mouser, Arrow, etc.).
-                A future update will allow you to map Nexar's supplier names to your Dokuly suppliers
-                for automatic price import.
-              </p>
-            </div>
+            {/* Supplier Mapping Section */}
+            {hasNexarCredentials && (
+              <div className="mt-4">
+                <h6>Supplier Mapping</h6>
+                <p className="text-muted small">
+                  Map your Dokuly suppliers to Nexar distributors for automatic price import.
+                  When you create a part from Nexar data, prices will be automatically created for mapped suppliers.
+                  {getMappedCount() > 0 && (
+                    <span className="text-success d-block mt-1">
+                      <strong>{getMappedCount()}</strong> supplier{getMappedCount() !== 1 ? 's' : ''} mapped
+                    </span>
+                  )}
+                </p>
+
+                {loadingNexarSellers ? (
+                  <div className="text-center py-3">
+                    <div className="spinner-border spinner-border-sm" role="status">
+                      <span className="sr-only">Loading Nexar sellers...</span>
+                    </div>
+                    <p className="text-muted small mt-2">Loading available distributors from Nexar...</p>
+                  </div>
+                ) : nexarSellersError ? (
+                  <div className="alert alert-warning">
+                    <small>{nexarSellersError}</small>
+                    <button 
+                      className="btn btn-sm btn-link" 
+                      onClick={loadNexarSellers}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : nexarSellers.length > 0 ? (
+                  <div className="mt-3">
+                    {loadingSuppliers ? (
+                      <div className="text-center py-2">
+                        <div className="spinner-border spinner-border-sm" role="status">
+                          <span className="sr-only">Loading suppliers...</span>
+                        </div>
+                      </div>
+                    ) : suppliers.length === 0 ? (
+                      <div className="alert alert-info">
+                        <small>No suppliers found. Create suppliers first to enable mapping.</small>
+                      </div>
+                    ) : (
+                      <div className="table-responsive" style={{ maxHeight: "400px", overflowY: "auto" }}>
+                        <table className="table table-sm table-bordered">
+                          <thead className="table-light" style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                            <tr>
+                              <th style={{ width: "40%" }}>Dokuly Supplier</th>
+                              <th style={{ width: "60%" }}>Nexar Distributor</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {suppliers.map((supplier) => (
+                              <tr key={supplier.id}>
+                                <td>
+                                  <strong>{supplier.name}</strong>
+                                </td>
+                                <td>
+                                  <GenericDropdownSelector
+                                    state={nexarSupplierMappings[supplier.id] || null}
+                                    setState={(value) => handleSupplierMapping(supplier.id, value)}
+                                    dropdownValues={[
+                                      { label: "No mapping", value: null },
+                                      ...nexarSellers.map((seller) => ({
+                                        label: seller.name,
+                                        value: parseInt(seller.id),
+                                      })),
+                                    ]}
+                                    placeholder="Select Nexar distributor"
+                                    borderIfPlaceholder={false}
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="alert alert-info">
+                    <small>No Nexar sellers available. Please check your API credentials.</small>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="mt-4">
               <h6>Automatic Field Mappings</h6>
@@ -116,6 +261,12 @@ const NexarSettings = ({
                       <tr>
                         <td><strong>Operating Temperature</strong></td>
                         <td className="text-muted">Min/Max operating temperature is extracted and displayed separately</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Pricing & Availability</strong></td>
+                        <td className="text-muted">
+                          Price tiers and stock levels from mapped distributors are automatically imported
+                        </td>
                       </tr>
                     </tbody>
                   </table>

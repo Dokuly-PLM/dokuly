@@ -107,6 +107,53 @@ class NexarClient:
             logger.error(f"Failed to fetch Nexar access token: {e}")
             raise
     
+    def get_sellers(self):
+        """
+        Get list of all available sellers/distributors from Nexar API
+        
+        Returns:
+            dict: Dictionary mapping seller IDs to seller names
+        """
+        token = self.get_access_token()
+        
+        # GraphQL query for sellers list using supSellers
+        query = """
+        query GetSellers {
+          supSellers {
+            id
+            name
+            isVerified
+            homepageUrl
+          }
+        }
+        """
+        
+        try:
+            response = requests.post(
+                self.API_URL,
+                json={'query': query},
+                headers={
+                    'Authorization': f'Bearer {token}',
+                    'Content-Type': 'application/json'
+                }
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Check for GraphQL errors
+            if 'errors' in data:
+                logger.error(f"GraphQL errors: {data['errors']}")
+                return {}
+            
+            # Extract sellers and convert to dict
+            sellers = data.get('data', {}).get('supSellers', [])
+            return {seller['id']: seller['name'] for seller in sellers}
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to fetch Nexar sellers: {e}")
+            return {}
+    
     def search_parts(self, mpn, limit=10):
         """
         Search for parts by MPN using Nexar GraphQL API
@@ -116,11 +163,11 @@ class NexarClient:
             limit (int): Maximum number of results to return
             
         Returns:
-            list: List of part dictionaries with relevant fields
+            list: List of part dictionaries with relevant fields including seller offers
         """
         token = self.get_access_token()
         
-        # GraphQL query for part search
+        # GraphQL query for part search with seller offers
         query = """
         query SearchParts($mpn: String!, $limit: Int!) {
           supSearch(q: $mpn, limit: $limit) {
@@ -162,6 +209,23 @@ class NexarClient:
                 bestImage {
                   url
                   creditString
+                }
+                sellers {
+                  company {
+                    id
+                    name
+                  }
+                  offers {
+                    sku
+                    inventoryLevel
+                    moq
+                    clickUrl
+                    prices {
+                      quantity
+                      price
+                      currency
+                    }
+                  }
                 }
               }
             }
@@ -287,6 +351,34 @@ class NexarClient:
                         'value': display_value
                     })
             
+            # Process seller offers for pricing and availability
+            sellers_data = []
+            for seller in part.get('sellers', []):
+                company = seller.get('company', {})
+                seller_id = company.get('id', '')
+                seller_name = company.get('name', '')
+                
+                for offer in seller.get('offers', []):
+                    # Get pricing tiers for this offer
+                    price_tiers = []
+                    for price_data in offer.get('prices', []):
+                        price_tiers.append({
+                            'quantity': price_data.get('quantity', 1),
+                            'price': price_data.get('price'),
+                            'currency': price_data.get('currency', 'USD')
+                        })
+                    
+                    # Build seller offer data
+                    sellers_data.append({
+                        'seller_id': seller_id,
+                        'seller_name': seller_name,
+                        'sku': offer.get('sku', ''),
+                        'stock': offer.get('inventoryLevel', 0),
+                        'moq': offer.get('moq', 1),
+                        'url': offer.get('clickUrl', ''),
+                        'prices': price_tiers
+                    })
+            
             # Build the result - internal IDs are separate from technical_specs
             result = {
                 'nexar_part_id': part.get('id', ''),
@@ -303,7 +395,8 @@ class NexarClient:
                 'currency': currency,
                 'total_avail': part.get('totalAvail', 0),
                 'manufacturer_url': part.get('manufacturerUrl', ''),
-                'technical_specs': technical_specs
+                'technical_specs': technical_specs,
+                'sellers': sellers_data  # Seller-specific pricing and availability
             }
             
             # Add temperature fields if found
