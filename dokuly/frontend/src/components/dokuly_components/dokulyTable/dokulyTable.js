@@ -829,8 +829,8 @@ function DokulyTableContents({
             {sortedAndPaginatedData.map((row) => (
               <tr
                 key={row.id}
-                onClick={(e) => onRowClick(row.row_id, row, e)} // Event added to the end so to not affect any existing functionality
-                onDoubleClick={() => onRowDoubleClick(row.row_id, row)}
+                onClick={(e) => onRowClick && onRowClick(row.row_id, row, e)} // Event added to the end so to not affect any existing functionality
+                onDoubleClick={() => onRowDoubleClick && onRowDoubleClick(row.row_id, row)}
                 onKeyDown={(e) => handleRowKeyDown(e, row.row_id, row)}
                 onContextMenu={(e) => {
                   if (!useOnRightClick) {

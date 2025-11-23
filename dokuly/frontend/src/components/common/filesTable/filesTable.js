@@ -59,6 +59,7 @@ export const FilesTable = (props, { release_state }) => {
   const [selectedFileUri, setSelectedFileUri] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState(null);
   const [selectedDisplayName, setSelectedDisplayName] = useState(null);
+  const [selectedFileId, setSelectedFileId] = useState(null);
 
   // New handler for the row double-click event
   const handleRowDoubleClick = (rowIndex) => {
@@ -67,6 +68,7 @@ export const FilesTable = (props, { release_state }) => {
     setSelectedFileUri(fileViewUri);
     setSelectedFileName(row.file_name);
     setSelectedDisplayName(row?.display_name);
+    setSelectedFileId(row.id);
     setIsModalOpen(true);
   };
 
@@ -201,6 +203,7 @@ export const FilesTable = (props, { release_state }) => {
                   showCsvDownload={false}
                   showPagination={false}
                   showSearch={false}
+                  onRowClick={() => {}} // Provide empty function to prevent errors
                   onRowDoubleClick={handleRowDoubleClick}
                 />
               </div>
@@ -224,6 +227,9 @@ export const FilesTable = (props, { release_state }) => {
         fileName={selectedFileName}
         displayName={selectedDisplayName}
         handleClose={handleCloseModal}
+        parentEntityType={app}
+        parentEntityId={objectId}
+        currentFileId={selectedFileId}
       />
     </Col>
   );

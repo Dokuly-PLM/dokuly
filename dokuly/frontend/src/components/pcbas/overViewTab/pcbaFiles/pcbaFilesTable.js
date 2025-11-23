@@ -21,6 +21,7 @@ export const PcbaFilesTable = (props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFileUri, setSelectedFileUri] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState(null);
+  const [selectedFileId, setSelectedFileId] = useState(null);
   const [revisionLocked, setRevisionLocked] = useState(true);
   const [gerberUpload, setGerberUpload] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -38,6 +39,7 @@ export const PcbaFilesTable = (props) => {
   const handleRowDoubleClick = (rowIndex, row) => {
     setSelectedFileUri(row.view_uri);
     setSelectedFileName(row.file_name);
+    setSelectedFileId(row.file_id || row.id);
     setIsModalOpen(true);
   };
 
@@ -248,6 +250,9 @@ export const PcbaFilesTable = (props) => {
         fileUri={selectedFileUri}
         fileName={selectedFileName}
         handleClose={handleCloseModal}
+        parentEntityType="pcbas"
+        parentEntityId={props.pcba_id}
+        currentFileId={selectedFileId}
       />
     </React.Fragment>
   );

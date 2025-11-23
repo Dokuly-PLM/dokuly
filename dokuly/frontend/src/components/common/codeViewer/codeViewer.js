@@ -89,6 +89,10 @@ export default function CodeViewer({ extension, fileUri }) {
           key={selectedLanguage.alias}
           language={selectedLanguage.alias}
           style={atomDark}
+          customStyle={{
+            fontSize: '11px',
+            lineHeight: '1.4'
+          }}
         >
           {fileContent}
         </SyntaxHighlighter>
