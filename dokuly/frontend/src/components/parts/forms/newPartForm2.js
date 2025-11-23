@@ -256,8 +256,6 @@ const PartNewForm = (props) => {
   };
 
   const applyNexarResult = (result) => {
-    console.log("Applying Nexar result:", result);
-    console.log("Sellers data from result:", result.sellers);
     
     // Auto-populate form with Nexar data
     if (result.mpn) setMpn(result.mpn);
@@ -279,7 +277,6 @@ const PartNewForm = (props) => {
         specifications: result.technical_specs || [],
         sellers: result.sellers || [], // Store seller offers for price creation
       };
-      console.log("Setting part_information to:", newPartInfo);
       setPartInformation(newPartInfo);
     }
     
@@ -321,8 +318,6 @@ const PartNewForm = (props) => {
   };
 
   const handleDigikeyProductSelect = async (product) => {
-    // Log the product object for debugging
-    console.log("Selected DigiKey product:", product);
     
     // Check if we have the required part number - try multiple possible field names
     const partNumber = product.digikey_part_number || 
@@ -341,7 +336,6 @@ const PartNewForm = (props) => {
     setIsLoadingDigikeyDetails(true);
     
     try {
-      console.log("Fetching product details for:", partNumber);
       const response = await getDigikeyProductDetails(partNumber);
       if (response.status === 200 && response.data && response.data.result) {
         setDigikeyProductDetails(response.data.result);
@@ -366,8 +360,6 @@ const PartNewForm = (props) => {
       toast.error("No product details available");
       return;
     }
-
-    console.log("Applying DigiKey result:", detailsToUse);
 
     // Auto-populate form with DigiKey data - set MPN exactly as provided
     if (detailsToUse.manufacturer_part_number) {
@@ -428,8 +420,6 @@ const PartNewForm = (props) => {
       is_reach_compliant: isReach,
       export_control_classification_number: detailsToUse.export_control_classification_number || '',
     };
-    
-    console.log("Part info to be stored:", partInfo);
     
     setPartInformation(partInfo);
     
@@ -494,8 +484,6 @@ const PartNewForm = (props) => {
       export_control_classification_number: part_information?.export_control_classification_number || null,
       estimated_factory_lead_days: part_information?.estimated_factory_lead_days || null,
     };
-    
-    console.log("Submitting part data:", data);
 
     newPart(data).then((res) => {
       if (res.status === 201) {
@@ -553,7 +541,6 @@ const PartNewForm = (props) => {
                 
                 Promise.all(pricePromises)
                   .then((priceResults) => {
-                    console.log(`Successfully created ${priceResults.length} DigiKey price entries`);
                   })
                   .catch((err) => {
                     console.error("Error creating DigiKey prices:", err);
@@ -619,27 +606,16 @@ const PartNewForm = (props) => {
             });
         }
         
-        // If part was created from Nexar and has seller offers, create prices automatically
-        console.log("Checking for Nexar pricing data:", {
-          source: part_information?.source,
-          has_sellers: !!part_information?.sellers,
-          sellers_count: part_information?.sellers?.length || 0,
-          sellers_data: part_information?.sellers
-        });
         
         if (part_information?.source === "nexar" && part_information?.sellers) {
           const sellersData = part_information.sellers;
           
           if (sellersData.length > 0) {
-            console.log(`Creating prices from ${sellersData.length} Nexar seller offers`);
-            console.log("Sellers data:", JSON.stringify(sellersData, null, 2));
             
             createPricesFromNexar(res.data.id, sellersData)
               .then((priceRes) => {
                 if (priceRes.status === 200 && priceRes.data) {
                   const { created, skipped, errors, details } = priceRes.data;
-                  console.log(`Nexar prices: ${created} created, ${skipped} skipped`);
-                  console.log("Price creation details:", details);
                   
                   if (created > 0) {
                     toast.success(`Created ${created} price(s) from Nexar sellers`);
