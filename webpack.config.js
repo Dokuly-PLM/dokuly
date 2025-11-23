@@ -12,9 +12,15 @@ module.exports = {
     },
   },
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'dokuly/frontend/static'),
-    },
+    static: [
+      {
+        directory: path.join(__dirname, 'dokuly/frontend/static'),
+      },
+      {
+        directory: path.join(__dirname, 'node_modules/pdfjs-dist/build'),
+        publicPath: '/pdfjs-dist/build',
+      },
+    ],
     port: 3000,
     hot: true,
     liveReload: true,
@@ -72,6 +78,13 @@ module.exports = {
             options: {},
           },
         ],
+      },
+      {
+        test: /pdf\.worker\.(min\.)?js/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'pdf.worker.min.js',
+        },
       },
     ],
   },
