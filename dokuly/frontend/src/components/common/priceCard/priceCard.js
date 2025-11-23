@@ -90,13 +90,6 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
         value: supplier.id,
       }));
     
-    console.log("PriceCard supplier options:", {
-      totalSuppliers: suppliers.length,
-      filteredCount: formattedSupplierOptions.length,
-      suppliers: suppliers.map(s => ({ id: s.id, name: s.name, key: s.key })),
-      options: formattedSupplierOptions
-    });
-    
     setSupplierOptions(formattedSupplierOptions);
   }, [suppliers]);
 
@@ -124,29 +117,6 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
     loadingSuppliers,
     currencyKeysOptions,
     doneFormatting,
-  ]);
-
-  // Debug logging
-  useEffect(() => {
-    console.log("PriceCard loading state:", {
-      loadingSuppliers,
-      loadingCurrency,
-      supplierOptionsLength: supplierOptions.length,
-      currencyKeysOptionsLength: currencyKeysOptions.length,
-      doneFormatting,
-      organizationCurrency,
-      errorCurrency,
-      errorSuppliers,
-    });
-  }, [
-    loadingSuppliers,
-    loadingCurrency,
-    supplierOptions.length,
-    currencyKeysOptions.length,
-    doneFormatting,
-    organizationCurrency,
-    errorCurrency,
-    errorSuppliers,
   ]);
 
   // Show error messages if there are issues

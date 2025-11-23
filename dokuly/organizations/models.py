@@ -329,6 +329,10 @@ class IntegrationSettings(models.Model):
         help_text="Supplier to use when creating prices from DigiKey parts"
     )
     
+    # Nexar API credentials (plain text, no encryption)
+    nexar_client_id = models.CharField(max_length=500, blank=True, null=True)
+    nexar_client_secret = models.CharField(max_length=500, blank=True, null=True)
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

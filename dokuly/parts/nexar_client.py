@@ -12,6 +12,27 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def get_nexar_credentials_from_db():
+    """Get Nexar credentials from IntegrationSettings in database"""
+    try:
+        from organizations.models import IntegrationSettings
+        from profiles.models import Profile
+        
+        # Get the first available integration settings
+        # In a multi-tenant system, this would be user-specific
+        integration_settings = IntegrationSettings.objects.first()
+        
+        if integration_settings:
+            return {
+                'client_id': integration_settings.nexar_client_id,
+                'client_secret': integration_settings.nexar_client_secret
+            }
+        return None
+    except Exception as e:
+        logger.warning(f"Could not fetch Nexar credentials from database: {e}")
+        return None
+
+
 class NexarClient:
     """Client for Nexar API with OAuth2 token management"""
     
@@ -20,12 +41,26 @@ class NexarClient:
     TOKEN_CACHE_KEY = "nexar_access_token"
     TOKEN_EXPIRY_KEY = "nexar_token_expiry"
     
-    def __init__(self):
-        self.client_id = os.getenv('NEXAR_CLIENT_ID')
-        self.client_secret = os.getenv('NEXAR_CLIENT_SECRET')
+    def __init__(self, client_id=None, client_secret=None):
+        # Try credentials in this order:
+        # 1. Explicitly passed credentials (for user-specific calls)
+        # 2. Database credentials (IntegrationSettings)
+        
+        if client_id and client_secret:
+            self.client_id = client_id
+            self.client_secret = client_secret
+        else:
+            # Get credentials from database
+            db_creds = get_nexar_credentials_from_db()
+            if db_creds and db_creds['client_id'] and db_creds['client_secret']:
+                self.client_id = db_creds['client_id']
+                self.client_secret = db_creds['client_secret']
+            else:
+                self.client_id = None
+                self.client_secret = None
         
         if not self.client_id or not self.client_secret:
-            raise ValueError("NEXAR_CLIENT_ID and NEXAR_CLIENT_SECRET must be set in environment variables")
+            raise ValueError("Nexar credentials not found. Please configure them in Admin → Settings → Integrations → Nexar")
     
     def get_access_token(self):
         """Get cached access token or fetch a new one"""
@@ -72,6 +107,53 @@ class NexarClient:
             logger.error(f"Failed to fetch Nexar access token: {e}")
             raise
     
+    def get_sellers(self):
+        """
+        Get list of all available sellers/distributors from Nexar API
+        
+        Returns:
+            dict: Dictionary mapping seller IDs to seller names
+        """
+        token = self.get_access_token()
+        
+        # GraphQL query for sellers list using supSellers
+        query = """
+        query GetSellers {
+          supSellers {
+            id
+            name
+            isVerified
+            homepageUrl
+          }
+        }
+        """
+        
+        try:
+            response = requests.post(
+                self.API_URL,
+                json={'query': query},
+                headers={
+                    'Authorization': f'Bearer {token}',
+                    'Content-Type': 'application/json'
+                }
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Check for GraphQL errors
+            if 'errors' in data:
+                logger.error(f"GraphQL errors: {data['errors']}")
+                return {}
+            
+            # Extract sellers and convert to dict
+            sellers = data.get('data', {}).get('supSellers', [])
+            return {seller['id']: seller['name'] for seller in sellers}
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to fetch Nexar sellers: {e}")
+            return {}
+    
     def search_parts(self, mpn, limit=10):
         """
         Search for parts by MPN using Nexar GraphQL API
@@ -81,11 +163,11 @@ class NexarClient:
             limit (int): Maximum number of results to return
             
         Returns:
-            list: List of part dictionaries with relevant fields
+            list: List of part dictionaries with relevant fields including seller offers
         """
         token = self.get_access_token()
         
-        # GraphQL query for part search
+        # GraphQL query for part search with seller offers
         query = """
         query SearchParts($mpn: String!, $limit: Int!) {
           supSearch(q: $mpn, limit: $limit) {
@@ -128,6 +210,23 @@ class NexarClient:
                   url
                   creditString
                 }
+                sellers {
+                  company {
+                    id
+                    name
+                  }
+                  offers {
+                    sku
+                    inventoryLevel
+                    moq
+                    clickUrl
+                    prices {
+                      quantity
+                      price
+                      currency
+                    }
+                  }
+                }
               }
             }
           }
@@ -154,7 +253,9 @@ class NexarClient:
             
             # Check for GraphQL errors
             if 'errors' in data:
-                logger.error(f"GraphQL errors: {data['errors']}")
+                logger.error(f"GraphQL errors in search_parts: {data['errors']}")
+                # Log full response for debugging
+                logger.error(f"Full GraphQL response: {data}")
                 return []
             
             # Extract and transform results
@@ -172,8 +273,20 @@ class NexarClient:
         for item in results:
             part = item.get('part', {})
             
-            # Get display name - use 'name' field from Nexar, fallback to MPN
-            display_name = part.get('name', '') or part.get('mpn', '')
+            # Get display name - prefer shortDescription (concise), fallback to MPN
+            # The 'name' field is often too long, combining multiple descriptions
+            short_desc = part.get('shortDescription', '').strip()
+            mpn = part.get('mpn', '').strip()
+            
+            # Use shortDescription if available and not too long, otherwise use MPN
+            if short_desc and len(short_desc) <= 150:
+                display_name = short_desc
+            elif mpn:
+                display_name = mpn
+            else:
+                # Fallback to truncated 'name' field if nothing else available
+                name = part.get('name', '').strip()
+                display_name = name[:147] + '...' if len(name) > 150 else name
             
             # Get description (prefer short description, fallback to first description)
             description = part.get('shortDescription', '')
@@ -240,6 +353,34 @@ class NexarClient:
                         'value': display_value
                     })
             
+            # Process seller offers for pricing and availability
+            sellers_data = []
+            for seller in part.get('sellers', []):
+                company = seller.get('company', {})
+                seller_id = company.get('id', '')
+                seller_name = company.get('name', '')
+                
+                for offer in seller.get('offers', []):
+                    # Get pricing tiers for this offer
+                    price_tiers = []
+                    for price_data in offer.get('prices', []):
+                        price_tiers.append({
+                            'quantity': price_data.get('quantity', 1),
+                            'price': price_data.get('price'),
+                            'currency': price_data.get('currency', 'USD')
+                        })
+                    
+                    # Build seller offer data
+                    sellers_data.append({
+                        'seller_id': seller_id,
+                        'seller_name': seller_name,
+                        'sku': offer.get('sku', ''),
+                        'stock': offer.get('inventoryLevel', 0),
+                        'moq': offer.get('moq', 1),
+                        'url': offer.get('clickUrl', ''),
+                        'prices': price_tiers
+                    })
+            
             # Build the result - internal IDs are separate from technical_specs
             result = {
                 'nexar_part_id': part.get('id', ''),
@@ -256,7 +397,8 @@ class NexarClient:
                 'currency': currency,
                 'total_avail': part.get('totalAvail', 0),
                 'manufacturer_url': part.get('manufacturerUrl', ''),
-                'technical_specs': technical_specs
+                'technical_specs': technical_specs,
+                'sellers': sellers_data  # Seller-specific pricing and availability
             }
             
             # Add temperature fields if found
@@ -282,8 +424,10 @@ def get_nexar_client():
     return _nexar_client
 
 
+
+
 def is_nexar_configured():
-    """Check if Nexar API credentials are configured"""
-    client_id = os.getenv('NEXAR_CLIENT_ID')
-    client_secret = os.getenv('NEXAR_CLIENT_SECRET')
-    return bool(client_id and client_secret and client_id.strip() and client_secret.strip())
+    """Check if Nexar API credentials are configured in database"""
+    db_creds = get_nexar_credentials_from_db()
+    return bool(db_creds and db_creds['client_id'] and db_creds['client_secret'])
+

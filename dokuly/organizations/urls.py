@@ -45,6 +45,7 @@ urlpatterns = [
     # Integration settings
     path("api/integrations/get/", viewsIntegrations.get_integration_settings),
     path("api/integrations/update/", viewsIntegrations.update_integration_settings),
+    path("api/integrations/nexar/sellers/", viewsIntegrations.get_nexar_sellers),
     
     # Revision system fixes
     path("api/organizations/checkCorruptedRevisions/", views.check_corrupted_revisions),

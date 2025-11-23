@@ -8,6 +8,7 @@ from . import (
     viewsPartTypes,
     viewsPrice,
     viewsNexar,
+    viewsNexarPrices,
     viewsDigikey,
 )
 from rest_framework.decorators import api_view, renderer_classes
@@ -98,6 +99,7 @@ urlpatterns = [
     path("api/parts/nexar/search/", viewsNexar.search_nexar_parts),
     path("api/parts/nexar/clear_cache/", viewsNexar.clear_nexar_cache),
     path("api/parts/nexar/check_config/", viewsNexar.check_nexar_config),
+    path("api/parts/nexar/create_prices/", viewsNexarPrices.create_prices_from_nexar),
     # DigiKey integration
     path("api/parts/digikey/search/", viewsDigikey.search_digikey_parts),
     path("api/parts/digikey/product_details/", viewsDigikey.get_digikey_product_details),

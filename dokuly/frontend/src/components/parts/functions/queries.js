@@ -381,6 +381,15 @@ export const checkNexarConfig = () => {
   return promise;
 };
 
+export const createPricesFromNexar = (partId, sellersData) => {
+  const promise = axios.post(
+    "api/parts/nexar/create_prices/",
+    { part_id: partId, sellers: sellersData },
+    tokenConfig()
+  );
+  return promise;
+};
+
 export const searchDigikeyParts = (keyword, limit = 10) => {
   const promise = axios.post(
     "api/parts/digikey/search/",

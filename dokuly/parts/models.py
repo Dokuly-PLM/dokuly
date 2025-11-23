@@ -81,7 +81,7 @@ class Part(models.Model):
     mpn = models.CharField(max_length=50, blank=True, null=True)
     farnell_number = models.CharField(max_length=50, blank=True, null=True)
     manufacturer = models.CharField(max_length=60, blank=True, null=True)
-    datasheet = models.CharField(max_length=200, blank=True, null=True)
+    datasheet = models.CharField(max_length=400, blank=True, null=True)
     # Lifecycle # TODO change to lifecycle statur
     production_status = models.CharField(max_length=20, blank=True, null=True)
 
@@ -113,6 +113,14 @@ class Part(models.Model):
     hs_code = models.CharField(max_length=200, blank=True, null=True)
 
     estimated_factory_lead_days = models.IntegerField(blank=True, null=True)
+
+    # Technical specifications and metadata from external sources (Nexar, DigiKey, Component Vault)
+    # Stores flexible JSON data including:
+    # - Technical specifications (e.g., voltage, temperature ranges, package type)
+    # - Integration metadata (source identifier, stock quantities, pricing tiers)
+    # - Custom attributes that don't fit into dedicated fields
+    # Note: Display data like MPN, manufacturer, datasheet should use dedicated fields above
+    part_information = models.JSONField(blank=True, null=True)
 
     # Alternative_parts. Foreign keys to parts which have the same mechanical fit, with the same or greater performance.
     alternative_parts_v2 = models.ManyToManyField("self",
@@ -156,11 +164,8 @@ class Part(models.Model):
 
     backorder_quantity = models.IntegerField(blank=True, null=True)
 
-    # From component vault
-    part_information = models.JSONField(blank=True, null=True)
     # ID to the connected part on the component vault.
     component_vault_id = models.IntegerField(blank=True, null=True)
-
 
     rohs_status_code = models.CharField(max_length=20, blank=True, null=True)
 
@@ -216,8 +221,9 @@ class Part(models.Model):
         models.JSONField(null=True, blank=True), blank=True, null=True
     )
 
-    # DEPRECATED
-    # After Octopart integration, these fields are DEPRECATED, however some legacy parts might still used these
+    # DEPRECATED - replaced by part_information JSONField (see main section above)
+    # After Octopart integration, these TextField fields are DEPRECATED
+    # Legacy parts may still use these fields for compatibility during revision copies
     sellers = models.TextField(max_length=50000, blank=True, null=True)
     specs = models.TextField(max_length=50000, blank=True, null=True)
 

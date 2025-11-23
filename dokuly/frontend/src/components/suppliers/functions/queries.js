@@ -37,3 +37,12 @@ export const deleteSupplier = (supplierId) => {
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+export const getNexarSellers = () => {
+  const promise = axios.get(
+    "api/integrations/nexar/sellers/",
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};

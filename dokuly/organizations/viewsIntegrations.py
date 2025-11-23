@@ -69,6 +69,14 @@ def get_integration_settings(request):
             "has_digikey_credentials": bool(
                 integration_settings.digikey_client_id and 
                 integration_settings.digikey_client_secret
+            ),
+
+            
+            "nexar_client_id": integration_settings.nexar_client_id or "",
+            "nexar_client_secret": "***" if integration_settings.nexar_client_secret else "",
+            "has_nexar_credentials": bool(
+                integration_settings.nexar_client_id and 
+                integration_settings.nexar_client_secret
             )
         }
         
@@ -165,6 +173,20 @@ def update_integration_settings(request):
             else:
                 integration_settings.digikey_supplier = None
         
+        # Update Nexar credentials
+        if "nexar_client_id" in data:
+            client_id = data["nexar_client_id"].strip() if data["nexar_client_id"] else None
+            integration_settings.nexar_client_id = client_id
+        
+        if "nexar_client_secret" in data:
+            # Only update if a new value is provided (not the masked "***")
+            client_secret = data["nexar_client_secret"]
+            if client_secret and client_secret != "***" and client_secret.strip():
+                integration_settings.nexar_client_secret = client_secret.strip()
+            elif not client_secret or client_secret == "***":
+                # Keep existing secret if masked value is provided
+                pass
+        
         integration_settings.save()
         
         # Return updated settings
@@ -180,6 +202,12 @@ def update_integration_settings(request):
             "has_digikey_credentials": bool(
                 integration_settings.digikey_client_id and 
                 integration_settings.digikey_client_secret
+            ),
+            "nexar_client_id": integration_settings.nexar_client_id or "",
+            "nexar_client_secret": "***" if integration_settings.nexar_client_secret else "",
+            "has_nexar_credentials": bool(
+                integration_settings.nexar_client_id and 
+                integration_settings.nexar_client_secret
             )
         }
         
@@ -191,4 +219,73 @@ def update_integration_settings(request):
             {"error": "Failed to update integration settings", "details": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(["GET"])
+@renderer_classes([JSONRenderer])
+def get_nexar_sellers(request):
+    """
+    Get list of available Nexar sellers/distributors from the Octopart API
+    
+    Returns:
+        List of sellers with id and name for dropdown selection
+        Based on: https://octopart.com/api/v4/values#sellers
+    """
+    try:
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                "Not Authorized",
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        organization = get_user_organization(request.user)
+        if not organization:
+            return Response(
+                {"error": "User organization not found"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get integration settings to check for Nexar credentials
+        integration_settings, created = IntegrationSettings.objects.get_or_create(
+            organization=organization
+        )
+        
+        if not integration_settings.nexar_client_id or not integration_settings.nexar_client_secret:
+            return Response(
+                {"error": "Nexar API credentials not configured"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Fetch sellers from Nexar API
+        from parts.nexar_client import get_nexar_client
+        
+        try:
+            nexar_client = get_nexar_client()
+            sellers = nexar_client.get_sellers()
+            
+            # Transform to format expected by frontend
+            sellers_list = [
+                {"id": seller_id, "name": seller_name}
+                for seller_id, seller_name in sellers.items()
+            ]
+            
+            # Sort by name for better UX
+            sellers_list.sort(key=lambda x: x["name"])
+            
+            return Response(sellers_list, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error fetching sellers from Nexar API: {e}")
+            return Response(
+                {"error": "Failed to fetch sellers from Nexar API", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    except Exception as e:
+        logger.error(f"Error getting Nexar sellers: {e}")
+        return Response(
+            {"error": "Failed to get Nexar sellers", "details": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 
