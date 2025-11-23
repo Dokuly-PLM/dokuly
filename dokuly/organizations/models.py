@@ -333,9 +333,6 @@ class IntegrationSettings(models.Model):
     nexar_client_id = models.CharField(max_length=500, blank=True, null=True)
     nexar_client_secret = models.CharField(max_length=500, blank=True, null=True)
     
-    # TODO: Add Nexar supplier mapping (map Nexar supplier names to Dokuly Supplier IDs)
-    # Will need JSONField to store mappings like: {"DigiKey": supplier_id_1, "Mouser": supplier_id_2, ...}
-    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
