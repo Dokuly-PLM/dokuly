@@ -81,7 +81,7 @@ class Part(models.Model):
     mpn = models.CharField(max_length=50, blank=True, null=True)
     farnell_number = models.CharField(max_length=50, blank=True, null=True)
     manufacturer = models.CharField(max_length=60, blank=True, null=True)
-    datasheet = models.CharField(max_length=200, blank=True, null=True)
+    datasheet = models.CharField(max_length=400, blank=True, null=True)
     # Lifecycle # TODO change to lifecycle statur
     production_status = models.CharField(max_length=20, blank=True, null=True)
 
