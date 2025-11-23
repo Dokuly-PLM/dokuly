@@ -253,7 +253,9 @@ class NexarClient:
             
             # Check for GraphQL errors
             if 'errors' in data:
-                logger.error(f"GraphQL errors: {data['errors']}")
+                logger.error(f"GraphQL errors in search_parts: {data['errors']}")
+                # Log full response for debugging
+                logger.error(f"Full GraphQL response: {data}")
                 return []
             
             # Extract and transform results

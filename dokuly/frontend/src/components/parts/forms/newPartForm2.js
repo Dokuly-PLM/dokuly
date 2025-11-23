@@ -256,6 +256,9 @@ const PartNewForm = (props) => {
   };
 
   const applyNexarResult = (result) => {
+    console.log("Applying Nexar result:", result);
+    console.log("Sellers data from result:", result.sellers);
+    
     // Auto-populate form with Nexar data
     if (result.mpn) setMpn(result.mpn);
     if (result.manufacturer) setManufacturer(result.manufacturer);
@@ -267,7 +270,7 @@ const PartNewForm = (props) => {
     // Store Nexar part ID and seller data for future reference
     if (result.nexar_part_id) {
       // We'll send this when creating the part, including sellers for price creation
-      setPartInformation({
+      const newPartInfo = {
         ...part_information,
         source: "nexar",
         nexar_part_id: result.nexar_part_id,
@@ -275,7 +278,9 @@ const PartNewForm = (props) => {
         manufacturer_id: result.manufacturer_id,
         specifications: result.technical_specs || [],
         sellers: result.sellers || [], // Store seller offers for price creation
-      });
+      };
+      console.log("Setting part_information to:", newPartInfo);
+      setPartInformation(newPartInfo);
     }
     
     setShowNexarResults(false);
@@ -615,17 +620,26 @@ const PartNewForm = (props) => {
         }
         
         // If part was created from Nexar and has seller offers, create prices automatically
+        console.log("Checking for Nexar pricing data:", {
+          source: part_information?.source,
+          has_sellers: !!part_information?.sellers,
+          sellers_count: part_information?.sellers?.length || 0,
+          sellers_data: part_information?.sellers
+        });
+        
         if (part_information?.source === "nexar" && part_information?.sellers) {
           const sellersData = part_information.sellers;
           
           if (sellersData.length > 0) {
             console.log(`Creating prices from ${sellersData.length} Nexar seller offers`);
+            console.log("Sellers data:", JSON.stringify(sellersData, null, 2));
             
             createPricesFromNexar(res.data.id, sellersData)
               .then((priceRes) => {
                 if (priceRes.status === 200 && priceRes.data) {
-                  const { created, skipped, errors } = priceRes.data;
+                  const { created, skipped, errors, details } = priceRes.data;
                   console.log(`Nexar prices: ${created} created, ${skipped} skipped`);
+                  console.log("Price creation details:", details);
                   
                   if (created > 0) {
                     toast.success(`Created ${created} price(s) from Nexar sellers`);
