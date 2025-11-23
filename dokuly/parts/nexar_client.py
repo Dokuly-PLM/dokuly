@@ -207,8 +207,20 @@ class NexarClient:
         for item in results:
             part = item.get('part', {})
             
-            # Get display name - use 'name' field from Nexar, fallback to MPN
-            display_name = part.get('name', '') or part.get('mpn', '')
+            # Get display name - prefer shortDescription (concise), fallback to MPN
+            # The 'name' field is often too long, combining multiple descriptions
+            short_desc = part.get('shortDescription', '').strip()
+            mpn = part.get('mpn', '').strip()
+            
+            # Use shortDescription if available and not too long, otherwise use MPN
+            if short_desc and len(short_desc) <= 150:
+                display_name = short_desc
+            elif mpn:
+                display_name = mpn
+            else:
+                # Fallback to truncated 'name' field if nothing else available
+                name = part.get('name', '').strip()
+                display_name = name[:147] + '...' if len(name) > 150 else name
             
             # Get description (prefer short description, fallback to first description)
             description = part.get('shortDescription', '')
