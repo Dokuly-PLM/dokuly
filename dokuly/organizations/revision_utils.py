@@ -612,3 +612,153 @@ def get_next_revision(revisions: list, organization_id: Optional[int] = None) ->
     
     # Increment it
     return increment_revision(highest_revision, organization_id)
+
+
+def build_full_document_number(
+    organization_id: int,
+    prefix: str,
+    document_number: str,
+    revision_count_major: int,
+    revision_count_minor: int,
+    project_number: Optional[str] = None,
+    part_number: Optional[str] = None,
+    created_at: Optional[object] = None,
+) -> str:
+    """
+    Build a full document number using organization settings and template.
+    
+    This is a convenience wrapper around build_full_document_number_from_template
+    that automatically fetches the organization's document template and revision settings.
+    
+    Args:
+        organization_id: Organization ID to fetch settings from
+        prefix: Document type prefix (e.g., "TN", "DOC", "MAN")
+        document_number: The document number (e.g., "103", "001")
+        revision_count_major: Major revision count (0-indexed)
+        revision_count_minor: Minor revision count (0-indexed)
+        project_number: Optional project number (e.g., "1001", "PRJ123")
+        part_number: Optional part number (e.g., "1234", "ASM5678")
+        created_at: Optional datetime for date-based template variables
+    
+    Returns:
+        Formatted full document number according to organization template
+    
+    Examples:
+        # Organization has template: "<prefix><project_number>-<document_number><revision>"
+        # Letter revisions, major-only format
+        build_full_document_number(org_id, "TN", "103", 0, 0, project_number="1001")
+        # -> "TN1001-103A"
+        
+        # Organization has template: "<prefix><project_number>-<document_number>-<major_revision>"
+        # Number revisions, major-minor format
+        build_full_document_number(org_id, "DOC", "5", 1, 2, project_number="2000")
+        # -> "DOC2000-5-1"
+    """
+    try:
+        org = Organization.objects.get(id=organization_id)
+        template = org.full_document_number_template
+        # Use document-specific revision settings
+        use_number_revisions = org.document_use_number_revisions
+        start_at_one = org.document_start_major_revision_at_one
+    except Organization.DoesNotExist:
+        # Fallback to defaults
+        template = "<prefix><project_number>-<document_number><revision>"
+        use_number_revisions = False
+        start_at_one = False
+    
+    return build_full_document_number_from_template(
+        template=template,
+        prefix=prefix,
+        document_number=document_number,
+        revision_count_major=revision_count_major,
+        revision_count_minor=revision_count_minor,
+        use_number_revisions=use_number_revisions,
+        start_at_one=start_at_one,
+        project_number=project_number,
+        part_number=part_number,
+        created_at=created_at,
+    )
+
+
+def build_full_document_number_from_template(
+    template: str,
+    prefix: str,
+    document_number: str,
+    revision_count_major: int,
+    revision_count_minor: int,
+    use_number_revisions: bool,
+    start_at_one: bool = False,
+    project_number: Optional[str] = None,
+    part_number: Optional[str] = None,
+    created_at: Optional[object] = None,
+) -> str:
+    """
+    Build a full document number from a template and revision counts.
+    
+    Args:
+        template: Template string with variables like "<prefix><project_number>-<document_number><revision>"
+        prefix: Document type prefix (e.g., "TN", "DOC", "MAN")
+        document_number: The document number (e.g., "103", "001")
+        revision_count_major: Major revision count (0-indexed)
+        revision_count_minor: Minor revision count (0-indexed)
+        use_number_revisions: Whether to use numbers (True) or letters (False)
+        start_at_one: If True and using number revisions, start major at 1 instead of 0
+        project_number: Optional project number (e.g., "1001", "PRJ123")
+        part_number: Optional part number (e.g., "1234", "ASM5678")
+        created_at: Optional datetime object for date-based variables
+    
+    Returns:
+        Formatted full document number
+    
+    Examples:
+        # Template: "<prefix><project_number>-<document_number><revision>"
+        # TN, project=1001, doc=103, major=1, minor=0, letters, major-only
+        # -> "TN1001-103B"
+        
+        # Template: "<prefix><project_number>-<document_number>-<major_revision>.<minor_revision>"
+        # DOC, project=2000, doc=5, major=0, minor=2, numbers, major-minor
+        # -> "DOC2000-5-0.2"
+        
+        # Template: "<prefix><project_number>-<part_number>-<document_number>-<year><month><day>"
+        # TN, project=1001, part=1234, doc=103, created_at=2025-01-15
+        # -> "TN1001-1234-103-20250115"
+    """
+    # Convert inputs to strings to ensure replace() works
+    prefix_str = str(prefix) if prefix else ""
+    document_number_str = str(document_number) if document_number else ""
+    project_number_str = str(project_number) if project_number else ""
+    part_number_str = str(part_number) if part_number else ""
+    
+    # Format individual revision components
+    # Major revision can start at 0 or 1 based on start_at_one setting
+    major_formatted = format_revision_count(revision_count_major, use_number_revisions, start_at_one)
+    # Minor revision always starts at 0, regardless of start_at_one setting
+    minor_formatted = format_revision_count(revision_count_minor, use_number_revisions, False)
+    
+    # Format date components if created_at is provided
+    day_str = ""
+    month_str = ""
+    year_str = ""
+    if created_at:
+        try:
+            day_str = created_at.strftime("%d")  # 01-31
+            month_str = created_at.strftime("%m")  # 01-12
+            year_str = created_at.strftime("%Y")  # e.g., 2025
+        except (AttributeError, ValueError):
+            # If created_at is not a datetime object or is invalid, use empty strings
+            pass
+    
+    # Replace template variables
+    result = template
+    result = result.replace("<prefix>", prefix_str)
+    result = result.replace("<document_number>", document_number_str)
+    result = result.replace("<project_number>", project_number_str)
+    result = result.replace("<part_number>", part_number_str)
+    result = result.replace("<revision>", major_formatted)
+    result = result.replace("<major_revision>", major_formatted)
+    result = result.replace("<minor_revision>", minor_formatted)
+    result = result.replace("<day>", day_str)
+    result = result.replace("<month>", month_str)
+    result = result.replace("<year>", year_str)
+    
+    return result

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSpring, animated, config } from "react-spring";
 import DocumentPrefixes from "../adminComponents/documents/documentPrefixes";
 import ProtectionLevels from "../adminComponents/documents/protectionLevels";
+import DocumentNumberSettings from "../adminComponents/documents/documentNumberSettings";
 import {
   basicSkeletonLoaderInfoCard,
   basicSkeletonLoaderTableCard,
@@ -10,6 +11,7 @@ import {
   fetchCustomers,
   fetchUsers,
   fetchPrefixes,
+  fetchOrg,
 } from "../functions/queries";
 import { adminGetDocuments } from "../functions/queries";
 
@@ -21,6 +23,7 @@ const AdminDocuments = (props) => {
   const [refresh, setRefresh] = useState(true);
   const [selectedDocument, setSelectedDocument] = useState({});
   const [prefixes, setPrefixes] = useState(null);
+  const [org, setOrg] = useState(null);
   const [users, setUsers] = useState(
     props.users !== null && props.users !== undefined ? props.users : null
   );
@@ -72,6 +75,17 @@ const AdminDocuments = (props) => {
       setDocuments(props.documents);
     }
     if (refresh) {
+      // Fetch organization data - always refetch when refresh is true
+      fetchOrg()
+        .then((res) => {
+          if (res.status === 200) {
+            setOrg(res.data);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching organization:", err);
+        });
+
       if (documents == null && !newDocuments) {
         adminGetDocuments()
           .then((res) => {
@@ -181,6 +195,14 @@ const AdminDocuments = (props) => {
           <div className="row">
             <ProtectionLevels />
           </div>
+        </div>
+      </div>
+      <div className="row mt-3">
+        <div className="col">
+          <DocumentNumberSettings 
+            org={org} 
+            setRefresh={setRefresh}
+          />
         </div>
       </div>
     </div>

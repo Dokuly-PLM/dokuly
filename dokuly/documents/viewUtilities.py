@@ -131,34 +131,129 @@ def assemble_file_dict(row_number: None, file_title: None, file_name: None, type
 
 
 def assemble_full_document_number(entry, document, project, customer, part, assembly):
-    fullNumber = ""
-    if entry['full_doc_number'] != None:
-        fullNumber = entry['full_doc_number']
+    """
+    Assemble the full document number using the organization's template.
+    
+    Args:
+        entry: Document entry dict with 'full_doc_number' field
+        document: Document object with prefix_id, document_number, revision, etc.
+        project: Project object (optional)
+        customer: Customer object (optional)
+        part: Part object (optional)
+        assembly: Assembly object (optional)
+    
+    Returns:
+        Formatted full document number string
+    """
+    from organizations.revision_utils import build_full_document_number
+    
+    # If full_doc_number is already set, return it
+    if entry.get('full_doc_number') is not None:
+        return entry['full_doc_number']
+    
+    # Get prefix
+    pre = ""
+    if document.prefix_id is not None and document.prefix_id != -1:
+        prefix = Document_Prefix.objects.get(id=int(document.prefix_id))
+        pre = prefix.prefix
     else:
-        pre = ""
-        if document.prefix_id != None and document.prefix_id != -1:
-            prefix = Document_Prefix.objects.get(
-                id=int(document.prefix_id))
-            pre = prefix.prefix
-        else:
-            pre = document.document_type
-        if project != None:
+        pre = document.document_type
+    
+    # Get organization ID from document
+    org_id = document.organization_id
+    
+    # Get project number
+    project_number = None
+    if project is not None:
+        project_number = str(project.full_project_number)
+    
+    # Get part number if available
+    part_number = None
+    if hasattr(document, 'part_number') and document.part_number is not None:
+        part_number = str(document.part_number)
+    elif part is not None:
+        part_number = str(part.part_number)
+    
+    # Use template-based formatting
+    try:
+        fullNumber = build_full_document_number(
+            organization_id=org_id,
+            prefix=pre,
+            document_number=str(document.document_number),
+            revision_count_major=document.revision_count_major,
+            revision_count_minor=document.revision_count_minor,
+            project_number=project_number,
+            part_number=part_number,
+            created_at=document.created_at,
+        )
+    except Exception as e:
+        # Fallback to old format if template fails
+        if project is not None:
             fullNumber = f"{pre}{project.full_project_number}-{document.document_number}{document.revision}"
         else:
             fullNumber = f"{pre}??-{document.document_number}{document.revision}"
+    
     return fullNumber
 
 
 def assemble_full_document_number_no_prefix_db_call(entry, document, project, customer, part, assembly, prefix):
-    if entry['full_doc_number'] is not None:
+    """
+    Assemble the full document number using the organization's template (no prefix DB call).
+    
+    Args:
+        entry: Document entry dict with 'full_doc_number' field
+        document: Document object
+        project: Project object (optional)
+        customer: Customer object (optional)
+        part: Part object (optional)
+        assembly: Assembly object (optional)
+        prefix: Prefix string (already fetched)
+    
+    Returns:
+        Formatted full document number string
+    """
+    from organizations.revision_utils import build_full_document_number
+    
+    # If full_doc_number is already set, return it
+    if entry.get('full_doc_number') is not None:
         return entry['full_doc_number']
-
+    
     pre = prefix if prefix else ""
-
+    
+    # Get organization ID from document
+    org_id = document.organization_id
+    
+    # Get project number
+    project_number = None
     if project is not None:
-        fullNumber = f"{pre}{project.full_project_number}-{document.document_number}{document.revision}"
-    else:
-        fullNumber = f"{pre}??-{document.document_number}{document.revision}"
+        project_number = str(project.full_project_number)
+    
+    # Get part number if available
+    part_number = None
+    if hasattr(document, 'part_number') and document.part_number is not None:
+        part_number = str(document.part_number)
+    elif part is not None:
+        part_number = str(part.part_number)
+    
+    # Use template-based formatting
+    try:
+        fullNumber = build_full_document_number(
+            organization_id=org_id,
+            prefix=pre,
+            document_number=str(document.document_number),
+            revision_count_major=document.revision_count_major,
+            revision_count_minor=document.revision_count_minor,
+            project_number=project_number,
+            part_number=part_number,
+            created_at=document.created_at,
+        )
+    except Exception as e:
+        # Fallback to old format if template fails
+        if project is not None:
+            fullNumber = f"{pre}{project.full_project_number}-{document.document_number}{document.revision}"
+        else:
+            fullNumber = f"{pre}??-{document.document_number}{document.revision}"
+    
     return fullNumber
 
 

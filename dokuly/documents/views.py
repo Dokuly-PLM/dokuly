@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from organizations.revision_utils import build_full_document_number
 from organizations.revision_utils import increment_revision_counters, build_formatted_revision
 from part_numbers.methods import get_next_part_number
 from rest_framework.response import Response
@@ -222,7 +223,17 @@ def create_new_document(request, **kwargs):
             created_at=document.created_at
         )
         
-        document.full_doc_number = f"{prefix.prefix}{full_project_number}-{document_number}{document.formatted_revision}"  # TODO fix parsing
+        # Use template-based document number generation
+        document.full_doc_number = build_full_document_number(
+            organization_id=organization_id,
+            prefix=prefix.prefix,
+            document_number=document_number,
+            revision_count_major=document.revision_count_major,
+            revision_count_minor=document.revision_count_minor,
+            project_number=document.project.full_project_number if document.project else None,
+            part_number=document.part_number,
+            created_at=document.created_at
+        )
         document.save()
 
         if "template_id" in data and data["template_id"] not in (
@@ -901,14 +912,17 @@ def auto_new_revision(request, pk, **kwargs):
             created_at=new_revision.created_at
         )
 
-        projects = Project.objects.filter()
-        prefixes = Document_Prefix.objects.all()
-
-        # TODO DocumentSerializer runs twice in this view.
-        document_ser = DocumentSerializer(new_revision, many=False)
-        new_revision.full_doc_number = get_document_number(
-            document_ser.data, projects, prefixes
-        )  # TODO slim down
+        # Use template-based document number generation
+        new_revision.full_doc_number = build_full_document_number(
+            organization_id=organization_id,
+            prefix=prefix_str,
+            document_number=new_revision.document_number,
+            revision_count_major=new_revision.revision_count_major,
+            revision_count_minor=new_revision.revision_count_minor,
+            project_number=new_revision.project.full_project_number if new_revision.project else None,
+            part_number=new_revision.part_number,
+            created_at=new_revision.created_at
+        )
         new_revision.save()
 
         notify_on_new_revision(new_revision=new_revision, app_name="documents", user=request.user)
@@ -961,7 +975,7 @@ def admin_get_archived(request):
             if document.project != None:
                 project = Project.objects.get(id=document.project.id)
                 customer = Customer.objects.get(id=project.customer.id)
-                fullNumber = (
+                fullNumber = (                          # TODO DEPRECATE THIS
                     str(pre)
                     + str(project.full_project_number)
                     + "-"
@@ -970,7 +984,7 @@ def admin_get_archived(request):
                 )
             elif document.part != None:
                 part = Part.objects.get(id=document.part.id)
-                fullNumber = (
+                fullNumber = (                          # TODO DEPRECATE THIS
                     str(pre)
                     + str(part.part_number)
                     + "-"
@@ -979,7 +993,7 @@ def admin_get_archived(request):
                 )
             elif document.assembly != None:
                 asm = Assembly.objects.get(id=document.assembly.id)
-                fullNumber = (
+                fullNumber = (                          # TODO DEPRECATE THIS
                     str(pre)
                     + str(asm.part_number)
                     + "-"
@@ -987,7 +1001,7 @@ def admin_get_archived(request):
                     + str(document.formatted_revision)
                 )
             else:
-                fullNumber = (
+                fullNumber = (                          # TODO DEPRECATE THIS
                     str(pre)
                     + "!!!"
                     + "-"

@@ -1554,6 +1554,16 @@ export const previewFormattedRevisionTemplate = (data) => {
   return dataPromise;
 };
 
+export const previewDocumentNumberTemplate = (data) => {
+  const promise = axios.post(
+    "api/organizations/previewDocumentNumberTemplate/",
+    data,
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
 /**
  * Fetch organization rules.
  * @return {Promise<AxiosResponse<any>>} The axios data promise.

@@ -11,6 +11,8 @@ class CustomerOrganizationSerializer(serializers.ModelSerializer):
                   'storage_limit', 'component_vault_api_key', 'currency',
                   'use_number_revisions', 'revision_format', 'start_major_revision_at_one',
                   'full_part_number_template', 'formatted_revision_template',
+                  'full_document_number_template', 'document_use_number_revisions', 
+                  'document_revision_format', 'document_start_major_revision_at_one',
                   'time_tracking_is_enabled', 'customer_is_enabled', 'document_is_enabled',
                   'pcba_is_enabled', 'assembly_is_enabled', 'procurement_is_enabled',
                   'requirement_is_enabled', 'production_is_enabled']

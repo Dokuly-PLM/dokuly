@@ -51,4 +51,5 @@ urlpatterns = [
     path("api/organizations/checkCorruptedRevisions/", views.check_corrupted_revisions),
     path("api/organizations/previewPartNumberTemplate/", views.preview_part_number_template),
     path("api/organizations/previewFormattedRevisionTemplate/", views.preview_formatted_revision_template),
+    path("api/organizations/previewDocumentNumberTemplate/", views.preview_document_number_template),
 ]
