@@ -380,3 +380,35 @@ export const checkNexarConfig = () => {
   );
   return promise;
 };
+
+export const searchDigikeyParts = (keyword, limit = 10) => {
+  const promise = axios.post(
+    "api/parts/digikey/search/",
+    { keyword, limit },
+    tokenConfig()
+  );
+  return promise;
+};
+
+export const getDigikeyProductDetails = (digikeyPartNumber) => {
+  const promise = axios.post(
+    "api/parts/digikey/product_details/",
+    { digikey_part_number: digikeyPartNumber },
+    tokenConfig()
+  );
+  return promise;
+};
+
+export const checkDigikeyConfig = () => {
+  const promise = axios.get("api/parts/digikey/check_config/", tokenConfig());
+  return promise;
+};
+
+export const testDigikeyConnection = (testKeyword = "resistor") => {
+  const promise = axios.post(
+    "api/parts/digikey/test_connection/",
+    { test_keyword: testKeyword },
+    tokenConfig()
+  );
+  return promise;
+};

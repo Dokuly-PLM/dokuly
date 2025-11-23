@@ -266,3 +266,73 @@ class Rules(models.Model):
         elif self.project:
             return f"Release Rules for Project {self.project.title}"
         return "Release Rules"
+
+
+class IntegrationSettings(models.Model):
+    """
+    Integration settings for external APIs (DigiKey, Nexar, etc.)
+    Stores API credentials and field mapping configurations per organization.
+    """
+    
+    organization = models.OneToOneField(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="integration_settings",
+        null=True,
+        blank=True
+    )
+    
+    # DigiKey API credentials (plain text, no encryption)
+    digikey_client_id = models.CharField(max_length=500, blank=True, null=True)
+    digikey_client_secret = models.CharField(max_length=500, blank=True, null=True)
+    
+    # DigiKey locale settings for API queries
+    digikey_locale_site = models.CharField(
+        max_length=10,
+        default="US",
+        blank=True,
+        help_text="DigiKey locale site code (e.g., US, CA, UK, DE). Default: US"
+    )
+    digikey_locale_currency = models.CharField(
+        max_length=10,
+        default="USD",
+        blank=True,
+        help_text="DigiKey locale currency code (e.g., USD, EUR, GBP). Default: USD"
+    )
+    digikey_locale_language = models.CharField(
+        max_length=10,
+        default="en",
+        blank=True,
+        help_text="DigiKey locale language code (e.g., en, de, fr). Default: en"
+    )
+    
+    # Field mapping configuration - maps DigiKey API response fields to part model fields
+    # Example: {"rohs": "is_rohs_compliant", "ul": "is_ul_compliant", "datasheet": "datasheet"}
+    digikey_field_mapping = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Maps DigiKey API response fields to part model fields"
+    )
+    
+    # DigiKey supplier selection - user selects which supplier to use for DigiKey prices
+    digikey_supplier = models.ForeignKey(
+        'purchasing.Supplier',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='digikey_integration_settings',
+        help_text="Supplier to use when creating prices from DigiKey parts"
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Integration Settings"
+        verbose_name_plural = "Integration Settings"
+    
+    def __str__(self):
+        if self.organization:
+            return f"Integration Settings for {self.organization.name}"
+        return "Integration Settings"

@@ -8,6 +8,7 @@ from . import (
     viewsPartTypes,
     viewsPrice,
     viewsNexar,
+    viewsDigikey,
 )
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework import renderers
@@ -97,6 +98,12 @@ urlpatterns = [
     path("api/parts/nexar/search/", viewsNexar.search_nexar_parts),
     path("api/parts/nexar/clear_cache/", viewsNexar.clear_nexar_cache),
     path("api/parts/nexar/check_config/", viewsNexar.check_nexar_config),
+    # DigiKey integration
+    path("api/parts/digikey/search/", viewsDigikey.search_digikey_parts),
+    path("api/parts/digikey/product_details/", viewsDigikey.get_digikey_product_details),
+    path("api/parts/digikey/check_config/", viewsDigikey.check_digikey_config),
+    path("api/parts/digikey/test_connection/", viewsDigikey.test_digikey_connection),
+    path("api/parts/digikey/clear_cache/", viewsDigikey.clear_digikey_cache),
     # Common views between parts, PCBAs and assemblies
     path("api/items/edit/releaseState/", views.edit_release_state),
 ]

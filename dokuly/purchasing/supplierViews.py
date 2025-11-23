@@ -24,14 +24,12 @@ from files.models import Image
 @renderer_classes((JSONRenderer, ))
 @login_required(login_url='/login')
 def get_all_suppliers(request):
-    """Returns a list of all purchase orders.
+    """Returns a list of all suppliers.
+    Note: Read access is not restricted - all authenticated users can view suppliers.
     """
-    user = request.user
-    permission, response = check_user_auth_and_app_permission(
-        request, "procurement")
-    if not permission:
-        return response
-
+    # No permission check for reading suppliers - all authenticated users can view
+    # This allows users to select suppliers when creating prices even without procurement permission
+    
     suppliers = Supplier.objects.all()
     serializerSupplier = SupplierSerializer(suppliers, many=True)
 
