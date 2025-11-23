@@ -14,6 +14,9 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
   const [revisionFormat, setRevisionFormat] = useState(
     org?.revision_format || "major-minor"
   );
+  const [revisionStartAtOne, setRevisionStartAtOne] = useState(
+    org?.start_major_revision_at_one || false
+  );
   const [fullPartNumberTemplate, setFullPartNumberTemplate] = useState(
     org?.full_part_number_template || "<prefix><part_number><revision>"
   );
@@ -33,6 +36,7 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
       setRevisionFormat(org.revision_format || "major-minor");
       setFullPartNumberTemplate(org.full_part_number_template || "<prefix><part_number><revision>");
       setFormattedRevisionTemplate(org.formatted_revision_template || "<major_revision>");
+      setRevisionStartAtOne(org.start_major_revision_at_one || false);
     }
   }, [org]);
 
@@ -44,6 +48,7 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
         const response = await previewPartNumberTemplate({
           template: fullPartNumberTemplate,
           use_number_revisions: useNumberRevisions,
+          start_major_revision_at_one: revisionStartAtOne,
         });
         
         if (response.status === 200) {
@@ -60,7 +65,7 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
     // Debounce the preview fetch
     const timeoutId = setTimeout(fetchPreview, 300);
     return () => clearTimeout(timeoutId);
-  }, [fullPartNumberTemplate, useNumberRevisions]);
+  }, [fullPartNumberTemplate, useNumberRevisions, revisionStartAtOne]);
 
   // Fetch formatted revision preview from backend whenever settings change
   useEffect(() => {
@@ -71,6 +76,7 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
           template: formattedRevisionTemplate,
           use_number_revisions: useNumberRevisions,
           revision_format: revisionFormat,
+          start_major_revision_at_one: revisionStartAtOne,
         });
         
         if (response.status === 200) {
@@ -87,7 +93,7 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
     // Debounce the preview fetch
     const timeoutId = setTimeout(fetchRevisionPreview, 300);
     return () => clearTimeout(timeoutId);
-  }, [formattedRevisionTemplate, useNumberRevisions, revisionFormat]);
+  }, [formattedRevisionTemplate, useNumberRevisions, revisionFormat, revisionStartAtOne]);
 
   const handleSave = async () => {
     setIsUpdating(true);
@@ -97,6 +103,7 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
         revision_format: revisionFormat,
         full_part_number_template: fullPartNumberTemplate,
         formatted_revision_template: formattedRevisionTemplate,
+        start_major_revision_at_one: revisionStartAtOne,
       };
 
       const response = await editOrg(org.id, data);
@@ -122,13 +129,15 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
     setRevisionFormat(org?.revision_format || "major-minor");
     setFullPartNumberTemplate(org?.full_part_number_template || "<prefix><part_number><revision>");
     setFormattedRevisionTemplate(org?.formatted_revision_template || "<major_revision>");
+    setRevisionStartAtOne(org?.start_major_revision_at_one || false);
   };
 
   const hasChanges = 
     useNumberRevisions !== (org?.use_number_revisions || false) ||
     revisionFormat !== (org?.revision_format || "major-minor") ||
     fullPartNumberTemplate !== (org?.full_part_number_template || "<prefix><part_number><revision>") ||
-    formattedRevisionTemplate !== (org?.formatted_revision_template || "<major_revision>");
+    formattedRevisionTemplate !== (org?.formatted_revision_template || "<major_revision>") ||
+    revisionStartAtOne !== (org?.start_major_revision_at_one || false);
 
   // Available template keywords
   const availableKeywords = [
@@ -228,11 +237,31 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                   onChange={(e) => setUseNumberRevisions(e.target.checked)}
                 />
                 <Form.Text className="text-muted">
-                  When enabled, revisions will use numbers (1, 2, 3...) instead of letters (A, B, C...).
+                  When enabled, revisions will use numbers instead of letters. By default, number revisions start at 0 (0, 1, 2...), but you can configure them to start at 1 using the setting below.
                 </Form.Text>
               </Form.Group>
             </Col>
           </Row>
+
+          {useNumberRevisions && (
+            <Row>
+              <Col md={12}>
+                <Form.Group className="mb-3">
+                  <CheckBox
+                    id="revision-start-at-one"
+                    label="Start major revisions at 1"
+                    checked={revisionStartAtOne}
+                    onChange={(e) => setRevisionStartAtOne(e.target.checked)}
+                  />
+                  <Form.Text className="text-muted">
+                    When enabled, major revisions will display starting at 1 instead of 0 (e.g., 1, 2, 3... instead of 0, 1, 2...). 
+                    Minor revisions always start at 0 regardless of this setting (e.g., 1-0, 1-1, 1-2, 2-0...). 
+                    This only affects how revisions are displayed, not how they are stored in the database.
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+            </Row>
+          )}
 
           <Row>
             <Col md={12}>
@@ -241,8 +270,12 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                 <DokulyDropdown
                   title={
                     revisionFormat === "major-only" 
-                      ? useNumberRevisions ? "Major Only (0, 1, 2...)" : "Major Only (A, B, C...)"
-                      : useNumberRevisions ? "Major-Minor (0-0, 0-1, 1-0...)" : "Major-Minor (A-A, A-B, B-A...)"
+                      ? useNumberRevisions 
+                        ? (revisionStartAtOne ? "Major Only (1, 2, 3...)" : "Major Only (0, 1, 2...)")
+                        : "Major Only (A, B, C...)"
+                      : useNumberRevisions 
+                        ? (revisionStartAtOne ? "Major-Minor (1-0, 1-1, 2-0...)" : "Major-Minor (0-0, 0-1, 1-0...)")
+                        : "Major-Minor (A-A, A-B, B-A...)"
                   }
                   variant="outline-secondary"
                 >
@@ -255,7 +288,9 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                         }}
                         active={revisionFormat === "major-only"}
                       >
-                        {useNumberRevisions ? "Major Only (0, 1, 2...)" : "Major Only (A, B, C...)"}
+                        {useNumberRevisions 
+                          ? (revisionStartAtOne ? "Major Only (1, 2, 3...)" : "Major Only (0, 1, 2...)")
+                          : "Major Only (A, B, C...)"}
                       </Dropdown.Item>
                       <Dropdown.Item
                         onClick={() => {
@@ -264,13 +299,16 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                         }}
                         active={revisionFormat === "major-minor"}
                       >
-                        {useNumberRevisions ? "Major-Minor (0-0, 0-1, 1-0...)" : "Major-Minor (A-A, A-B, B-A...)"}
+                        {useNumberRevisions 
+                          ? (revisionStartAtOne ? "Major-Minor (1-0, 1-1, 2-0...)" : "Major-Minor (0-0, 0-1, 1-0...)")
+                          : "Major-Minor (A-A, A-B, B-A...)"}
                       </Dropdown.Item>
                     </>
                   )}
                 </DokulyDropdown>
                 <Form.Text className="text-muted">
-                  Choose the format for {useNumberRevisions ? "number" : "letter"}-based revisions. Major-minor format allows for more granular versioning with sub-revisions.
+                  Choose the format for {useNumberRevisions ? "number" : "letter"}-based revisions. Major-minor format allows for more granular versioning with sub-revisions. 
+                  {useNumberRevisions && `For number-based revisions, the starting value shown above depends on the "Start major revisions at 1" setting.`}
                 </Form.Text>
               </Form.Group>
             </Col>
@@ -420,6 +458,11 @@ const RevisionSystemSettings = ({ org, setRefresh }) => {
                   <li>
                     <strong>Format:</strong> {revisionFormat === "major-only" ? "Major only" : "Major-minor"}
                   </li>
+                  {useNumberRevisions && (
+                    <li>
+                      <strong>Major revision starts at:</strong> {revisionStartAtOne ? "1" : "0"}
+                    </li>
+                  )}
                   <li>
                     <strong>Part Number Template:</strong> {renderTemplateWithHighlights(fullPartNumberTemplate)}
                   </li>

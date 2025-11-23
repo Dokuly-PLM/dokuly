@@ -245,6 +245,7 @@ def update_organization(request, id):
             "billing_address",
             "use_number_revisions",
             "revision_format",
+            "start_major_revision_at_one",
             "full_part_number_template",
             "formatted_revision_template",
         ]:
@@ -567,6 +568,7 @@ def preview_part_number_template(request):
     try:
         template = request.data.get('template', '<prefix><part_number><revision>')
         use_number_revisions = request.data.get('use_number_revisions', False)
+        start_at_one = request.data.get('start_major_revision_at_one', False)
         
         # Create sample datetime for date-based variables
         sample_date = datetime(2025, 1, 15, 10, 30, 0)  # Jan 15, 2025
@@ -584,6 +586,7 @@ def preview_part_number_template(request):
                 revision_count_major=0,
                 revision_count_minor=0,
                 use_number_revisions=use_number_revisions,
+                start_at_one=start_at_one,
                 project_number='PRJ001',
                 created_at=sample_date,
             )
@@ -599,6 +602,7 @@ def preview_part_number_template(request):
                 revision_count_major=1,
                 revision_count_minor=0,
                 use_number_revisions=use_number_revisions,
+                start_at_one=start_at_one,
                 project_number='PRJ042',
                 created_at=sample_date,
             )
@@ -614,6 +618,7 @@ def preview_part_number_template(request):
                 revision_count_major=0,
                 revision_count_minor=2,
                 use_number_revisions=use_number_revisions,
+                start_at_one=start_at_one,
                 project_number='PRJ100',
                 created_at=sample_date,
             )
@@ -655,6 +660,7 @@ def preview_formatted_revision_template(request):
         template = request.data.get('template', '<major_revision>')
         use_number_revisions = request.data.get('use_number_revisions', False)
         revision_format = request.data.get('revision_format', 'major-minor')
+        start_at_one = request.data.get('start_major_revision_at_one', False)
         
         # Generate examples for different scenarios
         examples = []
@@ -669,6 +675,7 @@ def preview_formatted_revision_template(request):
                 revision_count_major=0,
                 revision_count_minor=0,
                 use_number_revisions=use_number_revisions,
+                start_at_one=start_at_one,
             )
         })
         
@@ -683,6 +690,7 @@ def preview_formatted_revision_template(request):
                     revision_count_major=0,
                     revision_count_minor=1,
                     use_number_revisions=use_number_revisions,
+                    start_at_one=start_at_one,
                 )
             })
         
@@ -696,6 +704,7 @@ def preview_formatted_revision_template(request):
                 revision_count_major=1,
                 revision_count_minor=0,
                 use_number_revisions=use_number_revisions,
+                start_at_one=start_at_one,
             )
         })
         

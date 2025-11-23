@@ -190,6 +190,41 @@ export default function PartsTable(props) {
           // full_part_number already contains the properly formatted part number with revision
           return row.full_part_number;
         },
+      sortFunction: (a, b, order) => {
+        // Sort by part_number instead of full_part_number
+        const aValue = a.part_number?.toString() || "";
+        const bValue = b.part_number?.toString() || "";
+        
+        if (aValue === "" && bValue === "") return 0;
+        if (aValue === "") return 1;
+        if (bValue === "") return -1;
+        
+        // Alphanumeric sort
+        const regex = /(\d+|\D+)/g;
+        const aParts = aValue.match(regex) || [];
+        const bParts = bValue.match(regex) || [];
+        
+        for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+          if (!aParts[i]) return -1;
+          if (!bParts[i]) return 1;
+          
+          const aPart = aParts[i];
+          const bPart = bParts[i];
+          
+          if (aPart !== bPart) {
+            const aIsNumber = !isNaN(aPart);
+            const bIsNumber = !isNaN(bPart);
+            
+            if (aIsNumber && bIsNumber) {
+              const comparison = Number(aPart) - Number(bPart);
+              return order === "asc" ? comparison : -comparison;
+            }
+            const comparison = aPart.localeCompare(bPart);
+            return order === "asc" ? comparison : -comparison;
+          }
+        }
+        return 0;
+      },
       maxWidth: "100px",
     },
     {
