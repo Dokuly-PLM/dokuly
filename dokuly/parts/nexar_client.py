@@ -189,17 +189,6 @@ class NexarClient:
                   text
                   creditString
                 }
-                specs {
-                  attribute {
-                    name
-                    shortname
-                  }
-                  displayValue
-                }
-                bestDatasheet {
-                  url
-                  name
-                }
                 medianPrice1000 {
                   price
                   currency
