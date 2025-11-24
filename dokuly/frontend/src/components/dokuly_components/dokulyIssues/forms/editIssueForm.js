@@ -4,6 +4,9 @@ import { Form, Row } from "react-bootstrap";
 import { criticalityValues } from "../functions/criticalityValues";
 import SubmitButton from "../../submitButton";
 import DeleteButton from "../../deleteButton";
+import { deleteIssue } from "../functions/queries";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const EditIssueForm = ({
   title,
@@ -13,7 +16,39 @@ const EditIssueForm = ({
   isOpen,
   onClose,
   onSubmit,
+  issueId,
+  app,
+  issue,
 }) => {
+  const navigate = useNavigate();
+
+  const handleDelete = () => {
+    if (!confirm("Are you sure you want to delete this issue?")) {
+      return;
+    }
+    
+    deleteIssue(issueId)
+      .then((res) => {
+        if (res.status === 200) {
+          toast.success("Issue deleted successfully.");
+          onClose(); // Close the modal
+          
+          // Navigate back to the parent item
+          if (app && issue && issue[app] && issue[app].length > 0) {
+            const item = issue[app][0];
+            navigate(`/${app}/${item.id}/overview`);
+          } else {
+            navigate(-1);
+          }
+        } else {
+          toast.error("Failed to delete issue.");
+        }
+      })
+      .catch((err) => {
+        toast.error("Failed to delete issue.");
+      });
+  };
+
   const criticalityOptions = criticalityValues.map((value) => (
     <option key={value.value} value={value.value}>
       {value.value}
@@ -57,7 +92,10 @@ const EditIssueForm = ({
         >
           Submit
         </SubmitButton>
-        <DeleteButton buttonText="Delete" />
+        <DeleteButton 
+          buttonText="Delete" 
+          onDelete={handleDelete}
+        />
       </Row>
     </DokulyModal>
   );
