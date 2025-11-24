@@ -348,7 +348,11 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
         (prices.length === 0 && (app === "pcbas" || app === "assemblies"))) && (
         <Row>
           <Col>
-            <BomCost app={app} id={itemId} refresh={refresh} />
+            <BomCost 
+              app={app} 
+              id={itemId} 
+              refresh={refresh}
+            />
           </Col>
         </Row>
       )}
