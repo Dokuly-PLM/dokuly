@@ -256,6 +256,9 @@ const DisplayIssue = () => {
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         onSubmit={onEditIssue}
+        issueId={issueId}
+        app={app}
+        issue={issue}
       />
     </div>
   );
