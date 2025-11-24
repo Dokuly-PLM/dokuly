@@ -9,6 +9,9 @@ from purchasing.priceModel import Price
 from organizations.models import Organization
 from profiles.views import check_user_auth_and_app_permission
 
+from parts.models import Part
+from parts.serializers import PartSerializer
+
 
 class BOMCostCalculator:
     def __init__(self, organization_currency, currency_conversion_rates):
@@ -251,9 +254,19 @@ def get_bom_cost(request, app, id):
                 {"quantity": quantity, "total_cost": total_cost, "unit_cost": unit_cost}
             )
 
+        # Fetch detailed information for parts missing prices
+        parts_missing_price_details = []
+        if calculator.parts_missing_price:
+            # Get unique part IDs
+            unique_part_ids = list(set(calculator.parts_missing_price))
+            parts = Part.objects.filter(id__in=unique_part_ids)
+            serializer = PartSerializer(parts, many=True)
+            parts_missing_price_details = serializer.data
+
         data = {
             "currency": organization.currency,
             "parts_missing_price": calculator.parts_missing_price,
+            "parts_missing_price_details": parts_missing_price_details,
             "price_breaks": price_breaks,
             "price_break_quantitites": calculator.cost_break_quantitites,
         }
