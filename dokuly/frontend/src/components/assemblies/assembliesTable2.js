@@ -152,6 +152,11 @@ export default function AssembliesTable(props) {
       filterType: "select",
     },
     {
+      key: "external_part_number",
+      header: "External P/N",
+      defaultShowColumn: false,
+    },
+    {
       key: "release_state",
       header: "State",
       filterType: "select",

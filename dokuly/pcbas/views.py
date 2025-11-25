@@ -227,6 +227,7 @@ def get_latest_revisions(request, **kwargs):
             "last_updated",
             "pcb_renders",
             "thumbnail",
+            "external_part_number",
             "project__title",
             "project__customer",
             "project__customer__name",
