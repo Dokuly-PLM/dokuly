@@ -53,7 +53,8 @@ class AssemblyTableSerializer(serializers.ModelSerializer):
             "thumbnail",
             "project",
             "tags",
-            "organization"
+            "organization",
+            "external_part_number"
         )
 
     def get_organization(self, obj):

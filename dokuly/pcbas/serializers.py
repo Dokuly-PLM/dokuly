@@ -66,6 +66,7 @@ class PcbaTableSerializer(serializers.ModelSerializer):
             "project",
             "tags",
             "organization",
+            "external_part_number",
         )
 
     def get_organization(self, obj):
