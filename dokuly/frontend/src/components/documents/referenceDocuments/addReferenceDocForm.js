@@ -82,13 +82,17 @@ export const DocumentSearchSelector = (props) => {
       is_specification: is_specification,
     };
     // Push data to the database
-    addReference(data).then((res) => {
-      if (res.status === 201) {
-        props?.setRefresh(true);
-      }
-    });
-
-    props.setRefresh(true);
+    addReference(data)
+      .then((res) => {
+        if (res.status === 201) {
+          if (props?.setRefresh) {
+            props.setRefresh(true);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Error adding reference document:", err);
+      });
   }
 
   return (
