@@ -49,28 +49,15 @@ const ItemInformation = ({ producedItem }) => {
           style={{
             cursor: "pointer",
             display: "flex",
-            alignItems: "center", // Ensures vertical center alignment of all items in the column
+            alignItems: "center",
           }}
         >
           <span>
             {(() => {
               const part = producedItem.part || producedItem.pcba || producedItem.assembly;
               if (!part) return "";
-              
-              const partNumber = part.full_part_number || "";
-              const revision = part.revision || "";
-              const useNumberRevisions = part?.organization?.use_number_revisions || false;
-              
-              if (useNumberRevisions && revision) {
-                // Check if partNumber already contains the revision with underscore
-                if (partNumber.includes(`_${revision}`)) {
-                  return partNumber; // Already formatted correctly
-                } else {
-                  return `${partNumber}_${revision}`;
-                }
-              } else {
-                return `${partNumber}${revision}`;
-              }
+              // full_part_number already contains the revision
+              return part.full_part_number || "";
             })()}
           </span>
           <img

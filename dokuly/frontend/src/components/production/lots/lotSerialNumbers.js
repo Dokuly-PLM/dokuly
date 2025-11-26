@@ -72,12 +72,8 @@ const LotSerialNumbers = ({
       header: "Part number",
       formatter: (row) => {
         const part = getNestedModelObject(row);
-        // Use a regular expression to check if the last character is a number
-        const shouldAppendRevision = /\d$/.test(part.full_part_number);
-        // Conditionally append the revision based on the test result
-        return `${part.full_part_number}${
-          shouldAppendRevision ? part.revision : ""
-        }`;
+        // full_part_number already contains the revision
+        return part.full_part_number;
       },
     },
     {
