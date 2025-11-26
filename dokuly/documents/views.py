@@ -1371,57 +1371,70 @@ def get_reference_documents(request, referenceListId):
         return response
 
     if referenceListId == -1:
-        return Response(status=status.HTTP_200_OK)
+        return Response([], status=status.HTTP_200_OK)
 
-    # TODO add access control on a per-project basis.
+    try:
+        referenceListId_obj = Reference_List.objects.get(id=int(referenceListId))
+    except Reference_List.DoesNotExist:
+        return Response([], status=status.HTTP_200_OK)
 
-    referenceListId_obj = Reference_List.objects.get(id=int(referenceListId))
+    if not referenceListId_obj.reference_doc_ids:
+        return Response([], status=status.HTTP_200_OK)
+
+    # Efficient query with project-based access control and select_related for joins
     document_list = Document.objects.filter(
+        Q(project__project_members=user) | Q(project__isnull=True),
         id__in=referenceListId_obj.reference_doc_ids
+    ).select_related(
+        'project',
+        'project__customer'
+    ).only(
+        'id',
+        'full_doc_number',
+        'title',
+        'release_state',
+        'thumbnail',
+        'document_number',
+        'document_type',
+        'prefix_id',
+        'formatted_revision',
+        'project__id',
+        'project__title',
+        'project__full_project_number',
+        'project__customer__id',
+        'project__customer__name'
     )
-    serializer = DocumentSerializer(document_list, many=True)
-    projects = Project.objects.all()
-    customers = Customer.objects.all()
-    prefixes = Document_Prefix.objects.all()
+
+    # Build a lookup dict for efficient is_specification retrieval
+    spec_lookup = {}
+    for idx, doc_id in enumerate(referenceListId_obj.reference_doc_ids):
+        if idx < len(referenceListId_obj.is_specification):
+            spec_lookup[doc_id] = referenceListId_obj.is_specification[idx]
+        else:
+            spec_lookup[doc_id] = False
 
     document_dict_list = []
 
-    # Assemble list of document info to send to the front-end.
-    for doc in serializer.data:
-        index = referenceListId_obj.reference_doc_ids.index(doc["id"])
-        is_specification = referenceListId_obj.is_specification[index]
+    for doc in document_list:
+        # Get customer and project names from the joined data
+        project_name = doc.project.title if doc.project else ""
         customer_name = ""
-        project_name = ""
-        document_number = doc["full_doc_number"]
-        try:
-            project_obj = next(
-                (i for i in projects if i.id == doc["project"]), None)
-            if project_obj != None:
-                project_name = project_obj.title
-            try:
-                customer_obj = next(
-                    (x for x in customers if x.id == project_obj.customer.id), None
-                )
-                if customer_obj != None:
-                    customer_name = customer_obj.name
-            except Customer.DoesNotExist:
-                customer_name = "Not Specified"
-        except Project.DoesNotExist:
-            project = ""
-        if doc["full_doc_number"] == None or doc["full_doc_number"] == "":
-            document_number = get_document_number(
-                doc, projects, prefixes)
+        if doc.project and doc.project.customer:
+            customer_name = doc.project.customer.name
+
+        # Use full_doc_number if available, otherwise it would need to be built
+        document_number = doc.full_doc_number or ""
 
         document_dict_list.append(
             {
-                "id": doc["id"],
+                "id": doc.id,
                 "full_doc_number": document_number,
-                "title": doc["title"],
+                "title": doc.title,
                 "customer_name": customer_name,
                 "project_name": project_name,
-                "release_state": doc["release_state"],
-                "is_specification": is_specification,
-                "thumbnail": doc.get("thumbnail"),
+                "release_state": doc.release_state,
+                "is_specification": spec_lookup.get(doc.id, False),
+                "thumbnail": doc.thumbnail_id,
             }
         )
 
