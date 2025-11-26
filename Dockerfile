@@ -29,7 +29,8 @@ RUN apt-get update \
     gcc \
     g++ \
     nodejs \
-    npm
+    npm \
+    poppler-utils
 
 # Necessary installation for gerber SVG generation.
 # Consider separating out gerber rendering to a micro-service.

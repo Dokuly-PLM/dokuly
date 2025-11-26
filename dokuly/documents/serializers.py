@@ -74,7 +74,8 @@ class DocumentTableSerializer(serializers.ModelSerializer):
                   'formatted_revision',
                   'revision_count_major',
                   'revision_count_minor',
-                  'is_latest_revision', 'is_archived', 'tags']
+                  'is_latest_revision', 'is_archived', 'tags',
+                  'thumbnail']
 
 
 class DocumentPrefixSerializer(serializers.ModelSerializer):

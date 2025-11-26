@@ -18,6 +18,7 @@ import {
 } from "./functions/formatters";
 
 import { releaseStateFormatter } from "../dokuly_components/formatters/releaseStateFormatter";
+import { ThumbnailFormatter } from "../dokuly_components/dokulyTable/functions/formatters";
 
 import NewDocumentForm from "./documentNewForm2";
 import { useNavigate } from "react-router";
@@ -115,6 +116,16 @@ export default function DocumentsOverviewTable2() {
       header: "Document number",
       formatter: numberFormatter2,
       maxWidth: "150px",
+    },
+    {
+      key: "thumbnail",
+      header: "",
+      formatter: (row) => {
+        return <ThumbnailFormatter thumbnail={row?.thumbnail} />;
+      },
+      maxWidth: "100px",
+      filterable: false,
+      sortable: false,
     },
     {
       key: "title",
