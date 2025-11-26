@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 // Common formatters for document tables.
 import { releaseStateFormatter } from "../../dokuly_components/formatters/releaseStateFormatter";
+import { ThumbnailFormatter } from "../../dokuly_components/dokulyTable/functions/formatters";
 
 // Temporary imports before custom view is created.
 import { getReferenceDocuments, removeReferences } from "../functions/queries";
@@ -210,6 +211,15 @@ const ReferenceDocumentsTable = (props) => {
       key: "full_doc_number",
       header: "Document number",
       //formatter: numberFormatter,
+    },
+    {
+      key: "thumbnail",
+      header: "",
+      formatter: (row) => {
+        return <ThumbnailFormatter thumbnail={row?.thumbnail} />;
+      },
+      maxWidth: "100px",
+      includeInCsv: false,
     },
     {
       key: "title",

@@ -1421,6 +1421,7 @@ def get_reference_documents(request, referenceListId):
                 "project_name": project_name,
                 "release_state": doc["release_state"],
                 "is_specification": is_specification,
+                "thumbnail": doc.get("thumbnail"),
             }
         )
 
