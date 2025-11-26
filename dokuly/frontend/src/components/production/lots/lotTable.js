@@ -70,19 +70,16 @@ const LotTable = ({ refresh }) => {
         if (row?.assembly) {
           item =
             row?.assembly?.full_part_number +
-            row?.assembly?.revision +
             " - " +
             row?.assembly?.display_name;
         } else if (row?.pcba) {
           item =
             row?.pcba?.full_part_number +
-            row?.pcba?.revision +
             " - " +
             row?.pcba?.display_name;
         } else {
           item =
             row?.part?.full_part_number +
-            row?.part?.revision +
             " - " +
             row?.part?.display_name;
         }

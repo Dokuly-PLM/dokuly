@@ -47,56 +47,19 @@ const ItemSearch = () => {
   const columns = [
     { key: "serial_number", header: "Serial number" },
     {
-      key: "full_part_number_revision",
+      key: "full_part_number",
       header: "Part number",
       formatter: (row, column) => {
-        const part = row.part || row.pcba || row.assembly; // Get the available part data
-
-        if (!part) return ""; // Handle the case when none of the parts are available
-
-        const partNumber = part.full_part_number || "";
-        const revision = part.revision || "";
-        const useNumberRevisions = part?.organization?.use_number_revisions || false;
-
-        let formattedPartNumber = "";
-        if (partNumber || revision) {
-          if (useNumberRevisions && revision) {
-            // Check if partNumber already contains the revision with underscore
-            if (partNumber.includes(`_${revision}`)) {
-              formattedPartNumber = partNumber; // Already formatted correctly
-            } else {
-              formattedPartNumber = `${partNumber}_${revision}`;
-            }
-          } else {
-            formattedPartNumber = `${partNumber}${revision}`;
-          }
-        }
-
-        return formattedPartNumber
-          ? highlightSearchTerm(formattedPartNumber, query)
-          : "";
-      },
-      csvFormatter: (row, column) => {
-        // Use the same formatting logic as the formatter
         const part = row.part || row.pcba || row.assembly;
         if (!part) return "";
-        const partNumber = part.full_part_number || "";
-        const revision = part.revision || "";
-        const useNumberRevisions = part?.organization?.use_number_revisions || false;
         
-        if (partNumber || revision) {
-          if (useNumberRevisions && revision) {
-            // Check if partNumber already contains the revision with underscore
-            if (partNumber.includes(`_${revision}`)) {
-              return partNumber; // Already formatted correctly
-            } else {
-              return `${partNumber}_${revision}`;
-            }
-          } else {
-            return `${partNumber}${revision}`;
-          }
-        }
-        return "";
+        const partNumber = part.full_part_number || "";
+        return partNumber ? highlightSearchTerm(partNumber, query) : "";
+      },
+      csvFormatter: (row, column) => {
+        const part = row.part || row.pcba || row.assembly;
+        if (!part) return "";
+        return part.full_part_number || "";
       },
     },
     {

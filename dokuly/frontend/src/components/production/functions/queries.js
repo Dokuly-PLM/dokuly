@@ -69,6 +69,18 @@ export const editSerialNumber = (serialNumberId, data) => {
   });
 };
 
+export const deleteSerialNumber = (serialNumberId) => {
+  const promise = axios.delete(
+    `/api/lots/serialNumbers/delete/${serialNumberId}/`,
+    tokenConfig()
+  );
+  return toast.promise(promise, {
+    pending: "Deleting serial number...",
+    success: "Serial number deleted successfully.",
+    error: "Error deleting serial number.",
+  });
+};
+
 export const deleteLot = (lotId) => {
   const promise = axios.delete(`/api/lots/delete/${lotId}/`, tokenConfig());
   return toast.promise(promise, {

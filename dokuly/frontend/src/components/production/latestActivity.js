@@ -43,7 +43,7 @@ export default function ProductionLatestActivity(props) {
     // Sorting items by 'created_at' to find the newest items
     items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    // Keeping only the latest 10 unique items based on the full part number and revision
+    // Keeping only the latest 10 unique items based on the full part number (which now includes revision)
     const uniqueSortedItems = props?.items
       .map((item) => ({
         // Extract the necessary details based on item type
@@ -56,11 +56,9 @@ export default function ProductionLatestActivity(props) {
       }))
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // Sort by created_at
       .reduce((acc, item) => {
-        // Deduplication logic
+        // Deduplication logic - full_part_number now includes revision
         const index = acc.findIndex(
-          (i) =>
-            i.full_part_number === item.full_part_number &&
-            i.revision === item.revision,
+          (i) => i.full_part_number === item.full_part_number,
         );
         if (index === -1) {
           acc.push(item); // Add if not already present

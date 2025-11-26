@@ -39,6 +39,7 @@ urlpatterns = [
     path('api/lots/fetchBom/<int:id>/', viewsLots.fetch_bom),
     path('api/lots/fetchSerialNumbers/<int:id>/', viewsLots.fetch_serial_numbers),
     path('api/lots/serialNumbers/update/<int:id>/', viewsLots.update_serial_number),
+    path('api/lots/serialNumbers/delete/<int:id>/', viewsLots.delete_serial_number),
     path('api/lots/getConnectedPo/<int:id>/', viewsLots.fetch_connected_po),
     path('api/lots/delete/<int:id>/', viewsLots.delete_lot),
 

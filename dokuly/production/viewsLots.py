@@ -188,12 +188,27 @@ def update_serial_number(request, id):
     data = request.data
     try:
         production = Production.objects.get(id=id)
+        
+        # Update assembly_date if provided
+        if "assembly_date" in data:
+            production.assembly_date = data.get('assembly_date')
+        
+        # Update state if provided
+        if "state" in data:
+            production.state = data.get('state')
+        
+        # Update comment if provided
+        if "comment" in data:
+            production.comment = data.get('comment')
+        
+        # Update description if provided (for notes tab)
         if "description" in data:
             if production.description:
                 production.description.text = data.get('description')
                 production.description.save()
             else:
                 production.description = MarkdownText.objects.create(text=data.get('description'))
+        
         production.save()
         serializer = ProductionSerializer(production)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -243,5 +258,18 @@ def delete_lot(request, id):
         lot = Lot.objects.get(id=id)
         lot.delete()
         return Response("Lot deleted", status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@renderer_classes([JSONRenderer])
+@permission_classes([IsAuthenticated])
+def delete_serial_number(request, id):
+    """Delete a serial number (produced item)"""
+    try:
+        production = Production.objects.get(id=id)
+        production.delete()
+        return Response("Serial number deleted", status=status.HTTP_200_OK)
     except Exception as e:
         return Response(str(e), status=status.HTTP_400_BAD_REQUEST)

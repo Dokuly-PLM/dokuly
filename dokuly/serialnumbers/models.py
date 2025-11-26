@@ -4,6 +4,7 @@ from assemblies.models import Assembly
 from django.db.models import Case, F, Value, When, DecimalField
 
 
+# DEPRECATED
 class SerialNumber(models.Model):
     """Instance of Assemblies that have been produced.
     Similar to production class.

@@ -59,7 +59,7 @@ export default function ProductionDashBoard() {
         </Row>
       ) : (
         <>
-          <Row className="justify-content-center mt-3">
+          {/* <Row className="justify-content-center mt-3">
             <Col>
               <DokulyCard isCollapsed={false} expandText="Items Produced">
                 <CardTitle
@@ -69,7 +69,7 @@ export default function ProductionDashBoard() {
                 <ItemsProducedChart data={items} />{" "}
               </DokulyCard>
             </Col>{" "}
-          </Row>
+          </Row> */}
           <Row>
           <NewProductionForm setRefresh={setRefresh} />
           </Row>
