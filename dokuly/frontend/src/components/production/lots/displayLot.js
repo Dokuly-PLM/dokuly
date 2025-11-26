@@ -9,6 +9,7 @@ import LotInfoCard, {
 } from "./lotInfoCard";
 import LotDescriptionCard from "./lotDescriptionCard";
 import useLot from "../../common/hooks/useLot";
+import useOrganization from "../../common/hooks/useOrganization";
 import { AuthContext } from "../../App";
 import { useLocation, useNavigate } from "react-router";
 import { toast } from "react-toastify";
@@ -59,6 +60,8 @@ const DisplayLot = () => {
   const [lotPos, refreshLotPos, loadingLotPos] = useLotPos({
     lotId: lotId,
   });
+
+  const [organization] = useOrganization();
 
   const onEditLot = (newDescription) => {
     const data = {
@@ -181,6 +184,7 @@ const DisplayLot = () => {
     {
       eventKey: "procurement",
       title: "Procurement",
+      hidden: organization?.procurement_is_enabled === false,
       content: (
         <>
           <LotProcurement poData={lotPos} lot={lot} />
@@ -225,7 +229,10 @@ const DisplayLot = () => {
         display_name={lot?.title ?? ""}
         app="production"
       />
-      <DokulyTabs tabs={tabs} basePath={`/production/lot/${lotId}`} />
+      <DokulyTabs
+        tabs={tabs.filter((tab) => !tab.hidden)}
+        basePath={`/production/lot/${lotId}`}
+      />
     </div>
   );
 };
