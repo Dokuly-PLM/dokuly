@@ -10,6 +10,7 @@ import DokulyTabs from "../../dokuly_components/dokulyTabs/dokulyTabs";
 import { getNestedModelObject } from "../lots/lotInfoCard";
 import { toast } from "react-toastify";
 import MarkDownNotes from "../../common/markDownNotes/markDownNotes";
+import EditProducedItemForm from "../forms/editProducedItemForm";
 
 const DisplayProducedItem = (props) => {
   const [producedItemId, setProducedItemId] = useState(-1);
@@ -60,18 +61,23 @@ const DisplayProducedItem = (props) => {
       content: (
         <>
           <Container>
+            <Row className="pl-3 pt-1">
+              <EditProducedItemForm
+                producedItem={producedItem}
+                setRefresh={setRefresh}
+              />
+            </Row>
             <Row>
               <Col>
                 {/* Content for Overview tab */}
                 <ItemInformation producedItem={producedItem} />
               </Col>
-      
             </Row>
             <Row>
-              <Col>   <TestData producedItem={producedItem} /> 
+              <Col>
+                <TestData producedItem={producedItem} />
               </Col>
             </Row>
-
           </Container>
         </>
       ),
