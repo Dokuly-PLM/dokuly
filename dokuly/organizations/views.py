@@ -307,6 +307,8 @@ def manage_active_modules(request):
             "procurement_is_enabled",
             "requirement_is_enabled",
             "production_is_enabled",
+            "supplier_is_enabled",
+            "inventory_is_enabled",
         ]:
             if field in data:
                 setattr(organization, field, data[field])

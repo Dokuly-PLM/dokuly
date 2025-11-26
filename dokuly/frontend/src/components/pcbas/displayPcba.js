@@ -315,6 +315,7 @@ const DisplayPcba = (props) => {
     {
       eventKey: "inventory",
       title: "Inventory",
+      hidden: organization?.inventory_is_enabled === false,
       content: (
         <>
           <InventoryStatus {...inventoryProps} />
@@ -422,7 +423,10 @@ const DisplayPcba = (props) => {
           app="pcbas"
           organization={pcba?.organization}
         />
-        <DokulyTabs tabs={tabs} basePath={`/pcbas/${id}`} />
+        <DokulyTabs
+          tabs={tabs.filter((tab) => !tab.hidden)}
+          basePath={`/pcbas/${id}`}
+        />
       </div>
     </div>
   );

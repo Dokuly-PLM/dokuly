@@ -11,17 +11,29 @@ const ActiveModules = ({ org, setRefresh }) => {
   const modules = [
     {
       id: "time_tracking",
-      label: "Time Tracking",
+      label: "Time Tracking (Deprecated)",
       isEnabled: "time_tracking_is_enabled",
+      deprecated: true,
     },
-    { id: "customer", label: "Customer", isEnabled: "customer_is_enabled" },
+    { 
+      id: "customer", 
+      label: "Customer (Deprecated)", 
+      isEnabled: "customer_is_enabled",
+      deprecated: true,
+    },
     { id: "document", label: "Document", isEnabled: "document_is_enabled" },
     { id: "pcba", label: "PCBA", isEnabled: "pcba_is_enabled" },
     { id: "assembly", label: "Assembly", isEnabled: "assembly_is_enabled" },
     {
       id: "procurement",
-      label: "Procurement",
+      label: "Procurement (Deprecated)",
       isEnabled: "procurement_is_enabled",
+      deprecated: true,
+    },
+    {
+      id: "supplier",
+      label: "Supplier",
+      isEnabled: "supplier_is_enabled",
     },
     {
       id: "requirements",
@@ -32,6 +44,11 @@ const ActiveModules = ({ org, setRefresh }) => {
       id: "production",
       label: "Production",
       isEnabled: "production_is_enabled",
+    },
+    {
+      id: "inventory",
+      label: "Inventory",
+      isEnabled: "inventory_is_enabled",
     },
   ];
 
@@ -59,7 +76,9 @@ const ActiveModules = ({ org, setRefresh }) => {
           <tbody>
             {modules.map((module) => (
               <tr key={module.id}>
-                <td>{module.label}</td>
+                <td style={module.deprecated ? { color: '#6c757d', fontStyle: 'italic' } : {}}>
+                  {module.label}
+                </td>
                 <td>
                   <input
                     className="dokuly-checkbox"

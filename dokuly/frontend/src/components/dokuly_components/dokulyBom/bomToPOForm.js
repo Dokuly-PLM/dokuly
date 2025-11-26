@@ -161,6 +161,11 @@ const BomToPOForm = ({
 
   const columns = getBomTableColumns(columnConfiguration);
 
+  // Don't render if procurement is disabled
+  if (organization?.procurement_is_enabled === false) {
+    return null;
+  }
+
   return (
     <>
       <AddButton
