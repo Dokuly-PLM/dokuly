@@ -322,6 +322,7 @@ const DisplayPart = (props) => {
     {
       eventKey: "inventory",
       title: "Inventory",
+      hidden: organization?.inventory_is_enabled === false,
       content: (
         <>
           <InventoryStatus {...inventoryProps} />
@@ -427,7 +428,10 @@ const DisplayPart = (props) => {
           app="parts"
           organization={part?.organization}
         />
-        <DokulyTabs tabs={tabs} basePath={`/parts/${currentPartID}`} />
+        <DokulyTabs
+          tabs={tabs.filter((tab) => !tab.hidden)}
+          basePath={`/parts/${currentPartID}`}
+        />
       </div>
     </React.Fragment>
   );

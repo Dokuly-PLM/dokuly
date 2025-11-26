@@ -414,6 +414,7 @@ const DisplayASM = (props) => {
     {
       eventKey: "inventory",
       title: "Inventory",
+      hidden: organization?.inventory_is_enabled === false,
       content: (
         <>
           <InventoryStatus {...inventoryProps} />
@@ -515,7 +516,10 @@ const DisplayASM = (props) => {
           organization={asmDetailed?.organization}
         />
 
-        <DokulyTabs tabs={tabs} basePath={`/assemblies/${currentASMID}`} />
+        <DokulyTabs
+          tabs={tabs.filter((tab) => !tab.hidden)}
+          basePath={`/assemblies/${currentASMID}`}
+        />
       </div>
     </React.Fragment>
   );
