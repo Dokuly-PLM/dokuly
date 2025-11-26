@@ -405,6 +405,20 @@ def new_revision(request, pk, **kwargs):
 
     notify_on_new_revision(new_revision=new_pcba, app_name="pcbas", user=user)
 
+    # Execute workflows for revision_created trigger
+    try:
+        from projects.workflowEngine import WorkflowExecutor
+        WorkflowExecutor.execute_workflows(
+            trigger_type='revision_created',
+            entity_type='pcbas',
+            entity_id=new_pcba.id,
+            entity_data=new_pcba,
+            user=user
+        )
+    except Exception as e:
+        # Log error but don't fail revision creation
+        print(f"Error executing workflows for PCBA revision: {str(e)}")
+
     data = {"id": new_pcba.id}
 
     return Response(data, status=status.HTTP_200_OK)
@@ -661,6 +675,20 @@ def create_new_pcba(request, **kwargs):
         new_bom = Assembly_bom()
         new_bom.pcba = pcba
         new_bom.save()
+
+        # Execute workflows for pcba_created trigger
+        try:
+            from projects.workflowEngine import WorkflowExecutor
+            WorkflowExecutor.execute_workflows(
+                trigger_type='pcba_created',
+                entity_type='pcbas',
+                entity_id=pcba.id,
+                entity_data=pcba,
+                user=request.user if hasattr(request, 'user') else pcba.created_by
+            )
+        except Exception as e:
+            # Log error but don't fail PCBA creation
+            print(f"Error executing workflows for PCBA creation: {str(e)}")
 
         serializer = PcbaSerializer(pcba, many=False)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

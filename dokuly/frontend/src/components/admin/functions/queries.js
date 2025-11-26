@@ -1620,3 +1620,81 @@ export const testDigikeyConnection = (testKeyword = "resistor") => {
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+// Workflow API functions
+export const fetchWorkflows = () => {
+  const promise = axios.get("api/workflows/", tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+export const fetchWorkflow = (workflowId) => {
+  const promise = axios.get(`api/workflows/${workflowId}/`, tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+export const createWorkflow = (data) => {
+  const promise = axios.post("api/workflows/create/", data, tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+export const updateWorkflow = (workflowId, data) => {
+  const promise = axios.put(
+    `api/workflows/update/${workflowId}/`,
+    data,
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+export const deleteWorkflow = (workflowId) => {
+  const promise = axios.delete(
+    `api/workflows/delete/${workflowId}/`,
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+export const fetchWorkflowTriggers = () => {
+  const promise = axios.get("api/workflows/triggers/", tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+export const fetchWorkflowActions = () => {
+  const promise = axios.get("api/workflows/actions/", tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Fetch workflow execution logs.
+ * @param {number|null} workflowId - Optional workflow ID to filter by specific workflow
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ */
+export const fetchWorkflowExecutions = (workflowId = null) => {
+  const url = workflowId 
+    ? `api/workflows/executions/${workflowId}/`
+    : "api/workflows/executions/";
+  const promise = axios.get(url, tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Fetch workflow audit logs (CRUD operations).
+ * @param {number|null} workflowId - Optional workflow ID to filter by specific workflow
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ */
+export const fetchWorkflowAuditLogs = (workflowId = null) => {
+  const url = workflowId 
+    ? `api/workflows/audit-logs/${workflowId}/`
+    : "api/workflows/audit-logs/";
+  const promise = axios.get(url, tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};

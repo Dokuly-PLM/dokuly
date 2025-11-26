@@ -495,6 +495,20 @@ def new_revision(request, pk, **kwargs):
 
             link_issues_on_new_object_revision('assemblies', current_asm, newRevision)
 
+            # Execute workflows for revision_created trigger
+            try:
+                from projects.workflowEngine import WorkflowExecutor
+                WorkflowExecutor.execute_workflows(
+                    trigger_type='revision_created',
+                    entity_type='assemblies',
+                    entity_id=newRevision.id,
+                    entity_data=newRevision,
+                    user=request.user
+                )
+            except Exception as e:
+                # Log error but don't fail revision creation
+                print(f"Error executing workflows for assembly revision: {str(e)}")
+
             updatedAsm = Assembly.objects.get(id=newRevision.id)
 
             serializer = AssemblySerializer(updatedAsm, many=False)

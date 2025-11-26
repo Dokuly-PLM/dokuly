@@ -6,6 +6,7 @@ from . import viewsGantt
 from . import viewsIssues
 from . import viewsIssueTrees
 from . import viewsTags
+from . import viewsWorkflows
 from django.urls.conf import path
 
 router = routers.DefaultRouter()
@@ -72,6 +73,20 @@ urlpatterns = [
     path('api/projects/get/tags/<int:project_id>/', viewsTags.get_project_tags),
     path('api/projects/put/tags/<int:tag_id>/', viewsTags.update_project_tag),
     path('api/projects/delete/tags/<int:tag_id>/', viewsTags.delete_project_tag),
+    
+    # Workflows
+    path('api/workflows/', viewsWorkflows.get_workflows),
+    path('api/workflows/<int:workflow_id>/', viewsWorkflows.get_workflow),
+    path('api/workflows/create/', viewsWorkflows.create_workflow),
+    path('api/workflows/update/<int:workflow_id>/', viewsWorkflows.update_workflow),
+    path('api/workflows/delete/<int:workflow_id>/', viewsWorkflows.delete_workflow),
+    path('api/workflows/triggers/', viewsWorkflows.get_workflow_triggers),
+    path('api/workflows/actions/', viewsWorkflows.get_workflow_actions),
+    path('api/workflows/execute/<int:workflow_id>/', viewsWorkflows.execute_workflow),
+    path('api/workflows/executions/', viewsWorkflows.get_workflow_executions),
+    path('api/workflows/executions/<int:workflow_id>/', viewsWorkflows.get_workflow_executions),
+    path('api/workflows/audit-logs/', viewsWorkflows.get_workflow_audit_logs),
+    path('api/workflows/audit-logs/<int:workflow_id>/', viewsWorkflows.get_workflow_audit_logs),
 ]
 
 urlpatterns += router.urls
