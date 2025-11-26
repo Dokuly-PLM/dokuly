@@ -323,7 +323,7 @@ const Sidebar = (props) => {
         </li>
       )}
 
-      {organization?.procurement_is_enabled === true &&
+      {organization?.supplier_is_enabled !== false &&
         isAppAllowed("procurement") && (
           <li
             className={`nav-item ${
