@@ -27,6 +27,7 @@ import Heading from "../dokuly_components/Heading";
 import ProjectDescription from "./projectDescription";
 
 import useProfile from "../common/hooks/useProfile";
+import useOrganization from "../common/hooks/useOrganization";
 import { checkProfileIsAllowedToEdit } from "../common/functions";
 import DokulyTabs from "../dokuly_components/dokulyTabs/dokulyTabs";
 
@@ -43,6 +44,7 @@ const DisplayProject = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const [profile, refreshProfile] = useProfile();
+  const [organization] = useOrganization();
   const [readOnly, setReadOnly] = useState(false);
   useEffect(() => {
     if (profile === null || profile === undefined) {
@@ -135,35 +137,39 @@ const DisplayProject = () => {
         </Container>
       ),
     },
-    {
-      eventKey: "task-manager",
-      title: "Task Manager",
-      content: (
-        <Container fluid>
-          <TaskManager
-            refresh={refresh}
-            setRefresh={setRefresh}
-            tasks={tasks}
-            project={project}
-          />
-        </Container>
-      ),
-    },
-    {
-      eventKey: "gantt-manager",
-      title: "Gantt Diagram",
-      content: (
-        <Container fluid>
-          <DisplayGantt
-            refresh={refresh}
-            setRefresh={setRefresh}
-            tasks={ganttTasks ?? []}
-            gantt={gantt}
-            project={project}
-          />
-        </Container>
-      ),
-    },
+    ...(organization?.time_tracking_is_enabled
+      ? [
+          {
+            eventKey: "task-manager",
+            title: "Task Manager",
+            content: (
+              <Container fluid>
+                <TaskManager
+                  refresh={refresh}
+                  setRefresh={setRefresh}
+                  tasks={tasks}
+                  project={project}
+                />
+              </Container>
+            ),
+          },
+          {
+            eventKey: "gantt-manager",
+            title: "Gantt Diagram",
+            content: (
+              <Container fluid>
+                <DisplayGantt
+                  refresh={refresh}
+                  setRefresh={setRefresh}
+                  tasks={ganttTasks ?? []}
+                  gantt={gantt}
+                  project={project}
+                />
+              </Container>
+            ),
+          },
+        ]
+      : []),
   ];
 
   if (loading) return loadingSpinner();
