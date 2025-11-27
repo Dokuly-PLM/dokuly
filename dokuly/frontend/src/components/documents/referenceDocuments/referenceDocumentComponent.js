@@ -249,10 +249,6 @@ const ReferenceDocumentsTable = (props) => {
       header: "Title ",
     },
     {
-      key: "customer_name",
-      header: "Customer",
-    },
-    {
       key: "project_name",
       header: "Project",
     },
