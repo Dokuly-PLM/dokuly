@@ -184,7 +184,7 @@ export default function AssembliesTable(props) {
           columns={columns}
           itemsPerPage={100}
           onRowClick={handleRowClick}
-          defaultSort={{ columnNumber: 7, order: "desc" }}
+          defaultSort={{ columnNumber: 8, order: "desc" }}
           showColumnFilters={true}
           showFilterChips={true}
           showSavedViews={true}
