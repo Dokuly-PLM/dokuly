@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 // Common formatters for document tables.
 import { releaseStateFormatter } from "../../dokuly_components/formatters/releaseStateFormatter";
+import { ThumbnailFormatter } from "../../dokuly_components/dokulyTable/functions/formatters";
 
 // Temporary imports before custom view is created.
 import { getReferenceDocuments, removeReferences } from "../functions/queries";
@@ -51,23 +52,35 @@ const ReferenceDocumentsTable = (props) => {
 
   const navigate = useNavigate();
 
-  // Fetch the reference documents.
-  useEffect(() => {
-    if (refresh) {
-      setRefresh(false);
-    }
+  // Function to fetch reference documents
+  const fetchReferenceDocuments = useCallback(() => {
     if (
       reference_list_id !== null &&
       reference_list_id !== -1 &&
       reference_list_id !== undefined
     ) {
       getReferenceDocuments(reference_list_id).then((res) => {
-        setDocuments(res.data);
+        if (res?.data) {
+          setDocuments(res.data);
+        }
       });
     } else if (reference_list_id === -1) {
       setDocuments([]);
     }
-  }, [reference_list_id, refresh]);
+  }, [reference_list_id]);
+
+  // Fetch the reference documents when reference_list_id changes.
+  useEffect(() => {
+    fetchReferenceDocuments();
+  }, [fetchReferenceDocuments]);
+
+  // Handle refresh trigger
+  useEffect(() => {
+    if (refresh) {
+      fetchReferenceDocuments();
+      setRefresh(false);
+    }
+  }, [refresh, fetchReferenceDocuments]);
 
   function get_reference_list_id(target_obj) {
     if (target_obj !== null && target_obj !== undefined) {
@@ -167,11 +180,18 @@ const ReferenceDocumentsTable = (props) => {
       return;
     }
     // Push data to the database
-    removeReferences(data).then((res) => {
-      // Empty the list of selected documents.
-      setSelectedDocumentIds([]);
-      setRefresh(true);
-    });
+    removeReferences(data)
+      .then((res) => {
+        if (res.status === 200) {
+          // Empty the list of selected documents.
+          setSelectedDocumentIds([]);
+          // Re-fetch documents from server to ensure sync
+          fetchReferenceDocuments();
+        }
+      })
+      .catch((err) => {
+        console.error("Error removing reference documents:", err);
+      });
   }
 
   const handleOnClick = (rowIndex, row) => {
@@ -204,12 +224,25 @@ const ReferenceDocumentsTable = (props) => {
     return row.is_specification === 0 ? "No" : "Yes";
   }
 
+  const onNavigate = (row) => {
+    navigate(`/documents/${row.id}`);
+  };
+
   // Table columns.
   const columns = [
     {
       key: "full_doc_number",
       header: "Document number",
       //formatter: numberFormatter,
+    },
+    {
+      key: "thumbnail",
+      header: "",
+      formatter: (row) => {
+        return <ThumbnailFormatter thumbnail={row?.thumbnail} />;
+      },
+      maxWidth: "100px",
+      includeInCsv: false,
     },
     {
       key: "title",
@@ -272,6 +305,7 @@ const ReferenceDocumentsTable = (props) => {
 
       <div style={{ leftMargin: "15px" }}>
         <DokulyTable
+          key={`ref-docs-table-${documents.map((d) => d.id).join("-")}`}
           tableName={"ReferenceDocumentsTable"}
           data={documents}
           columns={columns}
@@ -283,6 +317,8 @@ const ReferenceDocumentsTable = (props) => {
           textSize={tableTextSize}
           setTextSize={setTableTextSize}
           showTableSettings={true}
+          navigateColumn={true}
+          onNavigate={(row) => onNavigate(row)}
         />
       </div>
     </DokulyCard>

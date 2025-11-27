@@ -8,6 +8,7 @@ from profiles.models import Profile
 from parts.models import Part
 from assemblies.models import Assembly
 from projects.models import Project, Tag
+from files.models import Image
 from tenants.azure_storage import CustomAzureStorage
 
 
@@ -121,6 +122,9 @@ class Document(models.Model):
     shared_document_link = models.CharField(max_length=500, blank=True, null=True)
 
     tags = models.ManyToManyField(Tag, blank=True, symmetrical=False, related_name="document_tags")
+
+    # Thumbnail image generated from the first page of the PDF
+    thumbnail = models.ForeignKey(Image, on_delete=models.SET_NULL, null=True, blank=True)
 
     # DEPRECATED
     # Internal/External. Used to show if a document is suitable for public release, or handover to a customer.
