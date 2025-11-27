@@ -126,6 +126,7 @@ export default function DocumentsOverviewTable2() {
       maxWidth: "100px",
       filterable: false,
       sortable: false,
+      defaultShowColumn: true,
     },
     {
       key: "title",
@@ -205,7 +206,7 @@ export default function DocumentsOverviewTable2() {
             showSearch={true}
             itemsPerPage={100}
             onRowClick={rowEvents.onClick}
-            defaultSort={{ columnNumber: 6, order: "desc" }}
+            defaultSort={{ columnNumber: 7, order: "desc" }}
             showColumnFilters={true}
             showFilterChips={true}
             showSavedViews={true}
