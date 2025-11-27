@@ -182,7 +182,7 @@ export const FilesTable = (props, { release_state }) => {
             <CardTitle titleText={"Files"} />
           </Col>
           <Col>
-            {release_state !== "Released" && (
+            {props?.release_state !== "Released" && (
               <GenericFileForm
                 app={app}
                 objectId={objectId}
