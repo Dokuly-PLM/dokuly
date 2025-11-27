@@ -25,6 +25,7 @@ Some documentation can be found on [github pages](https://dokuly-plm.github.io/d
   - Vendor pricing with price breaks and currency conversion
   - Inventory
   - DigiKey API integration for part search and automatic data import ([Setup Guide](docs/admin/digikey_setup.md))
+  - Nexar API integration for part search and automatic data import
 - Documents
   - Document numbering
   - Automatic front page generation
@@ -32,17 +33,8 @@ Some documentation can be found on [github pages](https://dokuly-plm.github.io/d
   - Custom document types, width document number prefixes
   - Issues
 - Projects
+  - Relate parts and documents to projects
   - Project-based access control
-  - Time tracking with custom tasks
-  - Time estimation
-  - Access control
-  - Gantt
-- Purchasing
-  - Manage vendors and suppliers
-  - Add suppliers for parts
-  - Inventory forecasting
-  - PO generation
-  - Automatic PO creation from BoM, selecting the cheapest vendor for each quantity
 - Requirements
   - Track requirements in a model-based environment
   - Derived, hierarchical, and superseding relations
