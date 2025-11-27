@@ -10,8 +10,10 @@ import FileViewerModal from "../../../common/FileViewerModal";
 import DokulyTable from "../../../dokuly_components/dokulyTable/dokulyTable";
 import { getFile } from "../../../common/filesTable/functions/queries";
 import { toast } from "react-toastify";
-import { Form, Row } from "react-bootstrap";
+import { Form, Row, Col } from "react-bootstrap";
 import DokulyFormSection from "../../../dokuly_components/dokulyForm/dokulyFormSection";
+import DokulyCard from "../../../dokuly_components/dokulyCard";
+import CardTitle from "../../../dokuly_components/cardTitle";
 
 export const PcbaFilesTable = (props) => {
   const [fileList, setFileList] = useState([]);
@@ -197,12 +199,20 @@ export const PcbaFilesTable = (props) => {
 
   return (
     <React.Fragment>
-      <div className="card-body m-3 card rounded">
-        <div className="row">
-          <div className="col col-8">
-            <h5>
-              <b>Files</b>
-            </h5>
+      <DokulyCard
+        isCollapsed={!fileList || fileList.length === 0}
+        expandText={"Add files"}
+        isHidden={
+          (!fileList || fileList.length === 0) &&
+          props.pcba?.release_state === "Released"
+        }
+        hiddenText={"No files have been uploaded for this item."}
+      >
+        <Row>
+          <Col>
+            <CardTitle titleText={"Files"} />
+          </Col>
+          <Col>
             {props.pcba?.release_state !== "Released" && (
               <GenericFileForm
                 app={"pcbas"}
@@ -215,8 +225,8 @@ export const PcbaFilesTable = (props) => {
                 setLoading={setLoading}
               />
             )}
-          </div>
-        </div>
+          </Col>
+        </Row>
         <div className="row">
           <div className="col">
             {fileList?.length <= 1 && loading ? (
@@ -243,7 +253,7 @@ export const PcbaFilesTable = (props) => {
             )}
           </div>
         </div>
-      </div>
+      </DokulyCard>
 
       <FileViewerModal
         isOpen={isModalOpen}
