@@ -446,12 +446,7 @@ def alter_allowed_apps(request):
             return Response("Allowed apps must be a list", status=status.HTTP_400_BAD_REQUEST)
 
         current_profile = Profile.objects.get(user=target)
-        current_allowed_apps = current_profile.allowed_apps
 
-        is_addition = set(allowed_apps) - set(current_allowed_apps)
-
-        if is_addition and not check_available_subscriptions_for_allowed_apps(allowed_apps, current_allowed_apps, request):
-            return Response("Cannot update user, no available subscriptions for this app", status=status.HTTP_403_FORBIDDEN)
 
         current_profile.allowed_apps = allowed_apps
         current_profile.save()
@@ -460,33 +455,6 @@ def alter_allowed_apps(request):
     except Exception as e:
         return Response(f"alter_allowed_apps failed: {e}", status=status.HTTP_400_BAD_REQUEST)
 
-
-def check_available_subscriptions_for_allowed_apps(requested_apps, current_apps, request):
-    subscription_counts = count_subscription_types()
-    user_counts = count_users_by_allowed_apps()
-
-    local_server = bool(int(os.environ.get('DJANGO_LOCAL_SERVER', 0)))
-    if request.tenant == "nd" or local_server:
-        return True
-
-    # Calculate the total allowed for each app
-    total_allowed = {
-        app: (subscription_counts.get("Dokuly Pro", 0) +
-              subscription_counts.get("Dokuly Pro + Requirements", 0))
-        if app != "requirements" else subscription_counts.get("Dokuly Pro + Requirements", 0)
-        for app in set(requested_apps).union(current_apps)
-    }
-
-    # Calculate the changes in app configuration
-    added_apps = set(requested_apps) - set(current_apps)
-    removed_apps = set(current_apps) - set(requested_apps)
-
-    # Check for additions
-    for app in added_apps:
-        if user_counts.get(app, 0) + 1 > total_allowed[app]:
-            return False  # Not enough subscriptions available for addition
-
-    return True  # All checks passed, update is allowed
 
 
 def count_subscription_types():
