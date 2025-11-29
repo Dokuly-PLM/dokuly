@@ -367,6 +367,8 @@ class GlobalSearchPartSerializer(serializers.ModelSerializer):
             "serial_number_counter",
             "serial_number_offset",
             "serial_number_prefix",
+            "thumbnail",
+            "release_state",
         ]
 
 
@@ -395,6 +397,8 @@ class GlobalSearchPcbaSerializer(serializers.ModelSerializer):
             "serial_number_counter",
             "serial_number_offset",
             "serial_number_prefix",
+            "thumbnail",
+            "release_state",
         ]
 
 
@@ -423,4 +427,6 @@ class GlobalSearchAssemblySerializer(serializers.ModelSerializer):
             "serial_number_counter",
             "serial_number_offset",
             "serial_number_prefix",
+            "thumbnail",
+            "release_state",
         ]

@@ -120,3 +120,35 @@ class DocumentSerializerWithProject(serializers.ModelSerializer):
             "is_archived",
             "project",
         ]
+
+
+class GlobalSearchDocumentSerializer(serializers.ModelSerializer):
+    """Serializer for global search that includes documents."""
+    item_type = serializers.SerializerMethodField()
+    project_title = serializers.ReadOnlyField(source="project.title")
+    full_part_number = serializers.ReadOnlyField(source="full_doc_number")
+    display_name = serializers.ReadOnlyField(source="title")
+
+    def get_item_type(self, obj):
+        return "Document"
+
+    class Meta:
+        model = Document
+        fields = [
+            "id",
+            "part_number",
+            "full_part_number",
+            "full_doc_number",
+            "formatted_revision",
+            "revision_count_major",
+            "revision_count_minor",
+            "display_name",
+            "title",
+            "description",
+            "project",
+            "project_title",
+            "is_latest_revision",
+            "item_type",
+            "thumbnail",
+            "release_state",
+        ]

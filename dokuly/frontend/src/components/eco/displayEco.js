@@ -11,6 +11,7 @@ import EditableMarkdown from "../dokuly_components/dokulyMarkdown/editableMarkdo
 import CardTitle from "../dokuly_components/cardTitle";
 import Heading from "../dokuly_components/Heading";
 import EcoInfoCard from "./components/ecoInfoCard";
+import AffectedItemsTable from "./components/affectedItemsTable";
 import EditEcoForm from "./forms/editEcoForm";
 import { AuthContext } from "../App";
 import { loadingSpinner } from "../admin/functions/helperFunctions";
@@ -186,6 +187,13 @@ const DisplayEco = () => {
               readOnly={readOnly || isReleased}
             />
           </DokulyCard>
+
+          {/* Affected Items Table */}
+          <AffectedItemsTable
+            ecoId={id}
+            isReleased={isReleased}
+            readOnly={readOnly}
+          />
         </Col>
       </Row>
     </div>

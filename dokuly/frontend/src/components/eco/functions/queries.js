@@ -50,3 +50,46 @@ export const deleteEco = (id) => {
   const promise = axios.delete(`/api/eco/delete/${id}/`, tokenConfig());
   return promise;
 };
+
+// ============== Affected Items ==============
+
+/**
+ * Get all affected items for an ECO.
+ * @param {number} ecoId - The ECO ID
+ * @returns {Promise} Array of affected items
+ */
+export const getAffectedItems = (ecoId) => {
+  const promise = axios.get(`/api/eco/${ecoId}/affectedItems/`, tokenConfig());
+  return promise;
+};
+
+/**
+ * Add a new affected item to an ECO.
+ * @param {number} ecoId - The ECO ID
+ * @returns {Promise} The new affected item
+ */
+export const addAffectedItem = (ecoId) => {
+  const promise = axios.post(`/api/eco/${ecoId}/affectedItems/add/`, {}, tokenConfig());
+  return promise;
+};
+
+/**
+ * Edit an affected item.
+ * @param {number} id - The affected item ID
+ * @param {Object} data - The updated data (part_id, pcba_id, assembly_id, document_id, comment)
+ * @returns {Promise} The updated affected item
+ */
+export const editAffectedItem = (id, data) => {
+  const promise = axios.put(`/api/eco/affectedItems/${id}/edit/`, data, tokenConfig());
+  return promise;
+};
+
+/**
+ * Delete an affected item.
+ * @param {number} id - The affected item ID
+ * @returns {Promise} Deletion result
+ */
+export const deleteAffectedItem = (id) => {
+  const promise = axios.delete(`/api/eco/affectedItems/${id}/delete/`, tokenConfig());
+  return promise;
+};
