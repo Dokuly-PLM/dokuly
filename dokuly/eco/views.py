@@ -100,6 +100,14 @@ def edit_eco(request, pk):
             eco.released_date = datetime.now()
             eco.released_by = request.user
 
+    if "is_approved_for_release" in data:
+        if data["is_approved_for_release"] == False:
+            eco.quality_assurance = None
+        # Ensures QA is only set once, not every time the form is updated.
+        if data["is_approved_for_release"] == True and eco.quality_assurance == None:
+            profile = Profile.objects.get(user__pk=request.user.id)
+            eco.quality_assurance = profile
+
     eco.save()
 
     serializer = EcoSerializer(eco)

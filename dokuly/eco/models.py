@@ -25,6 +25,9 @@ class Eco(models.Model):
     )
 
     release_state = models.CharField(max_length=50, blank=True)
+    quality_assurance = models.ForeignKey(
+        Profile, on_delete=models.SET_NULL, null=True, related_name="eco_quality_assurance"
+    )  # The person that did the review/approval
     released_date = models.DateTimeField(null=True, blank=True)
     released_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="eco_released_by"

@@ -1,43 +1,37 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Row, Col } from "react-bootstrap";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 
 import { getEco, editEco } from "./functions/queries";
 import { tokenConfig } from "../../configs/auth";
 import DokulyCard from "../dokuly_components/dokulyCard";
-import DokulyTabs from "../dokuly_components/dokulyTabs/dokulyTabs";
 import EditableMarkdown from "../dokuly_components/dokulyMarkdown/editableMarkdown";
 import CardTitle from "../dokuly_components/cardTitle";
 import Heading from "../dokuly_components/Heading";
 import EcoInfoCard from "./components/ecoInfoCard";
+import EditEcoForm from "./forms/editEcoForm";
 import { AuthContext } from "../App";
 import { loadingSpinner } from "../admin/functions/helperFunctions";
 import useProfile from "../common/hooks/useProfile";
 import { checkProfileIsAllowedToEdit } from "../common/functions";
-import TextFieldEditor from "../dokuly_components/dokulyTable/components/textFieldEditor";
 
 const DisplayEco = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id: ecoId } = useParams();
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
   const [profile, refreshProfile] = useProfile();
-  
-  const [id, setId] = useState(-1);
+
   const [eco, setEco] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refresh, setRefresh] = useState(false);
   const [profiles, setProfiles] = useState([]);
   const [readOnly, setReadOnly] = useState(false);
-  const [descriptionCollapsed, setDescriptionCollapsed] = useState(false);
 
-  // Get ECO ID from URL
-  useEffect(() => {
-    const url = window.location.href.toString();
-    const split = url.split("/");
-    setId(Number.parseInt(split[4]));
-  }, [location]);
+  // Parse the ID from URL params
+  const id = ecoId ? Number.parseInt(ecoId) : -1;
 
   // Check permissions
   useEffect(() => {
@@ -48,8 +42,8 @@ const DisplayEco = () => {
 
   // Fetch ECO data
   useEffect(() => {
-    if (id === -1) return;
-    
+    if (id === -1 || Number.isNaN(id)) return;
+
     setLoading(true);
     getEco(id)
       .then((res) => {
@@ -75,8 +69,8 @@ const DisplayEco = () => {
 
   // Refresh data
   useEffect(() => {
-    if (!refresh || id === -1) return;
-    
+    if (!refresh || id === -1 || Number.isNaN(id)) return;
+
     getEco(id)
       .then((res) => {
         if (res.status === 200) {
@@ -121,59 +115,7 @@ const DisplayEco = () => {
       });
   };
 
-  const handleDisplayNameChange = (newName) => {
-    editEco(id, { display_name: newName })
-      .then((res) => {
-        if (res.status === 200) {
-          setRefresh(true);
-        }
-      })
-      .catch((err) => {
-        toast.error("Failed to update name");
-      });
-  };
-
   const isReleased = eco?.release_state === "Released";
-
-  const MainContent = () => (
-    <Row>
-      <Col md={4}>
-        <EcoInfoCard
-          eco={eco}
-          setRefresh={setRefresh}
-          readOnly={readOnly}
-          profiles={profiles}
-        />
-      </Col>
-      <Col md={8}>
-        <DokulyCard
-          isCollapsed={descriptionCollapsed && !eco?.description_text}
-          expandText={"Add description"}
-        >
-          <CardTitle
-            titleText={"Description"}
-            optionalHelpText={
-              "Describe the engineering change order. Use markdown for formatting."
-            }
-          />
-          <EditableMarkdown
-            initialMarkdown={eco?.description_text || ""}
-            onSubmit={handleDescriptionSubmit}
-            showEmptyBorder={true}
-            readOnly={readOnly || isReleased}
-          />
-        </DokulyCard>
-      </Col>
-    </Row>
-  );
-
-  const tabs = [
-    {
-      eventKey: "overview",
-      title: "Overview",
-      content: <MainContent />,
-    },
-  ];
 
   if (loading) {
     return (
@@ -198,25 +140,54 @@ const DisplayEco = () => {
       />
 
       {/* Header */}
-      <Row className="align-items-center mb-2">
+      <Heading
+        item_number={`ECO-${eco?.id || ""}`}
+        display_name={eco?.display_name || ""}
+        app="eco"
+      />
+
+      {/* Edit button outside the info card */}
+      {!readOnly && !isReleased && (
+        <EditEcoForm
+          eco={eco}
+          setRefresh={setRefresh}
+          profiles={profiles}
+        />
+      )}
+
+      {/* Full width layout like DisplayRequirement */}
+      <Row>
         <Col>
-          <Heading
-            item_number={`ECO-${eco?.id || ""}`}
-            display_name={
-              <TextFieldEditor
-                text={eco?.display_name || ""}
-                setText={handleDisplayNameChange}
-                placeholder="Enter ECO name..."
-                readOnly={readOnly || isReleased}
-                style={{ fontSize: "1.5rem", fontWeight: "500" }}
-              />
-            }
+          {/* Info Card - Full width */}
+          <EcoInfoCard
+            eco={eco}
+            setRefresh={setRefresh}
+            readOnly={readOnly}
+            profiles={profiles}
           />
+
+          {/* Description - Full width */}
+          <DokulyCard
+            isCollapsed={!eco?.description_text}
+            expandText={"Add description"}
+            isHidden={!eco?.description_text && (readOnly || isReleased)}
+            hiddenText={"No description added"}
+          >
+            <CardTitle
+              titleText={"Description"}
+              optionalHelpText={
+                "Describe the engineering change order. Use markdown for formatting."
+              }
+            />
+            <EditableMarkdown
+              initialMarkdown={eco?.description_text || ""}
+              onSubmit={handleDescriptionSubmit}
+              showEmptyBorder={true}
+              readOnly={readOnly || isReleased}
+            />
+          </DokulyCard>
         </Col>
       </Row>
-
-      {/* Tabs */}
-      <DokulyTabs tabs={tabs} basePath={`/eco/${id}`} />
     </div>
   );
 };

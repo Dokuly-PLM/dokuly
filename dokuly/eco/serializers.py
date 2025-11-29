@@ -5,6 +5,7 @@ from profiles.serializers import ProfileSerializer
 
 class EcoSerializer(serializers.ModelSerializer):
     responsible = ProfileSerializer(read_only=True)
+    quality_assurance = ProfileSerializer(read_only=True)
     description_text = serializers.SerializerMethodField()
 
     class Meta:
