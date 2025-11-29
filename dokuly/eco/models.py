@@ -8,6 +8,14 @@ class Eco(models.Model):
     Used to track and manage engineering changes.
     """
 
+    # Display name / title of the ECO
+    display_name = models.CharField(max_length=150, blank=True, default="")
+
+    # Description field using markdown
+    description = models.ForeignKey(
+        'documents.MarkdownText', on_delete=models.SET_NULL, null=True, blank=True
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="eco_created_by"

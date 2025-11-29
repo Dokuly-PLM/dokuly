@@ -10,6 +10,7 @@ from .models import Eco
 from .serializers import EcoSerializer
 from profiles.views import check_user_auth_and_app_permission
 from profiles.models import Profile
+from documents.models import MarkdownText
 
 
 @api_view(("POST",))
@@ -17,7 +18,7 @@ from profiles.models import Profile
 @permission_classes([IsAuthenticated])
 def create_eco(request):
     """Create a new ECO."""
-    permission, response = check_user_auth_and_app_permission(request, "assemblies")    #TODO make permission specific to ECOs
+    permission, response = check_user_auth_and_app_permission(request, "assemblies") # TODO make permission specific to ECOs
     if not permission:
         return response
 
@@ -27,11 +28,21 @@ def create_eco(request):
         eco.created_by = request.user
         eco.release_state = "Draft"
 
+        if "display_name" in data:
+            eco.display_name = data["display_name"]
+
         if "responsible" in data and data["responsible"]:
             try:
                 eco.responsible = Profile.objects.get(id=data["responsible"])
             except Profile.DoesNotExist:
                 pass
+
+        # Create markdown description
+        description = MarkdownText.objects.create(
+            created_by=request.user,
+            text="",
+        )
+        eco.description = description
 
         eco.save()
 
@@ -46,7 +57,7 @@ def create_eco(request):
 @permission_classes([IsAuthenticated])
 def edit_eco(request, pk):
     """Edit an existing ECO. Cannot edit if released."""
-    permission, response = check_user_auth_and_app_permission(request, "assemblies") #TODO make permission specific to ECOs
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")  # TODO make permission specific to ECOs
     if not permission:
         return response
 
@@ -59,6 +70,20 @@ def edit_eco(request, pk):
         return Response("Cannot edit a released ECO!", status=status.HTTP_400_BAD_REQUEST)
 
     data = request.data
+
+    if "display_name" in data:
+        eco.display_name = data["display_name"]
+
+    if "description" in data:
+        if eco.description:
+            eco.description.text = data["description"]
+            eco.description.save()
+        else:
+            description = MarkdownText.objects.create(
+                created_by=request.user,
+                text=data["description"],
+            )
+            eco.description = description
 
     if "responsible" in data:
         if data["responsible"]:
@@ -86,7 +111,7 @@ def edit_eco(request, pk):
 @permission_classes([IsAuthenticated])
 def delete_eco(request, pk):
     """Delete an ECO. Cannot delete if released."""
-    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    permission, response = check_user_auth_and_app_permission(request, "assemblies") # TODO make permission specific to ECOs
     if not permission:
         return response
 
@@ -107,7 +132,7 @@ def delete_eco(request, pk):
 @permission_classes([IsAuthenticated])
 def get_eco(request, pk):
     """Get a single ECO by ID."""
-    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")  # TODO make permission specific to ECOs
     if not permission:
         return response
 
@@ -125,7 +150,7 @@ def get_eco(request, pk):
 @permission_classes([IsAuthenticated])
 def get_all_ecos(request):
     """Get all ECOs."""
-    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")  # TODO make permission specific to ECOs
     if not permission:
         return response
 
