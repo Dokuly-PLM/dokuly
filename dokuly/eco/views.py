@@ -15,6 +15,7 @@ from parts.models import Part
 from pcbas.models import Pcba
 from assemblies.models import Assembly
 from projects.models import Project, Tag
+from projects.viewsTags import check_for_and_create_new_tags
 
 
 @api_view(("POST",))
@@ -131,9 +132,19 @@ def edit_eco(request, pk):
 
     # Handle tags (must be done after save for ManyToMany)
     if "tags" in data:
-        tag_ids = data["tags"]
-        if isinstance(tag_ids, list):
-            eco.tags.set(tag_ids)
+        tags_data = data["tags"]
+        if isinstance(tags_data, list):
+            # Check if tags_data contains dictionaries (with id, name, color) or just IDs
+            if tags_data and isinstance(tags_data[0], dict):
+                # Tags data contains full tag objects, use check_for_and_create_new_tags
+                error, message, tag_ids = check_for_and_create_new_tags(eco.project, tags_data)
+                if error:
+                    return Response(message, status=status.HTTP_400_BAD_REQUEST)
+                eco.tags.set(tag_ids)
+            else:
+                # Tags data contains just IDs, filter out any -1 values (invalid)
+                valid_tag_ids = [tid for tid in tags_data if tid != -1]
+                eco.tags.set(valid_tag_ids)
 
     serializer = EcoSerializer(eco)
     return Response(serializer.data, status=status.HTTP_200_OK)

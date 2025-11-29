@@ -9,7 +9,6 @@ import { releaseStateFormatter } from "../dokuly_components/formatters/releaseSt
 import { getAllEcos, deleteEco } from "./functions/queries";
 import { AuthContext } from "../App";
 import { loadingSpinner } from "../admin/functions/helperFunctions";
-import DeleteRowButton from "../dokuly_components/deleteRowButton";
 import NewEcoForm from "./forms/newEcoForm";
 
 const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) => {
@@ -166,19 +165,6 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
         const dateB = new Date(b.last_updated || 0);
         return order === "asc" ? dateA - dateB : dateB - dateA;
       },
-    },
-    {
-      key: "actions",
-      header: "",
-      defaultShowColumn: true,
-      maxWidth: "50px",
-      formatter: (row) =>
-        row.release_state !== "Released" && (
-          <DeleteRowButton
-            row={row}
-            handleDelete={() => handleDeleteEco(row.id)}
-          />
-        ),
     },
   ];
 

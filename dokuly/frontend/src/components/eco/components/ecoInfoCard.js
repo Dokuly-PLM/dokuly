@@ -47,8 +47,13 @@ const EcoInfoCard = ({
   };
 
   const handleTagsChange = (newTags) => {
-    const tagIds = newTags.map((tag) => tag.id);
-    changeField("tags", tagIds);
+    // Send full tag objects so new tags (id=-1) can be created
+    const tagsData = newTags.map((tag) => ({
+      id: tag.id,
+      name: tag.name,
+      color: tag.color,
+    }));
+    changeField("tags", tagsData);
   };
 
   const isReleased = eco?.release_state === "Released";
