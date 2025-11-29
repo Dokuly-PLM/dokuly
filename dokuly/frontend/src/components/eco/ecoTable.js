@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Row, Col } from "react-bootstrap";
 
 import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
-import DokulyCard from "../dokuly_components/dokulyCard";
-import CardTitle from "../dokuly_components/cardTitle";
 import AddButton from "../dokuly_components/AddButton";
 import DokulyDateFormat from "../dokuly_components/formatters/dateFormatter";
+import { releaseStateFormatter } from "../dokuly_components/formatters/releaseStateFormatter";
 import { getAllEcos, createEco, deleteEco } from "./functions/queries";
 import { AuthContext } from "../App";
 import { loadingSpinner } from "../admin/functions/helperFunctions";
@@ -80,17 +78,6 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
       });
   };
 
-  const getReleaseStateStyle = (state) => {
-    switch (state) {
-      case "Released":
-        return { color: "#28a745", fontWeight: "600" };
-      case "Draft":
-        return { color: "#6c757d", fontWeight: "600" };
-      default:
-        return { fontWeight: "600" };
-    }
-  };
-
   const columns = [
     {
       key: "id",
@@ -115,13 +102,11 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
       header: "State",
       headerTooltip: "Release State",
       sortable: true,
+      filterType: "select",
+      filterValue: (row) => row.release_state || "",
       defaultShowColumn: true,
       maxWidth: "100px",
-      formatter: (row) => (
-        <span style={getReleaseStateStyle(row.release_state)}>
-          {row.release_state || "Draft"}
-        </span>
-      ),
+      formatter: releaseStateFormatter,
     },
     {
       key: "responsible",
@@ -162,11 +147,9 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
   const handleRowClick = (rowId, row, event) => {
     if (event.ctrlKey || event.metaKey) {
       window.open(`#/eco/${row.id}`, "_blank");
+    } else {
+      navigate(`/eco/${row.id}`);
     }
-  };
-
-  const onNavigate = (row) => {
-    navigate(`/eco/${row.id}`);
   };
 
   if (loading) {
@@ -178,16 +161,12 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
   }
 
   return (
-    <div className="container-fluid mt-2 mainContainerWidth">
-      <DokulyCard>
-        <Row className="mb-3">
-          <Col>
-            <AddButton
-              onClick={handleCreateEco}
-              buttonText="New ECO"
-            />
-          </Col>
-        </Row>
+    <div
+      className="container-fluid mt-2 mainContainerWidth"
+      style={{ paddingBottom: "1rem" }}
+    >
+      <AddButton onClick={handleCreateEco} buttonText="New ECO" />
+      <div className="card rounded p-3">
         <DokulyTable
           tableName="ecoTable"
           data={ecos}
@@ -195,14 +174,14 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
           showColumnSelector={true}
           itemsPerPage={50}
           onRowClick={handleRowClick}
-          navigateColumn={true}
-          onNavigate={onNavigate}
           defaultSort={{ columnNumber: 0, order: "desc" }}
           textSize={tableTextSize}
           setTextSize={setTableTextSize}
           showTableSettings={true}
+          showColumnFilters={true}
+          showFilterChips={true}
         />
-      </DokulyCard>
+      </div>
     </div>
   );
 };
