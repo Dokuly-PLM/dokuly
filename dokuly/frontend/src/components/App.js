@@ -37,6 +37,7 @@ import ResetPassword from "./accounts/ResetPassword";
 import RequireAuth from "./common/requireAuth";
 import PurchasingDashboard from "./purchasing/purchasingDashboard";
 import DisplayPurchaseOrder from "./purchasing/displayPurchaseOrder";
+import HomepageDashboard from "./homepage/homepageDashboard";
 import { ToastContainer, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
@@ -259,7 +260,11 @@ function App() {
                         >
                           <Route
                             path="/"
-                            element={<Navigate replace to="/projects" />}
+                            element={<HomepageDashboard />}
+                          />
+                          <Route
+                            path="/home"
+                            element={<HomepageDashboard />}
                           />
 
                           {adminPaths.map((path) => (
