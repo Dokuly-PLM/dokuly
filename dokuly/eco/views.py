@@ -6,11 +6,14 @@ from rest_framework import status
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
 
-from .models import Eco
-from .serializers import EcoSerializer
+from .models import Eco, AffectedItem
+from .serializers import EcoSerializer, AffectedItemSerializer, AffectedItemDetailSerializer
 from profiles.views import check_user_auth_and_app_permission
 from profiles.models import Profile
-from documents.models import MarkdownText
+from documents.models import MarkdownText, Document
+from parts.models import Part
+from pcbas.models import Pcba
+from assemblies.models import Assembly
 
 
 @api_view(("POST",))
@@ -164,4 +167,133 @@ def get_all_ecos(request):
 
     ecos = Eco.objects.all().order_by("-created_at")
     serializer = EcoSerializer(ecos, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ============== Affected Items ==============
+
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def add_affected_item(request, eco_id):
+    """Add a new affected item row to an ECO."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    try:
+        eco = Eco.objects.get(pk=eco_id)
+    except Eco.DoesNotExist:
+        return Response("ECO not found", status=status.HTTP_404_NOT_FOUND)
+
+    if eco.release_state == "Released":
+        return Response("Cannot modify a released ECO!", status=status.HTTP_400_BAD_REQUEST)
+
+    # Create empty affected item
+    affected_item = AffectedItem.objects.create(eco=eco)
+
+    serializer = AffectedItemDetailSerializer(affected_item)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def edit_affected_item(request, pk):
+    """Edit an affected item - attach a part/pcba/assembly/document."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    try:
+        affected_item = AffectedItem.objects.get(pk=pk)
+    except AffectedItem.DoesNotExist:
+        return Response("Affected item not found", status=status.HTTP_404_NOT_FOUND)
+
+    if affected_item.eco.release_state == "Released":
+        return Response("Cannot modify a released ECO!", status=status.HTTP_400_BAD_REQUEST)
+
+    data = request.data
+
+    # Clear all item references first when setting a new one
+    if "part_id" in data or "pcba_id" in data or "assembly_id" in data or "document_id" in data:
+        affected_item.part = None
+        affected_item.pcba = None
+        affected_item.assembly = None
+        affected_item.document = None
+
+    if "part_id" in data:
+        if data["part_id"]:
+            try:
+                affected_item.part = Part.objects.get(pk=data["part_id"])
+            except Part.DoesNotExist:
+                return Response("Part not found", status=status.HTTP_404_NOT_FOUND)
+
+    if "pcba_id" in data:
+        if data["pcba_id"]:
+            try:
+                affected_item.pcba = Pcba.objects.get(pk=data["pcba_id"])
+            except Pcba.DoesNotExist:
+                return Response("PCBA not found", status=status.HTTP_404_NOT_FOUND)
+
+    if "assembly_id" in data:
+        if data["assembly_id"]:
+            try:
+                affected_item.assembly = Assembly.objects.get(pk=data["assembly_id"])
+            except Assembly.DoesNotExist:
+                return Response("Assembly not found", status=status.HTTP_404_NOT_FOUND)
+
+    if "document_id" in data:
+        if data["document_id"]:
+            try:
+                affected_item.document = Document.objects.get(pk=data["document_id"])
+            except Document.DoesNotExist:
+                return Response("Document not found", status=status.HTTP_404_NOT_FOUND)
+
+    if "comment" in data:
+        affected_item.comment = data["comment"]
+
+    affected_item.save()
+
+    serializer = AffectedItemDetailSerializer(affected_item)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(("DELETE",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def delete_affected_item(request, pk):
+    """Delete an affected item from an ECO."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    try:
+        affected_item = AffectedItem.objects.get(pk=pk)
+    except AffectedItem.DoesNotExist:
+        return Response("Affected item not found", status=status.HTTP_404_NOT_FOUND)
+
+    if affected_item.eco.release_state == "Released":
+        return Response("Cannot modify a released ECO!", status=status.HTTP_400_BAD_REQUEST)
+
+    affected_item.delete()
+    return Response("Affected item deleted", status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def get_affected_items(request, eco_id):
+    """Get all affected items for an ECO."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    try:
+        eco = Eco.objects.get(pk=eco_id)
+    except Eco.DoesNotExist:
+        return Response("ECO not found", status=status.HTTP_404_NOT_FOUND)
+
+    affected_items = AffectedItem.objects.filter(eco=eco).order_by("created_at")
+    serializer = AffectedItemDetailSerializer(affected_items, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)

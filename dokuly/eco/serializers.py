@@ -1,6 +1,10 @@
 from rest_framework import serializers
-from .models import Eco
+from .models import Eco, AffectedItem
 from profiles.serializers import ProfileSerializer
+from parts.serializers import PartBomSerializer
+from pcbas.serializers import PcbaBomSerializer
+from assemblies.serializers import AssemblyBomSerializer
+from documents.serializers import DocumentTableSerializer
 
 
 class EcoSerializer(serializers.ModelSerializer):
@@ -17,3 +21,23 @@ class EcoSerializer(serializers.ModelSerializer):
         if obj.description:
             return obj.description.text
         return ""
+
+
+class AffectedItemSerializer(serializers.ModelSerializer):
+    """Basic serializer for AffectedItem."""
+
+    class Meta:
+        model = AffectedItem
+        fields = '__all__'
+
+
+class AffectedItemDetailSerializer(serializers.ModelSerializer):
+    """Serializer with nested item details for display."""
+    part = PartBomSerializer(read_only=True)
+    pcba = PcbaBomSerializer(read_only=True)
+    assembly = AssemblyBomSerializer(read_only=True)
+    document = DocumentTableSerializer(read_only=True)
+
+    class Meta:
+        model = AffectedItem
+        fields = '__all__'
