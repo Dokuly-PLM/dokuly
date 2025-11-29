@@ -5,11 +5,14 @@ from parts.serializers import PartBomSerializer
 from pcbas.serializers import PcbaBomSerializer
 from assemblies.serializers import AssemblyBomSerializer
 from documents.serializers import DocumentTableSerializer
+from projects.serializers import ProjectTitleSerializer, TagSerializer
 
 
 class EcoSerializer(serializers.ModelSerializer):
     responsible = ProfileSerializer(read_only=True)
     quality_assurance = ProfileSerializer(read_only=True)
+    project = ProjectTitleSerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
     description_text = serializers.SerializerMethodField()
 
     class Meta:

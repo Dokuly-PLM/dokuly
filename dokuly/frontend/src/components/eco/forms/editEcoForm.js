@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import moment from "moment";
 
 import { editEco, deleteEco } from "../functions/queries";
+import { fetchProjects } from "../../projects/functions/queries";
 import SubmitButton from "../../dokuly_components/submitButton";
 import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import DokulyModal from "../../dokuly_components/dokulyModal";
@@ -15,6 +16,9 @@ const EditEcoForm = ({ eco, setRefresh, profiles = [] }) => {
   const [release_state, setReleaseState] = useState(eco?.release_state || "Draft");
   const [is_approved_for_release, setIsApprovedForRelease] = useState(eco?.quality_assurance !== null);
   const [display_name, setDisplayName] = useState(eco?.display_name || "");
+  const [projectId, setProjectId] = useState(eco?.project?.id || "");
+  const [projects, setProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
 
   // Update state when eco prop changes
   useEffect(() => {
@@ -22,20 +26,41 @@ const EditEcoForm = ({ eco, setRefresh, profiles = [] }) => {
       setReleaseState(eco.release_state || "Draft");
       setDisplayName(eco.display_name || "");
       setIsApprovedForRelease(eco.quality_assurance !== null);
+      setProjectId(eco.project?.id || "");
     }
   }, [eco]);
+
+  // Fetch projects when modal opens
+  useEffect(() => {
+    if (showModal && projects.length === 0) {
+      fetchProjects()
+        .then((res) => {
+          if (res.status === 200) {
+            setProjects(res.data);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to load projects:", err);
+        })
+        .finally(() => {
+          setLoadingProjects(false);
+        });
+    }
+  }, [showModal]);
 
   const loadStates = (ecoData) => {
     if (!ecoData) return;
     setReleaseState(ecoData.release_state || "Draft");
     setDisplayName(ecoData.display_name || "");
     setIsApprovedForRelease(ecoData.quality_assurance !== null);
+    setProjectId(ecoData.project?.id || "");
   };
 
   const clearStates = () => {
     setReleaseState("");
     setDisplayName("");
     setIsApprovedForRelease(false);
+    setProjectId("");
   };
 
   const editEcoClick = () => {
@@ -75,6 +100,7 @@ const EditEcoForm = ({ eco, setRefresh, profiles = [] }) => {
       release_state: release_state,
       is_approved_for_release: is_approved_for_release,
       last_updated: moment().format("YYYY-MM-DD HH:mm"),
+      project: projectId || null,
     };
 
     editEco(eco?.id, data)
@@ -137,6 +163,25 @@ const EditEcoForm = ({ eco, setRefresh, profiles = [] }) => {
             }}
             value={display_name}
           />
+        </div>
+
+        <div className="form-group">
+          <label>Project (optional)</label>
+          <select
+            className="form-control"
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value ? parseInt(e.target.value) : "")}
+            disabled={loadingProjects}
+          >
+            <option value="">No project</option>
+            {projects
+              .filter((project) => project.is_active !== false)
+              .map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.title}
+                </option>
+              ))}
+          </select>
         </div>
 
         <ReleaseStateTimeline

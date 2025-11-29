@@ -7,6 +7,7 @@ import DokulyCard from "../../dokuly_components/dokulyCard";
 import CardTitle from "../../dokuly_components/cardTitle";
 import GenericDropdownSelector from "../../dokuly_components/dokulyTable/components/genericDropdownSelector";
 import DokulyDateFormat from "../../dokuly_components/formatters/dateFormatter";
+import DokulyTags from "../../dokuly_components/dokulyTags/dokulyTags";
 import { editEco } from "../functions/queries";
 import { releaseStateFormatter } from "../../dokuly_components/formatters/releaseStateFormatter";
 
@@ -45,6 +46,11 @@ const EcoInfoCard = ({
     );
   };
 
+  const handleTagsChange = (newTags) => {
+    const tagIds = newTags.map((tag) => tag.id);
+    changeField("tags", tagIds);
+  };
+
   const isReleased = eco?.release_state === "Released";
   const keyColumnMaxWidth = "140px";
 
@@ -53,6 +59,16 @@ const EcoInfoCard = ({
       <CardTitle titleText={"Information"} />
 
       <Container fluid>
+        {/* Project - Display only, edit via Edit form */}
+        <Row className="align-items-center mb-2">
+          <Col className="col-lg-6 col-xl-6" style={{ maxWidth: keyColumnMaxWidth }}>
+            <b>Project:</b>
+          </Col>
+          <Col>
+            {eco?.project?.title || <span className="text-muted">No project</span>}
+          </Col>
+        </Row>
+
         {/* State - Display only, like partInfoCard */}
         <Row className="align-items-center mb-2">
           <Col className="col-lg-6 col-xl-6" style={{ maxWidth: keyColumnMaxWidth }}>
@@ -132,6 +148,30 @@ const EcoInfoCard = ({
             <Col>{eco.released_by_name}</Col>
           </Row>
         )}
+
+        {/* Tags */}
+        <hr />
+        <Row className="mt-2 align-items-top">
+          <Col className="col-lg-6 col-xl-6" style={{ maxWidth: keyColumnMaxWidth }}>
+            <b>Tags</b>
+          </Col>
+        </Row>
+        <Row className="mt-2 align-items-top">
+          <Col className="col-auto">
+            <DokulyTags
+              tags={eco?.tags ?? []}
+              onChange={handleTagsChange}
+              readOnly={readOnly || isReleased}
+              project={eco?.project ?? { id: 0 }}
+              setRefresh={setRefresh}
+            />
+            {!eco?.project && (
+              <span className="text-muted" style={{ fontSize: "0.875rem" }}>
+                Using organization tags. Attach to a project for project-specific tags.
+              </span>
+            )}
+          </Col>
+        </Row>
       </Container>
     </DokulyCard>
   );

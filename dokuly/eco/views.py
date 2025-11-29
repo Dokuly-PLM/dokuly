@@ -14,6 +14,7 @@ from documents.models import MarkdownText, Document
 from parts.models import Part
 from pcbas.models import Pcba
 from assemblies.models import Assembly
+from projects.models import Project, Tag
 
 
 @api_view(("POST",))
@@ -38,6 +39,12 @@ def create_eco(request):
             try:
                 eco.responsible = Profile.objects.get(id=data["responsible"])
             except Profile.DoesNotExist:
+                pass
+
+        if "project" in data and data["project"]:
+            try:
+                eco.project = Project.objects.get(id=data["project"])
+            except Project.DoesNotExist:
                 pass
 
         # Create markdown description
@@ -111,7 +118,22 @@ def edit_eco(request, pk):
             profile = Profile.objects.get(user__pk=request.user.id)
             eco.quality_assurance = profile
 
+    if "project" in data:
+        if data["project"]:
+            try:
+                eco.project = Project.objects.get(id=data["project"])
+            except Project.DoesNotExist:
+                pass
+        else:
+            eco.project = None
+
     eco.save()
+
+    # Handle tags (must be done after save for ManyToMany)
+    if "tags" in data:
+        tag_ids = data["tags"]
+        if isinstance(tag_ids, list):
+            eco.tags.set(tag_ids)
 
     serializer = EcoSerializer(eco)
     return Response(serializer.data, status=status.HTTP_200_OK)

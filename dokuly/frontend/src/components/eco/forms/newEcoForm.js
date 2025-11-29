@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import axios from "axios";
 
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import SubmitButton from "../../dokuly_components/submitButton";
 import { createEco } from "../functions/queries";
-import { tokenConfig } from "../../../configs/auth";
+import { fetchProjects } from "../../projects/functions/queries";
+import { fetchUsers } from "../../admin/functions/queries";
 
 /**
  * Button with form to create a new ECO.
@@ -17,16 +17,17 @@ const NewEcoForm = ({ setRefresh }) => {
   // Form Fields
   const [displayName, setDisplayName] = useState("");
   const [responsibleId, setResponsibleId] = useState("");
+  const [projectId, setProjectId] = useState("");
 
   // Data
   const [profiles, setProfiles] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (showModal) {
       // Fetch active profiles when modal opens
-      axios
-        .get("api/profiles", tokenConfig())
+      fetchUsers()
         .then((res) => {
           if (res.status === 200) {
             setProfiles(res.data);
@@ -34,6 +35,17 @@ const NewEcoForm = ({ setRefresh }) => {
         })
         .catch((err) => {
           console.error("Error fetching profiles:", err);
+        });
+
+      // Fetch projects when modal opens
+      fetchProjects()
+        .then((res) => {
+          if (res.status === 200) {
+            setProjects(res.data);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching projects:", err);
         });
     }
   }, [showModal]);
@@ -45,12 +57,14 @@ const NewEcoForm = ({ setRefresh }) => {
   const resetFields = () => {
     setDisplayName("");
     setResponsibleId("");
+    setProjectId("");
   };
 
   const onSubmit = () => {
     const data = {
       display_name: displayName,
       responsible: responsibleId ? parseInt(responsibleId) : null,
+      project: projectId ? parseInt(projectId) : null,
     };
 
     createEco(data)
@@ -107,6 +121,29 @@ const NewEcoForm = ({ setRefresh }) => {
         </div>
 
         <div className="form-group">
+          <label>Project</label>
+          <select
+            className="form-control"
+            name="project"
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+          >
+            <option value="">Choose project</option>
+            {projects
+              .filter((project) => project.is_active !== false)
+              .sort((a, b) => a.title.localeCompare(b.title))
+              .map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.title}
+                </option>
+              ))}
+          </select>
+          <small className="form-text text-muted">
+            Optional. Attach to a project for project-specific tags.
+          </small>
+        </div>
+
+        <div className="form-group">
           <label>Responsible</label>
           <select
             className="form-control"
@@ -138,7 +175,7 @@ const NewEcoForm = ({ setRefresh }) => {
             type="submit"
             disabled={!displayName || displayName.trim() === ""}
             onClick={onSubmit}
-            disabledTooltip="Please enter a display name for the ECO"
+            disabledTooltip="Please enter a display name"
           >
             Submit
           </SubmitButton>

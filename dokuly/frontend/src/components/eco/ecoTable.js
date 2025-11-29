@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 
 import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
 import DokulyDateFormat from "../dokuly_components/formatters/dateFormatter";
+import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
 import { releaseStateFormatter } from "../dokuly_components/formatters/releaseStateFormatter";
 import { getAllEcos, deleteEco } from "./functions/queries";
 import { AuthContext } from "../App";
@@ -83,6 +84,37 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
       defaultShowColumn: true,
       maxWidth: "200px",
       formatter: (row) => row.display_name || "-",
+    },
+    {
+      key: "project",
+      header: "Project",
+      headerTooltip: "Associated project",
+      sortable: true,
+      defaultShowColumn: true,
+      maxWidth: "150px",
+      filterType: "select",
+      filterValue: (row) => row.project?.title || "",
+      formatter: (row) => row.project?.title || "-",
+    },
+    {
+      key: "tags",
+      header: "Tags",
+      headerTooltip: "ECO tags",
+      maxWidth: "140px",
+      defaultShowColumn: true,
+      filterType: "multiselect",
+      filterValue: (row) => {
+        const tags = row?.tags ?? [];
+        return tags?.length > 0 ? tags.map((tag) => tag.name) : [];
+      },
+      searchValue: (row) => {
+        const tags = row?.tags ?? [];
+        return tags?.length > 0 ? tags.map((tag) => tag.name).join(" ") : "";
+      },
+      formatter: (row) => {
+        return <DokulyTags tags={row?.tags ?? []} readOnly={true} />;
+      },
+      csvFormatter: (row) => (row?.tags ? row.tags.map((t) => t.name).join(", ") : ""),
     },
     {
       key: "release_state",
@@ -180,7 +212,7 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
           showColumnSelector={true}
           itemsPerPage={50}
           onRowClick={handleRowClick}
-          defaultSort={{ columnNumber: 5, order: "desc" }}
+          defaultSort={{ columnNumber: 6, order: "desc" }}
           textSize={tableTextSize}
           setTextSize={setTableTextSize}
           showTableSettings={true}

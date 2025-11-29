@@ -5,6 +5,7 @@ from parts.models import Part
 from pcbas.models import Pcba
 from assemblies.models import Assembly
 from documents.models import Document
+from projects.models import Project, Tag
 
 
 class Eco(models.Model):
@@ -19,6 +20,12 @@ class Eco(models.Model):
     description = models.ForeignKey(
         'documents.MarkdownText', on_delete=models.SET_NULL, null=True, blank=True
     )
+
+    # Project for access control and tags
+    project = models.ForeignKey(
+        Project, on_delete=models.SET_NULL, null=True, blank=True, related_name="ecos"
+    )
+    tags = models.ManyToManyField(Tag, blank=True, related_name="eco_tags")
 
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
