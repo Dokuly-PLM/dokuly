@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
-import AddButton from "../dokuly_components/AddButton";
 import DokulyDateFormat from "../dokuly_components/formatters/dateFormatter";
 import { releaseStateFormatter } from "../dokuly_components/formatters/releaseStateFormatter";
-import { getAllEcos, createEco, deleteEco } from "./functions/queries";
+import { getAllEcos, deleteEco } from "./functions/queries";
 import { AuthContext } from "../App";
 import { loadingSpinner } from "../admin/functions/helperFunctions";
 import DeleteRowButton from "../dokuly_components/deleteRowButton";
+import NewEcoForm from "./forms/newEcoForm";
 
 const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) => {
   const navigate = useNavigate();
@@ -45,19 +45,6 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
       });
   }, [refresh, internalRefresh]);
 
-  const handleCreateEco = () => {
-    createEco({})
-      .then((res) => {
-        if (res.status === 201) {
-          toast.success("ECO created successfully");
-          navigate(`/eco/${res.data.id}`);
-        }
-      })
-      .catch((err) => {
-        toast.error("Failed to create ECO");
-      });
-  };
-
   const handleDeleteEco = (id) => {
     if (!confirm("Are you sure you want to delete this ECO?")) {
       return;
@@ -86,7 +73,7 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
       sortable: true,
       defaultShowColumn: true,
       maxWidth: "60px",
-      formatter: (row) => <b>ECO-{row.id}</b>,
+      formatter: (row) => <b>ECO{row.id}</b>,
     },
     {
       key: "display_name",
@@ -165,7 +152,7 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
       className="container-fluid mt-2 mainContainerWidth"
       style={{ paddingBottom: "1rem" }}
     >
-      <AddButton onClick={handleCreateEco} buttonText="New ECO" />
+      <NewEcoForm setRefresh={setRefresh} />
       <div className="card rounded p-3">
         <DokulyTable
           tableName="ecoTable"
