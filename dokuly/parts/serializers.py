@@ -245,6 +245,7 @@ class PartBomSerializer(serializers.ModelSerializer):
             "thumbnail",
             "current_total_stock",
             "minimum_stock_level",
+            "revision_notes",
         ]
 
 # For ASM BOM ------------------------------------------------------------------------
@@ -367,6 +368,8 @@ class GlobalSearchPartSerializer(serializers.ModelSerializer):
             "serial_number_counter",
             "serial_number_offset",
             "serial_number_prefix",
+            "thumbnail",
+            "release_state",
         ]
 
 
@@ -395,6 +398,8 @@ class GlobalSearchPcbaSerializer(serializers.ModelSerializer):
             "serial_number_counter",
             "serial_number_offset",
             "serial_number_prefix",
+            "thumbnail",
+            "release_state",
         ]
 
 
@@ -423,4 +428,6 @@ class GlobalSearchAssemblySerializer(serializers.ModelSerializer):
             "serial_number_counter",
             "serial_number_offset",
             "serial_number_prefix",
+            "thumbnail",
+            "release_state",
         ]

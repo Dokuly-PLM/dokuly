@@ -28,7 +28,8 @@ from .serializers import (
     SimpleAsmSerializer,
 )
 from assemblies.models import Assembly
-from documents.models import MarkdownText, Reference_List
+from documents.models import MarkdownText, Reference_List, Document
+from documents.serializers import GlobalSearchDocumentSerializer
 from projects.models import Project
 
 from organizations.views import get_subscription_type
@@ -1601,53 +1602,75 @@ def global_part_search(request):
 
         data = request.data
         query = data.get("query", "")
+        
+        # Get which tables to search (default: parts, pcbas, assemblies - NOT documents for BOM compatibility)
+        include_tables = data.get("include_tables", ["parts", "pcbas", "assemblies"])
 
         # Common filter for project membership or no project
         project_filter = Q(project__project_members=user) | Q(project__isnull=True)
 
-        # Query Parts, PCBAs, and Assemblies
-        part_results = Part.objects.filter(
-            project_filter
-            & Q(is_archived=False)
-            & (
-                Q(full_part_number__icontains=query)
-                | Q(display_name__icontains=query)
-                | Q(description__icontains=query)
-                | Q(manufacturer__icontains=query)
-                | Q(mpn__icontains=query)
-                | Q(external_part_number__icontains=query)
+        combined_results = []
+
+        # Query Parts
+        if "parts" in include_tables:
+            part_results = Part.objects.filter(
+                project_filter
+                & Q(is_archived=False)
+                & (
+                    Q(full_part_number__icontains=query)
+                    | Q(display_name__icontains=query)
+                    | Q(description__icontains=query)
+                    | Q(manufacturer__icontains=query)
+                    | Q(mpn__icontains=query)
+                    | Q(external_part_number__icontains=query)
+                )
             )
-        )
+            part_serializer = GlobalSearchPartSerializer(part_results, many=True)
+            combined_results += part_serializer.data
 
-        pcba_results = Pcba.objects.filter(
-            project_filter
-            & Q(is_archived=False)
-            & (
-                Q(full_part_number__icontains=query)
-                | Q(display_name__icontains=query)
-                | Q(description__icontains=query)
-                | Q(external_part_number__icontains=query)
+        # Query PCBAs
+        if "pcbas" in include_tables:
+            pcba_results = Pcba.objects.filter(
+                project_filter
+                & Q(is_archived=False)
+                & (
+                    Q(full_part_number__icontains=query)
+                    | Q(display_name__icontains=query)
+                    | Q(description__icontains=query)
+                    | Q(external_part_number__icontains=query)
+                )
             )
-        )
+            pcba_serializer = GlobalSearchPcbaSerializer(pcba_results, many=True)
+            combined_results += pcba_serializer.data
 
-        assembly_results = Assembly.objects.filter(
-            project_filter
-            & Q(is_archived=False)
-            & (
-                Q(full_part_number__icontains=query)
-                | Q(display_name__icontains=query)
-                | Q(description__icontains=query)
-                | Q(external_part_number__icontains=query)
+        # Query Assemblies
+        if "assemblies" in include_tables:
+            assembly_results = Assembly.objects.filter(
+                project_filter
+                & Q(is_archived=False)
+                & (
+                    Q(full_part_number__icontains=query)
+                    | Q(display_name__icontains=query)
+                    | Q(description__icontains=query)
+                    | Q(external_part_number__icontains=query)
+                )
             )
-        )
+            assembly_serializer = GlobalSearchAssemblySerializer(assembly_results, many=True)
+            combined_results += assembly_serializer.data
 
-        # Serialize the results with the custom serializer
-        part_serializer = GlobalSearchPartSerializer(part_results, many=True)
-        pcba_serializer = GlobalSearchPcbaSerializer(pcba_results, many=True)
-        assembly_serializer = GlobalSearchAssemblySerializer(assembly_results, many=True)
-
-        # Combine the serialized results into a single array
-        combined_results = part_serializer.data + pcba_serializer.data + assembly_serializer.data
+        # Query Documents (only if explicitly requested)
+        if "documents" in include_tables:
+            document_results = Document.objects.filter(
+                project_filter
+                & Q(is_archived=False)
+                & (
+                    Q(full_doc_number__icontains=query)
+                    | Q(title__icontains=query)
+                    | Q(description__icontains=query)
+                )
+            )
+            document_serializer = GlobalSearchDocumentSerializer(document_results, many=True)
+            combined_results += document_serializer.data
 
         # Limit the results to at most 50 items
         limited_results = combined_results[:50]

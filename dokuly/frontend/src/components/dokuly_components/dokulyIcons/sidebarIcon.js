@@ -46,6 +46,12 @@ const SidebarIcon = ({
         "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)";
       alt = "clipboard";
       break;
+    case "eco":
+      src = "../../../../static/icons/clipboard-list.svg";
+      filter =
+        "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)";
+      alt = "eco";
+      break;
     case "documents":
       src = "../../../../static/icons/file.svg";
       filter =

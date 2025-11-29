@@ -51,6 +51,8 @@ import DisplayRequirement from "./requirements/displayRequirement";
 import DisplaySupplier from "./suppliers/displaySupplier";
 import DisplayIssue from "./dokuly_components/dokulyIssues/displayIssue";
 import DisplayLot from "./production/lots/displayLot";
+import EcoDashboard from "./eco/ecoDashboard";
+import DisplayEco from "./eco/displayEco";
 
 // Component to track page views
 
@@ -416,6 +418,17 @@ function App() {
                             exact={true}
                             path="/production/lot/:id/*"
                             element={<DisplayLot />}
+                          />
+
+                          <Route
+                            exact={true}
+                            path="/eco"
+                            element={<EcoDashboard />}
+                          />
+                          <Route
+                            exact={true}
+                            path="/eco/:id/*"
+                            element={<DisplayEco />}
                           />
                         </Route>
                       </Routes>

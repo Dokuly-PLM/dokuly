@@ -156,7 +156,8 @@ const EditUserProfile = (props) => {
 
   const isAppDisabled = (app) => {
     const planMapping = {
-      requirements: "Dokuly Pro + Requirements",
+      requirements: "Dokuly Pro",
+      eco: "Dokuly Pro",
       timesheet: "Dokuly Pro",
       customers: "Dokuly Pro",
       projects: "Dokuly Pro",
@@ -333,6 +334,7 @@ const EditUserProfile = (props) => {
                     "customers",
                     "projects",
                     "requirements",
+                    "eco",
                     "documents",
                     "parts",
                     "assemblies",

@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     "purchasing",
     "requirements",
     "assembly_bom",
+    "eco",
     "django_expiring_token",
 ]
 

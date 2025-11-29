@@ -35,6 +35,8 @@ const GenericDropdownSelector = ({
   borderOnNoEdit = false, // New prop for border when not editing
   tooltipText = "", // New prop for tooltip text
   borderSize = "1px",
+  onOpen = null, // New prop for callback when dropdown opens
+  currentLabel = null, // New prop for displaying label when dropdown values aren't loaded
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -107,6 +109,7 @@ const GenericDropdownSelector = ({
 
   const selectedLabel =
     dropdownValues.find((option) => option.value === state)?.label ||
+    currentLabel ||
     placeholder;
 
   const handleMouseEnter = (e) => {
@@ -178,6 +181,9 @@ const GenericDropdownSelector = ({
     <div
       onClick={() => {
         if (!readOnly) {
+          if (onOpen) {
+            onOpen();
+          }
           setIsEditing(true);
         }
       }}
