@@ -40,3 +40,21 @@ class Issues(models.Model):
     criticality = models.CharField(max_length=500, blank=True)
 
     tags = models.ManyToManyField('projects.Tag', blank=True, symmetrical=False, related_name="issue_tags")
+    
+    # Workflow tracking (optional - only set if issue was created by a workflow)
+    created_by_workflow = models.ForeignKey(
+        'projects.Workflow',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_issues',
+        help_text="Workflow that created this issue (if any)"
+    )
+    workflow_execution = models.ForeignKey(
+        'projects.WorkflowExecution',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_issues',
+        help_text="Workflow execution record that created this issue (if any)"
+    )
