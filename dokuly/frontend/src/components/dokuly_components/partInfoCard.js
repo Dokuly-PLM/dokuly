@@ -14,6 +14,8 @@ import CardTitle from "./cardTitle";
 import { getName } from "country-list";
 import ReactCountryFlag from "react-country-flag";
 import DokulyTags from "./dokulyTags/dokulyTags";
+import useItemEcos from "../common/hooks/useItemEcos";
+import { EcoPillList } from "./ecoPill/ecoPill";
 
 const renderAdditionalFields = (additionalFields) => {
   return Object.entries(additionalFields)
@@ -67,6 +69,9 @@ const PartInformationCard = ({
   const [quality_assurance, setQualityAssurance] = useState(null);
   const [project, setProject] = useState(null);
   const [protectionLevel, setProtectionLevel] = useState(null);
+
+  // Fetch ECOs linked to this item
+  const { ecos: itemEcos } = useItemEcos(app, item?.id);
 
   useEffect(() => {
     if (item?.created_by !== null && item?.created_by !== undefined) {
@@ -298,6 +303,19 @@ const PartInformationCard = ({
               <Col>{attribute_icons(attributes)}</Col>
             </Row>
           )}
+
+          {/* ECOs linked to this item */}
+          {itemEcos && itemEcos.length > 0 && (
+            <Row>
+              <Col className="col-lg-6 col-xl-6">
+                <b>ECO:</b>
+              </Col>
+              <Col>
+                <EcoPillList ecos={itemEcos} size="sm" />
+              </Col>
+            </Row>
+          )}
+
           <Row className="mt-2 align-items-top">
             <Col className="col-lg-6 col-xl-6">
               <b>Tags</b>

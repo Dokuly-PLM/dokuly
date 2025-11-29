@@ -11,20 +11,47 @@ import DokulyCard from "../dokulyCard";
 import CardTitle from "../cardTitle";
 import { thumbnailFormatter } from "../../assemblies/functions/formatters";
 import { ThumbnailFormatterComponent } from "../../pcbas/functions/formatters";
+import { getEcosForItem } from "../../eco/functions/queries";
+import { EcoPillList } from "../ecoPill/ecoPill";
 
 const RevisionsTable = ({ item, app, setRevisionListParent = () => {} }) => {
   const navigate = useNavigate();
   const [revisionList, setRevisionList] = useState([]);
   const [tableTextSize, setTableTextSize] = useState("16px");
+  const [revisionEcos, setRevisionEcos] = useState({}); // Map of item id -> ECOs
 
   useEffect(() => {
     if (item != null && item !== undefined) {
       getRevisions(app, item.id).then((res) => {
         setRevisionList(res);
         setRevisionListParent(res);
+        
+        // Fetch ECOs for all revisions
+        if (res && res.length > 0) {
+          fetchEcosForRevisions(res);
+        }
       });
     }
   }, [item, app]);
+
+  const fetchEcosForRevisions = async (revisions) => {
+    const ecosMap = {};
+    
+    // Fetch ECOs for each revision in parallel
+    const promises = revisions.map(async (rev) => {
+      try {
+        const response = await getEcosForItem(app, rev.id);
+        if (response.status === 200 && response.data && response.data.length > 0) {
+          ecosMap[rev.id] = response.data;
+        }
+      } catch (err) {
+        // Silently ignore errors for individual items
+      }
+    });
+
+    await Promise.all(promises);
+    setRevisionEcos(ecosMap);
+  };
 
   const handleRowClick = (index) => {
     const row = revisionList[index];
@@ -75,6 +102,22 @@ const RevisionsTable = ({ item, app, setRevisionListParent = () => {} }) => {
       },
       csvFormatter: (row) =>
         row?.release_state ? `${row?.release_state}` : "",
+    },
+    {
+      key: "eco",
+      header: "ECO",
+      includeInCsv: true,
+      formatter: (row) => {
+        const ecos = revisionEcos[row.id];
+        if (!ecos || ecos.length === 0) return null;
+        return <EcoPillList ecos={ecos} size="sm" />;
+      },
+      csvFormatter: (row) => {
+        const ecos = revisionEcos[row.id];
+        if (!ecos || ecos.length === 0) return "";
+        return ecos.map(eco => `ECO${eco.id}`).join(", ");
+      },
+      maxWidth: "120px",
     },
     {
       key: "released_date",

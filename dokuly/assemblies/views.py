@@ -588,16 +588,21 @@ def update_info(request, pk, **kwargs):
             asm.markdown_notes.text = markdown_notes_data
             asm.markdown_notes.save()
 
-    # TODO why is this check missing?
-    if asm.release_state == "Released" and not "markdown_notes" in data and not price_update and not "tags" in data:
+    if "tags" in data:
+        error, message, tag_ids = check_for_and_create_new_tags(asm.project, data["tags"])
+        if error:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+        asm.tags.set(tag_ids)
+
+    if asm.release_state == "Released":
         return Response(
             "Can't edit a released asm!", status=status.HTTP_400_BAD_REQUEST
         )
 
     if "display_name" in data:
         asm.display_name = data["display_name"]
-    if "price" in data:
-        asm.price = data["price"]
+    # if "price" in data:
+    #    asm.price = data["price"]   # DEPRECATED
     if "model_url" in data:
         asm.model_url = data["model_url"]
     if "revision" in data:
@@ -633,12 +638,6 @@ def update_info(request, pk, **kwargs):
                 asm.quality_assurance = profile
 
                 notify_on_release_approval(asm, user, "assemblies")
-
-    if "tags" in data:
-        error, message, tag_ids = check_for_and_create_new_tags(asm.project, data["tags"])
-        if error:
-            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
-        asm.tags.set(tag_ids)
 
     if "external_part_number" in data:
         asm.external_part_number = data.get("external_part_number", "")

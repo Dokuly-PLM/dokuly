@@ -41,6 +41,11 @@ const ActiveModules = ({ org, setRefresh }) => {
       isEnabled: "requirement_is_enabled",
     },
     {
+      id: "eco",
+      label: "Engineering Change Order (ECO)",
+      isEnabled: "eco_is_enabled",
+    },
+    {
       id: "production",
       label: "Production",
       isEnabled: "production_is_enabled",

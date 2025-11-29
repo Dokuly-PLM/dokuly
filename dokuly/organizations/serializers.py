@@ -16,7 +16,7 @@ class CustomerOrganizationSerializer(serializers.ModelSerializer):
                   'time_tracking_is_enabled', 'customer_is_enabled', 'document_is_enabled',
                   'pcba_is_enabled', 'assembly_is_enabled', 'procurement_is_enabled',
                   'requirement_is_enabled', 'production_is_enabled', 'supplier_is_enabled',
-                  'inventory_is_enabled']
+                  'inventory_is_enabled', 'eco_is_enabled']
 
 
 class OrgComponentVaultAPIKeySerializer(serializers.ModelSerializer):

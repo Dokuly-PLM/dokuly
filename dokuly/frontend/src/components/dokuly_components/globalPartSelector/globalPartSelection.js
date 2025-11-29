@@ -6,14 +6,19 @@ import { toast } from "react-toastify";
 import highlightSearchTerm from "../funcitons/highlightSearchTerm"; // TODO
 import { PartSuggestions } from "./partSuggestions";
 
-const GlobalPartSelection = ({ setSelectedItem, searchTerm = "", organization }) => {
+const GlobalPartSelection = ({ 
+  setSelectedItem, 
+  searchTerm = "", 
+  organization,
+  includeTables = ["parts", "pcbas", "assemblies"],
+}) => {
   const [query, setQuery] = useState(searchTerm);
   const [results, setResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleSearch = useCallback(async (searchQuery) => {
     try {
-      const response = await searchPartsGlobal(searchQuery);
+      const response = await searchPartsGlobal(searchQuery, includeTables);
       const searchResults = response.data;
 
       if (response.status === 200) {
@@ -25,7 +30,7 @@ const GlobalPartSelection = ({ setSelectedItem, searchTerm = "", organization })
     } catch (error) {
       toast.error(`Error searching for global items: ${error.message}`);
     }
-  }, []);
+  }, [includeTables]);
 
   // Effect to automatically search when searchTerm changes
   useEffect(() => {

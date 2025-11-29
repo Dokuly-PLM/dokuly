@@ -66,9 +66,6 @@ class Document(models.Model):
     # Indicates if this is the latest revision of the document. It is used to quickly query for the latest revision without needing to sort through all revisions.
     is_latest_revision = models.BooleanField(blank=True, null=True)
 
-    # ID of the preceding document revision. # TODO can we consider not using linked lists?
-    previoius_revision_id = models.IntegerField(blank=True, default=-1)
-
     # Document metadata
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -126,6 +123,11 @@ class Document(models.Model):
     # Thumbnail image generated from the first page of the PDF
     thumbnail = models.ForeignKey(Image, on_delete=models.SET_NULL, null=True, blank=True)
 
+    # ID of the preceding document revision.
+    previoius_revision_id = models.IntegerField(blank=True, default=-1)
+
+
+    # __________________________________________________________________________________________
     # DEPRECATED
     # Internal/External. Used to show if a document is suitable for public release, or handover to a customer.
     internal = models.BooleanField(null=True)

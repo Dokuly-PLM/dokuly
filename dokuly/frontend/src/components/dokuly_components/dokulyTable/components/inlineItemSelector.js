@@ -24,7 +24,13 @@ function not_latest_rev_warning(item) {
   );
 }
 
-const InlineItemSelector = ({ row, readOnly, onSelectItem, searchTerm }) => {
+const InlineItemSelector = ({ 
+  row, 
+  readOnly, 
+  onSelectItem, 
+  searchTerm,
+  includeTables = ["parts", "pcbas", "assemblies"],
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [selected_item, setSelectedItem] = useState(null);
 
@@ -83,14 +89,14 @@ const InlineItemSelector = ({ row, readOnly, onSelectItem, searchTerm }) => {
   }, [isEditing]);
 
   function get_display_string() {
-    if (!(row.part || row.assembly || row.pcba)) {
+    if (!(row.part || row.assembly || row.pcba || row.document)) {
       return "-";
     }
 
     const displayPartNumber =
-      row?.full_part_number || row?.revision ? (
+      row?.full_part_number || row?.full_doc_number || row?.revision ? (
         <React.Fragment>
-          {row?.full_part_number}{" "}
+          {row?.full_part_number || row?.full_doc_number}{" "}
           {not_latest_rev_warning(row)}
         </React.Fragment>
       ) : isEditing ? (
@@ -113,6 +119,7 @@ const InlineItemSelector = ({ row, readOnly, onSelectItem, searchTerm }) => {
           <GlobalPartSelection
             searchTerm={searchTerm}
             setSelectedItem={setSelectedItem}
+            includeTables={includeTables}
           />
         </div>
       ) : (

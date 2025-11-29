@@ -64,6 +64,7 @@ class Organization(models.Model):
     customer_is_enabled = models.BooleanField(default=True, blank=True)
     supplier_is_enabled = models.BooleanField(default=True, blank=True)
     inventory_is_enabled = models.BooleanField(default=True, blank=True)
+    eco_is_enabled = models.BooleanField(default=True, blank=True)
 
     # Part numbering and revision settings
     full_part_number_template = models.CharField(

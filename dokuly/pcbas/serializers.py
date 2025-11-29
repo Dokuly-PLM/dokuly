@@ -163,4 +163,5 @@ class PcbaBomSerializer(serializers.ModelSerializer):
             "serial_number_counter",
             "serial_number_offset",
             "serial_number_prefix",
+            "revision_notes",
         )
