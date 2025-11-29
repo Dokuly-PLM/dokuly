@@ -7,6 +7,7 @@ import DokulyCard from "../../dokuly_components/dokulyCard";
 import CardTitle from "../../dokuly_components/cardTitle";
 import { thumbnailFormatter } from "../../dokuly_components/formatters/thumbnailFormatter";
 import { releaseStateFormatter } from "../../dokuly_components/formatters/releaseStateFormatter";
+import TextFieldEditor from "../../dokuly_components/dokulyTable/components/textFieldEditor";
 import {
   getAffectedItems,
   addAffectedItem,
@@ -43,7 +44,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => 
               pcba: item.pcba,
               assembly: item.assembly,
               document: item.document,
-              comment: item.comment,
+              description: item.description || "",
               created_at: item.created_at,
               // Flattened fields for display
               full_part_number: linkedItem?.full_part_number || linkedItem?.full_doc_number || "",
@@ -52,6 +53,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => 
               thumbnail: linkedItem?.thumbnail,
               image_url: linkedItem?.image_url,
               is_latest_revision: linkedItem?.is_latest_revision,
+              revision_notes: linkedItem?.revision_notes || "",
               item_type: item.part
                 ? "Part"
                 : item.pcba
@@ -161,54 +163,126 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => 
       });
   };
 
-  // Navigate to item
-  const handleRowClick = (row) => {
+  // Handle description change
+  const handleDescriptionChange = useCallback((rowId, newDescription) => {
+    editAffectedItem(rowId, { description: newDescription })
+      .then((res) => {
+        if (res.status === 200) {
+          setRefresh(true);
+        }
+      })
+      .catch((err) => {
+        toast.error("Failed to update description");
+      });
+  }, []);
+
+  // Get URL for an affected item
+  const getItemUrl = (row) => {
     if (row.part) {
-      navigate(`/parts/${row.part.id}`);
+      return `/parts/${row.part.id}`;
     } else if (row.pcba) {
-      navigate(`/pcbas/${row.pcba.id}`);
+      return `/pcbas/${row.pcba.id}`;
     } else if (row.assembly) {
-      navigate(`/assemblies/${row.assembly.id}`);
+      return `/assemblies/${row.assembly.id}`;
     } else if (row.document) {
-      navigate(`/documents/${row.document.id}`);
+      return `/documents/${row.document.id}`;
     }
+    return null;
+  };
+
+  // Navigate to item (for arrow button)
+  const onNavigate = (row) => {
+    const url = getItemUrl(row);
+    if (url) {
+      navigate(url);
+    }
+  };
+
+  // Handle row click - only ctrl+click navigates, normal click does nothing
+  const handleRowClick = (rowId, row, event) => {
+    const url = getItemUrl(row);
+    if (!url) return;
+
+    // Only navigate on ctrl+click or cmd+click
+    if (event?.ctrlKey || event?.metaKey) {
+      window.open(`#${url}`, "_blank");
+    }
+    // Normal click does nothing - allows inline editing
   };
 
   // Table columns
   const columns = [
     {
-      key: "thumbnail",
-      header: "",
-      formatter: (row) => thumbnailFormatter(row),
-      maxWidth: "60px",
+      key: "item",
+      header: "Item",
+      maxWidth: "180px",
+      formatter: (row) => {
+        // If no item attached yet, show the inline selector
+        if (!row.part && !row.pcba && !row.assembly && !row.document) {
+          return (
+            <InlineItemSelector
+              row={row}
+              readOnly={isLocked}
+              onSelectItem={handleSelectItem}
+              searchTerm=""
+              includeTables={["parts", "pcbas", "assemblies", "documents"]}
+            />
+          );
+        }
+        // Show compressed view: thumbnail + part number above, display name below
+        return (
+          <div className="d-flex align-items-center">
+            <div style={{ marginRight: "10px" }}>
+              {thumbnailFormatter(row)}
+            </div>
+            <div>
+              <div style={{ fontWeight: "bold", marginBottom: "2px" }}>
+                {row.full_part_number || "-"}
+              </div>
+              <div style={{ fontSize: "0.875rem", color: "#6c757d" }}>
+                {row.display_name || "-"}
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#6c757d", marginTop: "2px" }}>
+                {row.item_type}
+              </div>
+            </div>
+          </div>
+        );
+      },
     },
     {
-      key: "full_part_number",
-      header: "Item Number",
-      formatter: (row) => (
-        <InlineItemSelector
-          row={row}
+      key: "description",
+      header: "Description",
+      formatter: (row, column, searchString) => (
+        <TextFieldEditor
+          text={row?.description}
+          setText={(newText) => handleDescriptionChange(row.id, newText)}
+          multiline={true}
+          searchString={searchString}
           readOnly={isLocked}
-          onSelectItem={handleSelectItem}
-          searchTerm={row.temporary_mpn || ""}
-          includeTables={["parts", "pcbas", "assemblies", "documents"]}
         />
       ),
     },
     {
-      key: "display_name",
-      header: "Display Name",
-    },
-    {
-      key: "item_type",
-      header: "Type",
-      maxWidth: "100px",
+      key: "revision_notes",
+      header: "Revision Notes",
+      formatter: (row) => (
+        <div style={{ 
+          fontSize: "0.875rem", 
+          color: "#6c757d",
+          maxWidth: "200px",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}>
+          {row.revision_notes || "-"}
+        </div>
+      ),
     },
     {
       key: "release_state",
       header: "State",
       formatter: (row) => releaseStateFormatter(row),
-      maxWidth: "120px",
+      maxWidth: "100px",
     },
     {
       key: "actions",
@@ -269,11 +343,9 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => 
           showCsvDownload={false}
           showPagination={false}
           showSearch={false}
-          onRowClick={(row) => {
-            if (row.part || row.pcba || row.assembly || row.document) {
-              handleRowClick(row);
-            }
-          }}
+          onRowClick={handleRowClick}
+          navigateColumn={true}
+          onNavigate={onNavigate}
           itemsPerPage={100}
         />
       ) : (

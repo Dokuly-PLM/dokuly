@@ -21,6 +21,7 @@ class Eco(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="eco_created_by"
     )

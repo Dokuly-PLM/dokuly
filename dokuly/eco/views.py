@@ -165,7 +165,7 @@ def get_all_ecos(request):
     if not permission:
         return response
 
-    ecos = Eco.objects.all().order_by("-created_at")
+    ecos = Eco.objects.all().order_by("-last_updated")
     serializer = EcoSerializer(ecos, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -191,6 +191,9 @@ def add_affected_item(request, eco_id):
 
     # Create empty affected item
     affected_item = AffectedItem.objects.create(eco=eco)
+
+    # Update the ECO's last_updated timestamp
+    eco.save()
 
     serializer = AffectedItemDetailSerializer(affected_item)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -250,10 +253,13 @@ def edit_affected_item(request, pk):
             except Document.DoesNotExist:
                 return Response("Document not found", status=status.HTTP_404_NOT_FOUND)
 
-    if "comment" in data:
-        affected_item.comment = data["comment"]
+    if "description" in data:
+        affected_item.description = data["description"]
 
     affected_item.save()
+
+    # Update the ECO's last_updated timestamp
+    affected_item.eco.save()
 
     serializer = AffectedItemDetailSerializer(affected_item)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -276,7 +282,14 @@ def delete_affected_item(request, pk):
     if affected_item.eco.release_state == "Released":
         return Response("Cannot modify a released ECO!", status=status.HTTP_400_BAD_REQUEST)
 
+    # Store reference to ECO before deleting
+    eco = affected_item.eco
+
     affected_item.delete()
+
+    # Update the ECO's last_updated timestamp
+    eco.save()
+
     return Response("Affected item deleted", status=status.HTTP_204_NO_CONTENT)
 
 

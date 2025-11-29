@@ -75,7 +75,7 @@ class DocumentTableSerializer(serializers.ModelSerializer):
                   'revision_count_major',
                   'revision_count_minor',
                   'is_latest_revision', 'is_archived', 'tags',
-                  'thumbnail']
+                  'thumbnail', 'revision_notes']
 
 
 class DocumentPrefixSerializer(serializers.ModelSerializer):

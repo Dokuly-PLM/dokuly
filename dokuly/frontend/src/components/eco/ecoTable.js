@@ -115,6 +115,25 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
       defaultShowColumn: true,
       maxWidth: "120px",
       formatter: (row) => <DokulyDateFormat date={row.created_at} />,
+      sortFunction: (a, b, order) => {
+        const dateA = new Date(a.created_at || 0);
+        const dateB = new Date(b.created_at || 0);
+        return order === "asc" ? dateA - dateB : dateB - dateA;
+      },
+    },
+    {
+      key: "last_updated",
+      header: "Last Updated",
+      headerTooltip: "Last modification date",
+      sortable: true,
+      defaultShowColumn: true,
+      maxWidth: "120px",
+      formatter: (row) => <DokulyDateFormat date={row.last_updated} />,
+      sortFunction: (a, b, order) => {
+        const dateA = new Date(a.last_updated || 0);
+        const dateB = new Date(b.last_updated || 0);
+        return order === "asc" ? dateA - dateB : dateB - dateA;
+      },
     },
     {
       key: "actions",
@@ -161,7 +180,7 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
           showColumnSelector={true}
           itemsPerPage={50}
           onRowClick={handleRowClick}
-          defaultSort={{ columnNumber: 0, order: "desc" }}
+          defaultSort={{ columnNumber: 5, order: "desc" }}
           textSize={tableTextSize}
           setTextSize={setTableTextSize}
           showTableSettings={true}

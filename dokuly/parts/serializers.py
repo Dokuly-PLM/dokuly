@@ -245,6 +245,7 @@ class PartBomSerializer(serializers.ModelSerializer):
             "thumbnail",
             "current_total_stock",
             "minimum_stock_level",
+            "revision_notes",
         ]
 
 # For ASM BOM ------------------------------------------------------------------------
