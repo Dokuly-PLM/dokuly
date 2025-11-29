@@ -51,11 +51,6 @@ class Assembly(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
-    # The price shall be calculated based on the BOM.
-    # This field takes presedence over the calculated price.
-    price = models.DecimalField(max_digits=12, decimal_places=4, blank=True)
-    currency = models.CharField(max_length=20, blank=True, default="USD", null=True)
-
     # The model URL is intended to be used for link to fusion teams, or other online viewers.
     model_url = models.CharField(max_length=200, blank=True)
 
@@ -104,6 +99,10 @@ class Assembly(models.Model):
 
     # __________________________________________________________________________________________
     # DEPRECATED fields
+
+    # This is replaced by volume pricing.
+    price = models.DecimalField(max_digits=12, decimal_places=4, blank=True)
+    currency = models.CharField(max_length=20, blank=True, default="USD", null=True)
 
     # DEPRECATED
     generic_file_ids = ArrayField(
