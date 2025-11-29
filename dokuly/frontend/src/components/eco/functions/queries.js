@@ -93,3 +93,14 @@ export const deleteAffectedItem = (id) => {
   const promise = axios.delete(`/api/eco/affectedItems/${id}/delete/`, tokenConfig());
   return promise;
 };
+
+/**
+ * Get all ECOs that reference a specific item.
+ * @param {string} app - The app type ('parts', 'pcbas', 'assemblies', 'documents')
+ * @param {number} itemId - The item ID
+ * @returns {Promise} Array of ECOs with basic info
+ */
+export const getEcosForItem = (app, itemId) => {
+  const promise = axios.get(`/api/eco/forItem/${app}/${itemId}/`, tokenConfig());
+  return promise;
+};

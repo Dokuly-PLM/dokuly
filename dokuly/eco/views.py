@@ -343,3 +343,60 @@ def get_affected_items(request, eco_id):
     affected_items = AffectedItem.objects.filter(eco=eco).order_by("created_at")
     serializer = AffectedItemDetailSerializer(affected_items, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def get_ecos_for_item(request, app, item_id):
+    """Get all ECOs that reference a specific item (part/pcba/assembly/document).
+    
+    Args:
+        app: One of 'parts', 'pcbas', 'assemblies', 'documents'
+        item_id: The ID of the item
+    
+    Returns:
+        List of ECOs with basic info and affected item count
+    """
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    # Map app name to field name
+    app_to_field = {
+        'parts': 'part',
+        'pcbas': 'pcba',
+        'assemblies': 'assembly',
+        'documents': 'document',
+    }
+
+    field_name = app_to_field.get(app)
+    if not field_name:
+        return Response(f"Invalid app type: {app}", status=status.HTTP_400_BAD_REQUEST)
+
+    # Build filter for the specific item type
+    filter_kwargs = {f'{field_name}_id': item_id}
+    affected_items = AffectedItem.objects.filter(**filter_kwargs).select_related('eco')
+
+    # Get unique ECOs
+    ecos_data = []
+    seen_eco_ids = set()
+    
+    for affected_item in affected_items:
+        eco = affected_item.eco
+        if eco.id not in seen_eco_ids:
+            seen_eco_ids.add(eco.id)
+            # Count total affected items for this ECO
+            affected_count = AffectedItem.objects.filter(eco=eco).count()
+            
+            ecos_data.append({
+                'id': eco.id,
+                'display_name': eco.display_name,
+                'release_state': eco.release_state,
+                'description_text': eco.description.text if eco.description else '',
+                'affected_items_count': affected_count,
+                'created_at': eco.created_at,
+                'last_updated': eco.last_updated,
+            })
+
+    return Response(ecos_data, status=status.HTTP_200_OK)
