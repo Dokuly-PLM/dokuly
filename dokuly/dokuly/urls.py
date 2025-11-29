@@ -38,7 +38,6 @@ urlpatterns = [
     path("", include("pcbas.urls")),
     path("", include("production.urls")),
     path("", include("purchasing.urls")),
-    path("", include("todos.urls")),
     path("", include("requirements.urls")),
     path("", include("assembly_bom.urls")),
     path("", include("files.urls")),
