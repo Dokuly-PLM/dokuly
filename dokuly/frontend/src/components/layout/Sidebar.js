@@ -232,6 +232,31 @@ const Sidebar = (props) => {
             </Link>
           </li>
         )}
+      {organization?.eco_is_enabled === true &&
+        isAppAllowed("eco") && (
+          <li
+            className={`nav-item ${
+              location.pathname.startsWith("/eco")
+                ? "nav-item-active"
+                : ""
+            }`}
+            key={"ECO"}
+          >
+            <Link to="/eco" className="nav-link ">
+              <img
+                src="../../static/icons/clipboard-list.svg"
+                alt="eco"
+                width={22}
+                style={{
+                  marginRight: "5px",
+                  filter:
+                    "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
+                }}
+              />
+              {innerWidth > widthWhereTextDisappears ? "ECO" : ""}
+            </Link>
+          </li>
+        )}
       {organization?.document_is_enabled === true &&
         isAppAllowed("documents") && (
           <li
