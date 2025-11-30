@@ -16,7 +16,7 @@ from parts.models import Part
 from pcbas.models import Pcba
 from projects.models import Project
 from assembly_bom.models import Assembly_bom, Bom_item
-from eco.models import AffectedItem
+from eco.models import AffectedItem, Eco
 
 
 def check_item_affected_by_unreleased_eco(item_type, item_id):
@@ -100,6 +100,136 @@ def check_bom_items_released(bom_items):
     all_passed = len(unreleased_items) == 0
     
     return all_passed, unreleased_items, total_count, released_count
+
+
+def check_eco_bom_items_released_or_in_eco(eco):
+    """
+    Check if all BOM items of affected assemblies/PCBAs are either:
+    1. Already released
+    2. Included in the same ECO
+    
+    Args:
+        eco: Eco object
+        
+    Returns:
+        tuple: (all_passed: bool, missing_items: list, total_count: int, valid_count: int)
+    """
+    # Get all affected items in this ECO
+    affected_items = AffectedItem.objects.filter(eco=eco)
+    
+    # Build sets of part/pcba/assembly IDs that are included in the ECO
+    eco_part_ids = set()
+    eco_pcba_ids = set()
+    eco_assembly_ids = set()
+    
+    for item in affected_items:
+        if item.part_id:
+            eco_part_ids.add(item.part_id)
+        if item.pcba_id:
+            eco_pcba_ids.add(item.pcba_id)
+        if item.assembly_id:
+            eco_assembly_ids.add(item.assembly_id)
+    
+    missing_items = []
+    total_bom_items = 0
+    
+    # Check BOM items for affected assemblies
+    for item in affected_items:
+        if item.assembly_id:
+            try:
+                assembly_bom = Assembly_bom.objects.get(assembly_id=item.assembly_id)
+                bom_items = Bom_item.objects.filter(bom=assembly_bom).select_related('part', 'pcba', 'assembly')
+                
+                for bom_item in bom_items:
+                    total_bom_items += 1
+                    
+                    # Check if BOM item is released or in ECO
+                    if bom_item.part:
+                        if bom_item.part.release_state != 'Released' and bom_item.part_id not in eco_part_ids:
+                            missing_items.append({
+                                'type': 'Part',
+                                'id': bom_item.part_id,
+                                'part_number': bom_item.part.full_part_number,
+                                'display_name': bom_item.part.display_name,
+                                'release_state': bom_item.part.release_state,
+                                'parent_type': 'Assembly',
+                                'parent_part_number': item.assembly.full_part_number if item.assembly else '-',
+                            })
+                    elif bom_item.pcba:
+                        if bom_item.pcba.release_state != 'Released' and bom_item.pcba_id not in eco_pcba_ids:
+                            missing_items.append({
+                                'type': 'PCBA',
+                                'id': bom_item.pcba_id,
+                                'part_number': bom_item.pcba.full_part_number,
+                                'display_name': bom_item.pcba.display_name,
+                                'release_state': bom_item.pcba.release_state,
+                                'parent_type': 'Assembly',
+                                'parent_part_number': item.assembly.full_part_number if item.assembly else '-',
+                            })
+                    elif bom_item.assembly:
+                        if bom_item.assembly.release_state != 'Released' and bom_item.assembly_id not in eco_assembly_ids:
+                            missing_items.append({
+                                'type': 'Assembly',
+                                'id': bom_item.assembly_id,
+                                'part_number': bom_item.assembly.full_part_number,
+                                'display_name': bom_item.assembly.display_name,
+                                'release_state': bom_item.assembly.release_state,
+                                'parent_type': 'Assembly',
+                                'parent_part_number': item.assembly.full_part_number if item.assembly else '-',
+                            })
+            except Assembly_bom.DoesNotExist:
+                pass
+        
+        # Check BOM items for affected PCBAs
+        if item.pcba_id:
+            try:
+                pcba_bom = Assembly_bom.objects.get(pcba_id=item.pcba_id)
+                bom_items = Bom_item.objects.filter(bom=pcba_bom).select_related('part', 'pcba', 'assembly')
+                
+                for bom_item in bom_items:
+                    total_bom_items += 1
+                    
+                    # Check if BOM item is released or in ECO
+                    if bom_item.part:
+                        if bom_item.part.release_state != 'Released' and bom_item.part_id not in eco_part_ids:
+                            missing_items.append({
+                                'type': 'Part',
+                                'id': bom_item.part_id,
+                                'part_number': bom_item.part.full_part_number,
+                                'display_name': bom_item.part.display_name,
+                                'release_state': bom_item.part.release_state,
+                                'parent_type': 'PCBA',
+                                'parent_part_number': item.pcba.full_part_number if item.pcba else '-',
+                            })
+                    elif bom_item.pcba:
+                        if bom_item.pcba.release_state != 'Released' and bom_item.pcba_id not in eco_pcba_ids:
+                            missing_items.append({
+                                'type': 'PCBA',
+                                'id': bom_item.pcba_id,
+                                'part_number': bom_item.pcba.full_part_number,
+                                'display_name': bom_item.pcba.display_name,
+                                'release_state': bom_item.pcba.release_state,
+                                'parent_type': 'PCBA',
+                                'parent_part_number': item.pcba.full_part_number if item.pcba else '-',
+                            })
+                    elif bom_item.assembly:
+                        if bom_item.assembly.release_state != 'Released' and bom_item.assembly_id not in eco_assembly_ids:
+                            missing_items.append({
+                                'type': 'Assembly',
+                                'id': bom_item.assembly_id,
+                                'part_number': bom_item.assembly.full_part_number,
+                                'display_name': bom_item.assembly.display_name,
+                                'release_state': bom_item.assembly.release_state,
+                                'parent_type': 'PCBA',
+                                'parent_part_number': item.pcba.full_part_number if item.pcba else '-',
+                            })
+            except Assembly_bom.DoesNotExist:
+                pass
+    
+    valid_count = total_bom_items - len(missing_items)
+    all_passed = len(missing_items) == 0
+    
+    return all_passed, missing_items, total_bom_items, valid_count
 
 
 def get_rules_for_item(user, project=None):
@@ -199,6 +329,7 @@ def fetch_organization_rules(request):
                 'require_review_on_document': False,
                 'require_review_on_eco': False,
                 'require_all_affected_items_reviewed_for_eco': False,
+                'require_bom_items_released_or_in_eco': False,
                 'override_permission': 'Admin',
             }
         )
@@ -242,6 +373,7 @@ def update_organization_rules(request):
                 'require_review_on_document': False,
                 'require_review_on_eco': False,
                 'require_all_affected_items_reviewed_for_eco': False,
+                'require_bom_items_released_or_in_eco': False,
                 'override_permission': 'Admin',
             }
         )
@@ -272,6 +404,9 @@ def update_organization_rules(request):
         
         if 'require_all_affected_items_reviewed_for_eco' in data:
             rules.require_all_affected_items_reviewed_for_eco = data['require_all_affected_items_reviewed_for_eco']
+        
+        if 'require_bom_items_released_or_in_eco' in data:
+            rules.require_bom_items_released_or_in_eco = data['require_bom_items_released_or_in_eco']
         
         if 'override_permission' in data:
             # Validate permission choice
@@ -610,7 +745,6 @@ def check_document_rules(request, document_id):
 @login_required(login_url="/login")
 def check_eco_rules(request, eco_id):
     """Check if an ECO meets release rules requirements."""
-    from eco.models import Eco
     
     try:
         eco = get_object_or_404(Eco, id=eco_id)
@@ -676,6 +810,22 @@ def check_eco_rules(request, eco_id):
                 'total': total_items,
                 'reviewed': reviewed_count,
                 'unreviewed_items': unreviewed_items[:10],  # Limit to first 10 for display
+            })
+        
+        # Check if all BOM items of affected assemblies/PCBAs are released or in the ECO
+        if rules and rules.require_bom_items_released_or_in_eco:
+            bom_passed, missing_items, total_bom_items, valid_count = check_eco_bom_items_released_or_in_eco(eco)
+            
+            if not bom_passed:
+                all_passed = False
+            
+            rules_checks.append({
+                'rule': 'require_bom_items_released_or_in_eco',
+                'description': f'BOM items must be released or included in ECO ({valid_count}/{total_bom_items} valid)',
+                'passed': bom_passed,
+                'total': total_bom_items,
+                'valid': valid_count,
+                'missing_items': missing_items[:20],  # Limit to first 20 for display
             })
         
         has_active_rules = len(rules_checks) > 0

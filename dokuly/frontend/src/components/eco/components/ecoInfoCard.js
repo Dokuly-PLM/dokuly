@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Row, Col, Container, ProgressBar } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
@@ -8,8 +8,9 @@ import CardTitle from "../../dokuly_components/cardTitle";
 import GenericDropdownSelector from "../../dokuly_components/dokulyTable/components/genericDropdownSelector";
 import DokulyDateFormat from "../../dokuly_components/formatters/dateFormatter";
 import DokulyTags from "../../dokuly_components/dokulyTags/dokulyTags";
-import { editEco } from "../functions/queries";
+import { editEco, getEcoMissingBomItems } from "../functions/queries";
 import { releaseStateFormatter } from "../../dokuly_components/formatters/releaseStateFormatter";
+import MissingBomItemsList from "./missingBomItemsList";
 
 const EcoInfoCard = ({
   eco,
@@ -19,6 +20,25 @@ const EcoInfoCard = ({
   affectedItems = [],
 }) => {
   const navigate = useNavigate();
+  const [missingBomItems, setMissingBomItems] = useState([]);
+  const [showMissingBomTooltip, setShowMissingBomTooltip] = useState(false);
+
+  // Fetch missing BOM items when eco or affected items change
+  useEffect(() => {
+    if (eco?.id && eco?.release_state !== "Released") {
+      getEcoMissingBomItems(eco.id)
+        .then((res) => {
+          if (res.status === 200) {
+            setMissingBomItems(res.data.missing_items || []);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch missing BOM items:", err);
+        });
+    } else {
+      setMissingBomItems([]);
+    }
+  }, [eco?.id, eco?.release_state, affectedItems]);
 
   const getResponsibleOptions = () => {
     return profiles
@@ -210,6 +230,37 @@ const EcoInfoCard = ({
               </Col>
             </Row>
           </>
+        )}
+
+        {/* Missing BOM Items Warning */}
+        {missingBomItems.length > 0 && !isReleased && (
+          <Row className="align-items-center mb-2">
+            <Col>
+              <div style={{ position: "relative", display: "inline-block" }}>
+                <div
+                  onMouseEnter={() => setShowMissingBomTooltip(true)}
+                  onMouseLeave={() => setShowMissingBomTooltip(false)}
+                >
+                  <span 
+                    className="badge badge-pill badge-warning"
+                    style={{ cursor: "pointer", fontSize: "0.8rem" }}
+                  >
+                    {missingBomItems.length} BOM item{missingBomItems.length !== 1 ? 's' : ''} not in ECO
+                  </span>
+                  <MissingBomItemsList 
+                    items={missingBomItems} 
+                    show={showMissingBomTooltip}
+                    textSize="12px"
+                    style={{
+                      top: "100%",
+                      left: "0",
+                      marginTop: "5px",
+                    }}
+                  />
+                </div>
+              </div>
+            </Col>
+          </Row>
         )}
 
         {/* Tags */}
