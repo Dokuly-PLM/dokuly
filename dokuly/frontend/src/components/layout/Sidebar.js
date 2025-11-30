@@ -113,6 +113,33 @@ const Sidebar = (props) => {
 
   const navLinks = (
     <ul className="nav flex-column mt-5">
+      <li
+        className={`nav-item ${
+          location.pathname === "/" || location.pathname === "/home"
+            ? "nav-item-active"
+            : ""
+        }`}
+        key={"Home"}
+        style={
+          !isAdmin
+            ? { marginTop: "0rem" }
+            : { marginTop: "0rem" }
+        }
+      >
+        <Link to="/" className="nav-link ">
+          <img
+            src="../../static/icons/home.svg"
+            alt="home"
+            width="22px"
+            style={{
+              filter:
+                "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
+            }}
+          />
+          {innerWidth > widthWhereTextDisappears ? "Home" : ""}
+        </Link>
+      </li>
+
       {isAdmin && (
         <li
           className={`nav-item ${
@@ -135,7 +162,7 @@ const Sidebar = (props) => {
         isAppAllowed("timesheet") && (
           <li
             className={`nav-item ${
-              location.pathname === "/" || location.pathname === "/timesheet"
+              location.pathname === "/timesheet"
                 ? "nav-item-active"
                 : ""
             }`}

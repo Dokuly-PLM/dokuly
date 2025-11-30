@@ -1,10 +1,13 @@
 import React, { Fragment } from "react";
 import HomepageComponent from "./homepageComponent";
+import ErrorBoundary from "../common/errorBoundaries";
 
 export default function HomepageDashboard() {
 	return (
 		<Fragment>
-			<HomepageComponent />
+			<ErrorBoundary>
+				<HomepageComponent />
+			</ErrorBoundary>
 		</Fragment>
 	);
 }
