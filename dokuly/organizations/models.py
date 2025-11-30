@@ -264,6 +264,19 @@ class Rules(models.Model):
         help_text="Require review approval before releasing a Document"
     )
     
+    # ECO-specific rules
+    require_review_on_eco = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require review approval before releasing an ECO"
+    )
+    
+    require_all_affected_items_reviewed_for_eco = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require all affected items to be reviewed before releasing an ECO"
+    )
+    
     # Override permissions - choices: Owner, Admin, User, Project Owner
     PERMISSION_CHOICES = [
         ('Owner', 'Owner'),

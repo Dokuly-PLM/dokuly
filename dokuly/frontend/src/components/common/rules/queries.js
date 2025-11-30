@@ -56,3 +56,17 @@ export const checkDocumentRules = (documentId, projectId = null) => {
   const promise = axios.get(url, tokenConfig());
   return promise.then((res) => res);
 };
+
+/**
+ * Check if an ECO meets release rules requirements
+ * @param {number} ecoId - ECO ID
+ * @param {number} projectId - Project ID (optional)
+ * @return {Promise<AxiosResponse<any>>}
+ */
+export const checkEcoRules = (ecoId, projectId = null) => {
+  const url = projectId 
+    ? `api/rules/check/eco/${ecoId}/?project_id=${projectId}`
+    : `api/rules/check/eco/${ecoId}/`;
+  const promise = axios.get(url, tokenConfig());
+  return promise.then((res) => res);
+};

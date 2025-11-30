@@ -41,6 +41,7 @@ urlpatterns = [
     path("api/rules/check/pcba/<int:pcba_id>/", viewsRules.check_pcba_rules),
     path("api/rules/check/part/<int:part_id>/", viewsRules.check_part_rules),
     path("api/rules/check/document/<int:document_id>/", viewsRules.check_document_rules),
+    path("api/rules/check/eco/<int:eco_id>/", viewsRules.check_eco_rules),
     
     # Integration settings
     path("api/integrations/get/", viewsIntegrations.get_integration_settings),

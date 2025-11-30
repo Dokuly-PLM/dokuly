@@ -8,6 +8,7 @@ import { fetchProjects } from "../../projects/functions/queries";
 import SubmitButton from "../../dokuly_components/submitButton";
 import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import DokulyModal from "../../dokuly_components/dokulyModal";
+import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 
 const EditEcoForm = ({ eco, setRefresh, profiles = [] }) => {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ const EditEcoForm = ({ eco, setRefresh, profiles = [] }) => {
   const [projectId, setProjectId] = useState(eco?.project?.id || "");
   const [projects, setProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const [rulesStatus, setRulesStatus] = useState(null);
+  const [rulesOverride, setRulesOverride] = useState(false);
 
   // Update state when eco prop changes
   useEffect(() => {
@@ -192,12 +195,30 @@ const EditEcoForm = ({ eco, setRefresh, profiles = [] }) => {
           quality_assurance={eco?.quality_assurance}
         />
 
+        <RulesStatusIndicator 
+          itemType="eco"
+          itemId={eco?.id}
+          projectId={eco?.project?.id}
+          onStatusChange={setRulesStatus}
+          setOverride={setRulesOverride}
+        />
+
         <div className="mt-4">
           <SubmitButton
             onClick={submit}
             className="btn dokuly-bg-primary"
-            disabled={display_name === ""}
-            disabledTooltip="Display name is required"
+            disabled={
+              display_name === "" ||
+              (release_state === "Released" && 
+               rulesStatus && 
+               !rulesStatus.all_rules_passed && 
+               !rulesOverride)
+            }
+            disabledTooltip={
+              display_name === ""
+                ? "Display name is required"
+                : "Rules must be satisfied or overridden before releasing"
+            }
           >
             Submit
           </SubmitButton>
