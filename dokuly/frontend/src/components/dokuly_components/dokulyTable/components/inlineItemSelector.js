@@ -30,6 +30,7 @@ const InlineItemSelector = ({
   onSelectItem, 
   searchTerm,
   includeTables = ["parts", "pcbas", "assemblies"],
+  latestOnly = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [selected_item, setSelectedItem] = useState(null);
@@ -120,6 +121,7 @@ const InlineItemSelector = ({
             searchTerm={searchTerm}
             setSelectedItem={setSelectedItem}
             includeTables={includeTables}
+            latestOnly={latestOnly}
           />
         </div>
       ) : (

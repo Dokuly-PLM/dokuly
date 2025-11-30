@@ -1605,9 +1605,15 @@ def global_part_search(request):
         
         # Get which tables to search (default: parts, pcbas, assemblies - NOT documents for BOM compatibility)
         include_tables = data.get("include_tables", ["parts", "pcbas", "assemblies"])
+        
+        # Filter to only show latest revisions (for ECO, etc.)
+        latest_only = data.get("latest_only", False)
 
         # Common filter for project membership or no project
         project_filter = Q(project__project_members=user) | Q(project__isnull=True)
+        
+        # Optional filter for latest revision only
+        latest_filter = Q(is_latest_revision=True) if latest_only else Q()
 
         combined_results = []
 
@@ -1615,6 +1621,7 @@ def global_part_search(request):
         if "parts" in include_tables:
             part_results = Part.objects.filter(
                 project_filter
+                & latest_filter
                 & Q(is_archived=False)
                 & (
                     Q(full_part_number__icontains=query)
@@ -1632,6 +1639,7 @@ def global_part_search(request):
         if "pcbas" in include_tables:
             pcba_results = Pcba.objects.filter(
                 project_filter
+                & latest_filter
                 & Q(is_archived=False)
                 & (
                     Q(full_part_number__icontains=query)
@@ -1647,6 +1655,7 @@ def global_part_search(request):
         if "assemblies" in include_tables:
             assembly_results = Assembly.objects.filter(
                 project_filter
+                & latest_filter
                 & Q(is_archived=False)
                 & (
                     Q(full_part_number__icontains=query)
@@ -1662,6 +1671,7 @@ def global_part_search(request):
         if "documents" in include_tables:
             document_results = Document.objects.filter(
                 project_filter
+                & latest_filter
                 & Q(is_archived=False)
                 & (
                     Q(full_doc_number__icontains=query)

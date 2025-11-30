@@ -11,6 +11,7 @@ const GlobalPartSelection = ({
   searchTerm = "", 
   organization,
   includeTables = ["parts", "pcbas", "assemblies"],
+  latestOnly = false,
 }) => {
   const [query, setQuery] = useState(searchTerm);
   const [results, setResults] = useState([]);
@@ -18,7 +19,7 @@ const GlobalPartSelection = ({
 
   const handleSearch = useCallback(async (searchQuery) => {
     try {
-      const response = await searchPartsGlobal(searchQuery, includeTables);
+      const response = await searchPartsGlobal(searchQuery, includeTables, latestOnly);
       const searchResults = response.data;
 
       if (response.status === 200) {
@@ -30,7 +31,7 @@ const GlobalPartSelection = ({
     } catch (error) {
       toast.error(`Error searching for global items: ${error.message}`);
     }
-  }, [includeTables]);
+  }, [includeTables, latestOnly]);
 
   // Effect to automatically search when searchTerm changes
   useEffect(() => {

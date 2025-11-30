@@ -231,6 +231,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
               onSelectItem={handleSelectItem}
               searchTerm=""
               includeTables={["parts", "pcbas", "assemblies", "documents"]}
+              latestOnly={true}
             />
           );
         }
