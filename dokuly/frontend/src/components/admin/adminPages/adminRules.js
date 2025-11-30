@@ -14,6 +14,8 @@ const AdminRules = ({ setRefresh }) => {
   // State for release rules
   const [requireReleasedBomItemsAssembly, setRequireReleasedBomItemsAssembly] = useState(false);
   const [requireReleasedBomItemsPCBA, setRequireReleasedBomItemsPCBA] = useState(false);
+  const [requireMatchedBomItemsAssembly, setRequireMatchedBomItemsAssembly] = useState(false);
+  const [requireMatchedBomItemsPCBA, setRequireMatchedBomItemsPCBA] = useState(false);
   const [requireReviewOnPart, setRequireReviewOnPart] = useState(false);
   const [requireReviewOnPcba, setRequireReviewOnPcba] = useState(false);
   const [requireReviewOnAssembly, setRequireReviewOnAssembly] = useState(false);
@@ -43,6 +45,8 @@ const AdminRules = ({ setRefresh }) => {
           setRulesId(res.data.id);
           setRequireReleasedBomItemsAssembly(res.data.require_released_bom_items_assembly || false);
           setRequireReleasedBomItemsPCBA(res.data.require_released_bom_items_pcba || false);
+          setRequireMatchedBomItemsAssembly(res.data.require_matched_bom_items_assembly || false);
+          setRequireMatchedBomItemsPCBA(res.data.require_matched_bom_items_pcba || false);
           setRequireReviewOnPart(res.data.require_review_on_part || false);
           setRequireReviewOnPcba(res.data.require_review_on_pcba || false);
           setRequireReviewOnAssembly(res.data.require_review_on_assembly || false);
@@ -65,6 +69,8 @@ const AdminRules = ({ setRefresh }) => {
     const data = {
       require_released_bom_items_assembly: requireReleasedBomItemsAssembly,
       require_released_bom_items_pcba: requireReleasedBomItemsPCBA,
+      require_matched_bom_items_assembly: requireMatchedBomItemsAssembly,
+      require_matched_bom_items_pcba: requireMatchedBomItemsPCBA,
       require_review_on_part: requireReviewOnPart,
       require_review_on_pcba: requireReviewOnPcba,
       require_review_on_assembly: requireReviewOnAssembly,
@@ -162,6 +168,18 @@ const AdminRules = ({ setRefresh }) => {
                   value={requireReleasedBomItemsPCBA}
                   onChange={setRequireReleasedBomItemsPCBA}
                   id="requireReleasedBomItemsPCBA"
+                />
+                <DokulyCheckFormGroup
+                  label="Require all BOM items to be matched to a Part, PCBA, or Assembly before releasing Assembly"
+                  value={requireMatchedBomItemsAssembly}
+                  onChange={setRequireMatchedBomItemsAssembly}
+                  id="requireMatchedBomItemsAssembly"
+                />
+                <DokulyCheckFormGroup
+                  label="Require all BOM items to be matched to a Part, PCBA, or Assembly before releasing PCBA"
+                  value={requireMatchedBomItemsPCBA}
+                  onChange={setRequireMatchedBomItemsPCBA}
+                  id="requireMatchedBomItemsPCBA"
                 />
               </div>
 

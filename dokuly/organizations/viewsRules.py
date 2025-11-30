@@ -102,6 +102,42 @@ def check_bom_items_released(bom_items):
     return all_passed, unreleased_items, total_count, released_count
 
 
+def check_bom_items_matched(bom_items):
+    """
+    Check if all BOM items are matched to a Part, Assembly, or PCBA.
+    An unmatched BOM item has part=None, assembly=None, and pcba=None.
+    
+    Args:
+        bom_items: QuerySet of Bom_item objects
+        
+    Returns:
+        tuple: (all_passed: bool, unmatched_items: list, total_count: int, matched_count: int)
+    """
+    total_count = bom_items.count()
+    
+    # Query for unmatched items - items where part, assembly, and pcba are all None
+    unmatched_bom_items = bom_items.filter(
+        part__isnull=True,
+        assembly__isnull=True,
+        pcba__isnull=True
+    )
+    
+    # Build the unmatched items list
+    unmatched_items = []
+    for bom_item in unmatched_bom_items:
+        unmatched_items.append({
+            'designator': bom_item.designator or '-',
+            'temporary_mpn': bom_item.temporary_mpn or '-',
+            'temporary_manufacturer': bom_item.temporary_manufacturer or '-',
+            'comment': bom_item.comment or '-',
+        })
+    
+    matched_count = total_count - len(unmatched_items)
+    all_passed = len(unmatched_items) == 0
+    
+    return all_passed, unmatched_items, total_count, matched_count
+
+
 def check_eco_bom_items_released_or_in_eco(eco):
     """
     Check if all BOM items of affected assemblies/PCBAs are either:
@@ -323,6 +359,8 @@ def fetch_organization_rules(request):
             defaults={
                 'require_released_bom_items_assembly': False,
                 'require_released_bom_items_pcba': False,
+                'require_matched_bom_items_assembly': False,
+                'require_matched_bom_items_pcba': False,
                 'require_review_on_part': False,
                 'require_review_on_pcba': False,
                 'require_review_on_assembly': False,
@@ -367,6 +405,8 @@ def update_organization_rules(request):
             defaults={
                 'require_released_bom_items_assembly': False,
                 'require_released_bom_items_pcba': False,
+                'require_matched_bom_items_assembly': False,
+                'require_matched_bom_items_pcba': False,
                 'require_review_on_part': False,
                 'require_review_on_pcba': False,
                 'require_review_on_assembly': False,
@@ -386,6 +426,12 @@ def update_organization_rules(request):
         
         if 'require_released_bom_items_pcba' in data:
             rules.require_released_bom_items_pcba = data['require_released_bom_items_pcba']
+        
+        if 'require_matched_bom_items_assembly' in data:
+            rules.require_matched_bom_items_assembly = data['require_matched_bom_items_assembly']
+        
+        if 'require_matched_bom_items_pcba' in data:
+            rules.require_matched_bom_items_pcba = data['require_matched_bom_items_pcba']
         
         if 'require_review_on_part' in data:
             rules.require_review_on_part = data['require_review_on_part']
@@ -499,6 +545,29 @@ def check_assembly_rules(request, assembly_id):
                     'unreleased_items': [],
                 })
         
+        # Check if all BOM items are matched
+        if rules and rules.require_matched_bom_items_assembly:
+            try:
+                assembly_bom = Assembly_bom.objects.get(assembly_id=assembly_id)
+                bom_items = Bom_item.objects.filter(bom=assembly_bom)
+                matched_passed, unmatched_items, total_count, matched_count = check_bom_items_matched(bom_items)
+                if not matched_passed:
+                    all_passed = False
+                rules_checks.append({
+                    'rule': 'require_matched_bom_items_assembly',
+                    'description': f'All BOM items must be matched to a Part, PCBA, or Assembly ({matched_count}/{total_count} matched)',
+                    'passed': matched_passed,
+                    'unmatched_items': unmatched_items[:20],  # Limit to first 20 for display
+                })
+            except Assembly_bom.DoesNotExist:
+                # No BOM - this passes the check
+                rules_checks.append({
+                    'rule': 'require_matched_bom_items_assembly',
+                    'description': 'No BOM found for this assembly',
+                    'passed': True,
+                    'unmatched_items': [],
+                })
+        
         has_active_rules = len(rules_checks) > 0
         
         if not has_active_rules:
@@ -587,6 +656,29 @@ def check_pcba_rules(request, pcba_id):
                     'description': 'No BOM found for this PCBA',
                     'passed': True,
                     'unreleased_items': [],
+                })
+        
+        # Check if all BOM items are matched
+        if rules and rules.require_matched_bom_items_pcba:
+            try:
+                pcba_bom = Assembly_bom.objects.get(pcba=pcba)
+                bom_items = Bom_item.objects.filter(bom=pcba_bom)
+                matched_passed, unmatched_items, total_count, matched_count = check_bom_items_matched(bom_items)
+                if not matched_passed:
+                    all_passed = False
+                rules_checks.append({
+                    'rule': 'require_matched_bom_items_pcba',
+                    'description': f'All BOM items must be matched to a Part, PCBA, or Assembly ({matched_count}/{total_count} matched)',
+                    'passed': matched_passed,
+                    'unmatched_items': unmatched_items[:20],  # Limit to first 20 for display
+                })
+            except Assembly_bom.DoesNotExist:
+                # No BOM - this passes the check
+                rules_checks.append({
+                    'rule': 'require_matched_bom_items_pcba',
+                    'description': 'No BOM found for this PCBA',
+                    'passed': True,
+                    'unmatched_items': [],
                 })
         
         has_active_rules = len(rules_checks) > 0

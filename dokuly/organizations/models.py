@@ -239,6 +239,18 @@ class Rules(models.Model):
         help_text="Require all BOM items to be released before releasing a PCBA"
     )
     
+    require_matched_bom_items_assembly = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require all BOM items to be matched to a Part, PCBA, or Assembly before releasing an Assembly"
+    )
+    
+    require_matched_bom_items_pcba = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require all BOM items to be matched to a Part, PCBA, or Assembly before releasing a PCBA"
+    )
+    
     # Review requirements
     require_review_on_part = models.BooleanField(
         default=False,
