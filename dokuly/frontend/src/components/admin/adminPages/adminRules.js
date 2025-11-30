@@ -23,6 +23,8 @@ const AdminRules = ({ setRefresh }) => {
   const [requireReviewOnEco, setRequireReviewOnEco] = useState(false);
   const [requireAllAffectedItemsReviewedForEco, setRequireAllAffectedItemsReviewedForEco] = useState(false);
   const [requireBomItemsReleasedOrInEco, setRequireBomItemsReleasedOrInEco] = useState(false);
+  const [requireBomItemsMatchedForEcoAssembly, setRequireBomItemsMatchedForEcoAssembly] = useState(false);
+  const [requireBomItemsMatchedForEcoPcba, setRequireBomItemsMatchedForEcoPcba] = useState(false);
   const [overridePermission, setOverridePermission] = useState("Admin");
 
   const sections = [
@@ -54,6 +56,8 @@ const AdminRules = ({ setRefresh }) => {
           setRequireReviewOnEco(res.data.require_review_on_eco || false);
           setRequireAllAffectedItemsReviewedForEco(res.data.require_all_affected_items_reviewed_for_eco || false);
           setRequireBomItemsReleasedOrInEco(res.data.require_bom_items_released_or_in_eco || false);
+          setRequireBomItemsMatchedForEcoAssembly(res.data.require_bom_items_matched_for_eco_assembly || false);
+          setRequireBomItemsMatchedForEcoPcba(res.data.require_bom_items_matched_for_eco_pcba || false);
           setOverridePermission(res.data.override_permission || "Admin");
         }
         setLoading(false);
@@ -78,6 +82,8 @@ const AdminRules = ({ setRefresh }) => {
       require_review_on_eco: requireReviewOnEco,
       require_all_affected_items_reviewed_for_eco: requireAllAffectedItemsReviewedForEco,
       require_bom_items_released_or_in_eco: requireBomItemsReleasedOrInEco,
+      require_bom_items_matched_for_eco_assembly: requireBomItemsMatchedForEcoAssembly,
+      require_bom_items_matched_for_eco_pcba: requireBomItemsMatchedForEcoPcba,
       override_permission: overridePermission,
     };
 
@@ -230,6 +236,18 @@ const AdminRules = ({ setRefresh }) => {
                   value={requireBomItemsReleasedOrInEco}
                   onChange={setRequireBomItemsReleasedOrInEco}
                   id="requireBomItemsReleasedOrInEco"
+                />
+                <DokulyCheckFormGroup
+                  label="Require all BOM items of affected Assemblies to be matched to a Part, PCBA, or Assembly"
+                  value={requireBomItemsMatchedForEcoAssembly}
+                  onChange={setRequireBomItemsMatchedForEcoAssembly}
+                  id="requireBomItemsMatchedForEcoAssembly"
+                />
+                <DokulyCheckFormGroup
+                  label="Require all BOM items of affected PCBAs to be matched to a Part, PCBA, or Assembly"
+                  value={requireBomItemsMatchedForEcoPcba}
+                  onChange={setRequireBomItemsMatchedForEcoPcba}
+                  id="requireBomItemsMatchedForEcoPcba"
                 />
               </div>
 

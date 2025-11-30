@@ -295,6 +295,18 @@ class Rules(models.Model):
         help_text="Require BOM items of affected assemblies/PCBAs to be released or included in the ECO"
     )
     
+    require_bom_items_matched_for_eco_assembly = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require all BOM items of affected Assemblies to be matched to a Part, PCBA, or Assembly before releasing an ECO"
+    )
+    
+    require_bom_items_matched_for_eco_pcba = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require all BOM items of affected PCBAs to be matched to a Part, PCBA, or Assembly before releasing an ECO"
+    )
+    
     # Override permissions - choices: Owner, Admin, User, Project Owner
     PERMISSION_CHOICES = [
         ('Owner', 'Owner'),

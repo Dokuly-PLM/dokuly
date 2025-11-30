@@ -268,6 +268,80 @@ def check_eco_bom_items_released_or_in_eco(eco):
     return all_passed, missing_items, total_bom_items, valid_count
 
 
+def check_eco_bom_items_matched(eco, check_assemblies=True, check_pcbas=True):
+    """
+    Check if all BOM items of affected assemblies/PCBAs are matched to a Part, PCBA, or Assembly.
+    
+    Args:
+        eco: Eco object
+        check_assemblies: Whether to check BOM items of affected assemblies
+        check_pcbas: Whether to check BOM items of affected PCBAs
+        
+    Returns:
+        tuple: (all_passed: bool, unmatched_items: list, total_count: int, matched_count: int)
+    """
+    # Get all affected items in this ECO
+    affected_items = AffectedItem.objects.filter(eco=eco)
+    
+    unmatched_items = []
+    total_bom_items = 0
+    
+    # Check BOM items for affected assemblies
+    if check_assemblies:
+        for item in affected_items:
+            if item.assembly_id:
+                try:
+                    assembly_bom = Assembly_bom.objects.get(assembly_id=item.assembly_id)
+                    bom_items = Bom_item.objects.filter(bom=assembly_bom)
+                    
+                    for bom_item in bom_items:
+                        total_bom_items += 1
+                        
+                        # Check if BOM item is matched (has a part, pcba, or assembly linked)
+                        if bom_item.part_id is None and bom_item.pcba_id is None and bom_item.assembly_id is None:
+                            unmatched_items.append({
+                                'designator': bom_item.designator or '-',
+                                'temporary_mpn': bom_item.temporary_mpn or '-',
+                                'temporary_manufacturer': bom_item.temporary_manufacturer or '-',
+                                'comment': bom_item.comment or '-',
+                                'parent_type': 'Assembly',
+                                'parent_part_number': item.assembly.full_part_number if item.assembly else '-',
+                                'parent_id': item.assembly_id,
+                            })
+                except Assembly_bom.DoesNotExist:
+                    pass
+    
+    # Check BOM items for affected PCBAs
+    if check_pcbas:
+        for item in affected_items:
+            if item.pcba_id:
+                try:
+                    pcba_bom = Assembly_bom.objects.get(pcba_id=item.pcba_id)
+                    bom_items = Bom_item.objects.filter(bom=pcba_bom)
+                    
+                    for bom_item in bom_items:
+                        total_bom_items += 1
+                        
+                        # Check if BOM item is matched (has a part, pcba, or assembly linked)
+                        if bom_item.part_id is None and bom_item.pcba_id is None and bom_item.assembly_id is None:
+                            unmatched_items.append({
+                                'designator': bom_item.designator or '-',
+                                'temporary_mpn': bom_item.temporary_mpn or '-',
+                                'temporary_manufacturer': bom_item.temporary_manufacturer or '-',
+                                'comment': bom_item.comment or '-',
+                                'parent_type': 'PCBA',
+                                'parent_part_number': item.pcba.full_part_number if item.pcba else '-',
+                                'parent_id': item.pcba_id,
+                            })
+                except Assembly_bom.DoesNotExist:
+                    pass
+    
+    matched_count = total_bom_items - len(unmatched_items)
+    all_passed = len(unmatched_items) == 0
+    
+    return all_passed, unmatched_items, total_bom_items, matched_count
+
+
 def get_rules_for_item(user, project=None):
     """
     Get rules for an item, checking project first, then organization.
@@ -368,6 +442,8 @@ def fetch_organization_rules(request):
                 'require_review_on_eco': False,
                 'require_all_affected_items_reviewed_for_eco': False,
                 'require_bom_items_released_or_in_eco': False,
+                'require_bom_items_matched_for_eco_assembly': False,
+                'require_bom_items_matched_for_eco_pcba': False,
                 'override_permission': 'Admin',
             }
         )
@@ -414,6 +490,8 @@ def update_organization_rules(request):
                 'require_review_on_eco': False,
                 'require_all_affected_items_reviewed_for_eco': False,
                 'require_bom_items_released_or_in_eco': False,
+                'require_bom_items_matched_for_eco_assembly': False,
+                'require_bom_items_matched_for_eco_pcba': False,
                 'override_permission': 'Admin',
             }
         )
@@ -453,6 +531,12 @@ def update_organization_rules(request):
         
         if 'require_bom_items_released_or_in_eco' in data:
             rules.require_bom_items_released_or_in_eco = data['require_bom_items_released_or_in_eco']
+        
+        if 'require_bom_items_matched_for_eco_assembly' in data:
+            rules.require_bom_items_matched_for_eco_assembly = data['require_bom_items_matched_for_eco_assembly']
+        
+        if 'require_bom_items_matched_for_eco_pcba' in data:
+            rules.require_bom_items_matched_for_eco_pcba = data['require_bom_items_matched_for_eco_pcba']
         
         if 'override_permission' in data:
             # Validate permission choice
@@ -918,6 +1002,38 @@ def check_eco_rules(request, eco_id):
                 'total': total_bom_items,
                 'valid': valid_count,
                 'missing_items': missing_items[:20],  # Limit to first 20 for display
+            })
+        
+        # Check if all BOM items of affected assemblies are matched
+        if rules and rules.require_bom_items_matched_for_eco_assembly:
+            matched_passed, unmatched_items, total_bom_items, matched_count = check_eco_bom_items_matched(eco, check_assemblies=True, check_pcbas=False)
+            
+            if not matched_passed:
+                all_passed = False
+            
+            rules_checks.append({
+                'rule': 'require_bom_items_matched_for_eco_assembly',
+                'description': f'All Assembly BOM items must be matched to a Part, PCBA, or Assembly ({matched_count}/{total_bom_items} matched)',
+                'passed': matched_passed,
+                'total': total_bom_items,
+                'matched': matched_count,
+                'unmatched_items': unmatched_items[:20],  # Limit to first 20 for display
+            })
+        
+        # Check if all BOM items of affected PCBAs are matched
+        if rules and rules.require_bom_items_matched_for_eco_pcba:
+            matched_passed, unmatched_items, total_bom_items, matched_count = check_eco_bom_items_matched(eco, check_assemblies=False, check_pcbas=True)
+            
+            if not matched_passed:
+                all_passed = False
+            
+            rules_checks.append({
+                'rule': 'require_bom_items_matched_for_eco_pcba',
+                'description': f'All PCBA BOM items must be matched to a Part, PCBA, or Assembly ({matched_count}/{total_bom_items} matched)',
+                'passed': matched_passed,
+                'total': total_bom_items,
+                'matched': matched_count,
+                'unmatched_items': unmatched_items[:20],  # Limit to first 20 for display
             })
         
         has_active_rules = len(rules_checks) > 0
