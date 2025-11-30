@@ -254,7 +254,6 @@ const EcoInfoCard = ({
                     style={{
                       top: "100%",
                       left: "0",
-                      marginTop: "5px",
                     }}
                   />
                 </div>

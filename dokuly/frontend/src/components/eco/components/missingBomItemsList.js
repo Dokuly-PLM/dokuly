@@ -30,16 +30,21 @@ const MissingBomItemsList = ({ items, textSize = "12px", show, style = {} }) => 
     <div
       style={{
         position: "absolute",
-        backgroundColor: "white",
-        border: "1px solid #ddd",
-        borderRadius: "4px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         zIndex: 1050,
-        minWidth: "350px",
-        maxWidth: "450px",
+        paddingTop: "5px", // Small gap but keeps hover continuity
         ...style,
       }}
     >
+      <div
+        style={{
+          backgroundColor: "white",
+          border: "1px solid #ddd",
+          borderRadius: "4px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          minWidth: "350px",
+          maxWidth: "450px",
+        }}
+      >
       <div 
         style={{ 
           padding: "10px",
@@ -179,6 +184,7 @@ const MissingBomItemsList = ({ items, textSize = "12px", show, style = {} }) => 
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
