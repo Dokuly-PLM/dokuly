@@ -16,7 +16,7 @@ import {
 } from "../functions/queries";
 import InlineItemSelector from "../../dokuly_components/dokulyTable/components/inlineItemSelector";
 
-const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => {
+const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAffectedItemsChange = null }) => {
   const navigate = useNavigate();
 
   const [affectedItems, setAffectedItems] = useState([]);
@@ -54,6 +54,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => 
               image_url: linkedItem?.image_url,
               is_latest_revision: linkedItem?.is_latest_revision,
               revision_notes: linkedItem?.revision_notes || "",
+              quality_assurance_id: linkedItem?.quality_assurance_id || null,
               item_type: item.part
                 ? "Part"
                 : item.pcba
@@ -66,6 +67,10 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => 
             };
           });
           setAffectedItems(items);
+          // Notify parent of affected items change
+          if (onAffectedItemsChange) {
+            onAffectedItemsChange(items);
+          }
         }
       })
       .catch((err) => {
@@ -75,7 +80,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => 
         setLoading(false);
         setRefresh(false);
       });
-  }, [ecoId]);
+  }, [ecoId, onAffectedItemsChange]);
 
   useEffect(() => {
     if (refresh) {
@@ -226,6 +231,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => 
               onSelectItem={handleSelectItem}
               searchTerm=""
               includeTables={["parts", "pcbas", "assemblies", "documents"]}
+              latestOnly={true}
             />
           );
         }
@@ -252,7 +258,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => 
     },
     {
       key: "description",
-      header: "Description",
+      header: "Required Change",
       formatter: (row, column, searchString) => (
         <TextFieldEditor
           text={row?.description}
@@ -283,6 +289,34 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false }) => 
       header: "State",
       formatter: (row) => releaseStateFormatter(row),
       maxWidth: "100px",
+    },
+    {
+      key: "reviewed",
+      header: "Reviewed",
+      maxWidth: "80px",
+      formatter: (row) => {
+        // Only show checkbox if there's a linked item
+        if (!row.part && !row.pcba && !row.assembly && !row.document) {
+          return null;
+        }
+        const isReviewed = row.quality_assurance_id != null;
+        return (
+          <div className="d-flex justify-content-center">
+            <input
+              type="checkbox"
+              checked={isReviewed}
+              disabled
+              style={{ 
+                width: "18px", 
+                height: "18px",
+                cursor: "default",
+                accentColor: isReviewed ? "#28a745" : undefined,
+              }}
+              title={isReviewed ? "Item has been reviewed" : "Item not yet reviewed"}
+            />
+          </div>
+        );
+      },
     },
     {
       key: "actions",

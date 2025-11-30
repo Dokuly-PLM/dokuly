@@ -104,3 +104,13 @@ export const getEcosForItem = (app, itemId) => {
   const promise = axios.get(`/api/eco/forItem/${app}/${itemId}/`, tokenConfig());
   return promise;
 };
+
+/**
+ * Get BOM items from affected assemblies/PCBAs that are not released and not in the ECO.
+ * @param {number} ecoId - The ECO ID
+ * @returns {Promise} Object with missing_items array and count
+ */
+export const getEcoMissingBomItems = (ecoId) => {
+  const promise = axios.get(`/api/eco/${ecoId}/missingBomItems/`, tokenConfig());
+  return promise;
+};

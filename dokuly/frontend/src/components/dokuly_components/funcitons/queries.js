@@ -5,10 +5,10 @@ import {
   tokenConfigFileRequest,
 } from "../../../configs/auth";
 
-export const searchPartsGlobal = (query, includeTables = ["parts", "pcbas", "assemblies"]) => {
+export const searchPartsGlobal = (query, includeTables = ["parts", "pcbas", "assemblies"], latestOnly = false) => {
   const promise = axios.put(
     "api/global_part_search/", // Update the endpoint to match the correct URL pattern
-    { query, include_tables: includeTables }, // Send the search query and tables to include
+    { query, include_tables: includeTables, latest_only: latestOnly }, // Send the search query, tables to include, and latest only filter
     tokenConfig()
   );
   return promise;

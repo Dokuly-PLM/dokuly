@@ -72,7 +72,6 @@ const BomCost = ({ refresh, app = "", id = -1 }) => {
                 top: "100%",
                 left: "50%",
                 transform: "translateX(-50%)",
-                marginTop: "5px",
               }}
             />
           </div>

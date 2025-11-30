@@ -30,6 +30,7 @@ const DisplayEco = () => {
   const [refresh, setRefresh] = useState(false);
   const [profiles, setProfiles] = useState([]);
   const [readOnly, setReadOnly] = useState(false);
+  const [affectedItems, setAffectedItems] = useState([]);
 
   // Parse the ID from URL params
   const id = ecoId ? Number.parseInt(ecoId) : -1;
@@ -165,6 +166,7 @@ const DisplayEco = () => {
             setRefresh={setRefresh}
             readOnly={readOnly}
             profiles={profiles}
+            affectedItems={affectedItems}
           />
 
           {/* Description - Full width */}
@@ -175,7 +177,7 @@ const DisplayEco = () => {
             hiddenText={"No description added"}
           >
             <CardTitle
-              titleText={"Description"}
+              titleText={"Description of change"}
               optionalHelpText={
                 "Describe the engineering change order. Use markdown for formatting."
               }
@@ -193,6 +195,7 @@ const DisplayEco = () => {
             ecoId={id}
             isReleased={isReleased}
             readOnly={readOnly}
+            onAffectedItemsChange={setAffectedItems}
           />
         </Col>
       </Row>

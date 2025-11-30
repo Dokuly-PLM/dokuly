@@ -309,6 +309,7 @@ def manage_active_modules(request):
             "production_is_enabled",
             "supplier_is_enabled",
             "inventory_is_enabled",
+            "eco_is_enabled",
         ]:
             if field in data:
                 setattr(organization, field, data[field])

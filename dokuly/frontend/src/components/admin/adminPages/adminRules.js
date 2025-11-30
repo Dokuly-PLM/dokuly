@@ -18,6 +18,9 @@ const AdminRules = ({ setRefresh }) => {
   const [requireReviewOnPcba, setRequireReviewOnPcba] = useState(false);
   const [requireReviewOnAssembly, setRequireReviewOnAssembly] = useState(false);
   const [requireReviewOnDocument, setRequireReviewOnDocument] = useState(false);
+  const [requireReviewOnEco, setRequireReviewOnEco] = useState(false);
+  const [requireAllAffectedItemsReviewedForEco, setRequireAllAffectedItemsReviewedForEco] = useState(false);
+  const [requireBomItemsReleasedOrInEco, setRequireBomItemsReleasedOrInEco] = useState(false);
   const [overridePermission, setOverridePermission] = useState("Admin");
 
   const sections = [
@@ -44,6 +47,9 @@ const AdminRules = ({ setRefresh }) => {
           setRequireReviewOnPcba(res.data.require_review_on_pcba || false);
           setRequireReviewOnAssembly(res.data.require_review_on_assembly || false);
           setRequireReviewOnDocument(res.data.require_review_on_document || false);
+          setRequireReviewOnEco(res.data.require_review_on_eco || false);
+          setRequireAllAffectedItemsReviewedForEco(res.data.require_all_affected_items_reviewed_for_eco || false);
+          setRequireBomItemsReleasedOrInEco(res.data.require_bom_items_released_or_in_eco || false);
           setOverridePermission(res.data.override_permission || "Admin");
         }
         setLoading(false);
@@ -63,6 +69,9 @@ const AdminRules = ({ setRefresh }) => {
       require_review_on_pcba: requireReviewOnPcba,
       require_review_on_assembly: requireReviewOnAssembly,
       require_review_on_document: requireReviewOnDocument,
+      require_review_on_eco: requireReviewOnEco,
+      require_all_affected_items_reviewed_for_eco: requireAllAffectedItemsReviewedForEco,
+      require_bom_items_released_or_in_eco: requireBomItemsReleasedOrInEco,
       override_permission: overridePermission,
     };
 
@@ -181,6 +190,28 @@ const AdminRules = ({ setRefresh }) => {
                   value={requireReviewOnDocument}
                   onChange={setRequireReviewOnDocument}
                   id="requireReviewOnDocument"
+                />
+              </div>
+
+              <div className="mt-4">
+                <h6>ECO Requirements</h6>
+                <DokulyCheckFormGroup
+                  label="Require review approval before releasing ECO"
+                  value={requireReviewOnEco}
+                  onChange={setRequireReviewOnEco}
+                  id="requireReviewOnEco"
+                />
+                <DokulyCheckFormGroup
+                  label="Require all affected items to be reviewed before releasing ECO"
+                  value={requireAllAffectedItemsReviewedForEco}
+                  onChange={setRequireAllAffectedItemsReviewedForEco}
+                  id="requireAllAffectedItemsReviewedForEco"
+                />
+                <DokulyCheckFormGroup
+                  label="Require BOM items of affected Assemblies/PCBAs to be released or included in the ECO"
+                  value={requireBomItemsReleasedOrInEco}
+                  onChange={setRequireBomItemsReleasedOrInEco}
+                  id="requireBomItemsReleasedOrInEco"
                 />
               </div>
 

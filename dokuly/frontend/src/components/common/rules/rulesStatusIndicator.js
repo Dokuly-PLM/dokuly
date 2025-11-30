@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { checkAssemblyRules, checkPcbaRules, checkPartRules, checkDocumentRules } from "./queries";
+import { checkAssemblyRules, checkPcbaRules, checkPartRules, checkDocumentRules, checkEcoRules } from "./queries";
 
 /**
  * Component to display rules validation status
@@ -37,6 +37,9 @@ const RulesStatusIndicator = ({ itemType, itemId, projectId = null, onStatusChan
         break;
       case 'document':
         checkFunction = checkDocumentRules;
+        break;
+      case 'eco':
+        checkFunction = checkEcoRules;
         break;
       default:
         console.error(`Unknown item type: ${itemType}`);

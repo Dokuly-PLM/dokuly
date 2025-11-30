@@ -225,6 +225,8 @@ class PartThumbnailTitleSerializer(serializers.ModelSerializer):
 
 
 class PartBomSerializer(serializers.ModelSerializer):
+    quality_assurance_id = serializers.SerializerMethodField()
+
     class Meta:
         model = Part
         fields = [
@@ -246,7 +248,11 @@ class PartBomSerializer(serializers.ModelSerializer):
             "current_total_stock",
             "minimum_stock_level",
             "revision_notes",
+            "quality_assurance_id",
         ]
+
+    def get_quality_assurance_id(self, obj):
+        return obj.quality_assurance_id if obj.quality_assurance else None
 
 # For ASM BOM ------------------------------------------------------------------------
 

@@ -63,6 +63,7 @@ class DocumentTableSerializer(serializers.ModelSerializer):
     """This serializer is used to only send the fields that are needed for the table view of documents.
     """
     tags = DocumentTagSerializer(many=True)
+    quality_assurance_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
@@ -75,7 +76,10 @@ class DocumentTableSerializer(serializers.ModelSerializer):
                   'revision_count_major',
                   'revision_count_minor',
                   'is_latest_revision', 'is_archived', 'tags',
-                  'thumbnail', 'revision_notes']
+                  'thumbnail', 'revision_notes', 'quality_assurance_id']
+
+    def get_quality_assurance_id(self, obj):
+        return obj.quality_assurance_id if obj.quality_assurance else None
 
 
 class DocumentPrefixSerializer(serializers.ModelSerializer):

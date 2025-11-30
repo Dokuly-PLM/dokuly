@@ -4,6 +4,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from datetime import datetime
 
 from .models import Eco, AffectedItem
@@ -16,6 +17,232 @@ from pcbas.models import Pcba
 from assemblies.models import Assembly
 from projects.models import Project, Tag
 from projects.viewsTags import check_for_and_create_new_tags
+from assembly_bom.models import Assembly_bom, Bom_item
+
+
+def get_eco_missing_bom_items(eco):
+    """
+    Get all BOM items from affected assemblies/PCBAs that are:
+    1. NOT released
+    2. NOT included in the ECO
+    
+    Args:
+        eco: Eco object
+        
+    Returns:
+        list: List of missing BOM items with details
+    """
+    # Get all affected items in this ECO
+    affected_items = AffectedItem.objects.filter(eco=eco)
+    
+    # Build sets of part/pcba/assembly IDs that are included in the ECO
+    eco_part_ids = set()
+    eco_pcba_ids = set()
+    eco_assembly_ids = set()
+    
+    for item in affected_items:
+        if item.part_id:
+            eco_part_ids.add(item.part_id)
+        if item.pcba_id:
+            eco_pcba_ids.add(item.pcba_id)
+        if item.assembly_id:
+            eco_assembly_ids.add(item.assembly_id)
+    
+    missing_items = []
+    seen_items = set()  # To avoid duplicates
+    
+    # Check BOM items for affected assemblies
+    for item in affected_items:
+        if item.assembly_id:
+            try:
+                assembly_bom = Assembly_bom.objects.get(assembly_id=item.assembly_id)
+                bom_items = Bom_item.objects.filter(bom=assembly_bom).select_related('part', 'pcba', 'assembly')
+                
+                for bom_item in bom_items:
+                    # Check if BOM item is released or in ECO
+                    if bom_item.part:
+                        item_key = ('part', bom_item.part_id)
+                        if item_key not in seen_items:
+                            if bom_item.part.release_state != 'Released' and bom_item.part_id not in eco_part_ids:
+                                seen_items.add(item_key)
+                                missing_items.append({
+                                    'type': 'Part',
+                                    'id': bom_item.part_id,
+                                    'full_part_number': bom_item.part.full_part_number,
+                                    'display_name': bom_item.part.display_name,
+                                    'release_state': bom_item.part.release_state,
+                                    'thumbnail': bom_item.part.thumbnail.url if bom_item.part.thumbnail else None,
+                                    'parent_type': 'Assembly',
+                                    'parent_part_number': item.assembly.full_part_number if item.assembly else '-',
+                                })
+                    elif bom_item.pcba:
+                        item_key = ('pcba', bom_item.pcba_id)
+                        if item_key not in seen_items:
+                            if bom_item.pcba.release_state != 'Released' and bom_item.pcba_id not in eco_pcba_ids:
+                                seen_items.add(item_key)
+                                missing_items.append({
+                                    'type': 'PCBA',
+                                    'id': bom_item.pcba_id,
+                                    'full_part_number': bom_item.pcba.full_part_number,
+                                    'display_name': bom_item.pcba.display_name,
+                                    'release_state': bom_item.pcba.release_state,
+                                    'thumbnail': bom_item.pcba.thumbnail.url if bom_item.pcba.thumbnail else None,
+                                    'parent_type': 'Assembly',
+                                    'parent_part_number': item.assembly.full_part_number if item.assembly else '-',
+                                })
+                    elif bom_item.assembly:
+                        item_key = ('assembly', bom_item.assembly_id)
+                        if item_key not in seen_items:
+                            if bom_item.assembly.release_state != 'Released' and bom_item.assembly_id not in eco_assembly_ids:
+                                seen_items.add(item_key)
+                                missing_items.append({
+                                    'type': 'Assembly',
+                                    'id': bom_item.assembly_id,
+                                    'full_part_number': bom_item.assembly.full_part_number,
+                                    'display_name': bom_item.assembly.display_name,
+                                    'release_state': bom_item.assembly.release_state,
+                                    'thumbnail': bom_item.assembly.thumbnail.url if bom_item.assembly.thumbnail else None,
+                                    'parent_type': 'Assembly',
+                                    'parent_part_number': item.assembly.full_part_number if item.assembly else '-',
+                                })
+            except Assembly_bom.DoesNotExist:
+                pass
+        
+        # Check BOM items for affected PCBAs
+        if item.pcba_id:
+            try:
+                pcba_bom = Assembly_bom.objects.get(pcba_id=item.pcba_id)
+                bom_items = Bom_item.objects.filter(bom=pcba_bom).select_related('part', 'pcba', 'assembly')
+                
+                for bom_item in bom_items:
+                    # Check if BOM item is released or in ECO
+                    if bom_item.part:
+                        item_key = ('part', bom_item.part_id)
+                        if item_key not in seen_items:
+                            if bom_item.part.release_state != 'Released' and bom_item.part_id not in eco_part_ids:
+                                seen_items.add(item_key)
+                                missing_items.append({
+                                    'type': 'Part',
+                                    'id': bom_item.part_id,
+                                    'full_part_number': bom_item.part.full_part_number,
+                                    'display_name': bom_item.part.display_name,
+                                    'release_state': bom_item.part.release_state,
+                                    'thumbnail': bom_item.part.thumbnail.url if bom_item.part.thumbnail else None,
+                                    'parent_type': 'PCBA',
+                                    'parent_part_number': item.pcba.full_part_number if item.pcba else '-',
+                                })
+                    elif bom_item.pcba:
+                        item_key = ('pcba', bom_item.pcba_id)
+                        if item_key not in seen_items:
+                            if bom_item.pcba.release_state != 'Released' and bom_item.pcba_id not in eco_pcba_ids:
+                                seen_items.add(item_key)
+                                missing_items.append({
+                                    'type': 'PCBA',
+                                    'id': bom_item.pcba_id,
+                                    'full_part_number': bom_item.pcba.full_part_number,
+                                    'display_name': bom_item.pcba.display_name,
+                                    'release_state': bom_item.pcba.release_state,
+                                    'thumbnail': bom_item.pcba.thumbnail.url if bom_item.pcba.thumbnail else None,
+                                    'parent_type': 'PCBA',
+                                    'parent_part_number': item.pcba.full_part_number if item.pcba else '-',
+                                })
+                    elif bom_item.assembly:
+                        item_key = ('assembly', bom_item.assembly_id)
+                        if item_key not in seen_items:
+                            if bom_item.assembly.release_state != 'Released' and bom_item.assembly_id not in eco_assembly_ids:
+                                seen_items.add(item_key)
+                                missing_items.append({
+                                    'type': 'Assembly',
+                                    'id': bom_item.assembly_id,
+                                    'full_part_number': bom_item.assembly.full_part_number,
+                                    'display_name': bom_item.assembly.display_name,
+                                    'release_state': bom_item.assembly.release_state,
+                                    'thumbnail': bom_item.assembly.thumbnail.url if bom_item.assembly.thumbnail else None,
+                                    'parent_type': 'PCBA',
+                                    'parent_part_number': item.pcba.full_part_number if item.pcba else '-',
+                                })
+            except Assembly_bom.DoesNotExist:
+                pass
+    
+    return missing_items
+
+
+def release_affected_items(eco, released_by):
+    """
+    Release all affected items linked to an ECO.
+    
+    When an ECO is released, all parts/pcbas/assemblies/documents that are
+    affected by it should be released as well (if not already released).
+    
+    Args:
+        eco: The ECO that was just released
+        released_by: The user who released the ECO
+        
+    Returns:
+        dict: Summary of released items with counts and any errors
+    """
+    results = {
+        'parts_released': 0,
+        'pcbas_released': 0,
+        'assemblies_released': 0,
+        'documents_released': 0,
+        'already_released': 0,
+        'errors': []
+    }
+    
+    affected_items = AffectedItem.objects.filter(eco=eco)
+    release_date = datetime.now()
+    
+    for affected_item in affected_items:
+        try:
+            # Release Part
+            if affected_item.part:
+                part = affected_item.part
+                if part.release_state != "Released":
+                    part.release_state = "Released"
+                    part.released_date = release_date
+                    part.save()
+                    results['parts_released'] += 1
+                else:
+                    results['already_released'] += 1
+                    
+            # Release PCBA
+            elif affected_item.pcba:
+                pcba = affected_item.pcba
+                if pcba.release_state != "Released":
+                    pcba.release_state = "Released"
+                    pcba.released_date = release_date
+                    pcba.save()
+                    results['pcbas_released'] += 1
+                else:
+                    results['already_released'] += 1
+                    
+            # Release Assembly
+            elif affected_item.assembly:
+                assembly = affected_item.assembly
+                if assembly.release_state != "Released":
+                    assembly.release_state = "Released"
+                    assembly.released_date = release_date
+                    assembly.save()
+                    results['assemblies_released'] += 1
+                else:
+                    results['already_released'] += 1
+                    
+            # Release Document
+            elif affected_item.document:
+                document = affected_item.document
+                if document.release_state != "Released":
+                    document.release_state = "Released"
+                    document.released_date = release_date
+                    document.save()
+                    results['documents_released'] += 1
+                else:
+                    results['already_released'] += 1
+                    
+        except Exception as e:
+            results['errors'].append(f"Error releasing affected item {affected_item.id}: {str(e)}")
+    
+    return results
 
 
 @api_view(("POST",))
@@ -110,6 +337,17 @@ def edit_eco(request, pk):
         if data["release_state"] == "Released":
             eco.released_date = datetime.now()
             eco.released_by = request.user
+            
+            # Batch release all affected items when ECO is released
+            eco.save()  # Save first to ensure ECO is released
+            release_results = release_affected_items(eco, request.user)
+            
+            # Include release results in the response
+            serializer = EcoSerializer(eco)
+            response_data = serializer.data
+            response_data['release_results'] = release_results
+
+            return Response(response_data, status=status.HTTP_200_OK)
 
     if "is_approved_for_release" in data:
         if data["is_approved_for_release"] == False:
@@ -400,3 +638,34 @@ def get_ecos_for_item(request, app, item_id):
             })
 
     return Response(ecos_data, status=status.HTTP_200_OK)
+
+
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def get_eco_missing_bom_items_api(request, eco_id):
+    """Get BOM items from affected assemblies/PCBAs that are not released and not in the ECO.
+    
+    This endpoint is used to display a warning pill in the ECO info card.
+    
+    Args:
+        eco_id: The ID of the ECO
+    
+    Returns:
+        List of missing BOM items with details
+    """
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    try:
+        eco = Eco.objects.get(pk=eco_id)
+    except Eco.DoesNotExist:
+        return Response("ECO not found", status=status.HTTP_404_NOT_FOUND)
+
+    missing_items = get_eco_missing_bom_items(eco)
+    
+    return Response({
+        'missing_items': missing_items,
+        'count': len(missing_items),
+    }, status=status.HTTP_200_OK)

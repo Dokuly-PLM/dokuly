@@ -146,6 +146,7 @@ class PcbaThumbnailTitleSerializer(serializers.ModelSerializer):
 
 
 class PcbaBomSerializer(serializers.ModelSerializer):
+    quality_assurance_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Pcba
@@ -164,4 +165,8 @@ class PcbaBomSerializer(serializers.ModelSerializer):
             "serial_number_offset",
             "serial_number_prefix",
             "revision_notes",
+            "quality_assurance_id",
         )
+
+    def get_quality_assurance_id(self, obj):
+        return obj.quality_assurance_id if obj.quality_assurance else None

@@ -8,6 +8,9 @@ urlpatterns = [
     path("api/eco/get/", views.get_all_ecos, name="get_all_ecos"),
     path("api/eco/edit/<int:pk>/", views.edit_eco, name="edit_eco"),
     path("api/eco/delete/<int:pk>/", views.delete_eco, name="delete_eco"),
+    
+    # Missing BOM items endpoint
+    path("api/eco/<int:eco_id>/missingBomItems/", views.get_eco_missing_bom_items_api, name="get_eco_missing_bom_items"),
 
     # Get ECOs for a specific item
     path("api/eco/forItem/<str:app>/<int:item_id>/", views.get_ecos_for_item, name="get_ecos_for_item"),
