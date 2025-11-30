@@ -5,9 +5,53 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+
 from profiles.models import Profile
 from .models import Organization, Rules
 from .serializers import RulesSerializer
+
+from assemblies.models import Assembly
+from documents.models import Document
+from parts.models import Part
+from pcbas.models import Pcba
+from projects.models import Project
+from assembly_bom.models import Assembly_bom, Bom_item
+from eco.models import AffectedItem
+
+
+def check_item_affected_by_unreleased_eco(item_type, item_id):
+    """
+    Check if an item is affected by an unreleased ECO.
+    Items affected by an unreleased ECO can only be set to Review state, not Released.
+    
+    Args:
+        item_type: One of 'part', 'pcba', 'assembly', 'document'
+        item_id: The ID of the item
+        
+    Returns:
+        tuple: (is_affected: bool, eco_info: dict or None)
+            eco_info contains 'id', 'display_name' if affected
+    """
+    
+    # Build filter for the specific item type
+    filter_kwargs = {f'{item_type}_id': item_id}
+    
+    # Find affected items where the ECO is not released
+    affected_items = AffectedItem.objects.filter(
+        **filter_kwargs
+    ).select_related('eco').exclude(
+        eco__release_state='Released'
+    )
+    
+    if affected_items.exists():
+        eco = affected_items.first().eco
+        return True, {
+            'id': eco.id,
+            'display_name': eco.display_name or f'ECO{eco.id}',
+            'release_state': eco.release_state,
+        }
+    
+    return False, None
 
 
 def check_bom_items_released(bom_items):
@@ -249,10 +293,6 @@ def update_organization_rules(request):
 def check_assembly_rules(request, assembly_id):
     """Check if an assembly meets release rules requirements."""
     try:
-        from assemblies.models import Assembly
-        from projects.models import Project
-        from assembly_bom.models import Assembly_bom, Bom_item
-        
         assembly = get_object_or_404(Assembly, id=assembly_id)
         
         # Get project from query params or assembly
@@ -266,20 +306,22 @@ def check_assembly_rules(request, assembly_id):
         # Get applicable rules
         rules = get_rules_for_item(request.user, project)
         
-        has_active_rules = rules and (rules.require_released_bom_items_assembly or rules.require_review_on_assembly)
-        
-        if not has_active_rules:
-            return Response({
-                'has_active_rules': False,
-                'all_rules_passed': True,
-                'rules_checks': [],
-            }, status=status.HTTP_200_OK)
-        
         rules_checks = []
         all_passed = True
         
+        # Check if assembly is affected by an unreleased ECO
+        is_eco_affected, eco_info = check_item_affected_by_unreleased_eco('assembly', assembly_id)
+        if is_eco_affected:
+            all_passed = False
+            rules_checks.append({
+                'rule': 'eco_affected_item',
+                'description': f'Assembly is affected by unreleased ECO: {eco_info["display_name"]}. Release the ECO to release this item.',
+                'passed': False,
+                'eco': eco_info,
+            })
+        
         # Check review requirement
-        if rules.require_review_on_assembly:
+        if rules and rules.require_review_on_assembly:
             is_reviewed = assembly.quality_assurance is not None
             if not is_reviewed:
                 all_passed = False
@@ -290,7 +332,7 @@ def check_assembly_rules(request, assembly_id):
             })
         
         # Check BOM items if required
-        if rules.require_released_bom_items_assembly:
+        if rules and rules.require_released_bom_items_assembly:
             try:
                 assembly_bom = Assembly_bom.objects.get(assembly_id=assembly_id)
                 bom_items = Bom_item.objects.filter(bom=assembly_bom)
@@ -312,11 +354,20 @@ def check_assembly_rules(request, assembly_id):
                     'unreleased_items': [],
                 })
         
+        has_active_rules = len(rules_checks) > 0
+        
+        if not has_active_rules:
+            return Response({
+                'has_active_rules': False,
+                'all_rules_passed': True,
+                'rules_checks': [],
+            }, status=status.HTTP_200_OK)
+        
         return Response({
             'has_active_rules': True,
             'all_rules_passed': all_passed,
-            'override_permission': rules.override_permission,
-            'can_override': user_can_override(request.user, rules, project),
+            'override_permission': rules.override_permission if rules else 'Admin',
+            'can_override': user_can_override(request.user, rules, project) if rules else False,
             'rules_checks': rules_checks,
         }, status=status.HTTP_200_OK)
         
@@ -332,10 +383,6 @@ def check_assembly_rules(request, assembly_id):
 def check_pcba_rules(request, pcba_id):
     """Check if a PCBA meets release rules requirements."""
     try:
-        from pcbas.models import Pcba
-        from projects.models import Project
-        from assembly_bom.models import Assembly_bom, Bom_item
-        
         pcba = get_object_or_404(Pcba, id=pcba_id)
         
         # Get project from query params or pcba
@@ -349,20 +396,22 @@ def check_pcba_rules(request, pcba_id):
         # Get applicable rules
         rules = get_rules_for_item(request.user, project)
         
-        has_active_rules = rules and (rules.require_released_bom_items_pcba or rules.require_review_on_pcba)
-        
-        if not has_active_rules:
-            return Response({
-                'has_active_rules': False,
-                'all_rules_passed': True,
-                'rules_checks': [],
-            }, status=status.HTTP_200_OK)
-        
         rules_checks = []
         all_passed = True
         
+        # Check if PCBA is affected by an unreleased ECO
+        is_eco_affected, eco_info = check_item_affected_by_unreleased_eco('pcba', pcba_id)
+        if is_eco_affected:
+            all_passed = False
+            rules_checks.append({
+                'rule': 'eco_affected_item',
+                'description': f'PCBA is affected by unreleased ECO: {eco_info["display_name"]}. Release the ECO to release this item.',
+                'passed': False,
+                'eco': eco_info,
+            })
+        
         # Check review requirement
-        if rules.require_review_on_pcba:
+        if rules and rules.require_review_on_pcba:
             is_reviewed = pcba.quality_assurance is not None
             if not is_reviewed:
                 all_passed = False
@@ -373,7 +422,7 @@ def check_pcba_rules(request, pcba_id):
             })
         
         # Check BOM items if required
-        if rules.require_released_bom_items_pcba:
+        if rules and rules.require_released_bom_items_pcba:
             try:
                 pcba_bom = Assembly_bom.objects.get(pcba=pcba)
                 bom_items = Bom_item.objects.filter(bom=pcba_bom)
@@ -395,11 +444,20 @@ def check_pcba_rules(request, pcba_id):
                     'unreleased_items': [],
                 })
         
+        has_active_rules = len(rules_checks) > 0
+        
+        if not has_active_rules:
+            return Response({
+                'has_active_rules': False,
+                'all_rules_passed': True,
+                'rules_checks': [],
+            }, status=status.HTTP_200_OK)
+        
         return Response({
             'has_active_rules': True,
             'all_rules_passed': all_passed,
-            'override_permission': rules.override_permission,
-            'can_override': user_can_override(request.user, rules, project),
+            'override_permission': rules.override_permission if rules else 'Admin',
+            'can_override': user_can_override(request.user, rules, project) if rules else False,
             'rules_checks': rules_checks,
         }, status=status.HTTP_200_OK)
         
@@ -412,10 +470,7 @@ def check_pcba_rules(request, pcba_id):
 @login_required(login_url="/login")
 def check_part_rules(request, part_id):
     """Check if a part meets release rules requirements."""
-    try:
-        from parts.models import Part
-        from projects.models import Project
-        
+    try:     
         part = get_object_or_404(Part, id=part_id)
         
         # Get project from query params or part
@@ -429,26 +484,46 @@ def check_part_rules(request, part_id):
         # Get applicable rules
         rules = get_rules_for_item(request.user, project)
         
-        if not rules or not rules.require_review_on_part:
+        rules_checks = []
+        all_passed = True
+        
+        # Check if part is affected by an unreleased ECO
+        is_eco_affected, eco_info = check_item_affected_by_unreleased_eco('part', part_id)
+        if is_eco_affected:
+            all_passed = False
+            rules_checks.append({
+                'rule': 'eco_affected_item',
+                'description': f'Part is affected by unreleased ECO: {eco_info["display_name"]}. Release the ECO to release this item.',
+                'passed': False,
+                'eco': eco_info,
+            })
+        
+        # Check review requirement if rules exist
+        if rules and rules.require_review_on_part:
+            is_reviewed = part.quality_assurance is not None
+            if not is_reviewed:
+                all_passed = False
+            rules_checks.append({
+                'rule': 'require_review_on_part',
+                'description': 'Part must be reviewed before release',
+                'passed': is_reviewed,
+            })
+        
+        has_active_rules = len(rules_checks) > 0
+        
+        if not has_active_rules:
             return Response({
                 'has_active_rules': False,
                 'all_rules_passed': True,
                 'rules_checks': [],
             }, status=status.HTTP_200_OK)
         
-        # Check review requirement
-        is_reviewed = part.quality_assurance is not None
-        
         return Response({
             'has_active_rules': True,
-            'all_rules_passed': is_reviewed,
-            'override_permission': rules.override_permission,
-            'can_override': user_can_override(request.user, rules, project),
-            'rules_checks': [{
-                'rule': 'require_review_on_part',
-                'description': 'Part must be reviewed before release',
-                'passed': is_reviewed,
-            }],
+            'all_rules_passed': all_passed,
+            'override_permission': rules.override_permission if rules else 'Admin',
+            'can_override': user_can_override(request.user, rules, project) if rules else False,
+            'rules_checks': rules_checks,
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
@@ -461,9 +536,6 @@ def check_part_rules(request, part_id):
 def check_document_rules(request, document_id):
     """Check if a document meets release rules requirements."""
     try:
-        from documents.models import Document
-        from projects.models import Project
-        
         document = get_object_or_404(Document, id=document_id)
         
         # Get project from query params or document
@@ -477,26 +549,46 @@ def check_document_rules(request, document_id):
         # Get applicable rules
         rules = get_rules_for_item(request.user, project)
         
-        if not rules or not rules.require_review_on_document:
+        rules_checks = []
+        all_passed = True
+        
+        # Check if document is affected by an unreleased ECO
+        is_eco_affected, eco_info = check_item_affected_by_unreleased_eco('document', document_id)
+        if is_eco_affected:
+            all_passed = False
+            rules_checks.append({
+                'rule': 'eco_affected_item',
+                'description': f'Document is affected by unreleased ECO: {eco_info["display_name"]}. Release the ECO to release this item.',
+                'passed': False,
+                'eco': eco_info,
+            })
+        
+        # Check review requirement if rules exist
+        if rules and rules.require_review_on_document:
+            is_reviewed = document.quality_assurance is not None
+            if not is_reviewed:
+                all_passed = False
+            rules_checks.append({
+                'rule': 'require_review_on_document',
+                'description': 'Document must be reviewed before release',
+                'passed': is_reviewed,
+            })
+        
+        has_active_rules = len(rules_checks) > 0
+        
+        if not has_active_rules:
             return Response({
                 'has_active_rules': False,
                 'all_rules_passed': True,
                 'rules_checks': [],
             }, status=status.HTTP_200_OK)
         
-        # Check review requirement
-        is_reviewed = document.quality_assurance is not None
-        
         return Response({
             'has_active_rules': True,
-            'all_rules_passed': is_reviewed,
-            'override_permission': rules.override_permission,
-            'can_override': user_can_override(request.user, rules, project),
-            'rules_checks': [{
-                'rule': 'require_review_on_document',
-                'description': 'Document must be reviewed before release',
-                'passed': is_reviewed,
-            }],
+            'all_rules_passed': all_passed,
+            'override_permission': rules.override_permission if rules else 'Admin',
+            'can_override': user_can_override(request.user, rules, project) if rules else False,
+            'rules_checks': rules_checks,
         }, status=status.HTTP_200_OK)
         
     except Exception as e:

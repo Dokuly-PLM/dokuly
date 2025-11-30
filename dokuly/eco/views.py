@@ -4,6 +4,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from datetime import datetime
 
 from .models import Eco, AffectedItem
@@ -16,6 +17,84 @@ from pcbas.models import Pcba
 from assemblies.models import Assembly
 from projects.models import Project, Tag
 from projects.viewsTags import check_for_and_create_new_tags
+
+
+def release_affected_items(eco, released_by):
+    """
+    Release all affected items linked to an ECO.
+    
+    When an ECO is released, all parts/pcbas/assemblies/documents that are
+    affected by it should be released as well (if not already released).
+    
+    Args:
+        eco: The ECO that was just released
+        released_by: The user who released the ECO
+        
+    Returns:
+        dict: Summary of released items with counts and any errors
+    """
+    results = {
+        'parts_released': 0,
+        'pcbas_released': 0,
+        'assemblies_released': 0,
+        'documents_released': 0,
+        'already_released': 0,
+        'errors': []
+    }
+    
+    affected_items = AffectedItem.objects.filter(eco=eco)
+    release_date = datetime.now()
+    
+    for affected_item in affected_items:
+        try:
+            # Release Part
+            if affected_item.part:
+                part = affected_item.part
+                if part.release_state != "Released":
+                    part.release_state = "Released"
+                    part.released_date = release_date
+                    part.save()
+                    results['parts_released'] += 1
+                else:
+                    results['already_released'] += 1
+                    
+            # Release PCBA
+            elif affected_item.pcba:
+                pcba = affected_item.pcba
+                if pcba.release_state != "Released":
+                    pcba.release_state = "Released"
+                    pcba.released_date = release_date
+                    pcba.save()
+                    results['pcbas_released'] += 1
+                else:
+                    results['already_released'] += 1
+                    
+            # Release Assembly
+            elif affected_item.assembly:
+                assembly = affected_item.assembly
+                if assembly.release_state != "Released":
+                    assembly.release_state = "Released"
+                    assembly.released_date = release_date
+                    assembly.save()
+                    results['assemblies_released'] += 1
+                else:
+                    results['already_released'] += 1
+                    
+            # Release Document
+            elif affected_item.document:
+                document = affected_item.document
+                if document.release_state != "Released":
+                    document.release_state = "Released"
+                    document.released_date = release_date
+                    document.save()
+                    results['documents_released'] += 1
+                else:
+                    results['already_released'] += 1
+                    
+        except Exception as e:
+            results['errors'].append(f"Error releasing affected item {affected_item.id}: {str(e)}")
+    
+    return results
 
 
 @api_view(("POST",))
@@ -110,6 +189,17 @@ def edit_eco(request, pk):
         if data["release_state"] == "Released":
             eco.released_date = datetime.now()
             eco.released_by = request.user
+            
+            # Batch release all affected items when ECO is released
+            eco.save()  # Save first to ensure ECO is released
+            release_results = release_affected_items(eco, request.user)
+            
+            # Include release results in the response
+            serializer = EcoSerializer(eco)
+            response_data = serializer.data
+            response_data['release_results'] = release_results
+                        
+            return Response(response_data, status=status.HTTP_200_OK)
 
     if "is_approved_for_release" in data:
         if data["is_approved_for_release"] == False:
