@@ -177,7 +177,7 @@ const DisplayEco = () => {
             hiddenText={"No description added"}
           >
             <CardTitle
-              titleText={"Description"}
+              titleText={"Description of change"}
               optionalHelpText={
                 "Describe the engineering change order. Use markdown for formatting."
               }

@@ -258,7 +258,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
     },
     {
       key: "description",
-      header: "Description",
+      header: "Required Change",
       formatter: (row, column, searchString) => (
         <TextFieldEditor
           text={row?.description}
