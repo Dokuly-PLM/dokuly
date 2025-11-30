@@ -145,20 +145,64 @@ export const getBomTableColumns = ({
       header: "MPN",
       headerTooltip: "Manufacturer Part Number",
       sort: true,
-      formatter: (row) => (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-        <span
-          onClick={() => handleClick(row.mpn)}
-          title="Copy"
-          style={{
-            cursor: "pointer",
-            padding: "5px",
-            borderRadius: "5px",
-          }}
-        >
-          {row.mpn}
-        </span>
-      ),
+      formatter: (row) => {
+        // Check if item is matched (has part, pcba, or assembly linked)
+        const isMatched = row.part || row.pcba || row.assembly;
+        
+        // If matched and has MPN, show it normally
+        if (isMatched && row.mpn) {
+          return (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+            <span
+              onClick={() => handleClick(row.mpn)}
+              title="Copy"
+              style={{
+                cursor: "pointer",
+                padding: "5px",
+                borderRadius: "5px",
+              }}
+            >
+              {row.mpn}
+            </span>
+          );
+        }
+        
+        // If not matched but has temporary_mpn, show it muted
+        if (!isMatched && row.temporary_mpn && row.temporary_mpn !== "-") {
+          return (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+            <span
+              onClick={() => handleClick(row.temporary_mpn)}
+              title="Copy (Temporary MPN)"
+              className="text-muted"
+              style={{
+                cursor: "pointer",
+                padding: "5px",
+                borderRadius: "5px",
+                fontStyle: "italic",
+              }}
+            >
+              {row.temporary_mpn}
+            </span>
+          );
+        }
+        
+        // Otherwise show the MPN or empty
+        return (
+          // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+          <span
+            onClick={() => handleClick(row.mpn)}
+            title="Copy"
+            style={{
+              cursor: "pointer",
+              padding: "5px",
+              borderRadius: "5px",
+            }}
+          >
+            {row.mpn}
+          </span>
+        );
+      },
       csvFormatter: (row) => (row.mpn ? `${row.mpn}` : ""),
       // Enhanced search functionality for MPN
       searchValue: (row) => {
