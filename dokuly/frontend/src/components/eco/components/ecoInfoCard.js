@@ -1,5 +1,5 @@
-import React from "react";
-import { Row, Col, Container } from "react-bootstrap";
+import React, { useMemo } from "react";
+import { Row, Col, Container, ProgressBar } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
@@ -16,6 +16,7 @@ const EcoInfoCard = ({
   setRefresh,
   readOnly = false,
   profiles = [],
+  affectedItems = [],
 }) => {
   const navigate = useNavigate();
 
@@ -58,6 +59,36 @@ const EcoInfoCard = ({
 
   const isReleased = eco?.release_state === "Released";
   const keyColumnMaxWidth = "140px";
+
+  // Calculate review statistics from affected items
+  const reviewStats = useMemo(() => {
+    // Only count items that have an actual linked item (not empty rows)
+    const itemsWithLinks = affectedItems.filter(
+      (item) => item.part || item.pcba || item.assembly || item.document
+    );
+    const totalItems = itemsWithLinks.length;
+    const reviewedItems = itemsWithLinks.filter(
+      (item) => item.quality_assurance_id != null
+    ).length;
+    const progress = totalItems > 0 ? (reviewedItems / totalItems) * 100 : 0;
+
+    return {
+      total: totalItems,
+      reviewed: reviewedItems,
+      progress,
+    };
+  }, [affectedItems]);
+
+  // Determine the color based on review progress
+  const getProgressColor = (progress) => {
+    if (progress < 33) {
+      return "danger"; // Red
+    }
+    if (progress < 75) {
+      return "warning"; // Yellow
+    }
+    return "success"; // Green
+  };
 
   return (
     <DokulyCard>
@@ -152,6 +183,33 @@ const EcoInfoCard = ({
             </Col>
             <Col>{eco.released_by_name}</Col>
           </Row>
+        )}
+
+        {/* Review Progress Bar */}
+        {reviewStats.total > 0 && (
+          <>
+            <hr />
+            <Row className="align-items-center mb-2">
+              <Col className="col-lg-6 col-xl-6" style={{ maxWidth: keyColumnMaxWidth }}>
+                <b>Review Progress:</b>
+              </Col>
+              <Col>
+                <div className="d-flex align-items-center">
+                  <span className="mr-2" style={{ fontSize: "0.875rem" }}>
+                    {reviewStats.reviewed} / {reviewStats.total}
+                  </span>
+                  <ProgressBar
+                    now={reviewStats.progress}
+                    variant={getProgressColor(reviewStats.progress)}
+                    style={{ width: "100px", height: "12px", marginRight: "10px" }}
+                  />
+                  <span style={{ fontSize: "0.875rem" }}>
+                    {reviewStats.progress.toFixed(0)}%
+                  </span>
+                </div>
+              </Col>
+            </Row>
+          </>
         )}
 
         {/* Tags */}
