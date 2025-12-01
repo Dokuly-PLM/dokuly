@@ -71,7 +71,7 @@ def get_eco_missing_bom_items(eco):
                                     'full_part_number': bom_item.part.full_part_number,
                                     'display_name': bom_item.part.display_name,
                                     'release_state': bom_item.part.release_state,
-                                    'thumbnail': bom_item.part.thumbnail.url if bom_item.part.thumbnail else None,
+                                    'thumbnail_id': bom_item.part.thumbnail_id,
                                     'parent_type': 'Assembly',
                                     'parent_part_number': item.assembly.full_part_number if item.assembly else '-',
                                 })
@@ -86,7 +86,7 @@ def get_eco_missing_bom_items(eco):
                                     'full_part_number': bom_item.pcba.full_part_number,
                                     'display_name': bom_item.pcba.display_name,
                                     'release_state': bom_item.pcba.release_state,
-                                    'thumbnail': bom_item.pcba.thumbnail.url if bom_item.pcba.thumbnail else None,
+                                    'thumbnail_id': bom_item.pcba.thumbnail_id,
                                     'parent_type': 'Assembly',
                                     'parent_part_number': item.assembly.full_part_number if item.assembly else '-',
                                 })
@@ -101,7 +101,7 @@ def get_eco_missing_bom_items(eco):
                                     'full_part_number': bom_item.assembly.full_part_number,
                                     'display_name': bom_item.assembly.display_name,
                                     'release_state': bom_item.assembly.release_state,
-                                    'thumbnail': bom_item.assembly.thumbnail.url if bom_item.assembly.thumbnail else None,
+                                    'thumbnail_id': bom_item.assembly.thumbnail_id,
                                     'parent_type': 'Assembly',
                                     'parent_part_number': item.assembly.full_part_number if item.assembly else '-',
                                 })
@@ -127,7 +127,7 @@ def get_eco_missing_bom_items(eco):
                                     'full_part_number': bom_item.part.full_part_number,
                                     'display_name': bom_item.part.display_name,
                                     'release_state': bom_item.part.release_state,
-                                    'thumbnail': bom_item.part.thumbnail.url if bom_item.part.thumbnail else None,
+                                    'thumbnail_id': bom_item.part.thumbnail_id,
                                     'parent_type': 'PCBA',
                                     'parent_part_number': item.pcba.full_part_number if item.pcba else '-',
                                 })
@@ -142,7 +142,7 @@ def get_eco_missing_bom_items(eco):
                                     'full_part_number': bom_item.pcba.full_part_number,
                                     'display_name': bom_item.pcba.display_name,
                                     'release_state': bom_item.pcba.release_state,
-                                    'thumbnail': bom_item.pcba.thumbnail.url if bom_item.pcba.thumbnail else None,
+                                    'thumbnail_id': bom_item.pcba.thumbnail_id,
                                     'parent_type': 'PCBA',
                                     'parent_part_number': item.pcba.full_part_number if item.pcba else '-',
                                 })
@@ -157,7 +157,7 @@ def get_eco_missing_bom_items(eco):
                                     'full_part_number': bom_item.assembly.full_part_number,
                                     'display_name': bom_item.assembly.display_name,
                                     'release_state': bom_item.assembly.release_state,
-                                    'thumbnail': bom_item.assembly.thumbnail.url if bom_item.assembly.thumbnail else None,
+                                    'thumbnail_id': bom_item.assembly.thumbnail_id,
                                     'parent_type': 'PCBA',
                                     'parent_part_number': item.pcba.full_part_number if item.pcba else '-',
                                 })
