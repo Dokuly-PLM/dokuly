@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DokulyImage from "../../dokuly_components/dokulyImage";
-import { formatCloudImageUri } from "../../pcbas/functions/productionHelpers";
 import { releaseStateFormatterNoObject } from "../../dokuly_components/formatters/releaseStateFormatter";
 
 const MissingBomItemsList = ({ items, textSize = "12px", show, style = {} }) => {
@@ -101,9 +100,9 @@ const MissingBomItemsList = ({ items, textSize = "12px", show, style = {} }) => 
                       marginRight: "10px",
                     }}
                   >
-                    {item.thumbnail ? (
+                    {item.thumbnail_id ? (
                       <DokulyImage
-                        src={formatCloudImageUri(item.thumbnail)}
+                        src={`/api/files/images/download/${item.thumbnail_id}/`}
                         alt="Thumbnail"
                         style={{
                           maxWidth: "40px",
