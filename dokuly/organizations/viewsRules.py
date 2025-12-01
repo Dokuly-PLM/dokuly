@@ -444,6 +444,7 @@ def fetch_organization_rules(request):
                 'require_bom_items_released_or_in_eco': False,
                 'require_bom_items_matched_for_eco_assembly': False,
                 'require_bom_items_matched_for_eco_pcba': False,
+                'require_revision_notes_on_affected_items': False,
                 'override_permission': 'Admin',
             }
         )
@@ -492,6 +493,7 @@ def update_organization_rules(request):
                 'require_bom_items_released_or_in_eco': False,
                 'require_bom_items_matched_for_eco_assembly': False,
                 'require_bom_items_matched_for_eco_pcba': False,
+                'require_revision_notes_on_affected_items': False,
                 'override_permission': 'Admin',
             }
         )
@@ -537,6 +539,9 @@ def update_organization_rules(request):
         
         if 'require_bom_items_matched_for_eco_pcba' in data:
             rules.require_bom_items_matched_for_eco_pcba = data['require_bom_items_matched_for_eco_pcba']
+        
+        if 'require_revision_notes_on_affected_items' in data:
+            rules.require_revision_notes_on_affected_items = data['require_revision_notes_on_affected_items']
         
         if 'override_permission' in data:
             # Validate permission choice
@@ -1034,6 +1039,47 @@ def check_eco_rules(request, eco_id):
                 'total': total_bom_items,
                 'matched': matched_count,
                 'unmatched_items': unmatched_items[:20],  # Limit to first 20 for display
+            })
+        
+        # Check if all affected items have revision notes
+        if rules and rules.require_revision_notes_on_affected_items:
+            affected_items = AffectedItem.objects.filter(eco=eco)
+            
+            items_without_notes = []
+            total_items = 0
+            items_with_notes = 0
+            
+            for affected_item in affected_items:
+                # Get the linked item
+                linked_item = affected_item.part or affected_item.pcba or affected_item.assembly or affected_item.document
+                if linked_item:
+                    total_items += 1
+                    # Check if the item has revision_notes
+                    revision_notes = getattr(linked_item, 'revision_notes', None)
+                    has_notes = revision_notes is not None and revision_notes.strip() != ''
+                    
+                    if has_notes:
+                        items_with_notes += 1
+                    else:
+                        item_type = 'Part' if affected_item.part else 'PCBA' if affected_item.pcba else 'Assembly' if affected_item.assembly else 'Document'
+                        part_number = getattr(linked_item, 'full_part_number', None) or getattr(linked_item, 'full_doc_number', None) or str(linked_item.id)
+                        items_without_notes.append({
+                            'type': item_type,
+                            'part_number': part_number,
+                            'display_name': getattr(linked_item, 'display_name', None) or getattr(linked_item, 'title', ''),
+                        })
+            
+            notes_passed = len(items_without_notes) == 0
+            if not notes_passed:
+                all_passed = False
+            
+            rules_checks.append({
+                'rule': 'require_revision_notes_on_affected_items',
+                'description': f'All affected items must have revision notes ({items_with_notes}/{total_items} have notes)',
+                'passed': notes_passed,
+                'total': total_items,
+                'with_notes': items_with_notes,
+                'items_without_notes': items_without_notes[:20],  # Limit to first 20 for display
             })
         
         has_active_rules = len(rules_checks) > 0

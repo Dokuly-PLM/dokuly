@@ -307,6 +307,12 @@ class Rules(models.Model):
         help_text="Require all BOM items of affected PCBAs to be matched to a Part, PCBA, or Assembly before releasing an ECO"
     )
     
+    require_revision_notes_on_affected_items = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require all affected items in an ECO to have revision notes before releasing"
+    )
+    
     # Override permissions - choices: Owner, Admin, User, Project Owner
     PERMISSION_CHOICES = [
         ('Owner', 'Owner'),

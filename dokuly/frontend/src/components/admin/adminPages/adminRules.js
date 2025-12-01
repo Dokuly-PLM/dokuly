@@ -25,6 +25,7 @@ const AdminRules = ({ setRefresh }) => {
   const [requireBomItemsReleasedOrInEco, setRequireBomItemsReleasedOrInEco] = useState(false);
   const [requireBomItemsMatchedForEcoAssembly, setRequireBomItemsMatchedForEcoAssembly] = useState(false);
   const [requireBomItemsMatchedForEcoPcba, setRequireBomItemsMatchedForEcoPcba] = useState(false);
+  const [requireRevisionNotesOnAffectedItems, setRequireRevisionNotesOnAffectedItems] = useState(false);
   const [overridePermission, setOverridePermission] = useState("Admin");
 
   const sections = [
@@ -58,6 +59,7 @@ const AdminRules = ({ setRefresh }) => {
           setRequireBomItemsReleasedOrInEco(res.data.require_bom_items_released_or_in_eco || false);
           setRequireBomItemsMatchedForEcoAssembly(res.data.require_bom_items_matched_for_eco_assembly || false);
           setRequireBomItemsMatchedForEcoPcba(res.data.require_bom_items_matched_for_eco_pcba || false);
+          setRequireRevisionNotesOnAffectedItems(res.data.require_revision_notes_on_affected_items || false);
           setOverridePermission(res.data.override_permission || "Admin");
         }
         setLoading(false);
@@ -84,6 +86,7 @@ const AdminRules = ({ setRefresh }) => {
       require_bom_items_released_or_in_eco: requireBomItemsReleasedOrInEco,
       require_bom_items_matched_for_eco_assembly: requireBomItemsMatchedForEcoAssembly,
       require_bom_items_matched_for_eco_pcba: requireBomItemsMatchedForEcoPcba,
+      require_revision_notes_on_affected_items: requireRevisionNotesOnAffectedItems,
       override_permission: overridePermission,
     };
 
@@ -248,6 +251,12 @@ const AdminRules = ({ setRefresh }) => {
                   value={requireBomItemsMatchedForEcoPcba}
                   onChange={setRequireBomItemsMatchedForEcoPcba}
                   id="requireBomItemsMatchedForEcoPcba"
+                />
+                <DokulyCheckFormGroup
+                  label="Require revision notes on all affected items"
+                  value={requireRevisionNotesOnAffectedItems}
+                  onChange={setRequireRevisionNotesOnAffectedItems}
+                  id="requireRevisionNotesOnAffectedItems"
                 />
               </div>
 
