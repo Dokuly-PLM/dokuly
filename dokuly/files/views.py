@@ -480,14 +480,11 @@ def compress_image(file, filename, folder):
 
         im_io = io.BytesIO()
         im.save(im_io, 'JPEG', quality=60)
-        print("Image compressed and saved as JPEG in memory.")
 
         compressed_image = InMemoryUploadedFile(
             im_io, None, f"{folder}/compressed_{filename}",
             'image/jpeg', im_io.getbuffer().nbytes, None
         )
-
-        print(f"Compressed size {im_io.getbuffer().nbytes} bytes.")
 
         return compressed_image
 
@@ -925,14 +922,21 @@ def convert_file_size(size_in_bytes):
 
 
 def check_file_sizes_vs_limit(organization, fileSize, request):
-    local_server = bool(int(os.environ.get("DJANGO_LOCAL_SERVER", 0)))
-    if local_server:
-        return True
-    limit = organization.storage_limit
-    current = organization.current_storage_size
-    if (limit - current) > fileSize:
-        return True
-    return False
+    """
+    DEPRECATED: This function previously enforced storage limits per organization.
+    Since the project is now open source, storage limits are no longer enforced.
+    The function is kept for backwards compatibility but always returns True.
+    
+    Args:
+        organization: Organization object (unused, kept for compatibility)
+        fileSize: Size of the file in bytes (unused, kept for compatibility)
+        request: HTTP request object (unused, kept for compatibility)
+    
+    Returns:
+        bool: Always True (no storage limit enforcement)
+    """
+    # Always allow file uploads - no storage limits. Its open source :D
+    return True
 
 
 def update_org_current_storage_size(request):
