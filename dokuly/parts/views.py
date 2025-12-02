@@ -55,7 +55,7 @@ from profiles.utilityFunctions import (
     notify_on_state_change_to_release)
 
 from projects.viewsTags import check_for_and_create_new_tags
-from parts.viewUtilities import copy_markdown_tabs_to_new_revision
+from parts.viewUtilities import copy_markdown_tabs_to_new_revision, download_image_and_create_thumbnail, download_datasheet_and_attach
 from organizations.revision_utils import build_full_part_number, build_formatted_revision, increment_revision_counters
 
 @api_view(("PUT",))
@@ -881,10 +881,7 @@ def create_new_part(request, **kwargs):
         new_part.internal = data["internal"]
         if "description" in data:
             new_part.description = data["description"]
-        if "datasheet" in data:
-            new_part.datasheet = data["datasheet"]
-        if "image_url" in data:
-            new_part.image_url = data["image_url"]
+
         new_part.external_part_number = data.get("external_part_number", "")
 
         if "git_link" in data:
@@ -989,6 +986,19 @@ def create_new_part(request, **kwargs):
 
         # Save again with the full part number
         new_part.save()
+
+        # Check if image_url has a value and download it to create thumbnail
+        if "image_url" in data:
+            new_part.image_url = data["image_url"]
+            if new_part.image_url and new_part.image_url.strip():
+                download_image_and_create_thumbnail(new_part, new_part.image_url, user)
+        
+        # Check if datasheet has a value and download it to attach as file
+        if "datasheet" in data:
+            new_part.datasheet = data["datasheet"]
+            if new_part.datasheet and new_part.datasheet.strip():
+                download_datasheet_and_attach(new_part, new_part.datasheet, user)
+        
         serializer = PartSerializer(new_part, many=False)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -1152,6 +1162,9 @@ def edit_part(request, pk, **kwargs):
 
         if "datasheet" in data:
             part.datasheet = data["datasheet"]
+            # If datasheet has a value, download it and attach as file
+            if part.datasheet and part.datasheet.strip():
+                download_datasheet_and_attach(part, part.datasheet, user)
 
         if "display_name" in data:
             part.display_name = data["display_name"]
@@ -1161,6 +1174,9 @@ def edit_part(request, pk, **kwargs):
 
         if "image_url" in data:
             part.image_url = data["image_url"]
+            # If image_url has a value, download it to create thumbnail
+            if part.image_url and part.image_url.strip():
+                download_image_and_create_thumbnail(part, part.image_url, user)
 
         if "internal" in data:
             part.internal = data["internal"]

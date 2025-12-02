@@ -271,6 +271,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "dokuly.wsgi.application"
 
+# File Upload Settings
+# Setting max file upload size to 10MB to prevent abuse while allowing reasonable file sizes
+# 10MB = 10 * 1024 * 1024 = 10485760 bytes
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB limit on request body size
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB limit on file upload size
+
 if testing_server:
     TEST_DATABASE_PREFIX = "test_"
 

@@ -27,14 +27,6 @@ class Organization(models.Model):
 
     max_allowed_active_viewer_users = models.IntegerField(default=3, blank=True)
 
-    # ND managed fields, for customer and cost management
-    current_storage_size = models.BigIntegerField(
-        blank=True, default=1
-    )  # Saved as bytes
-    storage_limit = models.BigIntegerField(
-        blank=True, default=5368709120
-    )  # 5GB in bytes
-
     # TODO Document these fields.
     image_ids = ArrayField(
         models.IntegerField(null=True, blank=True), null=True, blank=True
@@ -130,6 +122,15 @@ class Organization(models.Model):
 
     #-----------------------------------------------------------------------------------------------------------------------
     #DEPRECATED
+
+    # DEPRECATED: Storage tracking fields - kept for backwards compatibility
+    # Storage limits are no longer enforced since its open source
+    current_storage_size = models.BigIntegerField(
+        blank=True, default=1
+    )  # Saved as bytes
+    storage_limit = models.BigIntegerField(
+        blank=True, default=5368709120
+    )  # 5GB in bytes (DEPRECATED - not enforced)
 
     # Component Vault
     component_vault_api_key = encrypt(  
