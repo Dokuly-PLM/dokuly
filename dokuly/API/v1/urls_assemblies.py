@@ -1,6 +1,7 @@
 from django.urls import path
 from assemblies import views
 from assemblies import viewsFile
+from assemblies import viewsBom
 from API.v1 import views_files
 
 # API Requirements:
@@ -45,4 +46,12 @@ urlpatterns = [
     
     path('api/v1/assemblies/<int:assembly_id>/files/', views_files.download_files_from_assembly,
          kwargs={"model_type": "assembly"}),  # Download all files from assembly as ZIP
+
+    ################### BOM API ######################
+    path('api/v1/assemblies/bom/<int:assembly_id>/', viewsBom.upload_assembly_bom,
+         kwargs={"model_type": "assembly"}),  # BOM file upload
+
+    ################### IMAGE API ######################
+    path('api/v1/assemblies/image/<int:assembly_id>/', views_files.upload_image_to_assembly,
+         kwargs={"model_type": "assembly"}),  # Upload image to assembly
 ]

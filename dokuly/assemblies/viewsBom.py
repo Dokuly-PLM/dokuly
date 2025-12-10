@@ -1,30 +1,69 @@
-import requests
-import pcbas.viewUtilities as util
 import json
-from django.contrib.auth.decorators import login_required
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes, permission_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from organizations.permissions import APIAndProjectAccess
-from .serializers import PcbaSerializer
 from parts.models import Part
+from assemblies.models import Assembly
 from pcbas.models import Pcba
 from assembly_bom.models import Assembly_bom, Bom_item
-from profiles.views import check_user_auth_and_app_permission
 import csv
 from django.db import transaction
-from assembly_bom.serializers import BomItemSerializer
-from assemblies.models import Assembly
 from django.db.models import Q
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
-#TODO is this deprecated?
+@swagger_auto_schema(
+    method='post',
+    operation_id='upload_assembly_bom',
+    operation_description="""
+    Upload a BOM (Bill of Materials) CSV file to an assembly.
+    
+    **Required fields:**
+    - `file`: CSV file containing BOM data (multipart/form-data)
+    
+    **CSV Format:**
+    The CSV file should contain the following columns:
+    - `Reference`: Reference designator (e.g., "R1", "C5", "U3")
+    - `MPN`: Manufacturer Part Number (full part number with revision, e.g., "PRT1234A")
+    - `QUANTITY`: Quantity of the item (defaults to 1 if not specified)
+    - `DNP`: Do Not Populate flag (if present, item is marked as not mounted)
+    
+    **Note:** The assembly must not be in "Released" state to upload BOM.
+    Existing BOM items will be replaced with the new data.
+    """,
+    tags=['assemblies'],
+    manual_parameters=[
+        openapi.Parameter(
+            'file',
+            openapi.IN_FORM,
+            type=openapi.TYPE_FILE,
+            required=True,
+            description='CSV file containing BOM data'
+        ),
+    ],
+    consumes=['multipart/form-data'],
+    responses={
+        200: openapi.Response(description='BOM uploaded successfully'),
+        400: openapi.Response(description='Bad request - missing file, assembly is released, CSV is empty, or invalid data'),
+        401: openapi.Response(description='Unauthorized - invalid API key or no project access'),
+        404: openapi.Response(description='Assembly not found'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([IsAuthenticated | APIAndProjectAccess])
-def upload_pcba_bom(request, pcba_id, **kwargs):
+def upload_assembly_bom(request, assembly_id, **kwargs):
+    """
+    Upload a BOM CSV file to an assembly.
+    
+    Request must be multipart/form-data with:
+    - file: CSV file containing BOM data (required)
+    """
     try:
         # Ensure that a file has been uploaded
         if 'file' not in request.FILES:
@@ -46,15 +85,42 @@ def upload_pcba_bom(request, pcba_id, **kwargs):
 
         # Start a database transaction
         with transaction.atomic():
-            # Retrieve or create a BOM for the given PCBA
-            pcba = Pcba.objects.get(pk=pcba_id)
+            # Retrieve the assembly
+            try:
+                assembly = Assembly.objects.get(pk=assembly_id)
+            except Assembly.DoesNotExist:
+                return Response("Assembly not found.", status=status.HTTP_404_NOT_FOUND)
 
-            if pcba.release_state == "Released":
+            # Check project access for API key requests
+            if APIAndProjectAccess.has_validated_key(request):
+                if not APIAndProjectAccess.check_project_access(request, assembly.project.pk):
+                    return Response(
+                        "Not authorized - no access to this project",
+                        status=status.HTTP_401_UNAUTHORIZED
+                    )
+
+            if assembly.release_state == "Released":
                 return Response(
-                    "Can't edit a released pcba!", status=status.HTTP_400_BAD_REQUEST
+                    "Can't edit a released assembly!", status=status.HTTP_400_BAD_REQUEST
                 )
 
-            bom, created = Assembly_bom.objects.get_or_create(pcba=pcba)
+            # Retrieve or create a BOM for the given assembly
+            # Handle case where multiple BOMs might exist for the same assembly
+            existing_boms = Assembly_bom.objects.filter(assembly_id=assembly_id)
+            if existing_boms.exists():
+                # Use the first BOM if multiple exist (or most recent if we want to be smarter)
+                bom = existing_boms.first()
+                # If there are multiple BOMs, delete the extra ones to avoid confusion
+                # Keep only the first one
+                extra_boms = existing_boms.exclude(id=bom.id)
+                if extra_boms.exists():
+                    # Delete BOM items from extra BOMs first
+                    Bom_item.objects.filter(bom__in=extra_boms).delete()
+                    # Then delete the extra BOMs
+                    extra_boms.delete()
+            else:
+                # Create a new BOM if none exists
+                bom = Assembly_bom.objects.create(assembly_id=assembly_id)
 
             # Prepare data for bulk operations
             bom_items_to_create = []
@@ -116,9 +182,9 @@ def upload_pcba_bom(request, pcba_id, **kwargs):
             )
 
             assembly_map = {}
-            for assembly in assemblies_qs:
-                key = (assembly.full_part_number, assembly.revision)
-                assembly_map[key] = assembly
+            for assembly_obj in assemblies_qs:
+                key = (assembly_obj.full_part_number, assembly_obj.revision)
+                assembly_map[key] = assembly_obj
 
             # And for PCBAs
             pcbas_qs = Pcba.objects.filter(
@@ -176,3 +242,4 @@ def upload_pcba_bom(request, pcba_id, **kwargs):
 
     except Exception as e:
         return Response(f"An error occurred: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+

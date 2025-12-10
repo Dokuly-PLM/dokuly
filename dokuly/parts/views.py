@@ -253,6 +253,7 @@ def get_latest_revisions(request, **kwargs):
         "is_archived",
         "project",
         "price",
+        "external_part_number",
     )
     if APIAndProjectAccess.has_validated_key(request):
         if not APIAndProjectAccess.check_wildcard_access(request):
@@ -260,8 +261,6 @@ def get_latest_revisions(request, **kwargs):
                 Q(project__in=APIAndProjectAccess.get_allowed_projects(
                     request)) | Q(project__isnull=True)
             )
-        for part in part_query:
-            print("After", part.full_part_number)
     else:
         part_query = part_query.filter(
             Q(project__project_members=user) | Q(project__isnull=True))
