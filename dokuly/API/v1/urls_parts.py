@@ -46,4 +46,8 @@ urlpatterns = [
     
     path('api/v1/parts/<int:part_id>/files/', views_files.download_files_from_part,
          kwargs={"model_type": "part"}),  # Download all files from part as ZIP
+
+    ################### IMAGE API ######################
+    path('api/v1/parts/image/<int:part_id>/', views_files.upload_image_to_part,
+         kwargs={"model_type": "part"}),  # Upload image to part
 ]

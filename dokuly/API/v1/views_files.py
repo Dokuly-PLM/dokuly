@@ -30,12 +30,14 @@ class BinaryFileRenderer(BaseRenderer):
         return data
 
 from organizations.permissions import APIAndProjectAccess
-from files.models import File
-from files.views import check_file_sizes_vs_limit, get_organization_by_user_id, get_organization_by_id
+from files.models import File, Image
+from files.views import check_file_sizes_vs_limit, get_organization_by_user_id, get_organization_by_id, update_org_current_storage_size, compress_image
+from files.serializers import ImageSerializer
 from parts.models import Part
 from assemblies.models import Assembly
 from pcbas.models import Pcba
 import uuid
+from django.db import transaction
 
 
 def str_to_bool(value):
@@ -745,3 +747,397 @@ def download_files_from_pcba(request, pcba_id, **kwargs):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+
+# ==================== IMAGE UPLOAD OPERATIONS ====================
+
+@swagger_auto_schema(
+    method='post',
+    operation_id='upload_image_to_part',
+    operation_description="""
+    Upload an image to a part.
+    
+    **Required fields:**
+    - `file`: The image file to upload (multipart/form-data)
+    - `display_name`: Name for the image (optional, defaults to filename)
+    
+    **Note:** The part must not be in "Released" state to upload images.
+    Images are automatically compressed to JPEG format.
+    """,
+    tags=['parts'],
+    manual_parameters=[
+        openapi.Parameter(
+            'file',
+            openapi.IN_FORM,
+            type=openapi.TYPE_FILE,
+            required=True,
+            description='The image file to upload (JPEG, PNG, etc.)'
+        ),
+        openapi.Parameter(
+            'display_name',
+            openapi.IN_FORM,
+            type=openapi.TYPE_STRING,
+            required=False,
+            description='Display name for the image (optional)'
+        ),
+    ],
+    consumes=['multipart/form-data'],
+    responses={
+        201: openapi.Response(description='Image uploaded successfully'),
+        400: openapi.Response(description='Bad request - missing required fields, part is released, or invalid data'),
+        401: openapi.Response(description='Unauthorized - invalid API key or no project access'),
+        404: openapi.Response(description='Part not found'),
+        409: openapi.Response(description='Storage limit exceeded'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
+@api_view(['POST'])
+@renderer_classes([JSONRenderer])
+@permission_classes([IsAuthenticated | APIAndProjectAccess])
+def upload_image_to_part(request, part_id, **kwargs):
+    """
+    Upload an image to a part.
+    
+    Request must be multipart/form-data with:
+    - file: The image file to upload (required)
+    - display_name: Name for the image (optional)
+    """
+    if "file" not in request.data:
+        return Response(
+            {"error": "Missing required field: 'file'"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    file = request.FILES.get("file")
+    if file is None:
+        return Response(
+            {"error": "Invalid file - file is null"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Check storage limits
+    if APIAndProjectAccess.has_validated_key(request):
+        org_id = APIAndProjectAccess.get_organization_id(request)
+        if not check_file_sizes_vs_limit(get_organization_by_id(org_id), file.size, request):
+            return Response(
+                {"error": "Storage limit exceeded"},
+                status=status.HTTP_409_CONFLICT
+            )
+    else:
+        if not check_file_sizes_vs_limit(get_organization_by_user_id(request), file.size, request):
+            return Response(
+                {"error": "Storage limit exceeded"},
+                status=status.HTTP_409_CONFLICT
+            )
+
+    data = request.data
+    display_name = data.get("display_name", file.name[:250])
+
+    try:
+        part = Part.objects.get(pk=part_id)
+        
+        # Check project access for API key requests (only if project exists)
+        if APIAndProjectAccess.has_validated_key(request):
+            if part.project is not None:
+                if not APIAndProjectAccess.check_project_access(request, part.project.pk):
+                    return Response(
+                        {"error": "Not authorized - no access to this project"},
+                        status=status.HTTP_401_UNAUTHORIZED
+                    )
+
+        if part.release_state == "Released":
+            return Response(
+                {"error": "Cannot upload images to a released part"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            # Delete old thumbnail if exists
+            if part.thumbnail:
+                old_file = Image.objects.get(id=part.thumbnail.pk)
+                old_file.file.delete()
+                old_file.delete()
+
+            # Compress and save image
+            compressed_file = compress_image(file, file.name, "parts")
+            new_image = Image(image_name=display_name)
+            new_image.save()
+            new_image.file.save(f"{uuid.uuid4().hex}/{file.name}", compressed_file)
+            part.thumbnail = new_image
+            part.save()
+
+            serializer = ImageSerializer(new_image, many=False)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    except Part.DoesNotExist:
+        return Response(
+            {"error": "Part not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    finally:
+        update_org_current_storage_size(request)
+
+
+@swagger_auto_schema(
+    method='post',
+    operation_id='upload_image_to_assembly',
+    operation_description="""
+    Upload an image to an assembly.
+    
+    **Required fields:**
+    - `file`: The image file to upload (multipart/form-data)
+    - `display_name`: Name for the image (optional, defaults to filename)
+    
+    **Note:** The assembly must not be in "Released" state to upload images.
+    Images are automatically compressed to JPEG format.
+    """,
+    tags=['assemblies'],
+    manual_parameters=[
+        openapi.Parameter(
+            'file',
+            openapi.IN_FORM,
+            type=openapi.TYPE_FILE,
+            required=True,
+            description='The image file to upload (JPEG, PNG, etc.)'
+        ),
+        openapi.Parameter(
+            'display_name',
+            openapi.IN_FORM,
+            type=openapi.TYPE_STRING,
+            required=False,
+            description='Display name for the image (optional)'
+        ),
+    ],
+    consumes=['multipart/form-data'],
+    responses={
+        201: openapi.Response(description='Image uploaded successfully'),
+        400: openapi.Response(description='Bad request - missing required fields, assembly is released, or invalid data'),
+        401: openapi.Response(description='Unauthorized - invalid API key or no project access'),
+        404: openapi.Response(description='Assembly not found'),
+        409: openapi.Response(description='Storage limit exceeded'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
+@api_view(['POST'])
+@renderer_classes([JSONRenderer])
+@permission_classes([IsAuthenticated | APIAndProjectAccess])
+def upload_image_to_assembly(request, assembly_id, **kwargs):
+    """
+    Upload an image to an assembly.
+    
+    Request must be multipart/form-data with:
+    - file: The image file to upload (required)
+    - display_name: Name for the image (optional)
+    """
+    if "file" not in request.data:
+        return Response(
+            {"error": "Missing required field: 'file'"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    file = request.FILES.get("file")
+    if file is None:
+        return Response(
+            {"error": "Invalid file - file is null"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Check storage limits
+    if APIAndProjectAccess.has_validated_key(request):
+        org_id = APIAndProjectAccess.get_organization_id(request)
+        if not check_file_sizes_vs_limit(get_organization_by_id(org_id), file.size, request):
+            return Response(
+                {"error": "Storage limit exceeded"},
+                status=status.HTTP_409_CONFLICT
+            )
+    else:
+        if not check_file_sizes_vs_limit(get_organization_by_user_id(request), file.size, request):
+            return Response(
+                {"error": "Storage limit exceeded"},
+                status=status.HTTP_409_CONFLICT
+            )
+
+    data = request.data
+    display_name = data.get("display_name", file.name[:250])
+
+    try:
+        assembly = Assembly.objects.get(pk=assembly_id)
+        
+        # Check project access for API key requests (only if project exists)
+        if APIAndProjectAccess.has_validated_key(request):
+            if assembly.project is not None:
+                if not APIAndProjectAccess.check_project_access(request, assembly.project.pk):
+                    return Response(
+                        {"error": "Not authorized - no access to this project"},
+                        status=status.HTTP_401_UNAUTHORIZED
+                    )
+
+        if assembly.release_state == "Released":
+            return Response(
+                {"error": "Cannot upload images to a released assembly"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            # Delete old thumbnail if exists
+            if assembly.thumbnail:
+                old_file = Image.objects.get(id=assembly.thumbnail.pk)
+                old_file.file.delete()
+                old_file.delete()
+
+            # Compress and save image
+            compressed_file = compress_image(file, file.name, "assemblies")
+            new_image = Image(image_name=display_name)
+            new_image.save()
+            new_image.file.save(f"{uuid.uuid4().hex}/{file.name}", compressed_file)
+            assembly.thumbnail = new_image
+            assembly.save()
+
+            serializer = ImageSerializer(new_image, many=False)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    except Assembly.DoesNotExist:
+        return Response(
+            {"error": "Assembly not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    finally:
+        update_org_current_storage_size(request)
+
+
+@swagger_auto_schema(
+    method='post',
+    operation_id='upload_image_to_pcba',
+    operation_description="""
+    Upload an image to a PCBA.
+    
+    **Required fields:**
+    - `file`: The image file to upload (multipart/form-data)
+    - `display_name`: Name for the image (optional, defaults to filename)
+    
+    **Note:** The PCBA must not be in "Released" state to upload images.
+    Images are automatically compressed to JPEG format.
+    """,
+    tags=['pcbas'],
+    manual_parameters=[
+        openapi.Parameter(
+            'file',
+            openapi.IN_FORM,
+            type=openapi.TYPE_FILE,
+            required=True,
+            description='The image file to upload (JPEG, PNG, etc.)'
+        ),
+        openapi.Parameter(
+            'display_name',
+            openapi.IN_FORM,
+            type=openapi.TYPE_STRING,
+            required=False,
+            description='Display name for the image (optional)'
+        ),
+    ],
+    consumes=['multipart/form-data'],
+    responses={
+        201: openapi.Response(description='Image uploaded successfully'),
+        400: openapi.Response(description='Bad request - missing required fields, PCBA is released, or invalid data'),
+        401: openapi.Response(description='Unauthorized - invalid API key or no project access'),
+        404: openapi.Response(description='PCBA not found'),
+        409: openapi.Response(description='Storage limit exceeded'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
+@api_view(['POST'])
+@renderer_classes([JSONRenderer])
+@permission_classes([IsAuthenticated | APIAndProjectAccess])
+def upload_image_to_pcba(request, pcba_id, **kwargs):
+    """
+    Upload an image to a PCBA.
+    
+    Request must be multipart/form-data with:
+    - file: The image file to upload (required)
+    - display_name: Name for the image (optional)
+    """
+    if "file" not in request.data:
+        return Response(
+            {"error": "Missing required field: 'file'"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    file = request.FILES.get("file")
+    if file is None:
+        return Response(
+            {"error": "Invalid file - file is null"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Check storage limits
+    if APIAndProjectAccess.has_validated_key(request):
+        org_id = APIAndProjectAccess.get_organization_id(request)
+        if not check_file_sizes_vs_limit(get_organization_by_id(org_id), file.size, request):
+            return Response(
+                {"error": "Storage limit exceeded"},
+                status=status.HTTP_409_CONFLICT
+            )
+    else:
+        if not check_file_sizes_vs_limit(get_organization_by_user_id(request), file.size, request):
+            return Response(
+                {"error": "Storage limit exceeded"},
+                status=status.HTTP_409_CONFLICT
+            )
+
+    data = request.data
+    display_name = data.get("display_name", file.name[:250])
+
+    try:
+        pcba = Pcba.objects.get(pk=pcba_id)
+        
+        # Check project access for API key requests (only if project exists)
+        if APIAndProjectAccess.has_validated_key(request):
+            if pcba.project is not None:
+                if not APIAndProjectAccess.check_project_access(request, pcba.project.pk):
+                    return Response(
+                        {"error": "Not authorized - no access to this project"},
+                        status=status.HTTP_401_UNAUTHORIZED
+                    )
+
+        if pcba.release_state == "Released":
+            return Response(
+                {"error": "Cannot upload images to a released PCBA"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            # Delete old thumbnail if exists
+            if pcba.thumbnail:
+                old_file = Image.objects.get(id=pcba.thumbnail.pk)
+                old_file.file.delete()
+                old_file.delete()
+
+            # Compress and save image
+            compressed_file = compress_image(file, file.name, "pcbas")
+            new_image = Image(image_name=display_name)
+            new_image.save()
+            new_image.file.save(f"{uuid.uuid4().hex}/{file.name}", compressed_file)
+            pcba.thumbnail = new_image
+            pcba.save()
+
+            serializer = ImageSerializer(new_image, many=False)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    except Pcba.DoesNotExist:
+        return Response(
+            {"error": "PCBA not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    finally:
+        update_org_current_storage_size(request)

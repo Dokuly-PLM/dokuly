@@ -337,6 +337,15 @@ PUT /api/v1/parts/update/<int:pk>/
 
 # PUT - Archive part
 PUT /api/v1/parts/archive/<int:pk>/
+
+# POST - Upload file to part
+POST /api/v1/parts/upload/<int:part_id>/
+
+# GET - Download all files from part as ZIP
+GET /api/v1/parts/<int:part_id>/files/
+
+# POST - Upload image to part
+POST /api/v1/parts/image/<int:part_id>/
 ```
 
 #### **Assemblies API**
@@ -358,6 +367,18 @@ PUT /api/v1/assemblies/update/<int:pk>/
 
 # PUT - Archive assembly
 PUT /api/v1/assemblies/archive/<int:pk>/
+
+# POST - Upload file to assembly
+POST /api/v1/assemblies/upload/<int:assembly_id>/
+
+# GET - Download all files from assembly as ZIP
+GET /api/v1/assemblies/<int:assembly_id>/files/
+
+# POST - Upload BOM CSV file to assembly
+POST /api/v1/assemblies/bom/<int:assembly_id>/
+
+# POST - Upload image to assembly
+POST /api/v1/assemblies/image/<int:assembly_id>/
 ```
 
 #### **PCBAs API**
@@ -379,6 +400,18 @@ PUT /api/v1/pcbas/update/<int:pk>/
 
 # PUT - Archive PCBA
 PUT /api/v1/pcbas/archive/<int:pk>/
+
+# POST - Upload file to PCBA
+POST /api/v1/pcbas/upload/<int:pcba_id>/
+
+# POST - Upload BOM CSV file to PCBA
+POST /api/v1/pcbas/bom/<int:pcba_id>/
+
+# GET - Download all files from PCBA as ZIP
+GET /api/v1/pcbas/<int:pcba_id>/files/
+
+# POST - Upload image to PCBA
+POST /api/v1/pcbas/image/<int:pcba_id>/
 ```
 
 #### **Projects API**

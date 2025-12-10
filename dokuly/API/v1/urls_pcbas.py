@@ -58,4 +58,8 @@ urlpatterns = [
     path('api/v1/pcbas/<int:pcba_id>/files/', views_files.download_files_from_pcba,
          kwargs={"model_type": "pcba"}),  # Download all files from PCBA as ZIP
 
+    ################### IMAGE API ######################
+    path('api/v1/pcbas/image/<int:pcba_id>/', views_files.upload_image_to_pcba,
+         kwargs={"model_type": "pcba"}),  # Upload image to PCBA
+
 ]
