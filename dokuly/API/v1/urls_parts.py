@@ -19,6 +19,9 @@ urlpatterns = [
     path('api/v1/parts/', views.get_latest_revisions,
          kwargs={"model_type": "part"}),  # Tested
 
+    path('api/v1/parts/all/', views.get_all_revisions,
+         kwargs={"model_type": "part"}),  # Get all revisions (not just latest)
+
     path('api/v1/parts/<int:pk>/', views.get_single_part,
          kwargs={"model_type": "part"}),  # Tested
 

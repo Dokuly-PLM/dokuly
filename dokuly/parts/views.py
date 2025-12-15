@@ -118,12 +118,14 @@ def get_single_part(request, pk, **kwargs):
     try:
         alternative_parts_prefetch = Prefetch('alternative_parts_v2')
         markdown_notes_prefetch = Prefetch('markdown_notes')
+        prices_prefetch = Prefetch('prices', queryset=Price.objects.filter(is_latest_price=True).select_related('supplier'))
         query = Part.objects.prefetch_related(
             alternative_parts_prefetch,
-            markdown_notes_prefetch
+            markdown_notes_prefetch,
+            prices_prefetch
         ).select_related('part_type').prefetch_related('tags')
         if APIAndProjectAccess.has_validated_key(request):
-            part = get_object_or_404(Part, id=pk)
+            part = get_object_or_404(query, id=pk)
             if not part.internal:
                 serializer = PartSerializer(part, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -243,7 +245,6 @@ def get_latest_revisions(request, **kwargs):
         "released_date",
         "description",
         "unit",
-        "currency",
         "is_latest_revision",
         "mpn",
         "image_url",
@@ -252,8 +253,77 @@ def get_latest_revisions(request, **kwargs):
         "datasheet",
         "is_archived",
         "project",
-        "price",
         "external_part_number",
+        "formatted_revision",
+        "revision_count_major",
+        "revision_count_minor",
+        "revision_notes",
+        "part_information",
+        "price_history",
+        "stock",
+    ).prefetch_related(
+        Prefetch('prices', queryset=Price.objects.filter(is_latest_price=True).select_related('supplier'))
+    )
+    if APIAndProjectAccess.has_validated_key(request):
+        if not APIAndProjectAccess.check_wildcard_access(request):
+            part_query = part_query.filter(
+                Q(project__in=APIAndProjectAccess.get_allowed_projects(
+                    request)) | Q(project__isnull=True)
+            )
+    else:
+        part_query = part_query.filter(
+            Q(project__project_members=user) | Q(project__isnull=True))
+
+    serializer = PartSerializerNoAlternate(part_query, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_id='get_all_revisions',
+    operation_description="""
+    Get all revisions of all parts (excluding archived).
+    
+    Returns all parts including historical revisions, not just the latest revision.
+    Archived parts are excluded from the results.
+    Includes external_part_number field.
+    """,
+    tags=['parts'],
+    responses={
+        200: openapi.Response(description='List of all parts (all revisions) retrieved successfully', schema=PartSerializerNoAlternate(many=True)),
+        401: openapi.Response(description='Unauthorized'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated | APIAndProjectAccess])
+def get_all_revisions(request, **kwargs):
+    """Fetch all revisions of all parts (excluding archived)."""
+    user = request.user
+    # Get all parts excluding archived, but include all revisions (not just latest)
+    part_query = Part.objects.all().exclude(is_archived=True).only(
+        "id",
+        "part_number",
+        "full_part_number",
+        "display_name",
+        "revision",
+        "part_type",
+        "release_state",
+        "released_date",
+        "description",
+        "unit",
+        "is_latest_revision",
+        "mpn",
+        "manufacturer",
+        "datasheet",
+        "is_archived",
+        "project",
+        "external_part_number",
+        "formatted_revision",
+        "revision_notes",
+    ).prefetch_related(
+        Prefetch('prices', queryset=Price.objects.filter(is_latest_price=True).select_related('supplier'))
     )
     if APIAndProjectAccess.has_validated_key(request):
         if not APIAndProjectAccess.check_wildcard_access(request):
