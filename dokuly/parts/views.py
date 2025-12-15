@@ -118,12 +118,14 @@ def get_single_part(request, pk, **kwargs):
     try:
         alternative_parts_prefetch = Prefetch('alternative_parts_v2')
         markdown_notes_prefetch = Prefetch('markdown_notes')
+        prices_prefetch = Prefetch('prices', queryset=Price.objects.filter(is_latest_price=True).select_related('supplier'))
         query = Part.objects.prefetch_related(
             alternative_parts_prefetch,
-            markdown_notes_prefetch
+            markdown_notes_prefetch,
+            prices_prefetch
         ).select_related('part_type').prefetch_related('tags')
         if APIAndProjectAccess.has_validated_key(request):
-            part = get_object_or_404(Part, id=pk)
+            part = get_object_or_404(query, id=pk)
             if not part.internal:
                 serializer = PartSerializer(part, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -243,7 +245,6 @@ def get_latest_revisions(request, **kwargs):
         "released_date",
         "description",
         "unit",
-        "currency",
         "is_latest_revision",
         "mpn",
         "image_url",
@@ -252,8 +253,16 @@ def get_latest_revisions(request, **kwargs):
         "datasheet",
         "is_archived",
         "project",
-        "price",
         "external_part_number",
+        "formatted_revision",
+        "revision_count_major",
+        "revision_count_minor",
+        "revision_notes",
+        "part_information",
+        "price_history",
+        "stock",
+    ).prefetch_related(
+        Prefetch('prices', queryset=Price.objects.filter(is_latest_price=True).select_related('supplier'))
     )
     if APIAndProjectAccess.has_validated_key(request):
         if not APIAndProjectAccess.check_wildcard_access(request):
@@ -304,17 +313,17 @@ def get_all_revisions(request, **kwargs):
         "released_date",
         "description",
         "unit",
-        "currency",
         "is_latest_revision",
         "mpn",
         "manufacturer",
         "datasheet",
         "is_archived",
         "project",
-        "price",
         "external_part_number",
         "formatted_revision",
         "revision_notes",
+    ).prefetch_related(
+        Prefetch('prices', queryset=Price.objects.filter(is_latest_price=True).select_related('supplier'))
     )
     if APIAndProjectAccess.has_validated_key(request):
         if not APIAndProjectAccess.check_wildcard_access(request):

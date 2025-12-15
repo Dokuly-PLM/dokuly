@@ -49,6 +49,37 @@ class PartSerializer(serializers.ModelSerializer):
     thumbnail_uri = serializers.CharField(source="image.uri", read_only=True)
     markdown_notes = MarkdownTextSerializer()
     tags = TagSerializer(many=True)
+    price = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
+
+    def get_price(self, obj):
+        """Get price from the latest Price model entry with lowest MOQ (matching BOM table logic)."""
+        try:
+            # Get all latest prices and select the one with lowest minimum_order_quantity
+            # This matches the logic used in BOM tables (getBomCols.js)
+            latest_prices = obj.prices.filter(is_latest_price=True)
+            if latest_prices.exists():
+                # Get the price with the lowest MOQ
+                lowest_moq_price = min(latest_prices, key=lambda p: p.minimum_order_quantity or float('inf'))
+                if lowest_moq_price and lowest_moq_price.price is not None:
+                    return str(lowest_moq_price.price)
+        except:
+            pass
+        return None
+
+    def get_currency(self, obj):
+        """Get currency from the latest Price model entry with lowest MOQ (matching BOM table logic)."""
+        try:
+            # Get all latest prices and select the one with lowest minimum_order_quantity
+            latest_prices = obj.prices.filter(is_latest_price=True)
+            if latest_prices.exists():
+                # Get the price with the lowest MOQ
+                lowest_moq_price = min(latest_prices, key=lambda p: p.minimum_order_quantity or float('inf'))
+                if lowest_moq_price and lowest_moq_price.currency:
+                    return lowest_moq_price.currency
+        except:
+            pass
+        return None
 
     def get_organization(self, obj):
         """Get organization revision settings for the current user."""
@@ -76,6 +107,8 @@ class PartSerializer(serializers.ModelSerializer):
 class PartSerializerNoAlternate(serializers.ModelSerializer):
     """All part info, not loading alternate parts."""
     organization = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
 
     class Meta:
         model = Part
@@ -109,6 +142,35 @@ class PartSerializerNoAlternate(serializers.ModelSerializer):
             "external_part_number",
             "organization",
         ]
+
+    def get_price(self, obj):
+        """Get price from the latest Price model entry with lowest MOQ (matching BOM table logic)."""
+        try:
+            # Get all latest prices and select the one with lowest minimum_order_quantity
+            # This matches the logic used in BOM tables (getBomCols.js)
+            latest_prices = obj.prices.filter(is_latest_price=True)
+            if latest_prices.exists():
+                # Get the price with the lowest MOQ
+                lowest_moq_price = min(latest_prices, key=lambda p: p.minimum_order_quantity or float('inf'))
+                if lowest_moq_price and lowest_moq_price.price is not None:
+                    return str(lowest_moq_price.price)
+        except:
+            pass
+        return None
+
+    def get_currency(self, obj):
+        """Get currency from the latest Price model entry with lowest MOQ (matching BOM table logic)."""
+        try:
+            # Get all latest prices and select the one with lowest minimum_order_quantity
+            latest_prices = obj.prices.filter(is_latest_price=True)
+            if latest_prices.exists():
+                # Get the price with the lowest MOQ
+                lowest_moq_price = min(latest_prices, key=lambda p: p.minimum_order_quantity or float('inf'))
+                if lowest_moq_price and lowest_moq_price.currency:
+                    return lowest_moq_price.currency
+        except:
+            pass
+        return None
 
     def get_organization(self, obj):
         """Get organization revision settings for the current user."""
