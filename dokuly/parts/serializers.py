@@ -106,6 +106,7 @@ class PartSerializerNoAlternate(serializers.ModelSerializer):
             "price_history",
             "stock",
             "price",
+            "external_part_number",
             "organization",
         ]
 
