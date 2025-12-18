@@ -57,6 +57,31 @@ export const uploadFileCreateNewFileEntity = (data) => {
 };
 
 /**
+ * Push multiple files to the back-end for processing and storage.
+ * This query also creates new file objects in the database.
+ * @param {FormData} data - The query payload.
+ * @return {Promise<AxiosResponse<any>>} The axios data promsie,
+ */
+export const uploadFilesCreateNewFilesEntities = (data) => {
+  const promise = axios
+    .post(
+      "api/files/post/upload_multiple_with_new_rows/",
+      data,
+      formDataWithToken(),
+    )
+    .then((res) => res)
+    .catch((err) => {
+      toast.error("An error occurred during multi-upload");
+      throw err;
+    });
+  return toast.promise(promise, {
+    pending: "Uploading files...",
+    success: "Files uploaded successfully",
+    error: "An error occurred",
+  });
+};
+
+/**
  * Connects the uploaded file with the assembly.
  * @param {Number} fileId - A file entity's id number.
  * @param {JSON} data - The query payload.

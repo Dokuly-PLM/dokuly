@@ -40,16 +40,19 @@ from .models import File, Image
 from parts.models import Part
 from assemblies.models import Assembly
 from pcbas.models import Pcba
-from purchasing.models import Supplier
+from purchasing.models import Supplier, PurchaseOrder
 
 from django.contrib.auth.models import User
 from profiles.models import Profile
 
 MODEL_MAPPING = {
+    "Part": Part,
     "parts": Part,
+    "Assembly": Assembly,
     "assemblies": Assembly,
     "pcbas": Pcba,
-    "procurement": Supplier
+    "procurement": Supplier,
+    "PurchaseOrder": PurchaseOrder
 }
 
 # ----------------- Files --------------------
@@ -205,6 +208,94 @@ def upload_and_create_new_file_row(request):
         return Response(serializerFile.data, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response("Request failed!", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def upload_multiple_and_create_new_file_rows(request):
+    if request.user == None:
+        return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+    if not request.FILES:
+        return Response("No files in request", status=status.HTTP_400_BAD_REQUEST)
+
+    # Get all files from request.FILES
+    files = request.FILES.getlist('files')
+    if not files:
+        # Fallback to checking all files if 'files' key wasn't used
+        files = [f for f in request.FILES.values()]
+
+    total_size = sum(f.size for f in files)
+
+    if not check_file_sizes_vs_limit(
+        get_organization_by_user_id(request), total_size, request
+    ):
+        return Response("Storage full!", status=status.HTTP_409_CONFLICT)
+
+    try:
+        data = request.data
+        display_names = data.getlist('display_names', [])
+
+        created_files = []
+        for i, file in enumerate(files):
+            display_name = display_names[i] if i < len(display_names) else file.name[0:49]
+            new_file = File.objects.create(display_name=display_name)
+            new_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
+            created_files.append(new_file)
+
+        serializer = FileSerializer(created_files, many=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response(f"Request failed! {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def connect_multiple_files_to_object(request, app_str, object_id):
+    if request.user == None:
+        return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+    data = request.data
+    file_ids = data.get("file_ids", [])
+
+    if not file_ids:
+        return Response("No file_ids provided", status=status.HTTP_400_BAD_REQUEST)
+
+    if app_str not in MODEL_MAPPING:
+        return Response(f"Invalid app: {app_str}", status=status.HTTP_400_BAD_REQUEST)
+
+    ModelClass = MODEL_MAPPING[app_str]
+
+    try:
+        obj = ModelClass.objects.get(id=object_id)
+        files = File.objects.filter(id__in=file_ids)
+
+        if not files:
+            return Response("No valid files found", status=status.HTTP_404_NOT_FOUND)
+
+        # Connect files based on model structure
+        if hasattr(obj, 'files'):
+            obj.files.add(*files)
+        elif hasattr(obj, 'generic_files'):
+            obj.generic_files.add(*files)
+        else:
+            return Response(f"Model {app_str} does not support generic file connections",
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        obj.save()
+
+        # Update project for files
+        if hasattr(obj, 'project'):
+            for file in files:
+                file.project = obj.project
+                file.save()
+
+        return Response("Files connected successfully", status=status.HTTP_200_OK)
+    except ModelClass.DoesNotExist:
+        return Response(f"{app_str} object not found", status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(f"Connection failed: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(("GET",))
@@ -926,12 +1017,12 @@ def check_file_sizes_vs_limit(organization, fileSize, request):
     DEPRECATED: This function previously enforced storage limits per organization.
     Since the project is now open source, storage limits are no longer enforced.
     The function is kept for backwards compatibility but always returns True.
-    
+
     Args:
         organization: Organization object (unused, kept for compatibility)
         fileSize: Size of the file in bytes (unused, kept for compatibility)
         request: HTTP request object (unused, kept for compatibility)
-    
+
     Returns:
         bool: Always True (no storage limit enforcement)
     """
