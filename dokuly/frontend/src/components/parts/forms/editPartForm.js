@@ -138,7 +138,8 @@ const EditPartForm = (props) => {
       onChange: setExportControlClassificationNumber,
       key: "exportControlClassificationNumber",
       showToolTip: true,
-      tooltipText: "ECCN: An Export Control Classification Number used to identify items for export control purposes under U.S. Export Administration Regulations (EAR)."
+      tooltipText:
+        "ECCN: An Export Control Classification Number used to identify items for export control purposes under U.S. Export Administration Regulations (EAR).",
     },
     {
       label: "Country of Origin",
@@ -148,7 +149,8 @@ const EditPartForm = (props) => {
       key: "countryOfOrigin",
       options: countries,
       showToolTip: true,
-      tooltipText: "Country of Origin (COO): Indicates the country where a product was manufactured, affecting duties, tariffs, and trade compliance."
+      tooltipText:
+        "Country of Origin (COO): Indicates the country where a product was manufactured, affecting duties, tariffs, and trade compliance.",
     },
     {
       label: "Harmonized System Code",
@@ -156,20 +158,24 @@ const EditPartForm = (props) => {
       onChange: setHarmonizedSystemCode,
       key: "harmonizedSystemCode",
       showToolTip: true,
-      tooltipText: "HS Code: A standardized 6-digit numerical code used globally to classify traded goods, created by the World Customs Organization (WCO).",
+      tooltipText:
+        "HS Code: A standardized 6-digit numerical code used globally to classify traded goods, created by the World Customs Organization (WCO).",
     },
   ];
 
   function onSubmit() {
     // Check if this is a placeholder part (external part with no MPN)
-    const isPlaceholderPart = is_internal === false && (!mpn || mpn.trim() === "");
-    
+    const isPlaceholderPart =
+      is_internal === false && (!mpn || mpn.trim() === "");
+
     // Warn if trying to release a placeholder part
     if (isPlaceholderPart && release_state === "Released") {
-      if (!confirm(
-        "Warning: This part has no MPN.\n\n" +
-        "Are you sure you want to release this part?"
-      )) {
+      if (
+        !confirm(
+          "Warning: This part has no MPN.\n\n" +
+            "Are you sure you want to release this part?",
+        )
+      ) {
         return;
       }
     }
@@ -202,7 +208,7 @@ const EditPartForm = (props) => {
         toast.success("Part updated");
       } else {
         toast.error(
-          "Error updating part. If the problem persists contact support."
+          "Error updating part. If the problem persists contact support.",
         );
       }
     });
@@ -224,22 +230,6 @@ const EditPartForm = (props) => {
 
   const internalOptions = (
     <div>
-      <div className="form-group">
-        <label>Description</label>
-        <textarea
-          className="form-control"
-          type="text"
-          name="description"
-          onChange={(e) => {
-            if (e.target.value.length > 500) {
-              toast("Max length 500");
-              return;
-            }
-            setDescription(e.target.value);
-          }}
-          value={description}
-        />
-      </div>
       <ExternalPartNumberFormGroup
         externalPartNumber={externalPartNumber}
         setExternalPartNumber={setExternalPartNumber}
@@ -286,7 +276,8 @@ const EditPartForm = (props) => {
               height="16"
               style={{ marginRight: "4px" }}
             />
-            <strong>Placeholder Part:</strong> This part has no MPN and cannot be released until an MPN is added.
+            <strong>Placeholder Part:</strong> This part has no MPN and cannot
+            be released until an MPN is added.
           </small>
         )}
       </div>
@@ -394,11 +385,28 @@ const EditPartForm = (props) => {
             />
           </div>
 
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              className="form-control"
+              type="text"
+              name="description"
+              onChange={(e) => {
+                if (e.target.value.length > 500) {
+                  toast("Max length 500");
+                  return;
+                }
+                setDescription(e.target.value);
+              }}
+              value={description}
+            />
+          </div>
+
           {is_internal === ""
             ? ""
             : is_internal === true
-            ? internalOptions
-            : externalOptions}
+              ? internalOptions
+              : externalOptions}
 
           <DropdownFormSection
             formGroups={complianceOptions}
@@ -426,7 +434,7 @@ const EditPartForm = (props) => {
             quality_assurance={props.part?.quality_assurance}
           />
 
-          <RulesStatusIndicator 
+          <RulesStatusIndicator
             itemType="part"
             itemId={props.part?.id}
             projectId={props.part?.project}
@@ -439,16 +447,16 @@ const EditPartForm = (props) => {
               type="submit"
               disabled={
                 display_name === "" ||
-                (release_state === "Released" && 
-                 rulesStatus && 
-                 !rulesStatus.all_rules_passed && 
-                 !rulesOverride)
+                (release_state === "Released" &&
+                  rulesStatus &&
+                  !rulesStatus.all_rules_passed &&
+                  !rulesOverride)
               }
               onClick={() => {
                 onSubmit();
               }}
               disabledTooltip={
-                display_name === "" 
+                display_name === ""
                   ? "Mandatory fields must be entered. Mandatory fields are marked with *"
                   : "Rules must be satisfied or overridden before releasing"
               }
