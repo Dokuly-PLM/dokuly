@@ -24,7 +24,7 @@ export const convertPriceToOrganizationCurrency = (
   price,
   currency,
   conversionRate,
-  organization
+  organization,
 ) => {
   if (!currency || currency === organization?.currency) {
     return Number.parseFloat(price);
@@ -71,6 +71,7 @@ const BomTable = ({
   const [isCorrectCurrencySet, setIsCorrectCurrencySet] = useState(false);
   const [open, setOpen] = useState(false);
   const [bomCopy, setBomCopy] = useState([]);
+  const [autoFocusItemId, setAutoFocusItemId] = useState(null);
 
   const [suppliers, refreshSuppliers, loadingSuppliers, errorSuppliers] =
     useSuppliers();
@@ -137,7 +138,7 @@ const BomTable = ({
         parts,
         pcbas,
         assemblies,
-        partTypes
+        partTypes,
       );
 
       // Make new rows with placeholder MPN ("-") appear at the top
@@ -201,7 +202,7 @@ const BomTable = ({
       () => {},
       (err) => {
         toast.error("Failed to copy: ", err);
-      }
+      },
     );
   };
 
@@ -234,6 +235,8 @@ const BomTable = ({
     thumbnailFormatter: thumbnailFormatter,
     currencyPairs: currencyPairs,
     organization: organization,
+    autoFocusItemId: autoFocusItemId,
+    setAutoFocusItemId: setAutoFocusItemId,
   };
 
   const columns = getBomTableColumns(columnConfiguration);
@@ -280,6 +283,10 @@ const BomTable = ({
                 bom_id={database_bom?.id}
                 is_locked_bom={is_locked_bom}
                 setRefreshBom={setRefreshBom}
+                onItemAdded={(newId) => {
+                  setAutoFocusItemId(newId);
+                  setRefreshBom(true);
+                }}
               />
               <ClearBomButton
                 bom_id={database_bom?.id}

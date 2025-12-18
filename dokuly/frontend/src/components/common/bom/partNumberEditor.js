@@ -35,6 +35,8 @@ const PartNumberEditor = ({
   className = "d-flex w-100",
   innerClassName = "w-100",
   style = { minWidth: "200px" },
+  autoFocus = false,
+  onFocusApplied = () => {},
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [selected_item, setSelectedItem] = useState(null);
@@ -42,6 +44,22 @@ const PartNumberEditor = ({
   const globalPartSelectionRef = useRef(null);
   const editorRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (autoFocus && !is_locked_bom && !isEditing) {
+      setIsEditing(true);
+      setExpandCol(true);
+      onFocusApplied();
+
+      // Scroll into view
+      if (editorRef.current) {
+        editorRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }
+  }, [autoFocus, is_locked_bom, isEditing, setExpandCol, onFocusApplied]);
 
   // Use part_number (raw number) to search for all revisions, not full_part_number
   const searchTerm = row.part_number
@@ -125,9 +143,7 @@ const PartNumberEditor = ({
     // Format part number with proper revision handling based on organization settings
     let formattedPartNumber = "";
     if (row?.full_part_number) {
-
-    formattedPartNumber = row.full_part_number;
-
+      formattedPartNumber = row.full_part_number;
     } else if (isEditing) {
       formattedPartNumber = "";
     } else {
@@ -136,8 +152,7 @@ const PartNumberEditor = ({
 
     const displayPartNumber = formattedPartNumber ? (
       <React.Fragment>
-        {formattedPartNumber}{" "}
-        {not_latest_rev_warning(row)}
+        {formattedPartNumber} {not_latest_rev_warning(row)}
       </React.Fragment>
     ) : (
       formattedPartNumber
