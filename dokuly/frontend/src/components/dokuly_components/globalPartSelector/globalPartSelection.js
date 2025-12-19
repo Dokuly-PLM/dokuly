@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Container, Form, Row, Col } from "react-bootstrap";
 import SearchButton from "../SearchButton";
 import { searchPartsGlobal } from "../funcitons/queries";
@@ -6,9 +6,9 @@ import { toast } from "react-toastify";
 import highlightSearchTerm from "../funcitons/highlightSearchTerm"; // TODO
 import { PartSuggestions } from "./partSuggestions";
 
-const GlobalPartSelection = ({ 
-  setSelectedItem, 
-  searchTerm = "", 
+const GlobalPartSelection = ({
+  setSelectedItem,
+  searchTerm = "",
   organization,
   includeTables = ["parts", "pcbas", "assemblies"],
   latestOnly = false,
@@ -16,22 +16,36 @@ const GlobalPartSelection = ({
   const [query, setQuery] = useState(searchTerm);
   const [results, setResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchInputRef = useRef(null);
 
-  const handleSearch = useCallback(async (searchQuery) => {
-    try {
-      const response = await searchPartsGlobal(searchQuery, includeTables, latestOnly);
-      const searchResults = response.data;
-
-      if (response.status === 200) {
-        setResults(searchResults);
-        setShowSuggestions(true);
-      } else {
-        toast.error(`Search failed with status code: ${response.status}`);
-      }
-    } catch (error) {
-      toast.error(`Error searching for global items: ${error.message}`);
+  useEffect(() => {
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
     }
-  }, [includeTables, latestOnly]);
+  }, []);
+
+  const handleSearch = useCallback(
+    async (searchQuery) => {
+      try {
+        const response = await searchPartsGlobal(
+          searchQuery,
+          includeTables,
+          latestOnly,
+        );
+        const searchResults = response.data;
+
+        if (response.status === 200) {
+          setResults(searchResults);
+          setShowSuggestions(true);
+        } else {
+          toast.error(`Search failed with status code: ${response.status}`);
+        }
+      } catch (error) {
+        toast.error(`Error searching for global items: ${error.message}`);
+      }
+    },
+    [includeTables, latestOnly],
+  );
 
   // Effect to automatically search when searchTerm changes
   useEffect(() => {
@@ -67,11 +81,11 @@ const GlobalPartSelection = ({
       // Sort by revision counters (major, then minor)
       const majorA = a?.revision_count_major ?? 0;
       const majorB = b?.revision_count_major ?? 0;
-      
+
       if (majorA !== majorB) {
         return majorA - majorB;
       }
-      
+
       const minorA = a?.revision_count_minor ?? 0;
       const minorB = b?.revision_count_minor ?? 0;
       return minorA - minorB;
@@ -83,6 +97,7 @@ const GlobalPartSelection = ({
         <Col md={8}>
           <Form.Group className="mb-3">
             <Form.Control
+              ref={searchInputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
