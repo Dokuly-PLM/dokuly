@@ -60,7 +60,7 @@ export const uploadFileCreateNewFileEntity = (data) => {
  * Push multiple files to the back-end for processing and storage.
  * This query also creates new file objects in the database.
  * @param {FormData} data - The query payload.
- * @return {Promise<AxiosResponse<any>>} The axios data promsie,
+ * @return {Promise<AxiosResponse<any>>} The axios data promise,
  */
 export const uploadFilesCreateNewFilesEntities = (data) => {
   const promise = axios
