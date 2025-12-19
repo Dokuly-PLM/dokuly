@@ -14,7 +14,7 @@ export const connectFileToObject = (
   po_id,
   file_id,
   data,
-  useProcessingToast = false
+  useProcessingToast = false,
 ) => {
   const url = `api/${app_str}/add_file/${po_id}/${file_id}/`;
   const promise = axios.put(url, data, tokenConfig());
@@ -22,6 +22,27 @@ export const connectFileToObject = (
     return toast.promise(promise, {
       pending: "Processing file...",
       success: "File processed successfully",
+      error: "An error occurred",
+    });
+  }
+  return promise
+    .then((response) => response.data)
+    .catch((error) => error.response || error);
+};
+
+export const connectFilesToObject = (
+  app_str,
+  po_id,
+  file_ids,
+  useProcessingToast = false,
+) => {
+  const url = `api/files/connect_multiple/${app_str}/${po_id}/`;
+  const data = { file_ids: file_ids };
+  const promise = axios.put(url, data, tokenConfig());
+  if (useProcessingToast) {
+    return toast.promise(promise, {
+      pending: "Processing files...",
+      success: "Files connected successfully",
       error: "An error occurred",
     });
   }
@@ -58,10 +79,19 @@ export const getFilesForEntity = async (app, entityId) => {
   try {
     // For parts, get the part data which includes the files ManyToManyField (array of file IDs)
     if (app === "parts") {
-      const partResponse = await axios.get(`api/v1/parts/${entityId}/`, tokenConfig());
-      if (partResponse.data?.files && Array.isArray(partResponse.data.files) && partResponse.data.files.length > 0) {
+      const partResponse = await axios.get(
+        `api/v1/parts/${entityId}/`,
+        tokenConfig(),
+      );
+      if (
+        partResponse.data?.files &&
+        Array.isArray(partResponse.data.files) &&
+        partResponse.data.files.length > 0
+      ) {
         // Use the same method as FilesTable - get_files with file_ids
-        const filesResponse = await get_files({ file_ids: partResponse.data.files });
+        const filesResponse = await get_files({
+          file_ids: partResponse.data.files,
+        });
         if (filesResponse.data && Array.isArray(filesResponse.data)) {
           // Format to match what FileSelector expects (similar to fetchFileList format)
           return filesResponse.data
@@ -81,7 +111,7 @@ export const getFilesForEntity = async (app, entityId) => {
         }
       }
     }
-    
+
     // Fallback to fetchFileList for other entity types or if files field is empty
     const url = `api/${app}/fetchFileList/${entityId}/`;
     const response = await axios.get(url, tokenConfig());

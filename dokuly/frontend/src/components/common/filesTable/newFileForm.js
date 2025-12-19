@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { connectFileToObject } from "./functions/queries";
-import { uploadFileCreateNewFileEntity } from "../../files/functions/queries";
+import { connectFileToObject, connectFilesToObject } from "./functions/queries";
+import {
+  uploadFileCreateNewFileEntity,
+  uploadFilesCreateNewFilesEntities,
+} from "../../files/functions/queries";
 import SubmitButton from "../../dokuly_components/submitButton";
 import FileUpload from "../../dokuly_components/fileUpload/fileUpload";
-import { Form, Row } from "react-bootstrap";
+import { Form, Row, ListGroup, Button } from "react-bootstrap";
 import { isNull } from "../../dokuly_components/funcitons/logicChecks";
 
 /**
@@ -19,7 +22,7 @@ import { isNull } from "../../dokuly_components/funcitons/logicChecks";
 const GenericFileForm = (props) => {
   const [is_uploading, setIsUploading] = useState(false);
   const [display_name, setDisplayName] = useState("");
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
 
   const openModal = () => {
     $("#genericFileModal").modal("show");
@@ -29,22 +32,56 @@ const GenericFileForm = (props) => {
     $("#genericFileModal").modal("hide");
   };
 
-  const handleFileUpload = (file) => {
-    setFile(file);
-    const split = file.name.split(".");
-    // Check if its a zip file, ask if it is a gerber file
-    if (split[split.length - 1] === "zip" && props?.checkForGerberUpload) {
-      if (confirm("Is this Gerber files?")) {
-        if (props.setGerberUpload) {
-          props.setGerberUpload(true);
-          const newName = "Gerber Files";
-          setDisplayName(newName);
-          return;
+  const handleFileUpload = (selectedFiles) => {
+    // Wrap single file in array if it's not already
+    const newFiles = Array.isArray(selectedFiles)
+      ? selectedFiles
+      : [selectedFiles];
+
+    // Check for duplicates
+    const uniqueNewFiles = newFiles.filter(
+      (newFile) =>
+        !files.some((f) => f.name === newFile.name && f.size === newFile.size),
+    );
+
+    if (uniqueNewFiles.length === 0) return;
+
+    const updatedFiles = [...files, ...uniqueNewFiles];
+    setFiles(updatedFiles);
+
+    // If it's the first file and display_name is empty, set it
+    if (updatedFiles.length === 1 && display_name === "") {
+      const firstFile = updatedFiles[0];
+      const split = firstFile.name.split(".");
+
+      // Check if its a zip file, ask if it is a gerber file
+      if (split[split.length - 1] === "zip" && props?.checkForGerberUpload) {
+        if (confirm("Is this Gerber files?")) {
+          if (props.setGerberUpload) {
+            props.setGerberUpload(true);
+            const newName = "Gerber Files";
+            setDisplayName(newName);
+            return;
+          }
         }
       }
+      const newName = split[0];
+      setDisplayName(newName);
     }
-    const newName = split[0];
-    setDisplayName(newName);
+  };
+
+  const removeFile = (index) => {
+    const updatedFiles = [...files];
+    updatedFiles.splice(index, 1);
+    setFiles(updatedFiles);
+    if (updatedFiles.length === 0) {
+      setDisplayName("");
+    }
+  };
+
+  const clearAllFiles = () => {
+    setFiles([]);
+    setDisplayName("");
   };
 
   const handleGerberUploadChange = (event) => {
@@ -54,44 +91,91 @@ const GenericFileForm = (props) => {
   };
 
   const onSubmit = () => {
-    const data = new FormData();
-    // Fields used by the view.
-    data.append("file", file);
-    data.append("display_name", display_name);
+    if (files.length === 0) return;
 
-    closeFileModal();
-    uploadFileCreateNewFileEntity(data).then((res) => {
-      if (res.status === 201) {
-        const data = props?.checkForGerberUpload
-          ? { gerber: props?.gerberUpload }
-          : {};
-        connectFileToObject(
-          props?.app,
-          props.objectId,
-          res.data.id,
-          data,
-          props?.gerberUpload,
-        )
-          .then((res2) => {
-            setIsUploading(false);
-            setDisplayName("");
-            setFile(null);
-          })
-          .finally(() => {
-            if (props?.checkForGerberUpload) {
-              props.setGerberUpload(false);
-            }
-            if (props?.handleRefresh) {
-              props.handleRefresh();
-            } else {
-              props.setRefresh(true);
-            }
-            if (props?.setLoading) {
-              props.setLoading(false);
-            }
-          });
+    if (props?.setLoading) {
+      props.setLoading(true);
+    }
+
+    if (files.length === 1) {
+      const data = new FormData();
+      data.append("file", files[0]);
+      data.append("display_name", display_name);
+
+      closeFileModal();
+      uploadFileCreateNewFileEntity(data).then((res) => {
+        if (res.status === 201) {
+          const connectData = props?.checkForGerberUpload
+            ? { gerber: props?.gerberUpload }
+            : {};
+          connectFileToObject(
+            props?.app,
+            props.objectId,
+            res.data.id,
+            connectData,
+            props?.gerberUpload,
+          )
+            .then((res2) => {
+              setIsUploading(false);
+              setDisplayName("");
+              setFiles([]);
+            })
+            .finally(() => {
+              if (props?.checkForGerberUpload) {
+                props.setGerberUpload(false);
+              }
+              if (props?.handleRefresh) {
+                props.handleRefresh();
+              } else {
+                props.setRefresh(true);
+              }
+              if (props?.setLoading) {
+                props.setLoading(false);
+              }
+            });
+        }
+      });
+    } else {
+      // Multi-file upload
+      const data = new FormData();
+      for (const file of files) {
+        data.append("files", file);
       }
-    });
+      for (const file of files) {
+        data.append("display_names", file.name.split(".")[0]);
+      }
+
+      closeFileModal();
+      uploadFilesCreateNewFilesEntities(data).then((res) => {
+        if (res.status === 201) {
+          const fileIds = res.data.map((f) => f.id);
+          connectFilesToObject(
+            props?.app,
+            props.objectId,
+            fileIds,
+            props?.gerberUpload,
+          )
+            .then((res2) => {
+              setIsUploading(false);
+              setDisplayName("");
+              setFiles([]);
+            })
+            .finally(() => {
+              if (props?.checkForGerberUpload) {
+                props.setGerberUpload(false);
+              }
+              if (props?.handleRefresh) {
+                props.handleRefresh();
+              } else {
+                props.setRefresh(true);
+              }
+              if (props?.setLoading) {
+                props.setLoading(false);
+              }
+            });
+        }
+      });
+    }
   };
 
   return (
@@ -123,7 +207,7 @@ const GenericFileForm = (props) => {
             <React.Fragment>
               <div className="modal-header">
                 <h5 className="modal-title" id="genericFileModalLabel">
-                  Upload file
+                  Upload files
                 </h5>
                 <button
                   type="button"
@@ -136,24 +220,69 @@ const GenericFileForm = (props) => {
               </div>
               <div className="modal-body">
                 <div className="container">
+                  {files.length <= 1 && (
+                    <div className="form-group">
+                      <label>Display name</label>
+                      <input
+                        className="form-control"
+                        type="text"
+                        name="name"
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        value={display_name}
+                        placeholder={
+                          files.length === 1
+                            ? files[0].name
+                            : "Enter display name"
+                        }
+                      />
+                    </div>
+                  )}
                   <div className="form-group">
-                    <label>Display name</label>
-                    <input
-                      className="form-control"
-                      type="text"
-                      name="name"
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      value={display_name}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Upload file</label>
+                    <label>Upload files</label>
                     <FileUpload
                       onFileSelect={handleFileUpload}
-                      file={file}
-                      setFile={setFile}
+                      multiple={true}
                     />
                   </div>
+
+                  {files.length > 0 && (
+                    <div className="form-group">
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <label className="mb-0">
+                          Selected Files ({files.length})
+                        </label>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="text-danger p-0"
+                          onClick={clearAllFiles}
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                      <ListGroup className="selected-files-list">
+                        {files.map((f, index) => (
+                          <ListGroup.Item
+                            key={`${f.name}-${index}`}
+                            className="d-flex justify-content-between align-items-center py-2"
+                          >
+                            <span className="text-truncate mr-2" title={f.name}>
+                              {f.name}
+                            </span>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              className="px-2 py-0"
+                              onClick={() => removeFile(index)}
+                            >
+                              &times;
+                            </Button>
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    </div>
+                  )}
+
                   {props?.checkForGerberUpload &&
                     !isNull(props?.gerberUpload) &&
                     !isNull(props?.setGerberUpload) && (
@@ -172,14 +301,12 @@ const GenericFileForm = (props) => {
                     )}
                   <div className="row mb-2">
                     <SubmitButton
-                      disabledTooltip={"Select a file to upload"}
-                      onClick={() => {
-                        if (props?.setLoading) {
-                          props.setLoading(true);
-                        }
-                        onSubmit();
-                      }}
-                      disabled={display_name === "" || file === null}
+                      disabledTooltip={"Select files to upload"}
+                      onClick={onSubmit}
+                      disabled={
+                        files.length === 0 ||
+                        (files.length === 1 && display_name === "")
+                      }
                       type="button"
                       className="btn dokuly-btn-primary ml-2 "
                     >
