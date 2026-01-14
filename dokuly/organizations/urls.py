@@ -48,6 +48,10 @@ urlpatterns = [
     path("api/integrations/update/", viewsIntegrations.update_integration_settings),
     path("api/integrations/nexar/sellers/", viewsIntegrations.get_nexar_sellers),
     
+    # Odoo integration
+    path("api/integrations/odoo/push/<str:item_type>/<int:item_id>/", viewsIntegrations.push_to_odoo),
+    path("api/integrations/odoo/test/", viewsIntegrations.test_odoo_connection),
+    
     # Revision system fixes
     path("api/organizations/checkCorruptedRevisions/", views.check_corrupted_revisions),
     path("api/organizations/previewPartNumberTemplate/", views.preview_part_number_template),

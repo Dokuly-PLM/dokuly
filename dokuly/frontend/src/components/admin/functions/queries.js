@@ -1620,3 +1620,30 @@ export const testDigikeyConnection = (testKeyword = "resistor") => {
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+/**
+ * Push item to Odoo
+ * @param {string} itemType - Type of item ('parts', 'pcbas', 'assemblies')
+ * @param {number} itemId - ID of the item
+ * @param {boolean} includeBom - Whether to include BOM (for assemblies)
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ */
+export const pushToOdoo = (itemType, itemId, includeBom = false) => {
+  const promise = axios.post(
+    `api/integrations/odoo/push/${itemType}/${itemId}/`,
+    { include_bom: includeBom },
+    tokenConfig()
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Test Odoo API connection
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ */
+export const testOdooConnection = () => {
+  const promise = axios.get("api/integrations/odoo/test/", tokenConfig());
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};

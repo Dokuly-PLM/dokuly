@@ -31,6 +31,7 @@ import useLocationEntires from "../common/hooks/useLocationEntires";
 import InventoryStatus from "../dokuly_components/dokulyInventory/inventoryStatus";
 import WhereUsedTable from "../common/whereUsed/whereUsedTable";
 import useOrganization from "../common/hooks/useOrganization";
+import PushToOdooButton from "../common/integrations/pushToOdooButton";
 
 const DisplayPart = (props) => {
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
@@ -227,12 +228,18 @@ const DisplayPart = (props) => {
       eventKey: "overview",
       title: "Overview",
       content: (
-        <>
-          <div className="row pl-3 pt-1">
-            <EditPartForm part={part} setRefresh={setRefresh} />
-            <PartNewRevision part={part} />
-          </div>
-          <div className="row">
+          <>
+            <div className="row pl-3 pt-1">
+              <EditPartForm part={part} setRefresh={setRefresh} />
+              <PartNewRevision part={part} />
+              <PushToOdooButton 
+                itemType="parts" 
+                itemId={part?.id} 
+                itemName={part?.full_part_number}
+                onSuccess={() => setRefresh(true)}
+              />
+            </div>
+            <div className="row">
             <div className="col">
               <div className="row">
                 <PartInformationCard

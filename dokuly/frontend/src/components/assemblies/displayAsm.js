@@ -35,6 +35,7 @@ import useLocations from "../common/hooks/useLocations";
 import InventoryTable from "../dokuly_components/dokulyInventory/inventoryTable";
 import WhereUsedTable from "../common/whereUsed/whereUsedTable";
 import InventoryStatus from "../dokuly_components/dokulyInventory/inventoryStatus";
+import PushToOdooButton from "../common/integrations/pushToOdooButton";
 
 export const getIssueColor = (issue, app) => {
   const closedInField = `closed_in_${appToModelName[app]}`;
@@ -318,20 +319,24 @@ const DisplayASM = (props) => {
       eventKey: "overview",
       title: "Overview",
       content: (
-        <>
-          <Row>
-            <AsmNewRevision
-              asm={asmDetailed}
-              profiles={profiles}
-              liftUpState={liftUpState}
-            />
-            {asmDetailed.release_state !== "Released" && (
-              <Row className="pl-3 pt-1">
+          <>
+            <Row>
+              <AsmNewRevision
+                asm={asmDetailed}
+                profiles={profiles}
+                liftUpState={liftUpState}
+              />
+              {asmDetailed.release_state !== "Released" && (
                 <AsmEditForm asm={asmDetailed} setRefresh={setRefresh} />
-              </Row>
-            )}
-          </Row>
-          <Row>
+              )}
+              <PushToOdooButton 
+                itemType="assemblies" 
+                itemId={asmDetailed?.id} 
+                itemName={asmDetailed?.full_part_number}
+                onSuccess={() => setRefresh(true)}
+              />
+            </Row>
+            <Row>
             <Col>
               <Row>
                 <PartInformationCard

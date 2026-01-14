@@ -12,6 +12,11 @@ from django.shortcuts import get_object_or_404
 from profiles.models import Profile
 from purchasing.suppliermodel import Supplier
 from customers.views import next_customer_supplier_number
+from parts.models import Part
+from pcbas.models import Pcba
+from assemblies.models import Assembly
+from parts.nexar_client import get_nexar_client
+from organizations.odoo_service import push_product_to_odoo, test_odoo_connection
 from .models import Organization, IntegrationSettings
 
 logger = logging.getLogger(__name__)
@@ -77,6 +82,23 @@ def get_integration_settings(request):
             "has_nexar_credentials": bool(
                 integration_settings.nexar_client_id and 
                 integration_settings.nexar_client_secret
+            ),
+            
+            # Odoo settings
+            "odoo_enabled": integration_settings.odoo_enabled,
+            "odoo_url": integration_settings.odoo_url or "",
+            "odoo_database": integration_settings.odoo_database or "",
+            "odoo_username": integration_settings.odoo_username or "",
+            "odoo_api_key": "***" if integration_settings.odoo_api_key else "",
+            "odoo_auto_push_on_release": integration_settings.odoo_auto_push_on_release,
+            "odoo_default_product_category_id": integration_settings.odoo_default_product_category_id,
+            "odoo_default_uom_id": integration_settings.odoo_default_uom_id,
+            "odoo_default_product_type": integration_settings.odoo_default_product_type or "consu",
+            "has_odoo_credentials": bool(
+                integration_settings.odoo_url and
+                integration_settings.odoo_database and
+                integration_settings.odoo_username and
+                integration_settings.odoo_api_key
             )
         }
         
@@ -187,6 +209,47 @@ def update_integration_settings(request):
                 # Keep existing secret if masked value is provided
                 pass
         
+        # Update Odoo settings
+        if "odoo_enabled" in data:
+            integration_settings.odoo_enabled = bool(data["odoo_enabled"])
+        
+        if "odoo_url" in data:
+            url = data["odoo_url"].strip() if data["odoo_url"] else None
+            integration_settings.odoo_url = url
+        
+        if "odoo_database" in data:
+            database = data["odoo_database"].strip() if data["odoo_database"] else None
+            integration_settings.odoo_database = database
+        
+        if "odoo_username" in data:
+            username = data["odoo_username"].strip() if data["odoo_username"] else None
+            integration_settings.odoo_username = username
+        
+        if "odoo_api_key" in data:
+            # Only update if a new value is provided (not the masked "***")
+            api_key = data["odoo_api_key"]
+            if api_key and api_key != "***" and api_key.strip():
+                integration_settings.odoo_api_key = api_key.strip()
+            elif not api_key or api_key == "***":
+                # Keep existing key if masked value is provided
+                pass
+        
+        if "odoo_auto_push_on_release" in data:
+            integration_settings.odoo_auto_push_on_release = bool(data["odoo_auto_push_on_release"])
+        
+        if "odoo_default_product_category_id" in data:
+            cat_id = data.get("odoo_default_product_category_id")
+            integration_settings.odoo_default_product_category_id = cat_id if cat_id else None
+        
+        if "odoo_default_uom_id" in data:
+            uom_id = data.get("odoo_default_uom_id")
+            integration_settings.odoo_default_uom_id = uom_id if uom_id else None
+        
+        if "odoo_default_product_type" in data:
+            product_type = data.get("odoo_default_product_type", "consu")
+            if product_type in ['consu', 'service', 'combo']:
+                integration_settings.odoo_default_product_type = product_type
+        
         integration_settings.save()
         
         # Return updated settings
@@ -208,6 +271,23 @@ def update_integration_settings(request):
             "has_nexar_credentials": bool(
                 integration_settings.nexar_client_id and 
                 integration_settings.nexar_client_secret
+            ),
+            
+            # Odoo settings
+            "odoo_enabled": integration_settings.odoo_enabled,
+            "odoo_url": integration_settings.odoo_url or "",
+            "odoo_database": integration_settings.odoo_database or "",
+            "odoo_username": integration_settings.odoo_username or "",
+            "odoo_api_key": "***" if integration_settings.odoo_api_key else "",
+            "odoo_auto_push_on_release": integration_settings.odoo_auto_push_on_release,
+            "odoo_default_product_category_id": integration_settings.odoo_default_product_category_id,
+            "odoo_default_uom_id": integration_settings.odoo_default_uom_id,
+            "odoo_default_product_type": integration_settings.odoo_default_product_type or "consu",
+            "has_odoo_credentials": bool(
+                integration_settings.odoo_url and
+                integration_settings.odoo_database and
+                integration_settings.odoo_username and
+                integration_settings.odoo_api_key
             )
         }
         
@@ -257,8 +337,6 @@ def get_nexar_sellers(request):
             )
         
         # Fetch sellers from Nexar API
-        from parts.nexar_client import get_nexar_client
-        
         try:
             nexar_client = get_nexar_client()
             sellers = nexar_client.get_sellers()
@@ -289,3 +367,145 @@ def get_nexar_sellers(request):
         )
 
 
+
+@api_view(["POST"])
+@renderer_classes([JSONRenderer])
+def push_to_odoo(request, item_type, item_id):
+    """
+    Manually push a part/pcba/assembly to Odoo as a product.
+    
+    Args:
+        item_type: 'parts', 'pcbas', or 'assemblies'
+        item_id: ID of the item to push
+        
+    POST data:
+        include_bom (bool, optional): Whether to include BOM for assemblies
+        
+    Returns:
+        Success/error response with Odoo product ID
+    """
+    try:
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                "Not Authorized",
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        organization = get_user_organization(request.user)
+        if not organization:
+            return Response(
+                {"error": "User organization not found"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get integration settings
+        integration_settings, created = IntegrationSettings.objects.get_or_create(
+            organization=organization
+        )
+        
+        # Validate Odoo is enabled
+        if not integration_settings.odoo_enabled:
+            return Response(
+                {"error": "Odoo integration is not enabled"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get the item based on type
+        item = None
+        if item_type == 'parts':
+            try:
+                item = Part.objects.get(id=item_id)
+            except Part.DoesNotExist:
+                return Response(
+                    {"error": f"Part with ID {item_id} not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        elif item_type == 'pcbas':
+            try:
+                item = Pcba.objects.get(id=item_id)
+            except Pcba.DoesNotExist:
+                return Response(
+                    {"error": f"PCBA with ID {item_id} not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        elif item_type == 'assemblies':
+            try:
+                item = Assembly.objects.get(id=item_id)
+            except Assembly.DoesNotExist:
+                return Response(
+                    {"error": f"Assembly with ID {item_id} not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return Response(
+                {"error": f"Invalid item type: {item_type}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get include_bom parameter (only relevant for assemblies)
+        include_bom = request.data.get('include_bom', False)
+        
+        # Push to Odoo
+        result = push_product_to_odoo(
+            item=item,
+            item_type=item_type,
+            integration_settings=integration_settings,
+            user=request.user,
+            include_bom=include_bom if item_type == 'assemblies' else False
+        )
+        
+        if result['success']:
+            return Response(result, status=status.HTTP_200_OK)
+        else:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+    
+    except Exception as e:
+        logger.error(f"Error pushing {item_type} {item_id} to Odoo: {e}")
+        return Response(
+            {"error": "Failed to push to Odoo", "details": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(["GET"])
+@renderer_classes([JSONRenderer])
+def test_odoo_connection(request):
+    """
+    Test connection to Odoo instance.
+    
+    Returns:
+        Connection status and version information
+    """
+    try:
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                "Not Authorized",
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        organization = get_user_organization(request.user)
+        if not organization:
+            return Response(
+                {"error": "User organization not found"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get integration settings
+        integration_settings, created = IntegrationSettings.objects.get_or_create(
+            organization=organization
+        )
+        
+        # Test connection
+        result = test_odoo_connection(integration_settings)
+        
+        if result['success']:
+            return Response(result, status=status.HTTP_200_OK)
+        else:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+    
+    except Exception as e:
+        logger.error(f"Error testing Odoo connection: {e}")
+        return Response(
+            {"error": "Failed to test Odoo connection", "details": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

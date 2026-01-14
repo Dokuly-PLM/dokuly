@@ -414,6 +414,58 @@ class IntegrationSettings(models.Model):
     nexar_client_id = models.CharField(max_length=500, blank=True, null=True)
     nexar_client_secret = models.CharField(max_length=500, blank=True, null=True)
     
+    # Odoo API credentials and settings
+    odoo_enabled = models.BooleanField(default=False, help_text="Enable Odoo integration")
+    odoo_url = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Odoo instance URL (e.g., https://mycompany.odoo.com)"
+    )
+    odoo_database = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Odoo database name"
+    )
+    odoo_username = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Odoo username (required for API key authentication)"
+    )
+    odoo_api_key = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Odoo API key for authentication"
+    )
+    odoo_auto_push_on_release = models.BooleanField(
+        default=False,
+        help_text="Automatically push to Odoo when items are released"
+    )
+    odoo_default_product_category_id = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text="Default Odoo product category ID"
+    )
+    odoo_default_uom_id = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text="Default Odoo unit of measure ID"
+    )
+    odoo_default_product_type = models.CharField(
+        max_length=50,
+        default='consu',
+        blank=True,
+        choices=[
+            ('consu', 'Goods'),
+            ('service', 'Service'),
+            ('combo', 'Combo')
+        ],
+        help_text="Default product type in Odoo"
+    )
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
