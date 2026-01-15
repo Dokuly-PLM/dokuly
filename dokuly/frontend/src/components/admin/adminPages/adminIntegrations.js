@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Row, Col, Card } from "react-bootstrap";
 import DokulyCard from "../../dokuly_components/dokulyCard";
-import { fetchIntegrationSettings, updateIntegrationSettings, testDigikeyConnection } from "../functions/queries";
+import { fetchIntegrationSettings, updateIntegrationSettings, testDigikeyConnection, testOdooConnection } from "../functions/queries";
 import { getSuppliers, updateSupplier } from "../../suppliers/functions/queries";
 import { createSupplier } from "../../suppliers/functions/queries";
 import { toast } from "react-toastify";
 import DigikeySettings from "../adminComponents/integrations/digikeySettings";
 import NexarSettings from "../adminComponents/integrations/nexarSettings";
+import OdooSettings from "../adminComponents/integrations/odooSettings";
 
 const AdminIntegrations = ({ setRefresh }) => {
   const [activeSection, setActiveSection] = useState("digikey");
@@ -27,6 +28,19 @@ const AdminIntegrations = ({ setRefresh }) => {
   const [nexarClientSecret, setNexarClientSecret] = useState("");
   const [hasNexarCredentials, setHasNexarCredentials] = useState(false);
   
+  // State for Odoo settings
+  const [odooEnabled, setOdooEnabled] = useState(false);
+  const [odooUrl, setOdooUrl] = useState("");
+  const [odooDatabase, setOdooDatabase] = useState("");
+  const [odooUsername, setOdooUsername] = useState("");
+  const [odooApiKey, setOdooApiKey] = useState("");
+  const [hasOdooCredentials, setHasOdooCredentials] = useState(false);
+  const [odooAutoPush, setOdooAutoPush] = useState(false);
+  const [odooDefaultProductCategoryId, setOdooDefaultProductCategoryId] = useState(null);
+  const [odooDefaultUomId, setOdooDefaultUomId] = useState(null);
+  const [odooDefaultProductType, setOdooDefaultProductType] = useState("product");
+  const [testingOdooConnection, setTestingOdooConnection] = useState(false);
+  
   // State for suppliers
   const [suppliers, setSuppliers] = useState([]);
   const [supplierOptions, setSupplierOptions] = useState([]);
@@ -39,6 +53,7 @@ const AdminIntegrations = ({ setRefresh }) => {
   const sections = [
     { id: "digikey", title: "DigiKey", icon: "search", disabled: false },
     { id: "nexar", title: "Nexar", icon: "search", disabled: false },
+    { id: "odoo", title: "Odoo", icon: "cloud-upload", disabled: false },
   ];
 
   // Load settings and suppliers on component mount
@@ -155,6 +170,18 @@ const AdminIntegrations = ({ setRefresh }) => {
           setNexarClientId(res.data.nexar_client_id || "");
           setNexarClientSecret(res.data.nexar_client_secret || "");
           setHasNexarCredentials(res.data.has_nexar_credentials || false);
+          
+          // Odoo settings
+          setOdooEnabled(res.data.odoo_enabled || false);
+          setOdooUrl(res.data.odoo_url || "");
+          setOdooDatabase(res.data.odoo_database || "");
+          setOdooUsername(res.data.odoo_username || "");
+          setOdooApiKey(res.data.odoo_api_key || "");
+          setHasOdooCredentials(res.data.has_odoo_credentials || false);
+          setOdooAutoPush(res.data.odoo_auto_push_on_release || false);
+          setOdooDefaultProductCategoryId(res.data.odoo_default_product_category_id || null);
+          setOdooDefaultUomId(res.data.odoo_default_uom_id || null);
+          setOdooDefaultProductType(res.data.odoo_default_product_type || "product");
         }
         setLoading(false);
       })
@@ -224,6 +251,89 @@ const AdminIntegrations = ({ setRefresh }) => {
       .catch((err) => {
         console.error("Error updating Nexar settings:", err);
         toast.error("Failed to update Nexar settings");
+      });
+  };
+
+  const handleOdooSubmit = () => {
+    const data = {
+      odoo_enabled: odooEnabled,
+      odoo_url: odooUrl,
+      odoo_database: odooDatabase,
+      odoo_username: odooUsername,
+      odoo_api_key: odooApiKey,
+      odoo_auto_push_on_release: odooAutoPush,
+      odoo_default_product_category_id: odooDefaultProductCategoryId,
+      odoo_default_uom_id: odooDefaultUomId,
+      odoo_default_product_type: odooDefaultProductType,
+    };
+
+    updateIntegrationSettings(data)
+      .then((res) => {
+        if (res.status === 200) {
+          toast.success("Odoo settings updated successfully");
+          if (setRefresh) {
+            setRefresh(true);
+          }
+          loadSettings();
+        }
+      })
+      .catch((err) => {
+        console.error("Error updating Odoo settings:", err);
+        toast.error("Failed to update Odoo settings");
+      });
+  };
+
+  const handleTestOdooConnection = () => {
+    if (!odooUrl || !odooUrl.trim()) {
+      toast.error("Please enter Odoo URL before testing");
+      return;
+    }
+    
+    if (!odooDatabase || !odooDatabase.trim()) {
+      toast.error("Please enter Database Name before testing");
+      return;
+    }
+    
+    if (!odooUsername || !odooUsername.trim()) {
+      toast.error("Please enter Username before testing");
+      return;
+    }
+    
+    if (!odooApiKey || !odooApiKey.trim()) {
+      toast.error("Please enter API Key before testing");
+      return;
+    }
+
+    setTestingOdooConnection(true);
+    
+    // First save the credentials temporarily for testing
+    const testData = {
+      odoo_enabled: odooEnabled,
+      odoo_url: odooUrl.trim(),
+      odoo_database: odooDatabase.trim(),
+      odoo_username: odooUsername.trim(),
+      odoo_api_key: odooApiKey.trim(),
+    };
+
+    updateIntegrationSettings(testData)
+      .then(() => {
+        // Now test the connection
+        return testOdooConnection();
+      })
+      .then((res) => {
+        if (res.status === 200 && res.data.success) {
+          toast.success(`Connection successful! Connected to Odoo ${res.data.version?.server_version || ''}`);
+        } else {
+          toast.error(res.data.message || "Connection failed");
+        }
+      })
+      .catch((err) => {
+        console.error("Connection test error:", err);
+        const errorMsg = err.response?.data?.message || err.response?.data?.error || "Connection test failed";
+        toast.error(errorMsg);
+      })
+      .finally(() => {
+        setTestingOdooConnection(false);
       });
   };
 
@@ -333,12 +443,46 @@ const AdminIntegrations = ({ setRefresh }) => {
     );
   };
 
+  const renderOdoo = () => {
+    return (
+      <OdooSettings
+        loading={loading}
+        odooEnabled={odooEnabled}
+        setOdooEnabled={setOdooEnabled}
+        odooUrl={odooUrl}
+        setOdooUrl={setOdooUrl}
+        odooDatabase={odooDatabase}
+        setOdooDatabase={setOdooDatabase}
+        odooUsername={odooUsername}
+        setOdooUsername={setOdooUsername}
+        odooApiKey={odooApiKey}
+        setOdooApiKey={setOdooApiKey}
+        hasOdooCredentials={hasOdooCredentials}
+        odooAutoPush={odooAutoPush}
+        setOdooAutoPush={setOdooAutoPush}
+        odooDefaultProductCategoryId={odooDefaultProductCategoryId}
+        setOdooDefaultProductCategoryId={setOdooDefaultProductCategoryId}
+        odooDefaultUomId={odooDefaultUomId}
+        setOdooDefaultUomId={setOdooDefaultUomId}
+        odooDefaultProductType={odooDefaultProductType}
+        setOdooDefaultProductType={setOdooDefaultProductType}
+        handleTestConnection={handleTestOdooConnection}
+        testingConnection={testingOdooConnection}
+        handleSubmit={handleOdooSubmit}
+      />
+    );
+  };
+
+
+
   const renderSectionContent = () => {
     switch (activeSection) {
       case "digikey":
         return renderDigikey();
       case "nexar":
         return renderNexar();
+      case "odoo":
+        return renderOdoo();
       default:
         return renderDigikey();
     }

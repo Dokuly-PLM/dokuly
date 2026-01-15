@@ -35,6 +35,7 @@ import useLocationEntires from "../common/hooks/useLocationEntires";
 import useLocations from "../common/hooks/useLocations";
 import InventoryStatus from "../dokuly_components/dokulyInventory/inventoryStatus";
 import WhereUsedTable from "../common/whereUsed/whereUsedTable";
+import PushToOdooButton from "../common/integrations/pushToOdooButton";
 
 const DisplayPcba = (props) => {
   const location = useLocation();
@@ -213,6 +214,12 @@ const DisplayPcba = (props) => {
                     refreshParent={setRefresh}
                   />
                 )}
+                <PushToOdooButton 
+                  itemType="pcbas" 
+                  itemId={pcba?.id} 
+                  itemName={pcba?.full_part_number}
+                  onSuccess={() => setRefresh(true)}
+                />
               </Row>
               <div className="row">
                 <div className="col">

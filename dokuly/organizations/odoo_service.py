@@ -1,0 +1,710 @@
+"""
+Odoo Integration Service Layer
+
+This module handles all interactions with Odoo v19 via XML-RPC API.
+Supports product creation/update, image upload, and BOM management.
+"""
+
+import logging
+import xmlrpc.client
+import base64
+from io import BytesIO
+from django.core.files.storage import default_storage
+from profiles.models import Profile
+from organizations.models import IntegrationSettings
+
+logger = logging.getLogger(__name__)
+
+
+class OdooConnectionError(Exception):
+    """Raised when connection to Odoo fails"""
+    pass
+
+
+class OdooAuthenticationError(Exception):
+    """Raised when authentication to Odoo fails"""
+    pass
+
+
+class OdooAPIError(Exception):
+    """Raised when Odoo API call fails"""
+    pass
+
+
+def get_odoo_connection(integration_settings):
+    """
+    Establish XML-RPC connection to Odoo instance.
+    
+    Args:
+        integration_settings: IntegrationSettings model instance
+        
+    Returns:
+        tuple: (common, models, uid) - Odoo XML-RPC connections and user ID
+        
+    Raises:
+        OdooConnectionError: If connection fails
+        OdooAuthenticationError: If authentication fails
+    """
+    if not integration_settings.odoo_enabled:
+        raise OdooConnectionError("Odoo integration is not enabled")
+    
+    if not integration_settings.odoo_url:
+        raise OdooConnectionError("Odoo URL is not configured")
+    
+    if not integration_settings.odoo_database:
+        raise OdooConnectionError("Odoo database is not configured")
+    
+    if not integration_settings.odoo_api_key:
+        raise OdooConnectionError("Odoo API key is not configured")
+    
+    if not integration_settings.odoo_username:
+        raise OdooConnectionError("Odoo username is not configured")
+    
+    try:
+        # Ensure URL has proper format
+        url = integration_settings.odoo_url.rstrip('/')
+        
+        # Connect to Odoo common endpoint
+        common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
+        
+        # Test connection
+        version = common.version()
+        logger.info(f"Connected to Odoo version: {version}")
+        
+        # Authenticate using API key
+        # In Odoo v19, API keys must be used with the correct username
+        uid = common.authenticate(
+            integration_settings.odoo_database,
+            integration_settings.odoo_username,
+            integration_settings.odoo_api_key,
+            {}
+        )
+        
+        if not uid:
+            raise OdooAuthenticationError(
+                "Failed to authenticate with Odoo. Check your username, API key, and database name. "
+                "Make sure the API key is valid and associated with the specified user."
+            )
+        
+        # Connect to object endpoint
+        models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
+        
+        logger.info(f"Successfully authenticated to Odoo as user ID: {uid}")
+        return common, models, uid
+        
+    except xmlrpc.client.Fault as e:
+        logger.error(f"Odoo XML-RPC Fault: {e}")
+        raise OdooAuthenticationError(f"Odoo authentication error: {e.faultString}")
+    except ConnectionError as e:
+        logger.error(f"Connection error to Odoo: {e}")
+        raise OdooConnectionError(f"Failed to connect to Odoo: {str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error connecting to Odoo: {e}")
+        raise OdooConnectionError(f"Failed to connect to Odoo: {str(e)}")
+
+
+def get_image_as_base64(image_obj):
+    """
+    Convert Dokuly Image model to base64 string for Odoo.
+    
+    Args:
+        image_obj: Image model instance
+        
+    Returns:
+        str: Base64-encoded image data, or None if no image
+    """
+    if not image_obj:
+        return None
+    
+    try:
+        # Try compressed image first, fallback to original
+        image_field = image_obj.image_compressed if image_obj.image_compressed else image_obj.file
+        
+        if not image_field:
+            logger.warning("Image object has no file data")
+            return None
+        
+        # Read the image file
+        if default_storage.exists(image_field.name):
+            with default_storage.open(image_field.name, 'rb') as img_file:
+                image_data = img_file.read()
+                # Encode to base64
+                base64_image = base64.b64encode(image_data).decode('utf-8')
+                logger.info(f"Successfully encoded image {image_obj.image_name} to base64")
+                return base64_image
+        else:
+            logger.warning(f"Image file does not exist: {image_field.name}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error encoding image to base64: {e}")
+        return None
+
+
+def create_or_update_odoo_product(models, uid, database, api_key, product_data):
+    """
+    Create or update a product in Odoo by internal reference (default_code).
+    
+    Args:
+        models: Odoo models XML-RPC connection
+        uid: Odoo user ID
+        database: Odoo database name
+        api_key: Odoo API key
+        product_data: Dict with product fields
+        
+    Returns:
+        int: Odoo product ID
+        
+    Raises:
+        OdooAPIError: If product creation/update fails
+    """
+    try:
+        internal_reference = product_data.get('default_code')
+        
+        if not internal_reference:
+            raise OdooAPIError("Product internal reference (default_code) is required")
+        
+        # Search for existing product by internal reference
+        product_ids = models.execute_kw(
+            database, uid, api_key,
+            'product.product', 'search',
+            [[['default_code', '=', internal_reference]]]
+        )
+        
+        if product_ids:
+            # Update existing product
+            product_id = product_ids[0]
+            logger.info(f"Found existing Odoo product with ID {product_id}, updating...")
+            
+            models.execute_kw(
+                database, uid, api_key,
+                'product.product', 'write',
+                [[product_id], product_data]
+            )
+            
+            logger.info(f"Successfully updated Odoo product {product_id}")
+            return product_id
+        else:
+            # Create new product
+            logger.info(f"Creating new Odoo product with reference {internal_reference}")
+            
+            product_id = models.execute_kw(
+                database, uid, api_key,
+                'product.product', 'create',
+                [product_data]
+            )
+            
+            logger.info(f"Successfully created Odoo product {product_id}")
+            return product_id
+            
+    except xmlrpc.client.Fault as e:
+        logger.error(f"Odoo API Fault during product create/update: {e}")
+        raise OdooAPIError(f"Failed to create/update product: {e.faultString}")
+    except Exception as e:
+        logger.error(f"Error creating/updating Odoo product: {e}")
+        raise OdooAPIError(f"Failed to create/update product: {str(e)}")
+
+
+def create_odoo_bom(models, uid, database, api_key, product_id, bom_items, integration_settings):
+    """
+    Create or update Bill of Materials in Odoo for a product.
+    
+    Args:
+        models: Odoo models XML-RPC connection
+        uid: Odoo user ID
+        database: Odoo database name
+        api_key: Odoo API key
+        product_id: Odoo product ID (the assembly)
+        bom_items: List of BOM items with structure:
+            [{
+                'item_type': 'parts' | 'pcbas' | 'assemblies',
+                'full_part_number': str,
+                'quantity': float,
+                'display_name': str
+            }]
+        integration_settings: IntegrationSettings instance
+        
+    Returns:
+        dict: {
+            'bom_id': int or None,
+            'total_items': int,
+            'added_items': int,
+            'skipped_items': list of {'part_number': str, 'reason': str, 'display_name': str}
+        }
+        
+    Raises:
+        OdooAPIError: If BOM creation fails
+    """
+    try:
+        # First, search for existing BOM for this product
+        existing_bom_ids = models.execute_kw(
+            database, uid, api_key,
+            'mrp.bom', 'search',
+            [[['product_id', '=', product_id]]]
+        )
+        
+        # Prepare BOM lines and track skipped items
+        bom_lines = []
+        skipped_items = []
+        
+        for item in bom_items:
+            # Search for the component product in Odoo by internal reference
+            component_ids = models.execute_kw(
+                database, uid, api_key,
+                'product.product', 'search',
+                [[['default_code', '=', item['full_part_number']]]]
+            )
+            
+            if component_ids:
+                component_id = component_ids[0]
+                bom_lines.append((0, 0, {
+                    'product_id': component_id,
+                    'product_qty': item['quantity'],
+                }))
+            else:
+                logger.warning(f"Component {item['full_part_number']} not found in Odoo, skipping")
+                skipped_items.append({
+                    'part_number': item['full_part_number'],
+                    'display_name': item.get('display_name', item['full_part_number']),
+                    'reason': 'Product not found in Odoo'
+                })
+        
+        result = {
+            'bom_id': None,
+            'total_items': len(bom_items),
+            'added_items': len(bom_lines),
+            'skipped_items': skipped_items
+        }
+        
+        # Only create BOM if ALL parts are present in Odoo
+        if skipped_items:
+            logger.warning(f"Cannot create BOM: {len(skipped_items)} component(s) not found in Odoo")
+            return result
+        
+        if not bom_lines:
+            logger.warning("No valid BOM lines to create")
+            return result
+        
+        # Get the product template ID for the assembly product
+        # Odoo requires product_tmpl_id for BOM creation
+        product_info = models.execute_kw(
+            database, uid, api_key,
+            'product.product', 'read',
+            [[product_id], ['product_tmpl_id']]
+        )
+        
+        if not product_info or 'product_tmpl_id' not in product_info[0]:
+            logger.error(f"Could not fetch product template ID for product {product_id}")
+            raise OdooAPIError("Could not fetch product template ID")
+        
+        product_tmpl_id = product_info[0]['product_tmpl_id'][0]  # It's returned as [id, name]
+        
+        # Prepare BOM data
+        bom_data = {
+            'product_id': product_id,
+            'product_tmpl_id': product_tmpl_id,
+            'product_qty': 1.0,
+            'type': 'normal',
+            'bom_line_ids': bom_lines
+        }
+        
+        if existing_bom_ids:
+            # Update existing BOM
+            bom_id = existing_bom_ids[0]
+            logger.info(f"Updating existing BOM {bom_id} for product {product_id}")
+            
+            # Delete old BOM lines and create new ones
+            models.execute_kw(
+                database, uid, api_key,
+                'mrp.bom', 'write',
+                [[bom_id], {'bom_line_ids': [(5, 0, 0)] + bom_lines}]
+            )
+        else:
+            # Create new BOM
+            logger.info(f"Creating new BOM for product {product_id}")
+            
+            bom_id = models.execute_kw(
+                database, uid, api_key,
+                'mrp.bom', 'create',
+                [bom_data]
+            )
+        
+        result['bom_id'] = bom_id
+        logger.info(f"Successfully created/updated BOM {bom_id} with {len(bom_lines)} lines")
+        return result
+        
+    except xmlrpc.client.Fault as e:
+        logger.error(f"Odoo API Fault during BOM creation: {e}")
+        raise OdooAPIError(f"Failed to create BOM: {e.faultString}")
+    except Exception as e:
+        logger.error(f"Error creating Odoo BOM: {e}")
+        raise OdooAPIError(f"Failed to create BOM: {str(e)}")
+
+
+def find_odoo_uom_by_name(models, uid, database, api_key, unit_name):
+    """
+    Find Odoo UoM (Unit of Measure) by name.
+    
+    Args:
+        models: Odoo models XML-RPC connection
+        uid: Odoo user ID
+        database: Odoo database name
+        api_key: Odoo API key
+        unit_name: Unit name from Dokuly (e.g., "pcs", "kg", "m")
+        
+    Returns:
+        int: Odoo UoM ID if found, None otherwise
+    """
+    try:
+        # Common mappings between Dokuly units and Odoo UoM names
+        unit_mappings = {
+            'pcs': ['Units', 'Unit(s)', 'Unit', 'Pieces', 'Piece'],
+            'piece': ['Units', 'Unit(s)', 'Unit', 'Pieces', 'Piece'],
+            'pieces': ['Units', 'Unit(s)', 'Unit', 'Pieces', 'Piece'],
+            'unit': ['Units', 'Unit(s)', 'Unit'],
+            'units': ['Units', 'Unit(s)', 'Unit'],
+            'kg': ['kg', 'Kilogram', 'Kilograms'],
+            'kilogram': ['kg', 'Kilogram', 'Kilograms'],
+            'kilograms': ['kg', 'Kilogram', 'Kilograms'],
+            'g': ['g', 'Gram', 'Grams'],
+            'gram': ['g', 'Gram', 'Grams'],
+            'grams': ['g', 'Gram', 'Grams'],
+            'm': ['m', 'Meter', 'Meters'],
+            'meter': ['m', 'Meter', 'Meters'],
+            'meters': ['m', 'Meter', 'Meters'],
+            'cm': ['cm', 'Centimeter', 'Centimeters'],
+            'centimeter': ['cm', 'Centimeter', 'Centimeters'],
+            'centimeters': ['cm', 'Centimeter', 'Centimeters'],
+            'mm': ['mm', 'Millimeter', 'Millimeters'],
+            'millimeter': ['mm', 'Millimeter', 'Millimeters'],
+            'millimeters': ['mm', 'Millimeter', 'Millimeters'],
+            'l': ['L', 'Liter', 'Liters'],
+            'liter': ['L', 'Liter', 'Liters'],
+            'liters': ['L', 'Liter', 'Liters'],
+            'ml': ['mL', 'Milliliter', 'Milliliters'],
+            'milliliter': ['mL', 'Milliliter', 'Milliliters'],
+            'milliliters': ['mL', 'Milliliter', 'Milliliters'],
+        }
+        
+        # Get list of names to try
+        search_names = unit_mappings.get(unit_name.lower(), [unit_name])
+        
+        # Try each name variant
+        for search_name in search_names:
+            # Try exact match first
+            uom_ids = models.execute_kw(
+                database, uid, api_key,
+                'uom.uom', 'search',
+                [[['name', '=', search_name]]],
+                {'limit': 1}
+            )
+            
+            if uom_ids:
+                logger.info(f"Found Odoo UoM ID {uom_ids[0]} for unit '{unit_name}' (matched as '{search_name}')")
+                return uom_ids[0]
+            
+            # Try case-insensitive match with ilike
+            uom_ids = models.execute_kw(
+                database, uid, api_key,
+                'uom.uom', 'search',
+                [[['name', 'ilike', search_name]]],
+                {'limit': 1}
+            )
+            
+            if uom_ids:
+                logger.info(f"Found Odoo UoM ID {uom_ids[0]} for unit '{unit_name}' (matched as '{search_name}' with ilike)")
+                return uom_ids[0]
+        
+        # Last resort: try to get default "Units" UoM by searching for active unit category
+        logger.warning(f"Could not find specific Odoo UoM for unit '{unit_name}', attempting to get default Units")
+        uom_ids = models.execute_kw(
+            database, uid, api_key,
+            'uom.uom', 'search',
+            [[['category_id.name', '=', 'Unit'], ['uom_type', '=', 'reference']]],
+            {'limit': 1}
+        )
+        
+        if uom_ids:
+            logger.info(f"Using default Units UoM ID {uom_ids[0]} for unit '{unit_name}'")
+            return uom_ids[0]
+        
+        logger.error(f"Could not find any suitable Odoo UoM for unit '{unit_name}'")
+        return None
+            
+    except Exception as e:
+        logger.error(f"Error finding Odoo UoM for '{unit_name}': {e}")
+        return None
+
+
+def push_product_to_odoo(item, item_type, integration_settings, user, include_bom=False):
+    """
+    Main function to push a part/pcba/assembly to Odoo as a product.
+    
+    Args:
+        item: Part, Pcba, or Assembly model instance
+        item_type: str - 'parts', 'pcbas', or 'assemblies'
+        integration_settings: IntegrationSettings instance
+        user: Django User instance
+        include_bom: bool - Whether to push BOM (for assemblies)
+        
+    Returns:
+        dict: {'success': bool, 'product_id': int, 'message': str}
+    """
+    try:
+        # Get Odoo connection
+        common, models, uid = get_odoo_connection(integration_settings)
+        
+        # Ensure product type is valid (Odoo v19 uses 'consu' for goods)
+        # Map any incorrect values to correct ones
+        product_type = integration_settings.odoo_default_product_type or 'consu'
+        
+        # Fix any incorrect values that might be in the database
+        type_mapping = {
+            'goods': 'consu',
+            'Goods': 'consu',
+            'product': 'consu',
+            'storable': 'consu',
+            'Storable': 'consu',
+            'consumable': 'consu',
+            'Consumable': 'consu',
+        }
+        
+        product_type = type_mapping.get(product_type, product_type.lower())
+        
+        logger.info(f"Pushing product {item.full_part_number} to Odoo with type: {product_type}")
+        
+        # Prepare product data
+        product_data = {
+            'name': item.display_name or f"{item.full_part_number}",
+            'default_code': item.full_part_number,  # Internal reference
+            'type': product_type,
+            'description': item.description or '',
+        }
+        
+        # Add category if configured
+        if integration_settings.odoo_default_product_category_id:
+            product_data['categ_id'] = integration_settings.odoo_default_product_category_id
+        
+        # Use the item's unit to find the corresponding Odoo UoM
+        if hasattr(item, 'unit') and item.unit:
+            uom_id = find_odoo_uom_by_name(
+                models, uid,
+                integration_settings.odoo_database,
+                integration_settings.odoo_api_key,
+                item.unit
+            )
+            if uom_id:
+                product_data['uom_id'] = uom_id
+                product_data['uom_po_id'] = uom_id
+            else:
+                # Fallback to default UoM if configured
+                if integration_settings.odoo_default_uom_id:
+                    product_data['uom_id'] = integration_settings.odoo_default_uom_id
+                    product_data['uom_po_id'] = integration_settings.odoo_default_uom_id
+        elif integration_settings.odoo_default_uom_id:
+            # Use default UoM if item has no unit
+            product_data['uom_id'] = integration_settings.odoo_default_uom_id
+            product_data['uom_po_id'] = integration_settings.odoo_default_uom_id
+        
+        # Handle image
+        if hasattr(item, 'thumbnail') and item.thumbnail:
+            image_base64 = get_image_as_base64(item.thumbnail)
+            if image_base64:
+                product_data['image_1920'] = image_base64
+        
+        # Create or update product
+        product_id = create_or_update_odoo_product(
+            models, uid,
+            integration_settings.odoo_database,
+            integration_settings.odoo_api_key,
+            product_data
+        )
+        
+        result = {
+            'success': True,
+            'product_id': product_id,
+            'message': f"Successfully pushed {item.full_part_number} to Odoo"
+        }
+        
+        # Handle BOM for assemblies
+        if item_type == 'assemblies' and include_bom:
+            try:
+                from assembly_bom.bom_flattening import flatten_bom_for_odoo
+                
+                bom_items = flatten_bom_for_odoo(item.id)
+                
+                if bom_items:
+                    bom_result = create_odoo_bom(
+                        models, uid,
+                        integration_settings.odoo_database,
+                        integration_settings.odoo_api_key,
+                        product_id,
+                        bom_items,
+                        integration_settings
+                    )
+                    
+                    # Include BOM result details in response
+                    result['bom_result'] = bom_result
+                    
+                    if bom_result['bom_id']:
+                        result['bom_id'] = bom_result['bom_id']
+                        result['message'] += f" with BOM ({bom_result['added_items']}/{bom_result['total_items']} items)"
+                    else:
+                        # BOM was not created because parts are missing
+                        result['message'] += " (BOM not created - missing components in Odoo)"
+                        result['bom_not_created'] = True
+                        result['missing_components'] = bom_result['skipped_items']
+                else:
+                    logger.warning(f"No BOM items found for assembly {item.id}")
+                    result['bom_warning'] = "No BOM items found for this assembly"
+                    
+            except Exception as bom_error:
+                logger.error(f"Error creating BOM in Odoo: {bom_error}")
+                result['bom_error'] = str(bom_error)
+                result['message'] += " (BOM creation failed)"
+        
+        logger.info(f"Successfully pushed {item_type} {item.id} to Odoo as product {product_id}")
+        return result
+        
+    except (OdooConnectionError, OdooAuthenticationError, OdooAPIError) as e:
+        logger.error(f"Odoo error pushing {item_type} {item.id}: {e}")
+        return {
+            'success': False,
+            'message': str(e)
+        }
+    except Exception as e:
+        logger.error(f"Unexpected error pushing {item_type} {item.id} to Odoo: {e}")
+        return {
+            'success': False,
+            'message': f"Unexpected error: {str(e)}"
+        }
+
+
+def test_odoo_connection(integration_settings):
+    """
+    Test connection to Odoo instance and fetch valid product type values.
+    
+    Args:
+        integration_settings: IntegrationSettings instance
+        
+    Returns:
+        dict: {'success': bool, 'message': str, 'version': dict, 'valid_product_types': list}
+    """
+    try:
+        common, models, uid = get_odoo_connection(integration_settings)
+        
+        # Get Odoo version info
+        version = common.version()
+        
+        # Try a simple query to verify full access
+        models.execute_kw(
+            integration_settings.odoo_database, uid,
+            integration_settings.odoo_api_key,
+            'product.product', 'search',
+            [[]], {'limit': 1}
+        )
+        
+        # Query valid product type values
+        valid_types = []
+        try:
+            fields_info = models.execute_kw(
+                integration_settings.odoo_database,
+                uid,
+                integration_settings.odoo_api_key,
+                'product.template', 'fields_get',
+                ['type'],
+                {'attributes': ['selection']}
+            )
+            valid_types = fields_info.get('type', {}).get('selection', [])
+            logger.info(f"Valid Odoo product types: {valid_types}")
+        except Exception as e:
+            logger.warning(f"Could not query product types: {e}")
+        
+        return {
+            'success': True,
+            'message': 'Successfully connected to Odoo',
+            'version': version,
+            'valid_product_types': valid_types
+        }
+        
+    except (OdooConnectionError, OdooAuthenticationError) as e:
+        return {
+            'success': False,
+            'message': str(e)
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f"Connection test failed: {str(e)}"
+        }
+
+
+def auto_push_on_release(item, item_type, user, include_bom=False):
+    """
+    Auto-push item to Odoo when released.
+    
+    This function checks if Odoo integration is enabled and configured for auto-push,
+    then pushes the item to Odoo. This is meant to be called when an item's release
+    state changes to "Released".
+    
+    Args:
+        item: The item to push (Part, Assembly, or Pcba model instance)
+        item_type: Type of item ('parts', 'assemblies', or 'pcbas')
+        user: Django User object who released the item
+        include_bom: Whether to include BOM (only relevant for assemblies)
+        
+    Returns:
+        dict: Result of the push operation with 'success', 'message' keys
+              Returns None if auto-push is not enabled
+              
+    Raises:
+        No exceptions - logs warnings on failure
+    """
+    try:
+        # Get user profile and organization
+        profile = Profile.objects.get(user=user)
+        if not profile.organization_id or profile.organization_id == -1:
+            logger.debug(f"User {user.id} has no organization, skipping Odoo auto-push")
+            return None
+        
+        # Get integration settings
+        integration_settings = IntegrationSettings.objects.filter(
+            organization_id=profile.organization_id
+        ).first()
+        
+        if not integration_settings:
+            logger.debug(f"No integration settings found for organization {profile.organization_id}")
+            return None
+        
+        # Check if Odoo auto-push is enabled
+        if not integration_settings.odoo_enabled:
+            logger.debug("Odoo integration is not enabled")
+            return None
+            
+        if not integration_settings.odoo_auto_push_on_release:
+            logger.debug("Odoo auto-push on release is not enabled")
+            return None
+        
+        # Push to Odoo
+        logger.info(f"Auto-pushing {item_type} {item.id} ({item.full_part_number}) to Odoo on release")
+        result = push_product_to_odoo(
+            item, 
+            item_type, 
+            integration_settings, 
+            user, 
+            include_bom=include_bom
+        )
+        
+        if result.get('success'):
+            logger.info(f"Successfully auto-pushed {item_type} {item.id} to Odoo: {result.get('message')}")
+        else:
+            logger.warning(f"Failed to auto-push {item_type} {item.id} to Odoo: {result.get('message')}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error during auto-push of {item_type} {item.id} to Odoo: {e}", exc_info=True)
+        return {
+            'success': False,
+            'message': f"Auto-push failed: {str(e)}"
+        }
