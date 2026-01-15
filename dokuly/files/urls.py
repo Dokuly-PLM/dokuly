@@ -15,6 +15,10 @@ urlpatterns = [
     path("api/files/archive/<int:file_id>/", views.archive_file),
     path("api/files/post/upload_with_new_row/",
          views.upload_and_create_new_file_row),
+    path("api/files/post/upload_multiple_with_new_rows/",
+         views.upload_multiple_and_create_new_file_rows),
+    path("api/files/connect_multiple/<str:app_str>/<int:object_id>/",
+         views.connect_multiple_files_to_object),
     path("api/files/get/files/", views.get_files),
     path("api/files/delete/<int:file_id>/", views.delete_file),
     # Images

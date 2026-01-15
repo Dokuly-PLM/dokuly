@@ -26,6 +26,8 @@ export const getBomTableColumns = ({
   supplierOptions = [],
   handleSelectDropdown = () => {},
   handleRowSelect = () => {},
+  autoFocusItemId = null,
+  setAutoFocusItemId = () => {},
 }) => {
   const columns = [
     {
@@ -41,6 +43,8 @@ export const getBomTableColumns = ({
             is_locked_bom={isLockedBom}
             setExpandCol={setExpandPnCol}
             organization={organization}
+            autoFocus={autoFocusItemId === row.id}
+            onFocusApplied={() => setAutoFocusItemId(null)}
           />
         );
       },
@@ -57,24 +61,23 @@ export const getBomTableColumns = ({
       // Enhanced search functionality for part numbers
       searchValue: (row) => {
         const searchTerms = [];
-        
+
         // Add properly formatted part number with revision
         if (row?.full_part_number) {
           // full_part_number already contains the properly formatted part number with revision
           searchTerms.push(row.full_part_number);
         }
-        
-        
+
         // Add MPN for cross-reference searches
         if (row?.mpn) {
           searchTerms.push(row.mpn);
         }
-        
+
         // Add temporary MPN for imported BOMs
         if (row?.temporary_mpn && row.temporary_mpn !== "-") {
           searchTerms.push(row.temporary_mpn);
         }
-        
+
         return searchTerms.join(" ");
       },
       includeInCsv: true,
@@ -96,22 +99,22 @@ export const getBomTableColumns = ({
       // Enhanced search functionality for display names
       searchValue: (row) => {
         const searchTerms = [];
-        
+
         // Add display name
         if (row?.display_name) {
           searchTerms.push(row.display_name);
         }
-        
+
         // Add description if available
         if (row?.description) {
           searchTerms.push(row.description);
         }
-        
+
         // Add manufacturer for manufacturer-based searches
         if (row?.manufacturer) {
           searchTerms.push(row.manufacturer);
         }
-        
+
         return searchTerms.join(" ");
       },
       defaultShowColumn: true,
@@ -122,18 +125,17 @@ export const getBomTableColumns = ({
       header: "External P/N",
       headerTooltip: "External Part Number",
       sort: true,
-      formatter: (row) => (
-        <span>{row?.external_part_number || ""}</span>
-      ),
-      csvFormatter: (row) => (row?.external_part_number ? `${row.external_part_number}` : ""),
+      formatter: (row) => <span>{row?.external_part_number || ""}</span>,
+      csvFormatter: (row) =>
+        row?.external_part_number ? `${row.external_part_number}` : "",
       searchValue: (row) => {
         const searchTerms = [];
-        
+
         // Add external part number
         if (row?.external_part_number) {
           searchTerms.push(row.external_part_number);
         }
-        
+
         return searchTerms.join(" ");
       },
       includeInCsv: true,
@@ -148,7 +150,7 @@ export const getBomTableColumns = ({
       formatter: (row) => {
         // Check if item is matched (has part, pcba, or assembly linked)
         const isMatched = row.part || row.pcba || row.assembly;
-        
+
         // If matched and has MPN, show it normally
         if (isMatched && row.mpn) {
           return (
@@ -166,7 +168,7 @@ export const getBomTableColumns = ({
             </span>
           );
         }
-        
+
         // If not matched but has temporary_mpn, show it muted
         if (!isMatched && row.temporary_mpn && row.temporary_mpn !== "-") {
           return (
@@ -186,7 +188,7 @@ export const getBomTableColumns = ({
             </span>
           );
         }
-        
+
         // Otherwise show the MPN or empty
         return (
           // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
@@ -207,22 +209,22 @@ export const getBomTableColumns = ({
       // Enhanced search functionality for MPN
       searchValue: (row) => {
         const searchTerms = [];
-        
+
         // Add MPN
         if (row?.mpn) {
           searchTerms.push(row.mpn);
         }
-        
+
         // Add temporary MPN for imported BOMs
         if (row?.temporary_mpn && row.temporary_mpn !== "-") {
           searchTerms.push(row.temporary_mpn);
         }
-        
+
         // Add manufacturer for manufacturer-based searches
         if (row?.manufacturer) {
           searchTerms.push(row.manufacturer);
         }
-        
+
         return searchTerms.join(" ");
       },
       includeInCsv: true,
@@ -252,17 +254,17 @@ export const getBomTableColumns = ({
       // Enhanced search functionality for designators
       searchValue: (row) => {
         const searchTerms = [];
-        
+
         // Add designator
         if (row?.designator) {
           searchTerms.push(row.designator);
         }
-        
+
         // Add comment for comment-based searches
         if (row?.comment) {
           searchTerms.push(row.comment);
         }
-        
+
         return searchTerms.join(" ");
       },
       includeInCsv: true,
@@ -322,7 +324,7 @@ export const getBomTableColumns = ({
           lowestMOQPrice.price,
           lowestMOQPrice.currency || row.part_information?.currency_price,
           currencyPairs,
-          organization
+          organization,
         );
         return `${price.toFixed(2)} (${lowestMOQPrice.minimum_order_quantity})`;
       },
@@ -343,7 +345,7 @@ export const getBomTableColumns = ({
           lowestMOQPrice.price,
           lowestMOQPrice.currency || row.part_information?.currency_price,
           currencyPairs,
-          organization
+          organization,
         );
         return `${price.toFixed(2)} (${lowestMOQPrice.minimum_order_quantity})`;
       },
@@ -422,7 +424,7 @@ export const getBomTableColumns = ({
     };
     // Add RoHS column before actions column
     const actionsIndex = columns.findIndex(
-      (column) => column.header === "Action"
+      (column) => column.header === "Action",
     );
     columns.splice(actionsIndex, 0, rohs_col);
   }
@@ -481,7 +483,7 @@ export const getBomTableColumns = ({
         }, null);
 
         const defaultSupplier = formattedSupplierOptions.find(
-          (supplier) => supplier.value === lowestPriceSupplier?.supplier?.id
+          (supplier) => supplier.value === lowestPriceSupplier?.supplier?.id,
         );
 
         // Use row.selected_supplier or default to defaultSupplier if it is null or undefined
@@ -491,11 +493,11 @@ export const getBomTableColumns = ({
               label: row.selected_supplier.name || "Unknown Supplier",
             }
           : defaultSupplier
-          ? {
-              value: defaultSupplier.value,
-              label: defaultSupplier.label,
-            }
-          : null;
+            ? {
+                value: defaultSupplier.value,
+                label: defaultSupplier.label,
+              }
+            : null;
 
         // Determine the placeholder based on available options
         const placeholderText =
@@ -519,7 +521,7 @@ export const getBomTableColumns = ({
     };
     // Remove actions column if it exists
     const actionsIndex = columns.findIndex(
-      (column) => column.header === "Action"
+      (column) => column.header === "Action",
     );
     if (actionsIndex > -1) {
       columns.splice(actionsIndex, 1);
