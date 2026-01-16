@@ -141,7 +141,7 @@ def get_image_as_base64(image_obj):
         return None
 
 
-def create_or_update_odoo_product(models, uid, database, api_key, product_data):
+def create_or_update_odoo_product(models, uid, database, api_key, product_data, template_data=None):
     """
     Create or update a product in Odoo by internal reference (default_code).
     
@@ -150,7 +150,8 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data):
         uid: Odoo user ID
         database: Odoo database name
         api_key: Odoo API key
-        product_data: Dict with product fields
+        product_data: Dict with product-level fields
+        template_data: Dict with template-level fields (type, sale_ok, purchase_ok, etc.)
         
     Returns:
         int: Odoo product ID
@@ -176,13 +177,14 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data):
             product_id = product_ids[0]
             logger.info(f"Found existing Odoo product with ID {product_id}, updating...")
             
+            # Update product-level fields
             models.execute_kw(
                 database, uid, api_key,
                 'product.product', 'write',
                 [[product_id], product_data]
             )
             
-            # Get template ID and update template-level fields (like rent_ok)
+            # Get template ID and update template-level fields
             product_info = models.execute_kw(
                 database, uid, api_key,
                 'product.product', 'read',
@@ -191,14 +193,14 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data):
             
             if product_info and 'product_tmpl_id' in product_info[0]:
                 template_id = product_info[0]['product_tmpl_id'][0]
-                # Update template with rent_ok = False (rental unchecked)
-                template_data = {'rent_ok': False}
-                models.execute_kw(
-                    database, uid, api_key,
-                    'product.template', 'write',
-                    [[template_id], template_data]
-                )
-                logger.info(f"Updated product template {template_id} with rent_ok=False")
+                # Update template with all template-level fields if provided
+                if template_data:
+                    models.execute_kw(
+                        database, uid, api_key,
+                        'product.template', 'write',
+                        [[template_id], template_data]
+                    )
+                    logger.info(f"Updated product template {template_id} with template-level fields")
             
             logger.info(f"Successfully updated Odoo product {product_id}")
             return product_id
@@ -206,29 +208,47 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data):
             # Create new product
             logger.info(f"Creating new Odoo product with reference {internal_reference}")
             
-            product_id = models.execute_kw(
+            # First create the template with template-level fields
+            if template_data:
+                template_data_with_name = template_data.copy()
+            else:
+                template_data_with_name = {}
+            
+            template_data_with_name['name'] = product_data['name']
+            template_data_with_name['default_code'] = product_data['default_code']
+            if 'description' in product_data:
+                template_data_with_name['description'] = product_data['description']
+            
+            template_id = models.execute_kw(
                 database, uid, api_key,
-                'product.product', 'create',
-                [product_data]
+                'product.template', 'create',
+                [template_data_with_name]
+            )
+            logger.info(f"Created product template {template_id}")
+            
+            # Get the product variant (product.product) from the template
+            product_variants = models.execute_kw(
+                database, uid, api_key,
+                'product.product', 'search',
+                [[['product_tmpl_id', '=', template_id]]],
+                {'limit': 1}
             )
             
-            # Get template ID and update template-level fields (like rent_ok)
-            product_info = models.execute_kw(
-                database, uid, api_key,
-                'product.product', 'read',
-                [[product_id], ['product_tmpl_id']]
-            )
-            
-            if product_info and 'product_tmpl_id' in product_info[0]:
-                template_id = product_info[0]['product_tmpl_id'][0]
-                # Update template with rent_ok = False (rental unchecked)
-                template_data = {'rent_ok': False}
-                models.execute_kw(
+            if product_variants:
+                product_id = product_variants[0]
+                logger.info(f"Found product variant {product_id} for template {template_id}")
+            else:
+                # If no variant exists, create one
+                product_variant_data = {
+                    'product_tmpl_id': template_id,
+                    'default_code': product_data['default_code'],
+                }
+                product_id = models.execute_kw(
                     database, uid, api_key,
-                    'product.template', 'write',
-                    [[template_id], template_data]
+                    'product.product', 'create',
+                    [product_variant_data]
                 )
-                logger.info(f"Updated product template {template_id} with rent_ok=False")
+                logger.info(f"Created product variant {product_id} for template {template_id}")
             
             logger.info(f"Successfully created Odoo product {product_id}")
             return product_id
@@ -571,18 +591,23 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
         
         logger.info(f"Pushing product {item.full_part_number} to Odoo with type: {product_type}")
         
-        # Prepare product data
+        # Prepare product data (product-level fields only)
         product_data = {
             'name': item.display_name or f"{item.full_part_number}",
             'default_code': item.full_part_number,  # Internal reference
-            'type': product_type,
             'description': item.description or '',
+        }
+        
+        # Prepare template data (template-level fields)
+        template_data = {
+            'type': product_type,
             # Set product flags: Sale unchecked, Purchase checked
             'sale_ok': False,
             'purchase_ok': True,
             # Track Inventory checked (is_storable = True) and By Quantity selected (tracking = 'lot')
             'is_storable': True,  # Enable inventory tracking
             'tracking': 'lot',  # Track by quantity (lots)
+            'rent_ok': False,  # Rental unchecked
         }
         
         # Set category to "Purchased Goods"
@@ -595,16 +620,16 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
         )
         
         if purchased_goods_category_id:
-            product_data['categ_id'] = purchased_goods_category_id
+            template_data['categ_id'] = purchased_goods_category_id
             logger.info(f"Set product category to 'Purchased Goods' (ID: {purchased_goods_category_id})")
         elif integration_settings.odoo_default_product_category_id:
             # Fallback to configured category ID if "Purchased Goods" not found
-            product_data['categ_id'] = integration_settings.odoo_default_product_category_id
+            template_data['categ_id'] = integration_settings.odoo_default_product_category_id
             logger.info(f"Using configured default product category ID: {integration_settings.odoo_default_product_category_id}")
         else:
             logger.warning("Could not find 'Purchased Goods' category and no default category configured")
         
-        # Use the item's unit to find the corresponding Odoo UoM
+        # Use the item's unit to find the corresponding Odoo UoM (template-level field)
         if hasattr(item, 'unit') and item.unit:
             uom_id = find_odoo_uom_by_name(
                 models, uid,
@@ -613,30 +638,31 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
                 item.unit
             )
             if uom_id:
-                product_data['uom_id'] = uom_id
-                product_data['uom_po_id'] = uom_id
+                template_data['uom_id'] = uom_id
+                template_data['uom_po_id'] = uom_id
             else:
                 # Fallback to default UoM if configured
                 if integration_settings.odoo_default_uom_id:
-                    product_data['uom_id'] = integration_settings.odoo_default_uom_id
-                    product_data['uom_po_id'] = integration_settings.odoo_default_uom_id
+                    template_data['uom_id'] = integration_settings.odoo_default_uom_id
+                    template_data['uom_po_id'] = integration_settings.odoo_default_uom_id
         elif integration_settings.odoo_default_uom_id:
             # Use default UoM if item has no unit
-            product_data['uom_id'] = integration_settings.odoo_default_uom_id
-            product_data['uom_po_id'] = integration_settings.odoo_default_uom_id
+            template_data['uom_id'] = integration_settings.odoo_default_uom_id
+            template_data['uom_po_id'] = integration_settings.odoo_default_uom_id
         
-        # Handle image
+        # Handle image (template-level field)
         if hasattr(item, 'thumbnail') and item.thumbnail:
             image_base64 = get_image_as_base64(item.thumbnail)
             if image_base64:
-                product_data['image_1920'] = image_base64
+                template_data['image_1920'] = image_base64
         
         # Create or update product
         product_id = create_or_update_odoo_product(
             models, uid,
             integration_settings.odoo_database,
             integration_settings.odoo_api_key,
-            product_data
+            product_data,
+            template_data
         )
         
         result = {
