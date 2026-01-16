@@ -34,6 +34,7 @@ def flatten_bom_for_odoo(assembly_id, visited=None):
                 'item_type': 'parts' | 'pcbas',
                 'item_id': int,
                 'full_part_number': str,
+                'external_part_number': str or None,
                 'display_name': str,
                 'quantity': float
             }]
@@ -81,6 +82,7 @@ def flatten_bom_for_odoo(assembly_id, visited=None):
                         'item_type': 'parts',
                         'item_id': part.id,
                         'full_part_number': part.full_part_number or f"PRT{part.part_number}",
+                        'external_part_number': part.external_part_number,
                         'display_name': part.display_name or '',
                         'quantity': quantity
                     }
@@ -97,6 +99,7 @@ def flatten_bom_for_odoo(assembly_id, visited=None):
                         'item_type': 'pcbas',
                         'item_id': pcba.id,
                         'full_part_number': pcba.full_part_number or f"PCBA{pcba.part_number}",
+                        'external_part_number': pcba.external_part_number,
                         'display_name': pcba.display_name or '',
                         'quantity': quantity
                     }
@@ -121,6 +124,7 @@ def flatten_bom_for_odoo(assembly_id, visited=None):
                             'item_type': sub_item['item_type'],
                             'item_id': sub_item['item_id'],
                             'full_part_number': sub_item['full_part_number'],
+                            'external_part_number': sub_item.get('external_part_number'),
                             'display_name': sub_item['display_name'],
                             'quantity': adjusted_quantity
                         }

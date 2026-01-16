@@ -182,6 +182,24 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data):
                 [[product_id], product_data]
             )
             
+            # Get template ID and update template-level fields (like rent_ok)
+            product_info = models.execute_kw(
+                database, uid, api_key,
+                'product.product', 'read',
+                [[product_id], ['product_tmpl_id']]
+            )
+            
+            if product_info and 'product_tmpl_id' in product_info[0]:
+                template_id = product_info[0]['product_tmpl_id'][0]
+                # Update template with rent_ok = False (rental unchecked)
+                template_data = {'rent_ok': False}
+                models.execute_kw(
+                    database, uid, api_key,
+                    'product.template', 'write',
+                    [[template_id], template_data]
+                )
+                logger.info(f"Updated product template {template_id} with rent_ok=False")
+            
             logger.info(f"Successfully updated Odoo product {product_id}")
             return product_id
         else:
@@ -193,6 +211,24 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data):
                 'product.product', 'create',
                 [product_data]
             )
+            
+            # Get template ID and update template-level fields (like rent_ok)
+            product_info = models.execute_kw(
+                database, uid, api_key,
+                'product.product', 'read',
+                [[product_id], ['product_tmpl_id']]
+            )
+            
+            if product_info and 'product_tmpl_id' in product_info[0]:
+                template_id = product_info[0]['product_tmpl_id'][0]
+                # Update template with rent_ok = False (rental unchecked)
+                template_data = {'rent_ok': False}
+                models.execute_kw(
+                    database, uid, api_key,
+                    'product.template', 'write',
+                    [[template_id], template_data]
+                )
+                logger.info(f"Updated product template {template_id} with rent_ok=False")
             
             logger.info(f"Successfully created Odoo product {product_id}")
             return product_id
@@ -248,7 +284,9 @@ def create_odoo_bom(models, uid, database, api_key, product_id, bom_items, integ
         skipped_items = []
         
         for item in bom_items:
-            # Search for the component product in Odoo by internal reference
+            component_id = None
+            
+            # First, search for the component product in Odoo by dokuly part number (internal reference)
             component_ids = models.execute_kw(
                 database, uid, api_key,
                 'product.product', 'search',
@@ -257,16 +295,32 @@ def create_odoo_bom(models, uid, database, api_key, product_id, bom_items, integ
             
             if component_ids:
                 component_id = component_ids[0]
+            else:
+                # If not found by dokuly part number, try external part number
+                external_part_number = item.get('external_part_number')
+                if external_part_number:
+                    component_ids = models.execute_kw(
+                        database, uid, api_key,
+                        'product.product', 'search',
+                        [[['default_code', '=', external_part_number]]]
+                    )
+                    
+                    if component_ids:
+                        component_id = component_ids[0]
+                        logger.info(f"Found component {item['full_part_number']} in Odoo using external part number {external_part_number}")
+            
+            if component_id:
                 bom_lines.append((0, 0, {
                     'product_id': component_id,
                     'product_qty': item['quantity'],
                 }))
             else:
-                logger.warning(f"Component {item['full_part_number']} not found in Odoo, skipping")
+                # Only fail if neither dokuly part number nor external part number matched
+                logger.warning(f"Component {item['full_part_number']} not found in Odoo (checked dokuly part number and external part number), skipping")
                 skipped_items.append({
                     'part_number': item['full_part_number'],
                     'display_name': item.get('display_name', item['full_part_number']),
-                    'reason': 'Product not found in Odoo'
+                    'reason': 'Product not found in Odoo (checked dokuly part number and external part number)'
                 })
         
         result = {
@@ -339,6 +393,53 @@ def create_odoo_bom(models, uid, database, api_key, product_id, bom_items, integ
     except Exception as e:
         logger.error(f"Error creating Odoo BOM: {e}")
         raise OdooAPIError(f"Failed to create BOM: {str(e)}")
+
+
+def find_odoo_category_by_name(models, uid, database, api_key, category_name):
+    """
+    Find Odoo product category by name.
+    
+    Args:
+        models: Odoo models XML-RPC connection
+        uid: Odoo user ID
+        database: Odoo database name
+        api_key: Odoo API key
+        category_name: Category name to search for (e.g., "Purchased Goods")
+        
+    Returns:
+        int: Odoo category ID if found, None otherwise
+    """
+    try:
+        # Try exact match first
+        category_ids = models.execute_kw(
+            database, uid, api_key,
+            'product.category', 'search',
+            [[['name', '=', category_name]]],
+            {'limit': 1}
+        )
+        
+        if category_ids:
+            logger.info(f"Found Odoo category ID {category_ids[0]} for '{category_name}'")
+            return category_ids[0]
+        
+        # Try case-insensitive match
+        category_ids = models.execute_kw(
+            database, uid, api_key,
+            'product.category', 'search',
+            [[['name', 'ilike', category_name]]],
+            {'limit': 1}
+        )
+        
+        if category_ids:
+            logger.info(f"Found Odoo category ID {category_ids[0]} for '{category_name}' (case-insensitive match)")
+            return category_ids[0]
+        
+        logger.warning(f"Could not find Odoo category '{category_name}'")
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error finding Odoo category '{category_name}': {e}")
+        return None
 
 
 def find_odoo_uom_by_name(models, uid, database, api_key, unit_name):
@@ -417,16 +518,26 @@ def find_odoo_uom_by_name(models, uid, database, api_key, unit_name):
         
         # Last resort: try to get default "Units" UoM by searching for active unit category
         logger.warning(f"Could not find specific Odoo UoM for unit '{unit_name}', attempting to get default Units")
-        uom_ids = models.execute_kw(
+        # First find the Unit category
+        category_ids = models.execute_kw(
             database, uid, api_key,
-            'uom.uom', 'search',
-            [[['category_id.name', '=', 'Unit'], ['uom_type', '=', 'reference']]],
+            'uom.category', 'search',
+            [[['name', '=', 'Unit']]],
             {'limit': 1}
         )
         
-        if uom_ids:
-            logger.info(f"Using default Units UoM ID {uom_ids[0]} for unit '{unit_name}'")
-            return uom_ids[0]
+        if category_ids:
+            # Then find UoM with that category and uom_type = 'reference'
+            uom_ids = models.execute_kw(
+                database, uid, api_key,
+                'uom.uom', 'search',
+                [[['category_id', '=', category_ids[0]], ['uom_type', '=', 'reference']]],
+                {'limit': 1}
+            )
+            
+            if uom_ids:
+                logger.info(f"Using default Units UoM ID {uom_ids[0]} for unit '{unit_name}'")
+                return uom_ids[0]
         
         logger.error(f"Could not find any suitable Odoo UoM for unit '{unit_name}'")
         return None
@@ -454,22 +565,9 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
         # Get Odoo connection
         common, models, uid = get_odoo_connection(integration_settings)
         
-        # Ensure product type is valid (Odoo v19 uses 'consu' for goods)
-        # Map any incorrect values to correct ones
+        # Use configured product type or default to 'consu' (Goods)
+        # Valid values: 'consu' (Goods), 'service' (Service), 'combo' (Combo)
         product_type = integration_settings.odoo_default_product_type or 'consu'
-        
-        # Fix any incorrect values that might be in the database
-        type_mapping = {
-            'goods': 'consu',
-            'Goods': 'consu',
-            'product': 'consu',
-            'storable': 'consu',
-            'Storable': 'consu',
-            'consumable': 'consu',
-            'Consumable': 'consu',
-        }
-        
-        product_type = type_mapping.get(product_type, product_type.lower())
         
         logger.info(f"Pushing product {item.full_part_number} to Odoo with type: {product_type}")
         
@@ -479,11 +577,32 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
             'default_code': item.full_part_number,  # Internal reference
             'type': product_type,
             'description': item.description or '',
+            # Set product flags: Sale unchecked, Purchase checked
+            'sale_ok': False,
+            'purchase_ok': True,
+            # Track Inventory checked (is_storable = True) and By Quantity selected (tracking = 'lot')
+            'is_storable': True,  # Enable inventory tracking
+            'tracking': 'lot',  # Track by quantity (lots)
         }
         
-        # Add category if configured
-        if integration_settings.odoo_default_product_category_id:
+        # Set category to "Purchased Goods"
+        # First try to find "Purchased Goods" category by name
+        purchased_goods_category_id = find_odoo_category_by_name(
+            models, uid,
+            integration_settings.odoo_database,
+            integration_settings.odoo_api_key,
+            'Purchased Goods'
+        )
+        
+        if purchased_goods_category_id:
+            product_data['categ_id'] = purchased_goods_category_id
+            logger.info(f"Set product category to 'Purchased Goods' (ID: {purchased_goods_category_id})")
+        elif integration_settings.odoo_default_product_category_id:
+            # Fallback to configured category ID if "Purchased Goods" not found
             product_data['categ_id'] = integration_settings.odoo_default_product_category_id
+            logger.info(f"Using configured default product category ID: {integration_settings.odoo_default_product_category_id}")
+        else:
+            logger.warning("Could not find 'Purchased Goods' category and no default category configured")
         
         # Use the item's unit to find the corresponding Odoo UoM
         if hasattr(item, 'unit') and item.unit:
