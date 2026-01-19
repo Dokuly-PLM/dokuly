@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 
 import { fetchProjects } from "../projects/functions/queries";
 import { fetchCustomers } from "../customers/funcitons/queries";
@@ -12,9 +12,12 @@ import NewAssemblyForm from "./forms/assemblyNewForm";
 import { releaseStateFormatter } from "../dokuly_components/formatters/releaseStateFormatter";
 import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
 import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
+import { useSyncedSearchParam } from "../common/hooks/useSyncedSearchParam";
 
 export default function AssembliesTable(props) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchTerm, setSearchTerm] = useSyncedSearchParam("search", 250, "assemblies");
 
   const [refresh, setRefresh] = useState(true);
   const [assemblies, setAssemblies] = useState([]);
@@ -98,10 +101,12 @@ export default function AssembliesTable(props) {
 
 
   const handleRowClick = (row_id, row, event) => {
+    // Navigate to detail without search param (search is persisted in localStorage)
+    const target = `/assemblies/${row.id}`;
     if (event?.ctrlKey || event?.metaKey) {
-      window.open(`/#/assemblies/${row.id}`);
+      window.open(`/#${target}`);
     } else {
-      navigate(`/assemblies/${row.id}`);
+      navigate(target);
     }
   };
 
@@ -189,6 +194,8 @@ export default function AssembliesTable(props) {
           showFilterChips={true}
           showSavedViews={true}
           showColumnSelector={true}
+          searchTerm={searchTerm}
+          onSearchTermChange={setSearchTerm}
         />
       </div>
     </div>

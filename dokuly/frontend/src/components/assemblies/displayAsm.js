@@ -4,7 +4,6 @@ import { fetchASM, getRevisions } from "./functions/queries";
 import ReferenceDocumentsTable from "../documents/referenceDocuments/referenceDocumentComponent";
 import axios from "axios";
 import { tokenConfig } from "../../configs/auth";
-import { Navigate } from "react-router-dom";
 import AsmNewRevision from "./overViewCards/asmNewRevision";
 import { FilesTable } from "./../common/filesTable/filesTable";
 import { fetchTestUser } from "../admin/functions/queries";
@@ -75,6 +74,7 @@ export const getIssueColor = (issue, app) => {
 const DisplayASM = (props) => {
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
   const location = useLocation();
+  const navigate = useNavigate();
   const [organization, refreshOrganization] = useOrganization();
 
   const [refresh, setRefresh] = useState(true);
@@ -86,9 +86,17 @@ const DisplayASM = (props) => {
     setCurrentASMID(Number.parseInt(split[5]));
   }, [location]);
 
-  const [searchTerm, setSearchTerm] = useState(
-    location?.state?.searchTerm || ""
-  );
+  // Compute return to list URL - search will be restored from localStorage
+  const returnToList = "/assemblies";
+
+  // Read searchTerm from localStorage for this table
+  const [searchTerm] = useState(() => {
+    try {
+      return localStorage.getItem("search_assemblies") || "";
+    } catch {
+      return "";
+    }
+  });
 
   const [test_user, setTestUser] = useState(false);
   useEffect(() => {
@@ -112,7 +120,6 @@ const DisplayASM = (props) => {
   const [loading2, setLoading2] = useState(true);
   const [loading3, setLoading3] = useState(true);
   const [bom, setBom] = useState({});
-  const [redirect, setNavigate] = useState(false);
 
   const [profiles, setProfiles] = useState(null);
   const [revision_list, setRevisionList] = useState(null);
@@ -139,8 +146,6 @@ const DisplayASM = (props) => {
   const [locations, refreshLocations, loadingLocations] = useLocations({
     setIsAuthenticated: setIsAuthenticated,
   });
-
-  const navigate = useNavigate();
 
   const liftUpState = (childData) => {
     if (childData?.refetchRevisions === true) {
@@ -504,13 +509,10 @@ const DisplayASM = (props) => {
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
         <img
           className="icon-dark p-2 arrow-back"
-          onClick={() => setNavigate(true)}
+          onClick={() => navigate(returnToList)}
           src="../../static/icons/arrow-left.svg"
           alt="arrow left"
         />
-        {redirect ? (
-          <Navigate push to={`/assemblies?search=${searchTerm}`} />
-        ) : null}
 
         <Heading
           item_number={asmDetailed?.full_part_number}
