@@ -72,6 +72,7 @@ const BomTable = ({
   const [open, setOpen] = useState(false);
   const [bomCopy, setBomCopy] = useState([]);
   const [autoFocusItemId, setAutoFocusItemId] = useState(null);
+  const [highlightedItemId, setHighlightedItemId] = useState(null);
 
   const [suppliers, refreshSuppliers, loadingSuppliers, errorSuppliers] =
     useSuppliers();
@@ -184,6 +185,14 @@ const BomTable = ({
     }
   }, [loadingCurrency, currencyPairs]);
 
+  const handleDuplicateFound = useCallback((existingItemId) => {
+    setHighlightedItemId(existingItemId);
+    // Clear highlight after 5 seconds
+    setTimeout(() => {
+      setHighlightedItemId(null);
+    }, 5000);
+  }, []);
+
   const handlePOFromBom = () => {
     const selectedItems = bom.map((item) => {
       return {
@@ -237,6 +246,9 @@ const BomTable = ({
     organization: organization,
     autoFocusItemId: autoFocusItemId,
     setAutoFocusItemId: setAutoFocusItemId,
+    allBomItems: bom,
+    onDuplicateFound: handleDuplicateFound,
+    highlightedItemId: highlightedItemId,
   };
 
   const columns = getBomTableColumns(columnConfiguration);
@@ -340,6 +352,7 @@ const BomTable = ({
                   textSize={tableTextSize}
                   setTextSize={setTableTextSize}
                   showTableSettings={true}
+                  highlightedRowId={highlightedItemId}
                 />
               )}
             </Row>

@@ -9,6 +9,8 @@ const QuantityEditor = ({
   displayProductionQuantity = false,
   displayOnlyProductionQuantity = false,
   productionQuantity = 0,
+  autoFocus = false,
+  onFocusApplied = () => {},
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [quantity, setQuantity] = useState(row.quantity || "");
@@ -41,6 +43,21 @@ const QuantityEditor = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [editorRef]);
+
+  useEffect(() => {
+    if (autoFocus && !is_locked_bom && !isEditing) {
+      setIsEditing(true);
+      onFocusApplied();
+
+      // Scroll into view
+      if (editorRef.current) {
+        editorRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }
+  }, [autoFocus, is_locked_bom, isEditing, onFocusApplied]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
