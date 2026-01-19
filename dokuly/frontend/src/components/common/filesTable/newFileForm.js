@@ -52,10 +52,14 @@ const GenericFileForm = (props) => {
     // If it's the first file and display_name is empty, set it
     if (updatedFiles.length === 1 && display_name === "") {
       const firstFile = updatedFiles[0];
-      const split = firstFile.name.split(".");
+      const lastDotIndex = firstFile.name.lastIndexOf(".");
+      const extension = lastDotIndex !== -1 ? firstFile.name.substring(lastDotIndex + 1) : "";
+      const nameWithoutExtension = lastDotIndex !== -1 
+        ? firstFile.name.substring(0, lastDotIndex)
+        : firstFile.name;
 
       // Check if its a zip file, ask if it is a gerber file
-      if (split[split.length - 1] === "zip" && props?.checkForGerberUpload) {
+      if (extension === "zip" && props?.checkForGerberUpload) {
         if (confirm("Is this Gerber files?")) {
           if (props.setGerberUpload) {
             props.setGerberUpload(true);
@@ -65,8 +69,7 @@ const GenericFileForm = (props) => {
           }
         }
       }
-      const newName = split[0];
-      setDisplayName(newName);
+      setDisplayName(nameWithoutExtension);
     }
   };
 
@@ -142,7 +145,11 @@ const GenericFileForm = (props) => {
         data.append("files", file);
       }
       for (const file of files) {
-        data.append("display_names", file.name.split(".")[0]);
+        const lastDotIndex = file.name.lastIndexOf(".");
+        const nameWithoutExtension = lastDotIndex !== -1 
+          ? file.name.substring(0, lastDotIndex)
+          : file.name;
+        data.append("display_names", nameWithoutExtension);
       }
 
       closeFileModal();
