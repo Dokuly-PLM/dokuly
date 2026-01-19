@@ -63,19 +63,19 @@ class GanttSerializer(serializers.ModelSerializer):
 class IssuePartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Part
-        fields = ['id', 'revision', 'full_part_number']
+        fields = ['id', 'formatted_revision', 'full_part_number']
 
 
 class IssuePcbaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pcba
-        fields = ['id', 'revision', 'full_part_number']
+        fields = ['id', 'formatted_revision', 'full_part_number']
 
 
 class IssueAssemblySerializer(serializers.ModelSerializer):
     class Meta:
         model = Assembly
-        fields = ['id', 'revision', 'full_part_number']
+        fields = ['id', 'formatted_revision', 'full_part_number']
 
 
 class IssueDocumentSerializer(serializers.ModelSerializer):
