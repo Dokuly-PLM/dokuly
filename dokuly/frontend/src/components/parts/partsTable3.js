@@ -7,7 +7,7 @@ import { getPartsTable } from "./functions/queries";
 import { mapProjectCustomerItems } from "../pcbas/functions/helperFuncitons";
 import { imageFormatter } from "./functions/formatters";
 import { dateFormatter } from "../documents/functions/formatters";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation } from "react-router-dom";
 import { partSearch } from "./partSearch";
 import { AuthContext } from "../App";
 import PartNewForm from "./forms/newPartForm2";
@@ -15,6 +15,7 @@ import { usePartTypes } from "./partTypes/usePartTypes";
 import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
 import { getUser } from "../layout/queries";
 import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
+import { useSyncedSearchParam } from "../common/hooks/useSyncedSearchParam";
 
 export default function PartsTable(props) {
   const [refresh, setRefresh] = useState(true);
@@ -24,7 +25,7 @@ export default function PartsTable(props) {
   const [data, setFilteredItems] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [projects, setProjecs] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useSyncedSearchParam("search", 250, "parts");
   const [allowed_app, setAllowedApp] = useState(true);
 
   const navigate = useNavigate();
@@ -33,25 +34,6 @@ export default function PartsTable(props) {
 
   // Part types
   const partTypes = usePartTypes();
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const searchParam = params.get("search");
-    const historyState = location.state?.searchTerm;
-    setSearchTerm(searchParam || historyState || "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state, location.search]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const currentSearchTerm = params.get("search");
-
-    if (currentSearchTerm !== searchTerm && searchTerm !== null) {
-      params.set("search", searchTerm);
-      navigate(`${location.pathname}?${params.toString()}`);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, location.pathname, location.search, navigate]);
 
   useEffect(() => {
     // Apply search filter if needed (DokulyTable handles its own search now)
@@ -174,11 +156,13 @@ export default function PartsTable(props) {
   }, [unProcessedParts, customers, projects]);
 
 
-  const handleRowClick = (rowIndex, row) => {
-    if (event.ctrlKey || event.metaKey) {
-      window.open(`/#/parts/${row.id}`);
+  const handleRowClick = (rowIndex, row, event) => {
+    // Navigate to detail without search param (search is persisted in localStorage)
+    const target = `/parts/${row.id}`;
+    if (event?.ctrlKey || event?.metaKey) {
+      window.open(`/#${target}`);
     } else {
-      navigate(`/parts/${row.id}`);
+      navigate(target);
     }
   };
 
@@ -344,6 +328,8 @@ export default function PartsTable(props) {
               showFilterChips={true}
               showSavedViews={true}
               defaultSort={{ columnNumber: 7, order: "desc" }}
+              searchTerm={searchTerm}
+              onSearchTermChange={setSearchTerm}
             />
           ) : (
             <>
