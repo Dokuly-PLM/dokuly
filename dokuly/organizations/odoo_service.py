@@ -184,7 +184,8 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data, 
                 [[product_id], product_data]
             )
             
-            # Get template ID and update template-level fields
+            # Get template ID and update only name and image for existing products
+            # (Skip other template-level fields like type, sale_ok, purchase_ok, etc.)
             product_info = models.execute_kw(
                 database, uid, api_key,
                 'product.product', 'read',
@@ -193,14 +194,25 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data, 
             
             if product_info and 'product_tmpl_id' in product_info[0]:
                 template_id = product_info[0]['product_tmpl_id'][0]
-                # Update template with all template-level fields if provided
-                if template_data:
+                # Only update name and image for existing products
+                update_template_data = {}
+                
+                if 'name' in product_data:
+                    update_template_data['name'] = product_data['name']
+                
+                # Check if image should be updated (it's in template_data, not product_data)
+                if template_data and 'image_1920' in template_data:
+                    update_template_data['image_1920'] = template_data['image_1920']
+                
+                if update_template_data:
                     models.execute_kw(
                         database, uid, api_key,
                         'product.template', 'write',
-                        [[template_id], template_data]
+                        [[template_id], update_template_data]
                     )
-                    logger.info(f"Updated product template {template_id} with template-level fields")
+                    logger.info(f"Updated product template {template_id} with name and/or image")
+                else:
+                    logger.info(f"No template-level fields to update for existing product {product_id}")
             
             logger.info(f"Successfully updated Odoo product {product_id}")
             return product_id
@@ -218,6 +230,10 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data, 
             template_data_with_name['default_code'] = product_data['default_code']
             if 'description' in product_data:
                 template_data_with_name['description'] = product_data['description']
+            
+            # Log the type value being sent for debugging
+            logger.info(f"Creating product template with type: {template_data_with_name.get('type', 'NOT SET')}")
+            logger.debug(f"Full template data: {template_data_with_name}")
             
             template_id = models.execute_kw(
                 database, uid, api_key,
@@ -587,9 +603,31 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
         
         # Use configured product type or default to 'consu' (Goods)
         # Valid values: 'consu' (Goods), 'service' (Service), 'combo' (Combo)
-        product_type = integration_settings.odoo_default_product_type or 'consu'
+        # Map any invalid/old values to valid ones
+        raw_product_type = integration_settings.odoo_default_product_type or 'consu'
         
-        logger.info(f"Pushing product {item.full_part_number} to Odoo with type: {product_type}")
+        # Map invalid values to valid ones (handle old 'product' value from migrations)
+        type_mapping = {
+            'product': 'consu',  # Old value, map to 'consu'
+            'Product': 'consu',
+            'PRODUCT': 'consu',
+            'storable': 'consu',
+            'Storable': 'consu',
+            'goods': 'consu',
+            'Goods': 'consu',
+            'consumable': 'consu',
+            'Consumable': 'consu',
+        }
+        
+        product_type = type_mapping.get(raw_product_type, raw_product_type)
+        
+        # Validate that the final type is one of the valid values
+        valid_types = ['consu', 'service', 'combo']
+        if product_type not in valid_types:
+            logger.warning(f"Invalid product type '{product_type}', defaulting to 'consu'")
+            product_type = 'consu'
+        
+        logger.info(f"Pushing product {item.full_part_number} to Odoo with type: {product_type} (mapped from: {raw_product_type})")
         
         # Prepare product data (product-level fields only)
         product_data = {
@@ -604,9 +642,9 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
             # Set product flags: Sale unchecked, Purchase checked
             'sale_ok': False,
             'purchase_ok': True,
-            # Track Inventory checked (is_storable = True) and By Quantity selected (tracking = 'lot')
+            # Track Inventory checked (is_storable = True) and By Quantity selected (tracking = 'none')
             'is_storable': True,  # Enable inventory tracking
-            'tracking': 'lot',  # Track by quantity (lots)
+            'tracking': 'none',  # Track by quantity (no lot/serial tracking)
             'rent_ok': False,  # Rental unchecked
         }
         
