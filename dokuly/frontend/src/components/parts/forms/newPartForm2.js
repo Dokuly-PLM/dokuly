@@ -1108,7 +1108,19 @@ const PartNewForm = (props) => {
       <button
         type="button"
         className="btn btn-bg-transparent mt-2 mb-2"
-        onClick={() => launchForm()}
+        onClick={(e) => {
+          // Prevent "mystery opens" caused by keyboard-triggered clicks (detail === 0)
+          // which can happen when switching tabs and focus is on this button.
+          if (e?.detail === 0) return;
+          launchForm();
+        }}
+        onKeyDown={(e) => {
+          // Keep keyboard accessibility while avoiding keyboard "click" events.
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            launchForm();
+          }
+        }}
       >
         <div className="row">
           <img

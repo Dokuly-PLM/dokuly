@@ -36,9 +36,14 @@ import PushToOdooButton from "../common/integrations/pushToOdooButton";
 const DisplayPart = (props) => {
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
   const location = useLocation();
-  const [searchTerm, setSearchTerm] = useState(
-    location.state?.searchTerm || ""
-  );
+  // Read searchTerm from localStorage for this table
+  const [searchTerm] = useState(() => {
+    try {
+      return localStorage.getItem("search_parts") || "";
+    } catch {
+      return "";
+    }
+  });
 
   // Url logic
   const [currentPartID, setCurrentPartID] = useState(-1);
@@ -422,7 +427,7 @@ const DisplayPart = (props) => {
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: No need for btn here */}
         <img
           className="icon-dark p-2 arrow-back"
-          onClick={() => navigate(`/parts?search=${searchTerm}`)}
+          onClick={() => navigate("/parts")}
           src="../../static/icons/arrow-left.svg"
           alt="Arrow Icon"
         />

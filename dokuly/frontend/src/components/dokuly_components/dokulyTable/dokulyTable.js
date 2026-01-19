@@ -109,6 +109,9 @@ function DokulyTableContents({
   showColumnFilters = false,
   showFilterChips = true,
   showSavedViews = false,
+  // Optional controlled search (URL sync)
+  searchTerm: controlledSearchTerm,
+  onSearchTermChange,
 }) {
 
   const [tableSettings, updateTableSetting] = useTableSettings(tableName);
@@ -138,7 +141,17 @@ function DokulyTableContents({
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOrder, setSortOrder] = useState(defaultSort.order);
   const [sortedColumn, setSortedColumn] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Support controlled or uncontrolled searchTerm
+  const isSearchControlled =
+    typeof controlledSearchTerm === "string" &&
+    typeof onSearchTermChange === "function";
+
+  const [internalSearchTerm, setInternalSearchTerm] = useState("");
+
+  const searchTerm = isSearchControlled ? controlledSearchTerm : internalSearchTerm;
+  const setSearchTerm = isSearchControlled ? onSearchTermChange : setInternalSearchTerm;
+  
   const [columnFilters, setColumnFilters] = useState({});
 
   const [expandedRows, setExpandedRows] = useState({});

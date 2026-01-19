@@ -9,12 +9,13 @@ import {
   numberFormatter,
   ThumbnailFormatterComponent,
 } from "./functions/formatters";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../App";
 import NewPcbaForm from "./forms/pcbaNewForm";
 import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
 import { releaseStateFormatter } from "../dokuly_components/formatters/releaseStateFormatter";
 import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
+import { useSyncedSearchParam } from "../common/hooks/useSyncedSearchParam";
 
 export default function PcbaTable(props) {
   const [refresh, setRefresh] = useState(true);
@@ -22,7 +23,9 @@ export default function PcbaTable(props) {
   const [processedPcbas, setProcessedPcbas] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [projects, setProjecs] = useState([]);
+  const [searchTerm, setSearchTerm] = useSyncedSearchParam("search", 250, "pcbas");
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
 
@@ -125,10 +128,12 @@ export default function PcbaTable(props) {
   }, [pcbas]);
 
   const handleRowClick = (row_id, row, event) => {
+    // Navigate to detail without search param (search is persisted in localStorage)
+    const target = `/pcbas/${row.id}`;
     if (event?.ctrlKey || event?.metaKey) {
-      window.open(`/#/pcbas/${row.id}`);
+      window.open(`/#${target}`);
     } else {
-      navigate(`/pcbas/${row.id}`);
+      navigate(target);
     }
   };
   const columns = [
@@ -228,6 +233,8 @@ export default function PcbaTable(props) {
           showFilterChips={true}
           showSavedViews={true}
           showColumnSelector={true}
+          searchTerm={searchTerm}
+          onSearchTermChange={setSearchTerm}
         />
       </div>
     </div>
