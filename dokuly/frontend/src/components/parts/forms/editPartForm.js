@@ -216,7 +216,7 @@ const EditPartForm = (props) => {
   }
 
   function archiveCurrentPart() {
-    if (!confirm("Are you sure you want to delete this part?")) {
+    if (!confirm(`Are you sure you want to delete this part:\n${props.part?.full_part_number} - ${props.part?.display_name}?`)) {
       return;
     }
 
