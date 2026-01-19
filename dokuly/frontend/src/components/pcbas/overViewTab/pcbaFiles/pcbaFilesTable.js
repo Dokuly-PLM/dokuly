@@ -128,7 +128,7 @@ export const PcbaFilesTable = (props) => {
             />
           </button>
         )}
-        {(!revisionLocked || row.type === "Generic") && (
+        {!revisionLocked && (
           <button
             type="button"
             className="btn btn-default"
