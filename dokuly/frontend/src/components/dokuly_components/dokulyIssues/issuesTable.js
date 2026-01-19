@@ -489,7 +489,7 @@ const IssuesTable = ({
               <span className="align-items-center">
                 {row[closedInFieldName]?.id === dbObject?.id
                   ? "Closed"
-                  : `Closed in: ${row[closedInFieldName]?.revision}`}
+                  : `Closed in: ${row[closedInFieldName]?.formatted_revision}`}
                 <img
                   className="icon-dark"
                   height={20}
