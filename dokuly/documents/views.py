@@ -1742,7 +1742,7 @@ def upload_file(request):
             # Save the PDF
             file.seek(0)
             doc_obj.pdf_raw.save(f"{uuid.uuid4().hex}/{file.name}", file)
-            process_pdf(id, org_id)
+            process_pdf(data["id"], org_id)
             
             # Generate thumbnail from the first page of the PDF
             thumbnail = generate_pdf_thumbnail(BytesIO(pdf_content), doc_obj.title)
