@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { editBomItem } from "./functions/queries";
+import { editBomItem, removeBomItem } from "./functions/queries";
 import { toast } from "react-toastify";
 import GlobalPartSelection from "../../dokuly_components/globalPartSelector/globalPartSelection";
+import DokulyModal from "../../dokuly_components/dokulyModal";
+import SubmitButton from "../../dokuly_components/submitButton";
+import CancelButton from "../../dokuly_components/cancelButton";
 
 function not_latest_rev_warning(item) {
   return item?.is_latest_revision === false ? (
@@ -37,9 +40,16 @@ const PartNumberEditor = ({
   style = { minWidth: "200px" },
   autoFocus = false,
   onFocusApplied = () => {},
+  allBomItems = [],
+  onDuplicateFound = null,
+  designatorHeader = "F/N",
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [selected_item, setSelectedItem] = useState(null);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateItem, setDuplicateItem] = useState(null);
+  const [pendingItem, setPendingItem] = useState(null);
+  const [isProcessingDuplicate, setIsProcessingDuplicate] = useState(false);
 
   const globalPartSelectionRef = useRef(null);
   const editorRef = useRef(null);
@@ -67,7 +77,9 @@ const PartNumberEditor = ({
     : row.temporary_mpn;
 
   useEffect(() => {
-    if (selected_item) {
+    // Don't process if we're already handling a duplicate or if modal is showing
+    if (selected_item && !isProcessingDuplicate && !showDuplicateModal) {
+      // Check if this item already exists in the BOM (excluding the current row)
       const idField =
         {
           Part: "part",
@@ -75,6 +87,25 @@ const PartNumberEditor = ({
           Assembly: "assembly",
         }[selected_item.item_type] || "item_id";
 
+      const existingItem = allBomItems.find(
+        (item) =>
+          item.id !== row.id && // Exclude the current row
+          item[idField] === selected_item.id
+      );
+
+      if (existingItem && onDuplicateFound) {
+        // Item already exists, show modal to confirm
+        setDuplicateItem(existingItem);
+        setPendingItem(selected_item);
+        setShowDuplicateModal(true);
+        setIsEditing(false);
+        setExpandCol(false);
+        // Highlight the existing row
+        onDuplicateFound(existingItem.id);
+        return;
+      }
+
+      // Item doesn't exist, proceed with normal flow
       const data = { [idField]: selected_item.id };
 
       editBomItem(row.id, data)
@@ -88,7 +119,7 @@ const PartNumberEditor = ({
           toast.error(`Error updating designator: ${error.message}`);
         });
     }
-  }, [selected_item, row.id, setExpandCol, setRefreshBom]);
+  }, [selected_item, row.id, setExpandCol, setRefreshBom, allBomItems, onDuplicateFound, isProcessingDuplicate, showDuplicateModal]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -164,31 +195,118 @@ const PartNumberEditor = ({
   // Display "-" when designator is empty and not editing
   const displayPartNumber = get_display_string();
 
+  const handleConfirmDuplicate = () => {
+    // User wants to add the duplicate, proceed with normal flow
+    // Set flag to prevent useEffect from re-triggering
+    setIsProcessingDuplicate(true);
+    // Clear selected_item FIRST to prevent useEffect from re-triggering when BOM refreshes
+    setSelectedItem(null);
+    setShowDuplicateModal(false);
+    setDuplicateItem(null);
+    
+    if (pendingItem) {
+      const idField =
+        {
+          Part: "part",
+          PCBA: "pcba",
+          Assembly: "assembly",
+        }[pendingItem.item_type] || "item_id";
+
+      const data = { [idField]: pendingItem.id };
+      // Clear pendingItem after constructing the data payload
+      setPendingItem(null);
+
+      editBomItem(row.id, data)
+        .then((response) => {
+          toast.success("Item added to BOM");
+          setIsEditing(false);
+          setExpandCol(false);
+          setRefreshBom(true);
+          // Reset flag after successful addition
+          setIsProcessingDuplicate(false);
+        })
+        .catch((error) => {
+          toast.error(`Error adding item: ${error.message}`);
+          // Reset flag on error too
+          setIsProcessingDuplicate(false);
+        });
+    } else {
+      setPendingItem(null);
+      setIsProcessingDuplicate(false);
+    }
+  };
+
+  const handleCancelDuplicate = () => {
+    // User doesn't want to add duplicate or modal was closed, delete the empty row
+    // Reset the selected item to prevent it from being processed again
+    setSelectedItem(null);
+    setShowDuplicateModal(false);
+    setDuplicateItem(null);
+    setPendingItem(null);
+    setIsEditing(false);
+    setExpandCol(false);
+    setIsProcessingDuplicate(false);
+    
+    // Delete the temporary entry
+    removeBomItem(row.id)
+      .then(() => {
+        toast.info("Duplicate entry cancelled");
+        setRefreshBom(true);
+      })
+      .catch((error) => {
+        toast.error(`Error removing item: ${error.message}`);
+        setRefreshBom(true);
+      });
+  };
+
   return (
-    <div ref={editorRef} className={className} style={{ ...style }}>
-      {is_locked_bom ? (
-        <span>{displayPartNumber}</span>
-      ) : isEditing ? (
-        <div ref={globalPartSelectionRef}>
-          <GlobalPartSelection
-            searchTerm={searchTerm}
-            setSelectedItem={setSelectedItem}
-            organization={organization}
-          />
+    <>
+      <div ref={editorRef} className={className} style={{ ...style }}>
+        {is_locked_bom ? (
+          <span>{displayPartNumber}</span>
+        ) : isEditing ? (
+          <div ref={globalPartSelectionRef}>
+            <GlobalPartSelection
+              searchTerm={searchTerm}
+              setSelectedItem={setSelectedItem}
+              organization={organization}
+            />
+          </div>
+        ) : (
+          // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+          <div
+            className={innerClassName}
+            onClick={() => {
+              setIsEditing(true);
+              setExpandCol(true);
+            }}
+          >
+            {displayPartNumber}
+          </div>
+        )}
+      </div>
+      <DokulyModal
+        show={showDuplicateModal}
+        onHide={handleCancelDuplicate}
+        title="Duplicate Item Detected"
+      >
+        <div className="p-3">
+          <p>
+            This part already exists in the BOM with {designatorHeader}:{" "}
+            <strong>{duplicateItem?.designator || "N/A"}</strong>
+          </p>
+          <p>Would you still like to add the duplicate?</p>
+          <div className="d-flex justify-content-start mt-3">
+            <SubmitButton className="mr-2" onClick={handleConfirmDuplicate}>
+              Yes, Add Duplicate
+            </SubmitButton>
+            <CancelButton onClick={handleCancelDuplicate}>
+              No, Cancel
+            </CancelButton>
+          </div>
         </div>
-      ) : (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-        <div
-          className={innerClassName}
-          onClick={() => {
-            setIsEditing(true);
-            setExpandCol(true);
-          }}
-        >
-          {displayPartNumber}
-        </div>
-      )}
-    </div>
+      </DokulyModal>
+    </>
   );
 };
 

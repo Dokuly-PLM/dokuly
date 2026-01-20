@@ -28,6 +28,8 @@ export const getBomTableColumns = ({
   handleRowSelect = () => {},
   autoFocusItemId = null,
   setAutoFocusItemId = () => {},
+  allBomItems = [],
+  onDuplicateFound = null,
 }) => {
   const columns = [
     {
@@ -45,6 +47,9 @@ export const getBomTableColumns = ({
             organization={organization}
             autoFocus={autoFocusItemId === row.id}
             onFocusApplied={() => setAutoFocusItemId(null)}
+            allBomItems={allBomItems}
+            onDuplicateFound={onDuplicateFound}
+            designatorHeader={designatorHeader}
           />
         );
       },

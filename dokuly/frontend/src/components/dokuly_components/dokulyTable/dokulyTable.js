@@ -109,9 +109,9 @@ function DokulyTableContents({
   showColumnFilters = false,
   showFilterChips = true,
   showSavedViews = false,
-  // Optional controlled search (URL sync)
   searchTerm: controlledSearchTerm,
   onSearchTermChange,
+  highlightedRowId = null,
 }) {
 
   const [tableSettings, updateTableSetting] = useTableSettings(tableName);
@@ -857,6 +857,8 @@ function DokulyTableContents({
                 style={{
                   cursor: "pointer",
                   border: checkForWarning(row) ? "2px solid #ffc109" : "none",
+                  backgroundColor: highlightedRowId === row.id ? "#fff9e6" : undefined,
+                  transition: highlightedRowId === row.id ? "background-color 0.3s ease" : undefined,
                 }}
               >
                 {selectedColumns.map((column) => (
