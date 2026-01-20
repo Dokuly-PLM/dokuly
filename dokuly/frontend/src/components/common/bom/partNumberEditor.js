@@ -292,7 +292,7 @@ const PartNumberEditor = ({
       >
         <div className="p-3">
           <p>
-            This part already exists in the BOM {designatorHeader}:{" "}
+            This part already exists in the BOM with {designatorHeader}:{" "}
             <strong>{duplicateItem?.designator || "N/A"}</strong>
           </p>
           <p>Would you still like to add the duplicate?</p>
