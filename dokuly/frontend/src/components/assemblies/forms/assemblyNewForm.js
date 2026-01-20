@@ -3,6 +3,7 @@ import { createNewAssembly } from "../functions/queries";
 import { get_active_customers } from "../../customers/funcitons/queries";
 import { getActiveProjectByCustomer, fetchProjects } from "../../projects/functions/queries";
 import { fetchOrg } from "../../admin/functions/queries";
+import { usePartTypes } from "../../parts/partTypes/usePartTypes";
 import { propTypes } from "react-bootstrap/esm/Image";
 import SubmitButton from "../../dokuly_components/submitButton";
 import { toast } from "react-toastify";
@@ -23,6 +24,9 @@ const NewAssemblyForm = (props) => {
 
   const [externalPartNumber, setExternalPartNumber] = useState("");
   const [organization, setOrganization] = useState(null);
+  const [partType, setPartType] = useState(null);
+  
+  const partTypes = usePartTypes();
 
   useEffect(() => {
     // Fetch organization settings
@@ -59,6 +63,7 @@ const NewAssemblyForm = (props) => {
       description: description,
       project: parseInt(selected_project_id),
       external_part_number: externalPartNumber,
+      part_type: partType?.id || null,
     };
 
     // Push data to the database
@@ -184,6 +189,30 @@ const NewAssemblyForm = (props) => {
                             </option>
                           );
                         })}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Part type</label>
+                <select
+                  className="form-control"
+                  name="part_type"
+                  value={partType ? partType?.name : ""}
+                  onChange={(e) => {
+                    const selectedPartType = partTypes.find(
+                      (pt) => pt.name === e.target.value
+                    );
+                    setPartType(selectedPartType || null);
+                  }}
+                >
+                  <option value="">Select part type</option>
+                  {partTypes
+                    .filter((pt) => pt.applies_to === "Assembly")
+                    .map((pt) => (
+                      <option key={pt.name} value={pt.name}>
+                        {pt.name}
+                      </option>
+                    ))}
                 </select>
               </div>
 

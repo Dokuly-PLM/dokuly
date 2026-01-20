@@ -6,6 +6,7 @@ import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/R
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
 import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
+import { usePartTypes } from "../../parts/partTypes/usePartTypes";
 
 const PcbaForm = (props) => {
   const navigate = useNavigate();
@@ -18,6 +19,9 @@ const PcbaForm = (props) => {
   const [externalPartNumber, setExternalPartNumber] = useState("");
   const [rulesStatus, setRulesStatus] = useState(null);
   const [rulesOverride, setRulesOverride] = useState(false);
+  const [partType, setPartType] = useState(null);
+
+  const partTypes = usePartTypes();
 
   useEffect(() => {
     setDisplayName(props.pcba?.display_name);
@@ -26,6 +30,25 @@ const PcbaForm = (props) => {
     setAttributes(props.pcba?.attributes || {});
     setExternalPartNumber(props?.pcba?.external_part_number ?? "");
   }, [props.pcba]);
+
+  useEffect(() => {
+    // part_type comes as an object from PcbaSerializerFull (PartTypeIconSerializer with id and icon_url)
+    if (!props.pcba?.part_type) {
+      setPartType(null);
+      return;
+    }
+    
+    if (partTypes.length === 0) {
+      // partTypes not loaded yet, will retry when it loads
+      return;
+    }
+    
+    const partTypeId = props.pcba.part_type.id || props.pcba.part_type;
+    const currentPartType = partTypes.find(
+      (partType) => partType.id === partTypeId
+    );
+    setPartType(currentPartType || null);
+  }, [props.pcba?.part_type, partTypes]);
 
   const launchForm = () => {
     setShowModal(true);
@@ -39,6 +62,7 @@ const PcbaForm = (props) => {
       is_approved_for_release: is_approved_for_release,
       attributes: attributes,
       external_part_number: externalPartNumber,
+      part_type: partType?.id || null,
     };
 
     setShowModal(false);
@@ -146,6 +170,30 @@ const PcbaForm = (props) => {
             externalPartNumber={externalPartNumber}
             setExternalPartNumber={setExternalPartNumber}
           />
+
+          <div className="form-group">
+            <label>Part type</label>
+            <select
+              className="form-control"
+              name="part_type"
+              value={partType ? partType?.name : ""}
+              onChange={(e) => {
+                const selectedPartType = partTypes.find(
+                  (partType) => partType.name === e.target.value
+                );
+                setPartType(selectedPartType || null);
+              }}
+            >
+              <option value="">Select part type</option>
+              {partTypes
+                .filter((partType) => partType.applies_to === "PCBA")
+                .map((partType) => (
+                  <option key={partType.name} value={partType.name}>
+                    {partType.name}
+                  </option>
+                ))}
+            </select>
+          </div>
 
           <div className="form-group">
             <label>Description</label>

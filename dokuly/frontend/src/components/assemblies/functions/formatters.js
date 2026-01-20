@@ -61,5 +61,12 @@ export const thumbnailFormatter = (row) => {
       </div>
     );
   }
+  if(row?.part_type?.icon_url) {
+    return (
+      <div style={containerStyle}>
+        <img src={row?.part_type?.icon_url} alt="icon" />
+      </div>
+    );
+  }
   return "";
 };

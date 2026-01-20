@@ -36,7 +36,7 @@ from organizations.revision_utils import build_full_part_number, build_formatted
 from projects.models import Project
 from projects.viewsIssues import link_issues_on_new_object_revision
 from projects.viewsTags import check_for_and_create_new_tags
-from parts.viewUtilities import copy_markdown_tabs_to_new_revision
+from parts.viewUtilities import copy_markdown_tabs_to_new_revision, resolve_part_type_for_module
 
 
 @swagger_auto_schema(
@@ -94,11 +94,11 @@ def create_new_assembly(request, **kwargs):
         assembly_entry.release_state = "Draft"
         assembly_entry.is_latest_revision = True
         assembly_entry.is_archived = False
-        
+
         # Initialize revision counters - both start at 0 for first revision
         assembly_entry.revision_count_major = 0
         assembly_entry.revision_count_minor = 0
-        
+
         # Get organization_id from user profile or API key for revision system
         organization_id = None
         if APIAndProjectAccess.has_validated_key(request):
@@ -112,6 +112,13 @@ def create_new_assembly(request, **kwargs):
             assembly_entry.display_name = data["display_name"]
         if "description" in data:
             assembly_entry.description = data["description"]
+
+        part_type, part_type_error = resolve_part_type_for_module(
+            data.get("part_type"), "Assembly"
+        )
+        if part_type_error:
+            return part_type_error
+        assembly_entry.part_type = part_type
 
         if "project" in data and data["project"] != -1:
             if APIAndProjectAccess.has_validated_key(request):
@@ -207,14 +214,18 @@ def get_single_asm(request, pk, **kwargs):
             "No id sent with the request", status=status.HTTP_400_BAD_REQUEST
         )
     try:
+        asm_queryset = (
+            Assembly.objects.select_related("project", "project__customer", "markdown_notes", "thumbnail", "part_type")
+            .prefetch_related("tags", "markdown_note_tabs", "files")
+        )
         if APIAndProjectAccess.has_validated_key(request):
             # Here we have already checked if the user has access to the project, dont need to check again
-            asm = get_object_or_404(Assembly, id=pk)
+            asm = get_object_or_404(asm_queryset, id=pk)
             serializer = AssemblySerializer(asm, many=False, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             asm = get_object_or_404(
-                Assembly,
+                asm_queryset,
                 Q(project__project_members=user) | Q(project__isnull=True),
                 id=pk,
             )
@@ -252,16 +263,18 @@ def get_latest_revisions(request, **kwargs):
         else:
             assemblies_query = assemblies_query.filter(
                 Q(project__project_members=user) | Q(project__isnull=True)
-            ).prefetch_related("tags")
+            )
+
+        assemblies_query = assemblies_query.select_related("project", "part_type").prefetch_related("tags")
         serializer = AssemblyTableSerializer(assemblies_query, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(f"Error: {str(e)}", status=status.HTTP_404_NOT_FOUND)
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def get_revision_list(request, asmId):
     user = request.user
     permission, response = check_user_auth_and_app_permission(
@@ -390,10 +403,11 @@ def new_revision(request, pk, **kwargs):
                     organization_id = org_id
             elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
                 organization_id = request.user.profile.organization_id
-            
+
             # Get revision type from request data (default to "major" for backward compatibility)
             revision_type = data.get('revision_type', 'major')
-            newRevision.revision_count_major, newRevision.revision_count_minor = increment_revision_counters(current_asm.revision_count_major, current_asm.revision_count_minor, revision_type == 'major')
+            newRevision.revision_count_major, newRevision.revision_count_minor = increment_revision_counters(
+                current_asm.revision_count_major, current_asm.revision_count_minor, revision_type == 'major')
 
             if APIAndProjectAccess.has_validated_key(request):
                 if "created_by" in data:
@@ -623,7 +637,7 @@ def update_info(request, pk, **kwargs):
 
         if data["release_state"] == "Released":
             asm.released_date = datetime.now()
-            
+
             # Auto-push to Odoo if enabled
             auto_push_on_release(asm, 'assemblies', user, include_bom=True)
 
@@ -645,15 +659,24 @@ def update_info(request, pk, **kwargs):
 
     if "external_part_number" in data:
         asm.external_part_number = data.get("external_part_number", "")
+
+    if "part_type" in data:
+        part_type, part_type_error = resolve_part_type_for_module(
+            data.get("part_type"), "Assembly"
+        )
+        if part_type_error:
+            return part_type_error
+        asm.part_type = part_type
+
     asm.save()
 
     serializer = AssemblySerializer(asm, many=False)
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 
-@ api_view(("PUT",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def save_blueprint(request, asmId):
     permission, response = check_user_auth_and_app_permission(
         request, "assemblies")
@@ -666,9 +689,9 @@ def save_blueprint(request, asmId):
     )
 
 
-@ api_view(("PUT",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def edit_errata(request, asmId):
     permission, response = check_user_auth_and_app_permission(
         request, "assemblies")
@@ -692,9 +715,9 @@ def edit_errata(request, asmId):
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-@ api_view(("PUT",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def edit_revision_notes(request, asmId):
     permission, response = check_user_auth_and_app_permission(
         request, "assemblies")
@@ -731,9 +754,9 @@ def edit_revision_notes(request, asmId):
         )
 
 
-@ api_view(("PUT",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def edit_bom_id(request, asmId, bom_id):
     permission, response = check_user_auth_and_app_permission(
         request, "assemblies")
@@ -779,8 +802,8 @@ def get_all_assemblies(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
 def get_revisions(request, part_number):
     """Return all revisions of a particular part number"""
     permission, response = check_user_auth_and_app_permission(

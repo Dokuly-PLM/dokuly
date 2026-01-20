@@ -1,8 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from profiles.models import Profile
-from parts.models import Part
-from django.core.validators import validate_comma_separated_integer_list
+from parts.models import Part, PartType
 from django.contrib.postgres.fields import ArrayField
 
 from projects.models import Project, Tag
@@ -20,7 +19,7 @@ class Pcba(models.Model):
     part_number = models.IntegerField(blank=True, null=True)
     # The complete part number of a pcba. e.g. PCBA1234.
     full_part_number = models.CharField(null=True, blank=True, max_length=50)
-    
+
     # Formatted revision field based on organization template (e.g., "A", "1", "A-0", "1-0")
     formatted_revision = models.CharField(null=True, blank=True, max_length=20)
 
@@ -83,6 +82,11 @@ class Pcba(models.Model):
     # Basic data fields
     display_name = models.CharField(max_length=150, blank=True)
     description = models.TextField(max_length=500, blank=True)
+
+    part_type = models.ForeignKey(
+        PartType, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     last_updated = models.DateTimeField(auto_now=True)

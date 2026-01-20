@@ -4,15 +4,14 @@ from .models import Pcba, Project
 from projects.serializers import ProjectTitleSerializer, TagSerializer
 from documents.serializers import MarkdownTextSerializer
 from customers.models import Customer
-
-# from .models import Employee
-
-# User Serializer
+from parts.serializers import PartTypeIconSerializer
 
 # Default serializer for fetching the main pcba info.
 
 
 class PcbaSerializer(serializers.ModelSerializer):
+    part_type = PartTypeIconSerializer()
+
     class Meta:
         model = Pcba
         # fields = '__all__'
@@ -46,6 +45,7 @@ class ProjectTitleSerializer(serializers.ModelSerializer):
 class PcbaTableSerializer(serializers.ModelSerializer):
     project = ProjectTitleSerializer()
     tags = TagSerializer(many=True)
+    part_type = PartTypeIconSerializer()
     organization = serializers.SerializerMethodField()
 
     class Meta:
@@ -65,6 +65,7 @@ class PcbaTableSerializer(serializers.ModelSerializer):
             "thumbnail",
             "project",
             "tags",
+            "part_type",
             "organization",
             "external_part_number",
         )
@@ -93,6 +94,7 @@ class PcbaSerializerFull(serializers.ModelSerializer):
 
     markdown_notes = MarkdownTextSerializer()
     tags = TagSerializer(many=True)
+    part_type = PartTypeIconSerializer()
     organization = serializers.SerializerMethodField()
 
     def get_organization(self, obj):

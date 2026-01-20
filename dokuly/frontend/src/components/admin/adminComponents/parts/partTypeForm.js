@@ -21,12 +21,14 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
   const [defaultUnit, setDefaultUnit] = useState(defaultDefaultUnit);
   const [selectedIcon, setSelectedIcon] = useState("");
   const [prefix, setPrefix] = useState(defaultPrefix);
+  const [appliesTo, setAppliesTo] = useState("Part");
 
   const resetStates = () => {
     setName("");
     setDescription("");
     setPrefix(defaultPrefix); // Reset prefix to default
     setDefaultUnit(defaultDefaultUnit); // Reset defaultUnit
+    setAppliesTo("Part"); // Reset applies_to to default
   };
 
   const onDeletePartType = (item) => {
@@ -59,6 +61,7 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
       prefix: prefix,
       icon_url: `/static/icons/${selectedIcon}`,
       default_unit: defaultUnit, // Use default_unit for consistency with the model
+      applies_to: appliesTo,
     };
 
     if (partTypeSelected) {
@@ -95,6 +98,7 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
       setDescription(partTypeSelected.description);
       setDefaultUnit(partTypeSelected.default_unit); // Set defaultUnit
       setPrefix(partTypeSelected.prefix || defaultPrefix); // Set prefix
+      setAppliesTo(partTypeSelected.applies_to || "Part"); // Set applies_to
       if (
         partTypeSelected?.icon_url == null ||
         partTypeSelected?.icon_url === undefined ||
@@ -107,6 +111,7 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
       setSelectedIcon(icon);
     } else {
       setPrefix(defaultPrefix); // Reset prefix to default when creating a new part type
+      setAppliesTo("Part"); // Reset applies_to to default when creating a new part type
     }
   }, [partTypeSelected]);
 
@@ -128,6 +133,18 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
             value={prefix}
             onChange={(e) => setPrefix(e.target.value)}
           />
+        </Form.Group>
+        <Form.Group controlId="formAppliesTo">
+          <Form.Label>Applies To *</Form.Label>
+          <Form.Control
+            as="select"
+            value={appliesTo}
+            onChange={(e) => setAppliesTo(e.target.value)}
+          >
+            <option value="Part">Part</option>
+            <option value="PCBA">PCBA</option>
+            <option value="Assembly">Assembly</option>
+          </Form.Control>
         </Form.Group>
         <Form.Group controlId="formDescription">
           <Form.Label>Description</Form.Label>

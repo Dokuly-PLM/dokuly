@@ -136,7 +136,11 @@ export function ThumbnailFormatterComponent({ row }) {
     defaultSrc = "../../../../static/icons/file-text.svg";
   }
   if (row?.part_type) {
-    defaultSrc = "../../../../static/icons/puzzle.svg";
+    if(row?.part_type?.icon_url) {
+      defaultSrc = row?.part_type?.icon_url;
+    } else {
+      defaultSrc = "../../../../static/icons/puzzle.svg";
+    }
   }
 
   if (thumbnailUrl === "api/files/download/file/undefined") {

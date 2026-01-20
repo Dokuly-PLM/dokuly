@@ -16,6 +16,22 @@ class PartTypeSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class PartTypeIconSerializer(serializers.ModelSerializer):
+    """Slim PartType serializer for table rows (avoid serializing full PartType)."""
+
+    class Meta:
+        model = PartType
+        fields = ("id", "icon_url")
+
+
+class PartTypeBomSerializer(serializers.ModelSerializer):
+    """Minimal PartType serializer for BOM-linked objects."""
+
+    class Meta:
+        model = PartType
+        fields = ("id", "name", "icon_url")
+
+
 # Part ----------------------------------------------------------------------------
 class AlternativePartSerializer(serializers.ModelSerializer):
     """
@@ -321,6 +337,8 @@ class PartBomSerializer(serializers.ModelSerializer):
 
 
 class SimplePcbaSerializer(serializers.ModelSerializer):
+    part_type = PartTypeBomSerializer()
+
     class Meta:
         model = Pcba
         fields = (
@@ -335,6 +353,7 @@ class SimplePcbaSerializer(serializers.ModelSerializer):
             "is_latest_revision",
             "thumbnail",
             "external_part_number",
+            "part_type",
         )  # Only the necessary fields
 
 
@@ -361,6 +380,8 @@ class SimplePartSerializer(serializers.ModelSerializer):
 
 
 class BomPartSerializer(serializers.ModelSerializer):
+    part_type = PartTypeBomSerializer()
+
     class Meta:
         model = Part
         fields = (
@@ -388,6 +409,8 @@ class BomPartSerializer(serializers.ModelSerializer):
 
 
 class SimpleAsmSerializer(serializers.ModelSerializer):
+    part_type = PartTypeBomSerializer()
+
     class Meta:
         model = Assembly
         fields = (
@@ -404,6 +427,7 @@ class SimpleAsmSerializer(serializers.ModelSerializer):
             "model_url",
             "thumbnail",
             "external_part_number",
+            "part_type",
         )
 
 

@@ -429,6 +429,7 @@ const DisplayPcba = (props) => {
           is_latest_revision={pcba?.is_latest_revision}
           app="pcbas"
           organization={pcba?.organization}
+          icon_url={pcba?.part_type?.icon_url}
         />
         <DokulyTabs
           tabs={tabs.filter((tab) => !tab.hidden)}
