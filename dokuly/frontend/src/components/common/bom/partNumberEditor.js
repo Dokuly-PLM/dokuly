@@ -213,8 +213,7 @@ const PartNumberEditor = ({
         }[pendingItem.item_type] || "item_id";
 
       const data = { [idField]: pendingItem.id };
-      const itemToAdd = pendingItem;
-      // Clear pendingItem after storing it in a local variable
+      // Clear pendingItem after constructing the data payload
       setPendingItem(null);
 
       editBomItem(row.id, data)
