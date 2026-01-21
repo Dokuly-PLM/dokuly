@@ -749,7 +749,8 @@ def archive_part(request, pk, **kwargs):
             if part.internal and not APIAndProjectAccess.check_project_access(request, part.project.pk):
                 return Response("Not authorized", status=status.HTTP_401_UNAUTHORIZED)
         else:
-            if part.internal and not part.project.project_members.filter(id=request.user.id).exists():
+            # Check if part.project is not None; otherwise we get a ValueError when accessing the project members
+            if part.internal and part.project is not None and not part.project.project_members.filter(id=request.user.id).exists():
                 return Response("Not authorized", status=status.HTTP_401_UNAUTHORIZED)
 
         part.is_archived = True
