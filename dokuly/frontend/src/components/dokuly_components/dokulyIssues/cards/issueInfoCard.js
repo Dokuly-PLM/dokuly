@@ -7,6 +7,7 @@ import { appToModelName } from "../issuesTable";
 import DokulyTags from "../../dokulyTags/dokulyTags";
 import DokulyImage from "../../dokulyImage";
 import { formatCloudImageUri } from "../../../pcbas/functions/productionHelpers";
+import DokulyDateFormat from "../../formatters/dateFormatter";
 
 export const getIssueProject = (issue, returnObject = false) => {
   if (issue?.parts && issue.parts.length > 0) {
@@ -129,6 +130,14 @@ const IssueInfoCard = ({
 
   const affectedItem = getAffectedItemInfo(issue);
 
+  const formatCreatorName = (createdBy) => {
+    if (!createdBy) return "Unknown";
+    if (createdBy.first_name || createdBy.last_name) {
+      return `${createdBy.first_name || ""} ${createdBy.last_name || ""}`.trim();
+    }
+    return createdBy.username || "Unknown";
+  };
+
   return (
     <DokulyCard>
       <CardTitle titleText={"Information"} />
@@ -186,6 +195,28 @@ const IssueInfoCard = ({
             <b>Criticality:</b>
           </Col>
           <Col>{issue?.criticality ?? ""}</Col>
+        </Row>
+
+        <hr />
+
+        <Row className="mt-2">
+          <Col xs="6" sm="6" md="6" lg="4" xl="6">
+            <b>Created by:</b>
+          </Col>
+          <Col>{formatCreatorName(issue?.created_by)}</Col>
+        </Row>
+
+        <Row className="mt-2">
+          <Col xs="6" sm="6" md="6" lg="4" xl="6">
+            <b>Created at:</b>
+          </Col>
+          <Col>
+            {issue?.created_at ? (
+              <DokulyDateFormat date={issue.created_at} showTime={true} />
+            ) : (
+              "N/A"
+            )}
+          </Col>
         </Row>
 
         <hr />

@@ -30,7 +30,7 @@ from projects.viewsTags import check_for_and_create_new_tags
 @renderer_classes([JSONRenderer])
 def get_issue(request, issue_id):
     try:
-        issue = Issues.objects.get(pk=issue_id)
+        issue = Issues.objects.select_related('created_by', 'closed_by', 'description').get(pk=issue_id)
         serializer = IssuesSerializer(issue, many=False)
         issue_data = {}
         issue_data = serializer.data
