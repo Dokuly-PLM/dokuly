@@ -244,12 +244,25 @@ class Part(models.Model):
 class PartType(models.Model):
     """Custom part types."""
 
+    APPLIES_TO_CHOICES = [
+        ("Part", "Part"),
+        ("PCBA", "PCBA"),
+        ("Assembly", "Assembly"),
+    ]
+
     name = models.CharField(max_length=150, blank=True, null=True)
     description = models.CharField(max_length=500, blank=True, null=True)
     # The suggjested unit shown on part creation.
     default_unit = models.CharField(max_length=20, blank=True, null=True)
     icon_url = models.CharField(max_length=800, blank=True, null=True)
     prefix = models.CharField(blank=True, max_length=20, null=True)
+    # Indicates which module this part type applies to: Part, PCBA, or Assembly
+    applies_to = models.CharField(
+        max_length=20,
+        choices=APPLIES_TO_CHOICES,
+        default="Part",
+        help_text="Indicates whether this part type applies to Parts, PCBAs, or Assemblies"
+    )
 
     # Nice to have metadata. Not shown.
     created_at = models.DateTimeField(auto_now_add=True)

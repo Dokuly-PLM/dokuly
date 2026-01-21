@@ -10,6 +10,7 @@ const Heading = ({
   is_latest_revision = true,
   app = "",
   organization = null,
+  icon_url = null,
 }) => {
   const titleRef = useRef(null);
 
@@ -61,7 +62,16 @@ const Heading = ({
     <div className="heading-container">
       <Row className="align-items-center">
         <Col className="col-auto justify-content-top">
-          <SidebarIcon app={app} width={45} />
+          {icon_url ? (
+            <img
+              src={icon_url}
+              alt="type icon"
+              width={45}
+              style={{ objectFit: "contain" }}
+            />
+          ) : (
+            <SidebarIcon app={app} width={45} />
+          )}
         </Col>
         <Col className="justify-content-center align-items-center">
           <h2

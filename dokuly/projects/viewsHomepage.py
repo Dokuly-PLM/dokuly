@@ -77,6 +77,7 @@ def get_for_you_data(request):
             is_latest_revision=True,
             is_archived=False
         )
+        .select_related("part_type")
         .only(
             "id",
             "part_number",
@@ -89,7 +90,9 @@ def get_for_you_data(request):
             "project",
             "last_updated",
             "thumbnail",
-            "tags"
+            "tags",
+            "part_type_id",
+            "part_type__icon_url",
         )
         .prefetch_related("tags")
     )
@@ -103,6 +106,7 @@ def get_for_you_data(request):
             is_latest_revision=True,
             is_archived=False
         )
+        .select_related("part_type")
         .only(
             "id",
             "part_number",
@@ -115,7 +119,9 @@ def get_for_you_data(request):
             "project",
             "last_updated",
             "thumbnail",
-            "tags"
+            "tags",
+            "part_type_id",
+            "part_type__icon_url",
         )
         .prefetch_related("tags")
     )
@@ -167,4 +173,3 @@ def get_for_you_data(request):
         "ecos": ecos_serializer.data,
         "stats": stats
     }, status=status.HTTP_200_OK)
-

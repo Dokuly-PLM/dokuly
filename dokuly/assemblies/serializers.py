@@ -2,12 +2,14 @@ from rest_framework import serializers
 from assemblies.models import Assembly
 from documents.serializers import MarkdownTextSerializer
 from projects.serializers import ProjectTitleSerializer, TagSerializer
+from parts.serializers import PartTypeIconSerializer
 
 
 class AssemblySerializer(serializers.ModelSerializer):
 
     markdown_notes = MarkdownTextSerializer()
     tags = TagSerializer(many=True)
+    part_type = PartTypeIconSerializer()
     organization = serializers.SerializerMethodField()
 
     def get_organization(self, obj):
@@ -35,6 +37,7 @@ class AssemblySerializer(serializers.ModelSerializer):
 
 class AssemblyTableSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
+    part_type = PartTypeIconSerializer()
     organization = serializers.SerializerMethodField()
 
     class Meta:
@@ -53,6 +56,7 @@ class AssemblyTableSerializer(serializers.ModelSerializer):
             "thumbnail",
             "project",
             "tags",
+            "part_type",
             "organization",
             "external_part_number"
         )

@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.validators import validate_comma_separated_integer_list
 from django.contrib.postgres.fields import ArrayField
 
 from django.contrib.auth.models import User
@@ -7,6 +6,7 @@ from profiles.models import Profile
 from projects.models import Project, Tag
 from files.models import Image
 from files.models import File
+from parts.models import PartType
 
 
 class Assembly(models.Model):
@@ -20,7 +20,7 @@ class Assembly(models.Model):
 
     # The complete part number of a document. e.g. ASM1234.
     full_part_number = models.CharField(null=True, blank=True, max_length=50)
-    
+
     # Formatted revision field based on organization template (e.g., "A", "1", "A-0", "1-0")
     formatted_revision = models.CharField(null=True, blank=True, max_length=20)
 
@@ -28,12 +28,16 @@ class Assembly(models.Model):
     display_name = models.CharField(max_length=150, blank=True)
     description = models.TextField(max_length=500, blank=True)
 
+    part_type = models.ForeignKey(
+        PartType, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
     # The primary revision counters. These are unrelated to formatting, and number/lettering style.
     revision_count_major = models.IntegerField(blank=True, null=True, default=0)
     revision_count_minor = models.IntegerField(blank=True, null=True, default=0)
 
     # This is the old revision field kept for compatibility.
-    revision = models.CharField(max_length=10, blank=True, null=True) # DEPRECATED
+    revision = models.CharField(max_length=10, blank=True, null=True)  # DEPRECATED
 
     # Indicates if this is the latest revision of the assembly. It is used to quickly query for the latest revision without needing to sort through all revisions.
     is_latest_revision = models.BooleanField(default=False, blank=True)

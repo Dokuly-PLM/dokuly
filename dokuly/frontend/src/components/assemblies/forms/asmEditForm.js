@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import moment from "moment";
 import { useNavigate } from "react-router";
 import { archiveAsmRevision, editAsmInfo } from "../functions/queries";
@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
 import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
+import { usePartTypes } from "../../parts/partTypes/usePartTypes";
 
 const AsmEditForm = (props) => {
   const navigate = useNavigate();
@@ -20,6 +21,9 @@ const AsmEditForm = (props) => {
   const [externalPartNumber, setExternalPartNumber] = useState("");
   const [rulesStatus, setRulesStatus] = useState(null);
   const [rulesOverride, setRulesOverride] = useState(false);
+  const [partType, setPartType] = useState(null);
+
+  const partTypes = usePartTypes();
 
   const editAsm = () => {
     loadStates(props?.asm);
@@ -46,7 +50,28 @@ const AsmEditForm = (props) => {
     setModelUrl(res?.model_url);
     setDescription(res?.description);
     setExternalPartNumber(res?.external_part_number ?? "");
+    // Part type will be loaded by useEffect when partTypes is available
   };
+
+  // Load part type when props.asm or partTypes changes
+  useEffect(() => {
+    // part_type comes as an object from AssemblySerializer (PartTypeIconSerializer with id and icon_url)
+    if (!props.asm?.part_type) {
+      setPartType(null);
+      return;
+    }
+    
+    if (partTypes.length === 0) {
+      // partTypes not loaded yet, will retry when it loads
+      return;
+    }
+    
+    const partTypeId = props.asm.part_type.id || props.asm.part_type;
+    const currentPartType = partTypes.find(
+      (partType) => partType.id === partTypeId
+    );
+    setPartType(currentPartType || null);
+  }, [props.asm?.part_type, partTypes]);
 
   const clearStates = () => {
     setReleaseState("");
@@ -54,6 +79,7 @@ const AsmEditForm = (props) => {
     setModelUrl("");
     setDescription("");
     setExternalPartNumber("");
+    setPartType(null);
   };
 
   const submit = () => {
@@ -78,6 +104,7 @@ const AsmEditForm = (props) => {
       description: description,
       last_updated: moment().format("YYYY-MM-DD HH:mm"),
       external_part_number: externalPartNumber,
+      part_type: partType?.id || null,
     };
     editAsmInfo(props.asm?.id, data)
       .then((res) => {
@@ -177,6 +204,30 @@ const AsmEditForm = (props) => {
                 externalPartNumber={externalPartNumber}
                 setExternalPartNumber={setExternalPartNumber}
               />
+
+              <div className="form-group">
+                <label>Part type</label>
+                <select
+                  className="form-control"
+                  name="part_type"
+                  value={partType ? partType?.name : ""}
+                  onChange={(e) => {
+                    const selectedPartType = partTypes.find(
+                      (partType) => partType.name === e.target.value
+                    );
+                    setPartType(selectedPartType || null);
+                  }}
+                >
+                  <option value="">Select part type</option>
+                  {partTypes
+                    .filter((partType) => partType.applies_to === "Assembly")
+                    .map((partType) => (
+                      <option key={partType.name} value={partType.name}>
+                        {partType.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
 
               <ReleaseStateTimeline
                 releaseState={release_state}

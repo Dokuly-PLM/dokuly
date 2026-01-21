@@ -55,8 +55,14 @@ from profiles.utilityFunctions import (
     notify_on_state_change_to_release)
 
 from projects.viewsTags import check_for_and_create_new_tags
-from parts.viewUtilities import copy_markdown_tabs_to_new_revision, download_image_and_create_thumbnail, download_datasheet_and_attach
+from parts.viewUtilities import (
+    copy_markdown_tabs_to_new_revision,
+    download_image_and_create_thumbnail,
+    download_datasheet_and_attach,
+    resolve_part_type_for_module,
+)
 from organizations.revision_utils import build_full_part_number, build_formatted_revision, increment_revision_counters
+
 
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
@@ -160,9 +166,9 @@ def get_single_part(request, pk, **kwargs):
         )
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def get_unarchived_parts(request):
     """Fetch all parts that are not archived."""
     user = request.user
@@ -339,9 +345,9 @@ def get_all_revisions(request, **kwargs):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def get_on_order_for_part(request, part_id):
     """Fetch the amount of parts on order for a specific part."""
     user = request.user
@@ -363,9 +369,9 @@ def get_on_order_for_part(request, part_id):
     return Response({"quantity": total_quantity_on_order}, status=status.HTTP_200_OK)
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def get_parts_table(request):
     user = request.user
     if request.user is None:
@@ -404,9 +410,9 @@ def get_parts_table(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def alt_parts_for_part(request, partIds):
     user = request.user
     permission, response = check_user_auth_and_app_permission(request, "parts")
@@ -481,8 +487,8 @@ def add_alternative_part(request, partID, alternativePartID):
         )
 
 
-@ api_view(("DELETE",))
-@ renderer_classes((JSONRenderer,))
+@api_view(("DELETE",))
+@renderer_classes((JSONRenderer,))
 def remove_alternative_part(request, partID, alternativePartID):
     """
     API view function that handles removing an alternative part from a part's
@@ -538,9 +544,9 @@ def remove_alternative_part(request, partID, alternativePartID):
         )
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def fetch_possible_bom_entries(request, asms, parts, pcbas):
     user = request.user
     if user is None:
@@ -662,10 +668,11 @@ def get_bom_items(request, assembly_ids, part_ids, pcba_ids):
                 id__in=asms_ids,
                 is_archived=False,
             )
+            .select_related("part_type")
             .only(
                 "id", "part_number", "full_part_number", "display_name",
                 "revision", "is_latest_revision", "release_state",
-                "price", "model_url", "thumbnail", "external_part_number"
+                "price", "model_url", "thumbnail", "external_part_number", "part_type_id", "part_type__prefix", "part_type__icon_url"
             )
             .order_by("-revision")
         )
@@ -686,13 +693,14 @@ def get_bom_items(request, assembly_ids, part_ids, pcba_ids):
                 Q(is_archived=False) | Q(is_archived=None),
                 id__in=parts_ids,
             )
+            .select_related("part_type")
             .only(
                 "id", "part_number", "full_part_number", "part_type",
                 "display_name", "revision", "release_state",
                 "is_latest_revision", "mpn", "image_url",
                 "unit", "git_link", "manufacturer", "datasheet",
                 "part_information", "thumbnail", "is_rohs_compliant",
-                "external_part_number"
+                "external_part_number", "part_type_id", "part_type__name", "part_type__icon_url"
             )
             .order_by("-revision")
         )
@@ -713,10 +721,12 @@ def get_bom_items(request, assembly_ids, part_ids, pcba_ids):
                 id__in=pcbas_ids,
                 is_archived__in=[False, None],
             )
+            .select_related("part_type")
             .only(
                 "id", "part_number", "full_part_number", "display_name",
                 "revision", "release_state", "is_latest_revision",
                 "thumbnail", "external_part_number",
+                "part_type_id", "part_type__name", "part_type__icon_url",
             )
             .order_by("-revision")
         )
@@ -766,9 +776,9 @@ def archive_part(request, pk, **kwargs):
         )
 
 
-@ api_view(("PUT",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def edit_revision_notes(request, partId):
     permission, response = check_user_auth_and_app_permission(request, "parts")
     if not permission:
@@ -791,9 +801,9 @@ def edit_revision_notes(request, partId):
         )
 
 
-@ api_view(("PUT",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def edit_errata(request, partId):
     if request.user == None:
         return Response("Not Authorized", status=status.HTTP_401_UNAUTHORIZED)
@@ -815,9 +825,9 @@ def edit_errata(request, partId):
         )
 
 
-@ api_view(("PUT",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def clear_sellers_data(request, partId):
     permission, response = check_user_auth_and_app_permission(request, "parts")
     if not permission:
@@ -922,7 +932,7 @@ def create_new_part(request, **kwargs):
     try:
         # Allow duplicate MPNs - different suppliers may use the same MPN,
         # and users should be able to create placeholder parts with no MPN
-        
+
         new_part = Part()
         if APIAndProjectAccess.has_validated_key(request):
             if "created_by" in data:
@@ -932,11 +942,11 @@ def create_new_part(request, **kwargs):
         new_part.part_number = get_next_part_number()
         new_part.release_state = "Draft"
         new_part.is_latest_revision = True
-        
+
         # Initialize revision counters - both start at 0 for first revision
         new_part.revision_count_major = 0
         new_part.revision_count_minor = 0
-        
+
         # Get organization_id from user profile or API key for revision system
         organization_id = None
         if APIAndProjectAccess.has_validated_key(request):
@@ -945,8 +955,7 @@ def create_new_part(request, **kwargs):
                 organization_id = org_id
         elif hasattr(user, 'profile') and user.profile.organization_id:
             organization_id = user.profile.organization_id
-        
-        
+
         new_part.display_name = data["display_name"]
         new_part.internal = data["internal"]
         if "description" in data:
@@ -989,29 +998,29 @@ def create_new_part(request, **kwargs):
         if "part_information" in data:
             if data["part_information"] != None:
                 new_part.part_information = data["part_information"]
-        
+
         # Set source field (digikey, nexar, or manual)
         if "source" in data:
             new_part.source = data["source"]
         else:
             new_part.source = "manual"  # Default to manual
-        
+
         # Set production_status if provided
         if "production_status" in data and data["production_status"]:
             new_part.production_status = data["production_status"]
-        
+
         # Set is_rohs_compliant if provided
         if "is_rohs_compliant" in data:
             new_part.is_rohs_compliant = data["is_rohs_compliant"]
-        
+
         # Set is_reach_compliant if provided
         if "is_reach_compliant" in data:
             new_part.is_reach_compliant = data["is_reach_compliant"]
-        
+
         # Set export_control_classification_number if provided
         if "export_control_classification_number" in data and data["export_control_classification_number"]:
             new_part.export_control_classification_number = data["export_control_classification_number"]
-        
+
         # Set estimated_factory_lead_days if provided
         if "estimated_factory_lead_days" in data and data["estimated_factory_lead_days"] is not None:
             new_part.estimated_factory_lead_days = data["estimated_factory_lead_days"]
@@ -1024,15 +1033,19 @@ def create_new_part(request, **kwargs):
             if data["urls"] != None:
                 new_part.component_vault_id = int(data["component_vault_id"])
 
-
         prefix = "PRT"
-        if "part_type" in data:
-            new_part.part_type_id = data["part_type"]
-            prefix = new_part.part_type.prefix
+        part_type, part_type_error = resolve_part_type_for_module(
+            data.get("part_type"), "Part"
+        )
+        if part_type_error:
+            return part_type_error
+        new_part.part_type = part_type
+        if part_type and part_type.prefix:
+            prefix = part_type.prefix
 
         # Save first to populate created_at (auto_now_add field)
         new_part.save()
-        
+
         # Now build full part number with the populated created_at
         new_part.full_part_number = build_full_part_number(
             organization_id=organization_id,
@@ -1062,13 +1075,13 @@ def create_new_part(request, **kwargs):
             new_part.image_url = data["image_url"]
             if new_part.image_url and new_part.image_url.strip():
                 download_image_and_create_thumbnail(new_part, new_part.image_url, user)
-        
+
         # Check if datasheet has a value and download it to attach as file
         if "datasheet" in data:
             new_part.datasheet = data["datasheet"]
             if new_part.datasheet and new_part.datasheet.strip():
                 download_datasheet_and_attach(new_part, new_part.datasheet, user)
-        
+
         serializer = PartSerializer(new_part, many=False)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -1206,7 +1219,7 @@ def edit_part(request, pk, **kwargs):
 
             if data["release_state"] == "Released":
                 part.released_date = datetime.now()
-                
+
                 # Auto-push to Odoo if enabled
                 auto_push_on_release(part, 'parts', user)
 
@@ -1419,8 +1432,6 @@ def new_revision(request, pk, **kwargs):
     new_part_rev.part_number = old_part_rev.part_number
     new_part_rev.part_type = old_part_rev.part_type
 
-    
-    
     # Get organization_id from user profile or API key for revision system
     organization_id = None
     if APIAndProjectAccess.has_validated_key(request):
@@ -1429,11 +1440,10 @@ def new_revision(request, pk, **kwargs):
             organization_id = org_id
     elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
         organization_id = request.user.profile.organization_id
-    
+
     # Get revision type from request data (default to "major" for backward compatibility)
     revision_type = request.data.get('revision_type', 'major')
     new_part_rev.revision_count_major, new_part_rev.revision_count_minor = increment_revision_counters(old_part_rev.revision_count_major, old_part_rev.revision_count_minor, revision_type == 'major')
-    
 
     new_part_rev.created_by = old_part_rev.created_by
     new_part_rev.display_name = old_part_rev.display_name
@@ -1500,7 +1510,6 @@ def new_revision(request, pk, **kwargs):
     if "revision_notes" in request.data:
         new_part_rev.revision_notes = request.data["revision_notes"]
 
-
     # Get prefix - default to "PRT" if part_type is None
     prefix = "PRT"
     if old_part_rev.part_type and old_part_rev.part_type.prefix:
@@ -1508,7 +1517,7 @@ def new_revision(request, pk, **kwargs):
 
     # Save first to populate created_at (auto_now_add field)
     new_part_rev.save()
-    
+
     # Now build full part number with the populated created_at
     new_part_rev.full_part_number = build_full_part_number(
         organization_id=organization_id,
@@ -1548,8 +1557,8 @@ def new_revision(request, pk, **kwargs):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
 def get_revision_list(request, id):
     if request.user == None:
         return Response("Not Authorized", status=status.HTTP_401_UNAUTHORIZED)
@@ -1649,8 +1658,8 @@ def edit_part_information(request, pk, **kwargs):
         )
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
 def get_revisions(request, part_number):
     """Return all revisions of a particular part number."""
     permission, response = check_user_auth_and_app_permission(request, "parts")
@@ -1691,16 +1700,16 @@ def global_part_search(request):
 
         data = request.data
         query = data.get("query", "")
-        
+
         # Get which tables to search (default: parts, pcbas, assemblies - NOT documents for BOM compatibility)
         include_tables = data.get("include_tables", ["parts", "pcbas", "assemblies"])
-        
+
         # Filter to only show latest revisions (for ECO, etc.)
         latest_only = data.get("latest_only", False)
 
         # Common filter for project membership or no project
         project_filter = Q(project__project_members=user) | Q(project__isnull=True)
-        
+
         # Optional filter for latest revision only
         latest_filter = Q(is_latest_revision=True) if latest_only else Q()
 
@@ -1791,8 +1800,8 @@ def batch_process_is_latest_revision_by_part_number(part_number):
         item.save()
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
 def batch_process_is_latest_revision_of_all_parts(request):
     """This view runs through all Parts and corrects the is_latest_revision field"""
     permission, response = check_user_auth_and_app_permission(request, "parts")
@@ -1808,8 +1817,8 @@ def batch_process_is_latest_revision_of_all_parts(request):
     return Response(status=status.HTTP_200_OK)
 
 
-@ api_view(("GET",))
-@ renderer_classes((JSONRenderer,))
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
 def batch_process_full_part_number_on_all_parts(request):
     """This view runs through all Parts and corrects the full_part_number field"""
     permission, response = check_user_auth_and_app_permission(request, "parts")
@@ -1824,9 +1833,9 @@ def batch_process_full_part_number_on_all_parts(request):
     return Response(status=status.HTTP_200_OK)
 
 
-@ api_view(("PUT",))
-@ renderer_classes((JSONRenderer,))
-@ login_required(login_url="/login")
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
 def update_thumbnail(request, partId, imageId):
     permission, response = check_user_auth_and_app_permission(request, "parts")
     if not permission:

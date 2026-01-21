@@ -521,6 +521,7 @@ const DisplayASM = (props) => {
           is_latest_revision={asmDetailed?.is_latest_revision}
           app="assemblies"
           organization={asmDetailed?.organization}
+          icon_url={asmDetailed?.part_type?.icon_url}
         />
 
         <DokulyTabs

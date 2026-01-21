@@ -1206,11 +1206,13 @@ const PartNewForm = (props) => {
               }}
             >
               <option value="">Select part type</option>
-              {partTypes.map((pt) => (
-                <option key={pt.name} value={pt.name}>
-                  {pt.name}
-                </option>
-              ))}
+              {partTypes
+                .filter((pt) => pt.applies_to === "Part")
+                .map((pt) => (
+                  <option key={pt.name} value={pt.name}>
+                    {pt.name}
+                  </option>
+                ))}
             </select>
           )}
         </div>

@@ -3,6 +3,7 @@ import { createNewPcba } from "../functions/queries";
 import { get_active_customers } from "../../customers/funcitons/queries";
 import { getActiveProjectByCustomer, fetchProjects } from "../../projects/functions/queries";
 import { fetchOrg } from "../../admin/functions/queries";
+import { usePartTypes } from "../../parts/partTypes/usePartTypes";
 import SubmitButton from "../../dokuly_components/submitButton";
 import { toast } from "react-toastify";
 import DokulyModal from "../../dokuly_components/dokulyModal";
@@ -19,6 +20,9 @@ const NewPcbaForm = (props) => {
   const [showModal, setShowModal] = useState(false);
   const [externalPartNumber, setExternalPartNumber] = useState("");
   const [organization, setOrganization] = useState(null);
+  const [partType, setPartType] = useState(null);
+  
+  const partTypes = usePartTypes();
 
   useEffect(() => {
     // Fetch organization settings
@@ -53,6 +57,7 @@ const NewPcbaForm = (props) => {
       description: description,
       project: parseInt(selected_project_id),
       external_part_number: externalPartNumber,
+      part_type: partType?.id || null,
     };
 
     createNewPcba(data)
@@ -150,6 +155,30 @@ const NewPcbaForm = (props) => {
                       </option>
                     );
                   })}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Part type</label>
+          <select
+            className="form-control"
+            name="part_type"
+            value={partType ? partType?.name : ""}
+            onChange={(e) => {
+              const selectedPartType = partTypes.find(
+                (pt) => pt.name === e.target.value
+              );
+              setPartType(selectedPartType || null);
+            }}
+          >
+            <option value="">Select part type</option>
+            {partTypes
+              .filter((pt) => pt.applies_to === "PCBA")
+              .map((pt) => (
+                <option key={pt.name} value={pt.name}>
+                  {pt.name}
+                </option>
+              ))}
           </select>
         </div>
 

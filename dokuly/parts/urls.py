@@ -75,8 +75,8 @@ urlpatterns = [
     # Part Types
     path("api/parts/get/partTypes/", viewsPartTypes.get_part_types),
     path("api/parts/post/partType/", viewsPartTypes.add_part_type),
-    path("api/parts/put/partType/<int:id>/", viewsPartTypes.edit_part_type),
-    path("api/parts/delete/partType/<int:id>/",
+    path("api/parts/put/partType/<int:part_type_id>/", viewsPartTypes.edit_part_type),
+    path("api/parts/delete/partType/<int:part_type_id>/",
          viewsPartTypes.delete_part_type),
     path(
         "api/parts/get/convert_threemf_to_gltf_view/<int:file_id>/",

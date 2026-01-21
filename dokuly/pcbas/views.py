@@ -35,18 +35,18 @@ from profiles.utilityFunctions import (
     notify_on_new_revision, notify_on_release_approval,
     notify_on_state_change_to_release)
 from projects.viewsTags import check_for_and_create_new_tags
-from parts.viewUtilities import copy_markdown_tabs_to_new_revision
+from parts.viewUtilities import copy_markdown_tabs_to_new_revision, resolve_part_type_for_module
 
 
 def is_latest_revision(part_number, revision_count_major, revision_count_minor):
     """
     Check if the current item is the latest revision.
-    
+
     Args:
         part_number: The part number to check
         revision_count_major: Major revision count of the current item
         revision_count_minor: Minor revision count of the current item
-    
+
     Returns:
         True if this is the latest revision, False otherwise
     """
@@ -64,7 +64,7 @@ def is_latest_revision(part_number, revision_count_major, revision_count_minor):
         # If same major but higher minor, current is not latest
         if item.revision_count_major == revision_count_major and item.revision_count_minor > revision_count_minor:
             return False
-    
+
     return True
 
 
@@ -76,11 +76,19 @@ def fetch_single_pcba(request, pk, **kwargs):
     user = request.user
     # Not an API request, project filter is done by APIAndProjectAccess in decorator.
     if not APIAndProjectAccess.has_validated_key(request):
+        pcba_queryset = (
+            Pcba.objects.select_related("project", "project__customer", "markdown_notes", "thumbnail", "part_type")
+            .prefetch_related("tags", "markdown_note_tabs", "generic_files")
+        )
         pcba = get_object_or_404(
-            Pcba, Q(project__project_members=user) | Q(project__isnull=True), id=pk
+            pcba_queryset, Q(project__project_members=user) | Q(project__isnull=True), id=pk
         )
     else:
-        pcba = get_object_or_404(Pcba, id=pk)
+        pcba_queryset = (
+            Pcba.objects.select_related("project", "project__customer", "markdown_notes", "thumbnail", "part_type")
+            .prefetch_related("tags", "markdown_note_tabs", "generic_files")
+        )
+        pcba = get_object_or_404(pcba_queryset, id=pk)
 
     if pcba.is_archived == True:
         return Response(f"PCBA is archived!", status=status.HTTP_204_NO_CONTENT)
@@ -146,7 +154,7 @@ def fetch_pcba_by_revision_and_part_number(request, **kwargs):
     data = serializer.data
 
     data["latest_revision"] = pcba.is_latest_revision
-    
+
     if data["project"] != None:
         project = Project.objects.get(pk=data["project"])
         if project.customer != None:
@@ -216,7 +224,7 @@ def get_latest_revisions(request, **kwargs):
     pcba = (
         Pcba.objects.filter(is_archived=False)
         .exclude(is_latest_revision=False)
-        .select_related("project")
+        .select_related("project", "part_type")
         .only(
             "id",
             "part_number",
@@ -229,6 +237,8 @@ def get_latest_revisions(request, **kwargs):
             "pcb_renders",
             "thumbnail",
             "external_part_number",
+            "part_type_id",
+            "part_type__icon_url",
             "project__title",
             "project__customer",
             "project__customer__name",
@@ -313,7 +323,7 @@ def new_revision(request, pk, **kwargs):
     new_pcba.created_by = old_pcba.created_by
     new_pcba.part_number = old_pcba.part_number
     new_pcba.external_part_number = old_pcba.external_part_number
-    
+
     # Get organization_id from user profile or API key for revision system
     organization_id = None
     if APIAndProjectAccess.has_validated_key(request):
@@ -322,10 +332,10 @@ def new_revision(request, pk, **kwargs):
             organization_id = org_id
     elif hasattr(user, 'profile') and user.profile.organization_id:
         organization_id = user.profile.organization_id
-    
+
     # Get revision type from request data (default to "major" for backward compatibility)
     revision_type = request.data.get('revision_type', 'major')
-    new_pcba.revision_count_major, new_pcba.revision_count_minor = increment_revision_counters(old_pcba.revision_count_major, old_pcba.revision_count_minor, revision_type == 'major')    
+    new_pcba.revision_count_major, new_pcba.revision_count_minor = increment_revision_counters(old_pcba.revision_count_major, old_pcba.revision_count_minor, revision_type == 'major')
 
     new_pcba.save()
 
@@ -349,8 +359,8 @@ def new_revision(request, pk, **kwargs):
         created_at=new_pcba.created_at
     )
 
-    new_pcba.price = old_pcba.price       #TODO are these deprecated?
-    new_pcba.currency = old_pcba.currency #TODO are these deprecated?
+    new_pcba.price = old_pcba.price  # TODO are these deprecated?
+    new_pcba.currency = old_pcba.currency  # TODO are these deprecated?
     new_pcba.save()
 
     copy_bom_to_new_revision = True
@@ -489,7 +499,7 @@ def edit_pcba(request, pk, **kwargs):
 
             if data["release_state"] == "Released":
                 pcba.released_date = datetime.now()
-                
+
                 # Auto-push to Odoo if enabled
                 auto_push_on_release(pcba, 'pcbas', user)
 
@@ -527,6 +537,14 @@ def edit_pcba(request, pk, **kwargs):
 
         if "external_part_number" in data:
             pcba.external_part_number = data.get("external_part_number", "")
+
+        if "part_type" in data:
+            part_type, part_type_error = resolve_part_type_for_module(
+                data.get("part_type"), "PCBA"
+            )
+            if part_type_error:
+                return part_type_error
+            pcba.part_type = part_type
 
         if "tags" in data:
             error, message, tag_ids = check_for_and_create_new_tags(pcba.project, data["tags"])
@@ -616,11 +634,18 @@ def create_new_pcba(request, **kwargs):
         pcba.release_state = "Draft"
         pcba.part_number = get_next_part_number()
         pcba.external_part_number = data.get("external_part_number", "")
-        
+
+        part_type, part_type_error = resolve_part_type_for_module(
+            data.get("part_type"), "PCBA"
+        )
+        if part_type_error:
+            return part_type_error
+        pcba.part_type = part_type
+
         # Initialize revision counters - both start at 0 for first revision
         pcba.revision_count_major = 0
         pcba.revision_count_minor = 0
-        
+
         # Get organization_id from user profile or API key for revision system
         organization_id = None
         if APIAndProjectAccess.has_validated_key(request):
@@ -629,7 +654,6 @@ def create_new_pcba(request, **kwargs):
                 organization_id = org_id
         elif hasattr(request.user, 'profile') and request.user.profile.organization_id:
             organization_id = request.user.profile.organization_id
-        
 
         if APIAndProjectAccess.has_validated_key(request):
             if "created_by" in data:

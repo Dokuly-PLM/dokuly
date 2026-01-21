@@ -90,8 +90,28 @@ const EditPartForm = (props) => {
       if (eccn !== "" || country !== "" || hscode !== "") {
         setExportCollapsed(false);
       }
+
     }
-  }, [props.part]);
+  }, [props.part, partTypes]);
+
+  useEffect(() => {
+    // part_type comes as an object from PartSerializer (PartTypeSerializer)
+    if (!props.part?.part_type) {
+      setPartType(null);
+      return;
+    }
+    
+    if (partTypes.length === 0) {
+      // partTypes not loaded yet, will retry when it loads
+      return;
+    }
+    
+    const partTypeId = props.part.part_type.id || props.part.part_type;
+    const currentPartType = partTypes.find(
+      (partType) => partType.id === partTypeId
+    );
+    setPartType(currentPartType || null);
+  }, [props.part?.part_type, partTypes]);
 
   const launchForm = () => {
     setShowModal(true);
@@ -200,6 +220,7 @@ const EditPartForm = (props) => {
       export_control_classification_number: exportControlClassificationNumber,
       country_of_origin: countryOfOrigin,
       harmonized_system_code: harmonizedSystemCode,
+      part_type: partType?.id || null,
     };
 
     editPart(props.part?.id, data).then((res) => {
@@ -366,6 +387,33 @@ const EditPartForm = (props) => {
               }}
               value={display_name}
             />
+          </div>
+
+          <div className="form-group">
+            <label>Part type</label>
+            <select
+              className="form-control"
+              name="part_type"
+              value={partType ? partType?.name : ""}
+              onChange={(e) => {
+                const selectedPartType = partTypes.find(
+                  (partType) => partType.name === e.target.value
+                );
+                setPartType(selectedPartType || null);
+                if (selectedPartType?.default_unit) {
+                  setUnit(selectedPartType.default_unit);
+                }
+              }}
+            >
+              <option value="">Select part type</option>
+              {partTypes
+                .filter((partType) => partType.applies_to === "Part")
+                .map((partType) => (
+                  <option key={partType.name} value={partType.name}>
+                    {partType.name}
+                  </option>
+                ))}
+            </select>
           </div>
 
           <div className="form-group">
