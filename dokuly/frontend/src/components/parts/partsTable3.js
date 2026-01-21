@@ -330,6 +330,7 @@ export default function PartsTable(props) {
               defaultSort={{ columnNumber: 7, order: "desc" }}
               searchTerm={searchTerm}
               onSearchTermChange={setSearchTerm}
+              showClearSearch={true}
             />
           ) : (
             <>

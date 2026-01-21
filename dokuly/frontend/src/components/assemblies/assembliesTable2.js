@@ -196,6 +196,7 @@ export default function AssembliesTable(props) {
           showColumnSelector={true}
           searchTerm={searchTerm}
           onSearchTermChange={setSearchTerm}
+          showClearSearch={true}
         />
       </div>
     </div>
