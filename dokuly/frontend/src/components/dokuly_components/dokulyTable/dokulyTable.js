@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useDrop } from "react-dnd";
+import { useLocation } from "react-router-dom";
 import { Container, Table, Row, Col, Form } from "react-bootstrap";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -54,6 +55,7 @@ import SavedViews from "./components/savedViews";
  * @param {Boolean} props.showColumnFilters - Whether to show column filter dropdowns
  * @param {Boolean} props.showFilterChips - Whether to show active filter chips
  * @param {Boolean} props.showSavedViews - Whether to show saved views functionality
+ * @param {Boolean} props.showClearSearch - Whether to show the clear search button
  * @returns {JSX.Element}
  * @constructor
  * @example
@@ -109,12 +111,14 @@ function DokulyTableContents({
   showColumnFilters = false,
   showFilterChips = true,
   showSavedViews = false,
+  showClearSearch = false,
   searchTerm: controlledSearchTerm,
   onSearchTermChange,
   highlightedRowId = null,
 }) {
 
   const [tableSettings, updateTableSetting] = useTableSettings(tableName);
+  const location = useLocation();
 
   useEffect(() => {
     // Apply text size from settings if available
@@ -419,6 +423,22 @@ function DokulyTableContents({
   const handleClearAllFilters = () => {
     setColumnFilters({});
     setCurrentPage(1);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    // Also clear localStorage if it exists (for persistent URL search hook)
+    // Use the same key logic as useSyncedSearchParam hook
+    try {
+      const storageKey = tableName 
+        ? `search_${tableName}` 
+        : `search_${location.pathname.split('/')[1]}`;
+      localStorage.removeItem(storageKey);
+    } catch {
+      // Ignore localStorage errors
+    }
+    // Note: The hook will also automatically clear localStorage when value becomes empty,
+    // but we clear it explicitly here to ensure it's cleared immediately
   };
 
   const applyColumnFilter = (row, column, filterValue) => {
@@ -760,7 +780,7 @@ function DokulyTableContents({
         <Row className="mb-2">
           <Col md={5}>
             <Row className="mb-1">
-              <Col className="col-9">
+              <Col className={showClearSearch && searchTerm ? "col-7" : "col-9"}>
                 <Form.Control
                   className="dokuly-form-input"
                   type="text"
@@ -770,6 +790,23 @@ function DokulyTableContents({
                   style={{ fontSize: textSize }}
                 />
               </Col>
+              {showClearSearch && searchTerm && (
+                <Col className="col-2 d-flex align-items-center justify-content-start">
+                  <button
+                    type="button"
+                    className="btn dokuly-btn-transparent p-1"
+                    onClick={handleClearSearch}
+                    title="Clear search"
+                    style={{ fontSize: textSize }}
+                  >
+                    <img
+                      src="../../../static/icons/x.svg"
+                      alt="Clear search"
+                      style={{ width: "16px", height: "16px", opacity: 0.7 }}
+                    />
+                  </button>
+                </Col>
+              )}
               <Col className="d-flex align-items-center justify-content-start">
                 <QuestionToolTip
                   optionalHelpText={searchHelpText}
