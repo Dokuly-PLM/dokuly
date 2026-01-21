@@ -466,6 +466,62 @@ class IntegrationSettings(models.Model):
         help_text="Default product type in Odoo"
     )
     
+    # Odoo product field defaults (for new products)
+    odoo_default_sale_ok = models.BooleanField(
+        default=False,
+        help_text="Default 'Can be Sold' setting for new products"
+    )
+    odoo_default_purchase_ok = models.BooleanField(
+        default=True,
+        help_text="Default 'Can be Purchased' setting for new products"
+    )
+    odoo_default_rent_ok = models.BooleanField(
+        default=False,
+        help_text="Default 'Can be Rented' setting for new products"
+    )
+    odoo_default_is_storable = models.BooleanField(
+        default=True,
+        help_text="Default 'Track Inventory' setting for new products"
+    )
+    odoo_default_tracking = models.CharField(
+        max_length=20,
+        default='none',
+        blank=True,
+        choices=[
+            ('none', 'By Quantity'),
+            ('lot', 'By Lots'),
+            ('serial', 'By Serial Numbers')
+        ],
+        help_text="Default inventory tracking method for new products"
+    )
+    
+    # Category mappings
+    odoo_category_parts = models.CharField(
+        max_length=200,
+        default='Purchased Goods',
+        blank=True,
+        help_text="Product category name for Parts"
+    )
+    odoo_category_pcbas = models.CharField(
+        max_length=200,
+        default='Purchased Goods',
+        blank=True,
+        help_text="Product category name for PCBAs"
+    )
+    odoo_category_assemblies = models.CharField(
+        max_length=200,
+        default='Manufactured',
+        blank=True,
+        help_text="Product category name for Assemblies"
+    )
+    
+    # Fields to update for existing products (JSON array of field names)
+    odoo_update_fields_existing = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of fields to update when product already exists in Odoo. Options: name, description, image"
+    )
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

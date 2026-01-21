@@ -94,6 +94,16 @@ def get_integration_settings(request):
             "odoo_default_product_category_id": integration_settings.odoo_default_product_category_id,
             "odoo_default_uom_id": integration_settings.odoo_default_uom_id,
             "odoo_default_product_type": integration_settings.odoo_default_product_type or "consu",
+            # New Odoo configuration fields
+            "odoo_default_sale_ok": integration_settings.odoo_default_sale_ok,
+            "odoo_default_purchase_ok": integration_settings.odoo_default_purchase_ok,
+            "odoo_default_rent_ok": integration_settings.odoo_default_rent_ok,
+            "odoo_default_is_storable": integration_settings.odoo_default_is_storable,
+            "odoo_default_tracking": integration_settings.odoo_default_tracking or "none",
+            "odoo_category_parts": integration_settings.odoo_category_parts or "Purchased Goods",
+            "odoo_category_pcbas": integration_settings.odoo_category_pcbas or "Purchased Goods",
+            "odoo_category_assemblies": integration_settings.odoo_category_assemblies or "Manufactured",
+            "odoo_update_fields_existing": integration_settings.odoo_update_fields_existing or ["name", "description", "image"],
             "has_odoo_credentials": bool(
                 integration_settings.odoo_url and
                 integration_settings.odoo_database and
@@ -250,6 +260,36 @@ def update_integration_settings(request):
             if product_type in ['consu', 'service', 'combo']:
                 integration_settings.odoo_default_product_type = product_type
         
+        # Update Odoo default field values
+        if "odoo_default_sale_ok" in data:
+            integration_settings.odoo_default_sale_ok = bool(data.get("odoo_default_sale_ok", False))
+        if "odoo_default_purchase_ok" in data:
+            integration_settings.odoo_default_purchase_ok = bool(data.get("odoo_default_purchase_ok", True))
+        if "odoo_default_rent_ok" in data:
+            integration_settings.odoo_default_rent_ok = bool(data.get("odoo_default_rent_ok", False))
+        if "odoo_default_is_storable" in data:
+            integration_settings.odoo_default_is_storable = bool(data.get("odoo_default_is_storable", True))
+        if "odoo_default_tracking" in data:
+            tracking = data.get("odoo_default_tracking", "none")
+            if tracking in ['none', 'lot', 'serial']:
+                integration_settings.odoo_default_tracking = tracking
+        
+        # Update category mappings
+        if "odoo_category_parts" in data:
+            integration_settings.odoo_category_parts = data.get("odoo_category_parts", "Purchased Goods").strip()
+        if "odoo_category_pcbas" in data:
+            integration_settings.odoo_category_pcbas = data.get("odoo_category_pcbas", "Purchased Goods").strip()
+        if "odoo_category_assemblies" in data:
+            integration_settings.odoo_category_assemblies = data.get("odoo_category_assemblies", "Manufactured").strip()
+        
+        # Update fields to update for existing products
+        if "odoo_update_fields_existing" in data:
+            update_fields = data.get("odoo_update_fields_existing", [])
+            if isinstance(update_fields, list):
+                # Validate field names
+                valid_fields = ['name', 'description', 'image']
+                integration_settings.odoo_update_fields_existing = [f for f in update_fields if f in valid_fields]
+        
         integration_settings.save()
         
         # Return updated settings
@@ -283,6 +323,16 @@ def update_integration_settings(request):
             "odoo_default_product_category_id": integration_settings.odoo_default_product_category_id,
             "odoo_default_uom_id": integration_settings.odoo_default_uom_id,
             "odoo_default_product_type": integration_settings.odoo_default_product_type or "consu",
+            # New Odoo configuration fields
+            "odoo_default_sale_ok": integration_settings.odoo_default_sale_ok,
+            "odoo_default_purchase_ok": integration_settings.odoo_default_purchase_ok,
+            "odoo_default_rent_ok": integration_settings.odoo_default_rent_ok,
+            "odoo_default_is_storable": integration_settings.odoo_default_is_storable,
+            "odoo_default_tracking": integration_settings.odoo_default_tracking or "none",
+            "odoo_category_parts": integration_settings.odoo_category_parts or "Purchased Goods",
+            "odoo_category_pcbas": integration_settings.odoo_category_pcbas or "Purchased Goods",
+            "odoo_category_assemblies": integration_settings.odoo_category_assemblies or "Manufactured",
+            "odoo_update_fields_existing": integration_settings.odoo_update_fields_existing or ["name", "description", "image"],
             "has_odoo_credentials": bool(
                 integration_settings.odoo_url and
                 integration_settings.odoo_database and

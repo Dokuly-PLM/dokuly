@@ -41,6 +41,17 @@ const AdminIntegrations = ({ setRefresh }) => {
   const [odooDefaultProductType, setOdooDefaultProductType] = useState("product");
   const [testingOdooConnection, setTestingOdooConnection] = useState(false);
   
+  // New Odoo configuration fields
+  const [odooDefaultSaleOk, setOdooDefaultSaleOk] = useState(false);
+  const [odooDefaultPurchaseOk, setOdooDefaultPurchaseOk] = useState(true);
+  const [odooDefaultRentOk, setOdooDefaultRentOk] = useState(false);
+  const [odooDefaultIsStorable, setOdooDefaultIsStorable] = useState(true);
+  const [odooDefaultTracking, setOdooDefaultTracking] = useState("none");
+  const [odooCategoryParts, setOdooCategoryParts] = useState("Purchased Goods");
+  const [odooCategoryPcbas, setOdooCategoryPcbas] = useState("Purchased Goods");
+  const [odooCategoryAssemblies, setOdooCategoryAssemblies] = useState("Manufactured");
+  const [odooUpdateFieldsExisting, setOdooUpdateFieldsExisting] = useState(["name", "description", "image"]);
+  
   // State for suppliers
   const [suppliers, setSuppliers] = useState([]);
   const [supplierOptions, setSupplierOptions] = useState([]);
@@ -182,6 +193,16 @@ const AdminIntegrations = ({ setRefresh }) => {
           setOdooDefaultProductCategoryId(res.data.odoo_default_product_category_id || null);
           setOdooDefaultUomId(res.data.odoo_default_uom_id || null);
           setOdooDefaultProductType(res.data.odoo_default_product_type || "product");
+          // New configuration fields
+          setOdooDefaultSaleOk(res.data.odoo_default_sale_ok !== undefined ? res.data.odoo_default_sale_ok : false);
+          setOdooDefaultPurchaseOk(res.data.odoo_default_purchase_ok !== undefined ? res.data.odoo_default_purchase_ok : true);
+          setOdooDefaultRentOk(res.data.odoo_default_rent_ok !== undefined ? res.data.odoo_default_rent_ok : false);
+          setOdooDefaultIsStorable(res.data.odoo_default_is_storable !== undefined ? res.data.odoo_default_is_storable : true);
+          setOdooDefaultTracking(res.data.odoo_default_tracking || "none");
+          setOdooCategoryParts(res.data.odoo_category_parts || "Purchased Goods");
+          setOdooCategoryPcbas(res.data.odoo_category_pcbas || "Purchased Goods");
+          setOdooCategoryAssemblies(res.data.odoo_category_assemblies || "Manufactured");
+          setOdooUpdateFieldsExisting(res.data.odoo_update_fields_existing || ["name", "description", "image"]);
         }
         setLoading(false);
       })
@@ -265,6 +286,16 @@ const AdminIntegrations = ({ setRefresh }) => {
       odoo_default_product_category_id: odooDefaultProductCategoryId,
       odoo_default_uom_id: odooDefaultUomId,
       odoo_default_product_type: odooDefaultProductType,
+      // New configuration fields
+      odoo_default_sale_ok: odooDefaultSaleOk,
+      odoo_default_purchase_ok: odooDefaultPurchaseOk,
+      odoo_default_rent_ok: odooDefaultRentOk,
+      odoo_default_is_storable: odooDefaultIsStorable,
+      odoo_default_tracking: odooDefaultTracking,
+      odoo_category_parts: odooCategoryParts,
+      odoo_category_pcbas: odooCategoryPcbas,
+      odoo_category_assemblies: odooCategoryAssemblies,
+      odoo_update_fields_existing: odooUpdateFieldsExisting,
     };
 
     updateIntegrationSettings(data)
@@ -466,6 +497,24 @@ const AdminIntegrations = ({ setRefresh }) => {
         setOdooDefaultUomId={setOdooDefaultUomId}
         odooDefaultProductType={odooDefaultProductType}
         setOdooDefaultProductType={setOdooDefaultProductType}
+        odooDefaultSaleOk={odooDefaultSaleOk}
+        setOdooDefaultSaleOk={setOdooDefaultSaleOk}
+        odooDefaultPurchaseOk={odooDefaultPurchaseOk}
+        setOdooDefaultPurchaseOk={setOdooDefaultPurchaseOk}
+        odooDefaultRentOk={odooDefaultRentOk}
+        setOdooDefaultRentOk={setOdooDefaultRentOk}
+        odooDefaultIsStorable={odooDefaultIsStorable}
+        setOdooDefaultIsStorable={setOdooDefaultIsStorable}
+        odooDefaultTracking={odooDefaultTracking}
+        setOdooDefaultTracking={setOdooDefaultTracking}
+        odooCategoryParts={odooCategoryParts}
+        setOdooCategoryParts={setOdooCategoryParts}
+        odooCategoryPcbas={odooCategoryPcbas}
+        setOdooCategoryPcbas={setOdooCategoryPcbas}
+        odooCategoryAssemblies={odooCategoryAssemblies}
+        setOdooCategoryAssemblies={setOdooCategoryAssemblies}
+        odooUpdateFieldsExisting={odooUpdateFieldsExisting}
+        setOdooUpdateFieldsExisting={setOdooUpdateFieldsExisting}
         handleTestConnection={handleTestOdooConnection}
         testingConnection={testingOdooConnection}
         handleSubmit={handleOdooSubmit}

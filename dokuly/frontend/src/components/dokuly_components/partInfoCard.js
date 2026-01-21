@@ -146,7 +146,7 @@ const PartInformationCard = ({
     <DokulyCard>
       <CardTitle titleText={"Information"} />
       <Row style={{ paddingLeft: "15px" }}>
-        {thumbnail_url !== "" ? (
+        {thumbnail_url && thumbnail_url !== "" ? (
           <div className="col-auto">
             <DokulyImage
               className="rounded"
