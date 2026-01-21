@@ -24,6 +24,24 @@ const OdooSettings = ({
   setOdooDefaultUomId,
   odooDefaultProductType,
   setOdooDefaultProductType,
+  odooDefaultSaleOk,
+  setOdooDefaultSaleOk,
+  odooDefaultPurchaseOk,
+  setOdooDefaultPurchaseOk,
+  odooDefaultRentOk,
+  setOdooDefaultRentOk,
+  odooDefaultIsStorable,
+  setOdooDefaultIsStorable,
+  odooDefaultTracking,
+  setOdooDefaultTracking,
+  odooCategoryParts,
+  setOdooCategoryParts,
+  odooCategoryPcbas,
+  setOdooCategoryPcbas,
+  odooCategoryAssemblies,
+  setOdooCategoryAssemblies,
+  odooUpdateFieldsExisting,
+  setOdooUpdateFieldsExisting,
   handleTestConnection,
   testingConnection,
   handleSubmit,
@@ -235,6 +253,213 @@ const OdooSettings = ({
                   Odoo internal ID for the fallback unit of measure. 
                   <strong> Note:</strong> The system will automatically use the unit from each part/PCBA/assembly (e.g., pcs, kg, m).
                   This default is only used if an item has no unit specified.
+                </small>
+              </div>
+            </div>
+
+            <hr className="my-4" />
+
+            <h5>Product Field Defaults</h5>
+            <p className="text-muted">
+              Configure default field values for new products created in Odoo.
+            </p>
+            
+            <div className="mt-3">
+              <div className="form-group">
+                <Form.Check
+                  type="switch"
+                  id="odoo-default-sale-ok"
+                  label="Can be Sold (Default)"
+                  checked={odooDefaultSaleOk}
+                  onChange={(e) => setOdooDefaultSaleOk(e.target.checked)}
+                  disabled={!odooEnabled}
+                />
+                <small className="text-muted d-block mt-1">
+                  Default "Can be Sold" setting for new products
+                </small>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="form-group">
+                <Form.Check
+                  type="switch"
+                  id="odoo-default-purchase-ok"
+                  label="Can be Purchased (Default)"
+                  checked={odooDefaultPurchaseOk}
+                  onChange={(e) => setOdooDefaultPurchaseOk(e.target.checked)}
+                  disabled={!odooEnabled}
+                />
+                <small className="text-muted d-block mt-1">
+                  Default "Can be Purchased" setting for new products
+                </small>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="form-group">
+                <Form.Check
+                  type="switch"
+                  id="odoo-default-rent-ok"
+                  label="Can be Rented (Default)"
+                  checked={odooDefaultRentOk}
+                  onChange={(e) => setOdooDefaultRentOk(e.target.checked)}
+                  disabled={!odooEnabled}
+                />
+                <small className="text-muted d-block mt-1">
+                  Default "Can be Rented" setting for new products
+                </small>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="form-group">
+                <Form.Check
+                  type="switch"
+                  id="odoo-default-is-storable"
+                  label="Track Inventory (Default)"
+                  checked={odooDefaultIsStorable}
+                  onChange={(e) => setOdooDefaultIsStorable(e.target.checked)}
+                  disabled={!odooEnabled}
+                />
+                <small className="text-muted d-block mt-1">
+                  Default "Track Inventory" setting for new products
+                </small>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="form-group">
+                <label>Inventory Tracking Method (Default)</label>
+                <select
+                  className="form-control"
+                  value={odooDefaultTracking}
+                  onChange={(e) => setOdooDefaultTracking(e.target.value)}
+                  disabled={!odooEnabled}
+                >
+                  <option value="none">By Quantity</option>
+                  <option value="lot">By Lots</option>
+                  <option value="serial">By Serial Numbers</option>
+                </select>
+                <small className="text-muted">
+                  Default inventory tracking method for new products
+                </small>
+              </div>
+            </div>
+
+            <hr className="my-4" />
+
+            <h5>Category Mappings</h5>
+            <p className="text-muted">
+              Configure product category names for different item types.
+            </p>
+            
+            <div className="mt-3">
+              <div className="form-group">
+                <label>Category for Parts</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={odooCategoryParts}
+                  onChange={(e) => setOdooCategoryParts(e.target.value)}
+                  placeholder="Purchased Goods"
+                  disabled={!odooEnabled}
+                />
+                <small className="text-muted">
+                  Product category name for Parts (e.g., "Purchased Goods")
+                </small>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="form-group">
+                <label>Category for PCBAs</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={odooCategoryPcbas}
+                  onChange={(e) => setOdooCategoryPcbas(e.target.value)}
+                  placeholder="Purchased Goods"
+                  disabled={!odooEnabled}
+                />
+                <small className="text-muted">
+                  Product category name for PCBAs (e.g., "Purchased Goods")
+                </small>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="form-group">
+                <label>Category for Assemblies</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={odooCategoryAssemblies}
+                  onChange={(e) => setOdooCategoryAssemblies(e.target.value)}
+                  placeholder="Manufactured"
+                  disabled={!odooEnabled}
+                />
+                <small className="text-muted">
+                  Product category name for Assemblies (e.g., "Manufactured")
+                </small>
+              </div>
+            </div>
+
+            <hr className="my-4" />
+
+            <h5>Update Settings for Existing Products</h5>
+            <p className="text-muted">
+              Select which fields to update when a product already exists in Odoo.
+              Other fields will remain unchanged to preserve existing Odoo configuration.
+            </p>
+            
+            <div className="mt-3">
+              <div className="form-group">
+                <Form.Check
+                  type="checkbox"
+                  id="update-field-name"
+                  label="Update Name"
+                  checked={odooUpdateFieldsExisting.includes('name')}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setOdooUpdateFieldsExisting([...odooUpdateFieldsExisting, 'name']);
+                    } else {
+                      setOdooUpdateFieldsExisting(odooUpdateFieldsExisting.filter(f => f !== 'name'));
+                    }
+                  }}
+                  disabled={!odooEnabled}
+                />
+                <Form.Check
+                  type="checkbox"
+                  id="update-field-description"
+                  label="Update Description"
+                  checked={odooUpdateFieldsExisting.includes('description')}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setOdooUpdateFieldsExisting([...odooUpdateFieldsExisting, 'description']);
+                    } else {
+                      setOdooUpdateFieldsExisting(odooUpdateFieldsExisting.filter(f => f !== 'description'));
+                    }
+                  }}
+                  disabled={!odooEnabled}
+                />
+                <Form.Check
+                  type="checkbox"
+                  id="update-field-image"
+                  label="Update Image"
+                  checked={odooUpdateFieldsExisting.includes('image')}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setOdooUpdateFieldsExisting([...odooUpdateFieldsExisting, 'image']);
+                    } else {
+                      setOdooUpdateFieldsExisting(odooUpdateFieldsExisting.filter(f => f !== 'image'));
+                    }
+                  }}
+                  disabled={!odooEnabled}
+                />
+                <small className="text-muted d-block mt-2">
+                  When a product already exists in Odoo, only the selected fields will be updated.
+                  All other fields (category, type, sale/purchase flags, tracking, etc.) will remain unchanged.
                 </small>
               </div>
             </div>

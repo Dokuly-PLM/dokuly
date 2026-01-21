@@ -141,7 +141,7 @@ def get_image_as_base64(image_obj):
         return None
 
 
-def create_or_update_odoo_product(models, uid, database, api_key, product_data, template_data=None):
+def create_or_update_odoo_product(models, uid, database, api_key, product_data, template_data=None, integration_settings=None):
     """
     Create or update a product in Odoo by internal reference (default_code).
     
@@ -152,6 +152,7 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data, 
         api_key: Odoo API key
         product_data: Dict with product-level fields
         template_data: Dict with template-level fields (type, sale_ok, purchase_ok, etc.)
+        integration_settings: IntegrationSettings instance (optional, for update field configuration)
         
     Returns:
         int: Odoo product ID
@@ -194,14 +195,17 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data, 
             
             if product_info and 'product_tmpl_id' in product_info[0]:
                 template_id = product_info[0]['product_tmpl_id'][0]
-                # Only update name and image for existing products
+                # Update only configured fields for existing products
+                update_fields = (integration_settings.odoo_update_fields_existing if integration_settings else None) or ['name', 'description', 'image']
                 update_template_data = {}
                 
-                if 'name' in product_data:
+                if 'name' in update_fields and 'name' in product_data:
                     update_template_data['name'] = product_data['name']
                 
-                # Check if image should be updated (it's in template_data, not product_data)
-                if template_data and 'image_1920' in template_data:
+                if 'description' in update_fields and 'description' in product_data:
+                    update_template_data['description'] = product_data['description']
+                
+                if 'image' in update_fields and template_data and 'image_1920' in template_data:
                     update_template_data['image_1920'] = template_data['image_1920']
                 
                 if update_template_data:
@@ -210,9 +214,9 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data, 
                         'product.template', 'write',
                         [[template_id], update_template_data]
                     )
-                    logger.info(f"Updated product template {template_id} with name and/or image")
+                    logger.info(f"Updated product template {template_id} with fields: {list(update_template_data.keys())}")
                 else:
-                    logger.info(f"No template-level fields to update for existing product {product_id}")
+                    logger.info(f"No template-level fields to update for existing product {product_id} (configured fields: {update_fields})")
             
             logger.info(f"Successfully updated Odoo product {product_id}")
             return product_id
@@ -636,36 +640,43 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
             'description': item.description or '',
         }
         
-        # Prepare template data (template-level fields)
+        # Prepare template data (template-level fields) using configuration
         template_data = {
             'type': product_type,
-            # Set product flags: Sale unchecked, Purchase checked
-            'sale_ok': False,
-            'purchase_ok': True,
-            # Track Inventory checked (is_storable = True) and By Quantity selected (tracking = 'none')
-            'is_storable': True,  # Enable inventory tracking
-            'tracking': 'none',  # Track by quantity (no lot/serial tracking)
-            'rent_ok': False,  # Rental unchecked
+            # Use configured defaults for product flags
+            'sale_ok': integration_settings.odoo_default_sale_ok,
+            'purchase_ok': integration_settings.odoo_default_purchase_ok,
+            'is_storable': integration_settings.odoo_default_is_storable,
+            'tracking': integration_settings.odoo_default_tracking or 'none',
+            'rent_ok': integration_settings.odoo_default_rent_ok,
         }
         
-        # Set category to "Purchased Goods"
-        # First try to find "Purchased Goods" category by name
-        purchased_goods_category_id = find_odoo_category_by_name(
+        # Set category based on item type using configuration
+        if item_type == 'assemblies':
+            category_name = integration_settings.odoo_category_assemblies or 'Manufactured'
+        elif item_type == 'parts':
+            category_name = integration_settings.odoo_category_parts or 'Purchased Goods'
+        elif item_type == 'pcbas':
+            category_name = integration_settings.odoo_category_pcbas or 'Purchased Goods'
+        else:
+            category_name = integration_settings.odoo_category_parts or 'Purchased Goods'  # Default fallback
+        
+        category_id = find_odoo_category_by_name(
             models, uid,
             integration_settings.odoo_database,
             integration_settings.odoo_api_key,
-            'Purchased Goods'
+            category_name
         )
         
-        if purchased_goods_category_id:
-            template_data['categ_id'] = purchased_goods_category_id
-            logger.info(f"Set product category to 'Purchased Goods' (ID: {purchased_goods_category_id})")
+        if category_id:
+            template_data['categ_id'] = category_id
+            logger.info(f"Set product category to '{category_name}' (ID: {category_id})")
         elif integration_settings.odoo_default_product_category_id:
-            # Fallback to configured category ID if "Purchased Goods" not found
+            # Fallback to configured category ID if category not found
             template_data['categ_id'] = integration_settings.odoo_default_product_category_id
             logger.info(f"Using configured default product category ID: {integration_settings.odoo_default_product_category_id}")
         else:
-            logger.warning("Could not find 'Purchased Goods' category and no default category configured")
+            logger.warning(f"Could not find '{category_name}' category and no default category configured")
         
         # Use the item's unit to find the corresponding Odoo UoM (template-level field)
         if hasattr(item, 'unit') and item.unit:
@@ -700,7 +711,8 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
             integration_settings.odoo_database,
             integration_settings.odoo_api_key,
             product_data,
-            template_data
+            template_data,
+            integration_settings
         )
         
         result = {
