@@ -115,6 +115,10 @@ const EditUserProfile = (props) => {
     return false;
   };
 
+  const isOwner = () => {
+    return props?.loggedUser?.role === "Owner";
+  };
+
   useEffect(() => {
     // Calculate subscription and user counts
     const newSubscriptionCounts = {};
@@ -365,6 +369,8 @@ const EditUserProfile = (props) => {
                     type="button"
                     className="btn btn-sm dokuly-btn-primary"
                     onClick={() => setShowPasswordReset(!showPasswordReset)}
+                    disabled={!isOwner()}
+                    title={!isOwner() ? "Only owner can reset passwords" : ""}
                   >
                     {showPasswordReset ? "Cancel" : "Reset Password"}
                   </button>
