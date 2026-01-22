@@ -341,15 +341,6 @@ const UsersList = (props) => {
         },
       },
       {
-        key: "subscription",
-        header: "Subscription",
-        formatter: subscriptionFormatter,
-        sort: true,
-        style: {
-          minWidth: "15rem",
-        },
-      },
-      {
         key: "role",
         header: "Permissions",
         sort: true,
