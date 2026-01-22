@@ -999,11 +999,10 @@ def auto_push_on_release_async(item, item_type, user, include_bom=False):
     item_id = item.id
     user_id = user.id
 
-    # Start background thread
+    # Start background thread (non-daemon to ensure DB operations complete before shutdown)
     thread = threading.Thread(
         target=_auto_push_on_release_sync,
         args=(item_id, item_type, user_id, include_bom),
-        daemon=True  # Daemon thread so it doesn't block server shutdown
     )
     thread.start()
     logger.info(f"Started background thread to push {item_type} {item_id} to Odoo")
