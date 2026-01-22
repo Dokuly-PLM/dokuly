@@ -334,3 +334,34 @@ def send_issue_creation_notifications(issue: Issues, object: ModelType, app: str
     except Exception as e:
         # TODO add logging
         pass
+
+
+def send_issue_assignee_notification(issue: Issues, assignee: User, app: str, object_id, issue_id):
+    """
+    Send a notification to a user when they are assigned to an issue.
+    :param issue: The issue that was assigned.
+    :param assignee: The user who was assigned to the issue.
+    :param app: Application name for URI construction.
+    :param object_id: ID of the object associated with the issue.
+    :param issue_id: ID of the issue.
+    """
+    try:
+        if assignee and object_id:
+            model = APP_TO_MODEL.get(app)
+            if model:
+                try:
+                    object = model.objects.get(id=object_id)
+                    object_number = get_model_object_number(object)
+                    message = f"You have been assigned to issue #{issue.pk} on {object_number}."
+                    create_notification(
+                        user=assignee,
+                        message=message,
+                        uri=f"/issues/{issue_id}",
+                        app=app.capitalize(),
+                        is_project_notification=False
+                    )
+                except model.DoesNotExist:
+                    pass
+    except Exception as e:
+        # TODO add logging
+        pass
