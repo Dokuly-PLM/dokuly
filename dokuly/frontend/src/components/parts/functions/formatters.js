@@ -25,16 +25,14 @@ export const imageFormatter = (cell, row, partTypes) => {
         <DokulyImage
           src={formatCloudImageUri(row?.thumbnail)}
           alt="Thumbnail"
+          lazy={true}
+          defaultSrc=""
           style={{
             maxWidth: "70px",
             maxHeight: "70px",
             objectFit: "contain",
             display: "block",
             margin: "auto",
-          }}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = ""; // set default image to no image
           }}
         />
       </div>
@@ -48,8 +46,9 @@ export const imageFormatter = (cell, row, partTypes) => {
           className="rounded float-left"
           width="40px"
           height="40px"
-          alt="Part Image"
+          alt="Part thumbnail"
           src={row.image_url}
+          loading="lazy"
           onError={(e) => {
             e.target.onerror = null;
             e.target.src = ""; // set default image to no image
@@ -57,7 +56,8 @@ export const imageFormatter = (cell, row, partTypes) => {
         />
       </div>
     );
-  } else if (partTypes !== undefined && partTypes != null) {
+  }
+  if (partTypes !== undefined && partTypes != null) {
     const partType = partTypes.find((type) => type.id === row.part_type);
     if (
       partType !== undefined &&
@@ -71,6 +71,12 @@ export const imageFormatter = (cell, row, partTypes) => {
             src={partType.icon_url}
             alt="icon"
             title={partType.description || ""}
+            loading="lazy"
+            style={{
+              maxWidth: "70px",
+              maxHeight: "70px",
+              objectFit: "contain",
+            }}
           />
         </div>
       );
