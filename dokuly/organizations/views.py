@@ -266,9 +266,9 @@ def update_organization(request, id):
             file = request.FILES["logo"]
             organization.logo.save(f"{uuid.uuid4().hex}/{file.name}", file)
 
-        if "enforce_2fa" in data and organization.enforce_2fa != data["enforce_2fa"]:
+        if "enforce_2fa" in data:# and organization.enforce_2fa != data["enforce_2fa"]:
             if not data["enforce_2fa"]:
-                Profile.objects.all().update(mfa_hash=None, mfa_validated=False)
+                Profile.objects.filter(organization_id=organization.id).update(mfa_hash=None, mfa_validated=False)
 
         # Check if revision system settings changed and trigger migration
         revision_settings_changed = False
