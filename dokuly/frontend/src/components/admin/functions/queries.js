@@ -308,6 +308,33 @@ export const adminResetUserPassword = (userId, password) => {
 };
 
 /**
+ * Admin-only function to reset a user's 2FA without requiring email.
+ * Clears the mfa_hash and sets mfa_validated to false.
+ * @param {number} userId - The ID of the user whose 2FA to reset.
+ * @return {Promise<AxiosResponse<any>>} The axios data promise.
+ *
+ * @example
+ * adminResetUser2FA(userId)
+ *   .then((res) => {
+ *     if(res.status === 200) {
+ *       toast.success("2FA reset successfully");
+ *     }
+ *   })
+ *   .catch((err) => {
+ *     toast.error("Failed to reset 2FA");
+ *   });
+ */
+export const adminResetUser2FA = (userId) => {
+  const promise = axios.put(
+    `api/profiles/admin/reset2FA/${userId}/`,
+    {},
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
  * An axios wrapper function, can be used in any react component.
  * PUT query to update a user profile's active status
  * @param {JSON} data - Query payload.
