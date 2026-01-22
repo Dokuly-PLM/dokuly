@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/profiles/checkToken/', views.check_token),
     path('api/profiles/resetPass/<int:userId>/', views.reset_password_by_mail),
     path('api/profiles/admin/resetPassword/<int:userId>/', views.admin_reset_user_password),
+    path('api/profiles/admin/reset2FA/<int:userId>/', views.admin_reset_user_2fa),
     path('api/profiles/checkEmail/', views.check_email_unique),
     path('api/profiles/enable2fa/', views.enable_2fa_totp),
     path('api/profiles/disable2fa/', views.remove_2fa_totp),
