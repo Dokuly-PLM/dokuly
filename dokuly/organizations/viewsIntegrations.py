@@ -16,7 +16,7 @@ from parts.models import Part
 from pcbas.models import Pcba
 from assemblies.models import Assembly
 from parts.nexar_client import get_nexar_client
-from organizations.odoo_service import push_product_to_odoo, test_odoo_connection
+from organizations.odoo_service import push_product_to_odoo, test_odoo_connection as test_odoo_connection_service
 from .models import Organization, IntegrationSettings
 
 logger = logging.getLogger(__name__)
@@ -546,7 +546,7 @@ def test_odoo_connection(request):
         )
         
         # Test connection
-        result = test_odoo_connection(integration_settings)
+        result = test_odoo_connection_service(integration_settings)
         
         if result['success']:
             return Response(result, status=status.HTTP_200_OK)

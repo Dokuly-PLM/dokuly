@@ -27,7 +27,7 @@ from .serializers import PcbaSerializer, PcbaSerializerFull, PcbaTableSerializer
 from profiles.models import Profile
 from profiles.views import check_user_auth_and_app_permission
 from rest_framework.permissions import IsAuthenticated
-from organizations.odoo_service import auto_push_on_release
+from organizations.odoo_service import auto_push_on_release_async
 from organizations.permissions import APIAndProjectAccess
 from django.contrib.auth.models import User
 from projects.viewsIssues import link_issues_on_new_object_revision
@@ -500,8 +500,8 @@ def edit_pcba(request, pk, **kwargs):
             if data["release_state"] == "Released":
                 pcba.released_date = datetime.now()
 
-                # Auto-push to Odoo if enabled
-                auto_push_on_release(pcba, 'pcbas', user)
+                # Auto-push to Odoo if enabled (runs in background)
+                auto_push_on_release_async(pcba, 'pcbas', user)
 
         user = request.user
         if "is_approved_for_release" in data:

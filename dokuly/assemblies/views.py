@@ -31,7 +31,7 @@ from django.contrib.postgres.search import SearchVector
 from profiles.models import Profile
 from profiles.serializers import ProfileSerializer
 from django.contrib.auth.models import User
-from organizations.odoo_service import auto_push_on_release
+from organizations.odoo_service import auto_push_on_release_async
 from organizations.revision_utils import build_full_part_number, build_formatted_revision, increment_revision_counters
 from projects.models import Project
 from projects.viewsIssues import link_issues_on_new_object_revision
@@ -638,8 +638,8 @@ def update_info(request, pk, **kwargs):
         if data["release_state"] == "Released":
             asm.released_date = datetime.now()
 
-            # Auto-push to Odoo if enabled
-            auto_push_on_release(asm, 'assemblies', user, include_bom=True)
+            # Auto-push to Odoo if enabled (runs in background)
+            auto_push_on_release_async(asm, 'assemblies', user, include_bom=True)
 
     if "is_approved_for_release" in data:
         if data["is_approved_for_release"] == False:
