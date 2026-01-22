@@ -3,13 +3,14 @@ import { Navigate, useNavigate, useLocation } from "react-router-dom";
 
 import { fetchProjects } from "../projects/functions/queries";
 import { fetchCustomers } from "../customers/funcitons/queries";
-import { getAssembliesLatestRevisions } from "./functions/queries";
+import { getAssembliesLatestRevisions, starAssembly, unstarAssembly } from "./functions/queries";
 import { mapProjectCustomerItems } from "../pcbas/functions/helperFuncitons";
 
 import { dateFormatter } from "../documents/functions/formatters";
 import { numberFormatter, thumbnailFormatter } from "./functions/formatters";
 import NewAssemblyForm from "./forms/assemblyNewForm";
 import { releaseStateFormatter } from "../dokuly_components/formatters/releaseStateFormatter";
+import { starFormatter } from "../dokuly_components/formatters/starFormatter";
 import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
 import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
 import { useSyncedSearchParam } from "../common/hooks/useSyncedSearchParam";
@@ -28,7 +29,7 @@ export default function AssembliesTable(props) {
 
   useEffect(() => {
     if (
-      unProcessedAssemblies?.lenght === 0 ||
+      unProcessedAssemblies?.length === 0 ||
       unProcessedAssemblies == null ||
       refresh === true
     ) {
@@ -79,6 +80,7 @@ export default function AssembliesTable(props) {
 
     // Updates tab title
     document.title = "Assemblies | Dokuly";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh]);
 
   useEffect(() => {
@@ -110,7 +112,46 @@ export default function AssembliesTable(props) {
     }
   };
 
+  const handleStarClick = (e, row) => {
+    e.stopPropagation();
+    if (row.is_starred) {
+      // Unstar
+      unstarAssembly(row.id)
+        .then((res) => {
+          if (res.status === 200) {
+            setRefresh(true);
+          }
+        })
+        .catch((err) => {
+          console.error("Error unstarring assembly:", err);
+        });
+    } else {
+      // Star (always personal)
+      starAssembly(row.id)
+        .then((res) => {
+          if (res.status === 200) {
+            setRefresh(true);
+          }
+        })
+        .catch((err) => {
+          console.error("Error starring assembly:", err);
+        });
+    }
+  };
+
+  const starColumnFormatter = (row) => {
+    return starFormatter(row, "assemblies", handleStarClick);
+  };
+
   const columns = [
+    {
+      key: "star",
+      header: "",
+      includeInCsv: false,
+      formatter: starColumnFormatter,
+      filterable: false,
+      maxWidth: "40px",
+    },
     {
       key: "full_part_number",
       header: "Part number",
@@ -189,7 +230,7 @@ export default function AssembliesTable(props) {
           columns={columns}
           itemsPerPage={100}
           onRowClick={handleRowClick}
-          defaultSort={{ columnNumber: 8, order: "desc" }}
+          defaultSort={{ columnNumber: 9, order: "desc" }}
           showColumnFilters={true}
           showFilterChips={true}
           showSavedViews={true}

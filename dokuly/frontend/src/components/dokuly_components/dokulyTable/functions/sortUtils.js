@@ -31,6 +31,14 @@ const sortData = (data, column, order) => {
   if (!column) return data;
 
   return data.sort((a, b) => {
+    // Always prioritize starred items (if is_starred property exists)
+    const aIsStarred = a.is_starred === true;
+    const bIsStarred = b.is_starred === true;
+    
+    if (aIsStarred && !bIsStarred) return -1; // a comes first
+    if (!aIsStarred && bIsStarred) return 1;  // b comes first
+    
+    // If both are starred or both are not starred, apply normal sorting
     // If column has a custom sortFunction, use it
     if (column.sortFunction && typeof column.sortFunction === 'function') {
       return column.sortFunction(a, b, order);

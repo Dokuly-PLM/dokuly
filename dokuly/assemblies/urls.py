@@ -23,6 +23,8 @@ urlpatterns = [
     path("api/assemblies/createNewAssembly/", views.create_new_assembly),
     path("api/assemblies/get/revisions/<int:part_number>/", views.get_revisions),
     path("api/assemblies/get/all/", views.get_all_assemblies),
+    path("api/assemblies/star/<int:pk>/", views.star_assembly),
+    path("api/assemblies/unstar/<int:pk>/", views.unstar_assembly),
     # Assembly Files
     path(
         # TODO Change to "assemblies" (from "Assembly")
