@@ -397,14 +397,13 @@ const IssuesTable = ({
         );
       },
     },
-    /*
     {
       key: "created_by",
       header: "Created By",
       headerTooltip: "Issue creator",
       sortable: true,
       includeInCsv: true,
-      defaultShowColumn: true,
+      defaultShowColumn: false,
       maxWidth: "70px",
       formatter: (row) => {
         return (
@@ -420,7 +419,7 @@ const IssuesTable = ({
       headerTooltip: "Issue creation date",
       sortable: true,
       includeInCsv: true,
-      defaultShowColumn: true,
+      defaultShowColumn: false,
       maxWidth: "60px",
       formatter: (row) => {
         return (
@@ -429,7 +428,7 @@ const IssuesTable = ({
           </div>
         );
       },
-    },*/
+    },
     {
       key: "tags",
       header: "Tags",
