@@ -11,7 +11,6 @@ import base64
 import threading
 from io import BytesIO
 from django.core.files.storage import default_storage
-from django.db import connections
 from profiles.models import Profile
 from organizations.models import IntegrationSettings
 
