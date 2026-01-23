@@ -38,5 +38,6 @@ class Issues(models.Model):
     closed_at = models.DateTimeField(null=True, blank=True)
     closed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='closed_issues')
     criticality = models.CharField(max_length=500, blank=True)
+    assignee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_issues')
 
     tags = models.ManyToManyField('projects.Tag', blank=True, symmetrical=False, related_name="issue_tags")

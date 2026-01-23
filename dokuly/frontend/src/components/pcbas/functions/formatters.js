@@ -122,11 +122,6 @@ export function ThumbnailFormatterComponent({ row }) {
     }
   };
 
-  const handleError = (e) => {
-    e.target.onerror = null;
-    e.target.src = ""; // set default image to no image
-  };
-
   if (!thumbnailUrl) {
     return <div />;
   }
@@ -162,9 +157,11 @@ export function ThumbnailFormatterComponent({ row }) {
         src={thumbnailUrl}
         defaultSrc={defaultSrc}
         alt="Thumbnail"
+        lazy={true}
         style={imageStyle}
         onLoad={handleImageLoad}
-        onError={handleError}
+        // Remove onError handler - let DokulyImage handle errors internally
+        // It will use defaultSrc on error, which is already set above
       />
     </div>
   );
