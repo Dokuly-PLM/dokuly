@@ -1075,6 +1075,8 @@ def create_new_part(request, **kwargs):
             new_part.image_url = data["image_url"]
             if new_part.image_url and new_part.image_url.strip():
                 download_image_and_create_thumbnail(new_part, new_part.image_url, user)
+        else:
+            new_part.image_url = ""
 
         # Check if datasheet has a value and download it to attach as file
         if "datasheet" in data:
