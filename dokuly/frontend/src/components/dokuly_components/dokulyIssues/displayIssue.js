@@ -58,6 +58,11 @@ const DisplayIssue = () => {
     const data = {
       [field]: value,
     };
+    // Include app and object_id for assignee updates (needed for notifications)
+    if (field === "assignee" && app && issue && issue[app] && issue[app].length > 0) {
+      data.app = app;
+      data.object_id = issue[app][0].id;
+    }
     editIssue(id, data).then(
       (result) => {
         if (result.status === 200) {

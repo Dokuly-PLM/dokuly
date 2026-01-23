@@ -88,6 +88,7 @@ class IssuesSerializer(serializers.ModelSerializer):
     description = MarkdownTextSerializer(read_only=True)
     created_by = UserSerializer(read_only=True)
     closed_by = UserSerializer(read_only=True)
+    assignee = UserSerializer(read_only=True)
 
     closed_in_part = IssuePartSerializer(read_only=True)
     closed_in_pcba = IssuePcbaSerializer(read_only=True)

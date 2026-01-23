@@ -17,9 +17,10 @@ from typing import Type, Union, Optional, Tuple
 from django.db import models
 from .serializers import IssuesSerializer
 from django.utils import timezone
-from profiles.models import Profile
+from django.contrib.auth.models import User
 from profiles.utilityFunctions import (send_issue_creation_notifications,
                                        send_issue_closure_notifications,
+                                       send_issue_assignee_notification,
                                        APP_TO_MODEL, ModelType, MODEL_TO_MODEL_STRING)
 from projects.models import Project
 from projects.viewsTags import check_for_and_create_new_tags
@@ -82,6 +83,17 @@ def update_issue(request, issue_id):
             issue.criticality = data["criticality"]
         if "title" in data:
             issue.title = data["title"]
+        if "assignee" in data:
+            assignee_id = data["assignee"]
+            if assignee_id:
+                assignee = User.objects.get(id=assignee_id)
+                previous_assignee = issue.assignee
+                issue.assignee = assignee
+                # Send notification if assignee changed
+                if previous_assignee != assignee:
+                    send_issue_assignee_notification(issue, assignee, app, object_id, issue_id)
+            else:
+                issue.assignee = None
         if "tags" in data:
             project = None
             if issue.opened_in_assembly:
@@ -167,6 +179,7 @@ def get_issues(request, object_id, app):
             'description',
             'created_by',
             'closed_by',
+            'assignee',
             f'closed_in_{model_string}'
         )
         serializer = IssuesSerializer(issues, many=True, context={'model_name': model_string})
@@ -266,7 +279,7 @@ def get_related_object_issues(instance: models.Model, field_name: str, app: str)
     """
     model_string = MODEL_TO_MODEL_STRING.get(APP_TO_MODEL.get(app))
     closed_in_field_name = f"closed_in_{model_string}"
-    return getattr(instance, field_name).all().select_related('description', 'created_by', 'closed_by', closed_in_field_name)
+    return getattr(instance, field_name).all().select_related('description', 'created_by', 'closed_by', 'assignee', closed_in_field_name)
 
 
 def get_request_model_data(request) -> Tuple[Optional[str], Optional[ModelType], Optional[str], Optional[int], Optional[Response]]:

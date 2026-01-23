@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import DokulyCard from "../../dokulyCard";
 import { Col, Container, Row } from "react-bootstrap";
 import CardTitle from "../../cardTitle";
@@ -8,6 +8,8 @@ import DokulyTags from "../../dokulyTags/dokulyTags";
 import DokulyImage from "../../dokulyImage";
 import { formatCloudImageUri } from "../../../pcbas/functions/productionHelpers";
 import DokulyDateFormat from "../../formatters/dateFormatter";
+import GenericDropdownSelector from "../../dokulyTable/components/genericDropdownSelector";
+import { fetchUsers } from "../../../admin/functions/queries";
 
 export const getIssueProject = (issue, returnObject = false) => {
   if (issue?.parts && issue.parts.length > 0) {
@@ -39,6 +41,9 @@ const IssueInfoCard = ({
   setRefresh,
   updateItemField = () => {},
 }) => {
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+
   const backgroundColor =
     issue?.criticality === "Critical"
       ? "red"
@@ -47,6 +52,21 @@ const IssueInfoCard = ({
       : "#54a4daff";
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchUsers()
+      .then((res) => {
+        if (res.status === 200) {
+          setUsers(res.data.filter((user) => user.is_active));
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch users:", err);
+      })
+      .finally(() => {
+        setLoadingUsers(false);
+      });
+  }, []);
 
   const navigateToRelatedPart = (id) => {
     navigate(`/${app}/${id}/issues`);
@@ -109,6 +129,35 @@ const IssueInfoCard = ({
   const handleTagsChange = (newTags) => {
     // New array with tag ids
     changeField("tags", newTags);
+  };
+
+  const handleAssigneeChange = (assigneeId) => {
+    changeField("assignee", assigneeId);
+  };
+
+  const getUserDropdownOptions = () => {
+    const options = users.map((user) => ({
+      value: user.user,
+      label: `${user.first_name} ${user.last_name}`,
+    }));
+    // Add "None" option to clear assignee
+    return [{ value: null, label: "None" }, ...options];
+  };
+
+  const getAssigneeLabel = () => {
+    if (!issue?.assignee) {
+      return "None";
+    }
+    // issue.assignee comes from UserSerializer, so it has id, first_name, last_name
+    if (issue.assignee.first_name && issue.assignee.last_name) {
+      return `${issue.assignee.first_name} ${issue.assignee.last_name}`;
+    }
+    // Fallback: try to find in users list
+    const assigneeUser = users.find((u) => u.user === issue.assignee.id);
+    if (assigneeUser) {
+      return `${assigneeUser.first_name} ${assigneeUser.last_name}`;
+    }
+    return issue.assignee.username || "Unknown";
   };
 
   // Get the first linked item's thumbnail and display name
@@ -215,6 +264,27 @@ const IssueInfoCard = ({
               <DokulyDateFormat date={issue.created_at} showTime={true} />
             ) : (
               "N/A"
+            )}
+          </Col>
+        </Row>
+
+        <hr />
+
+        <Row className="mt-2 align-items-center">
+          <Col xs="6" sm="6" md="6" lg="4" xl="6">
+            <b>Assignee:</b>
+          </Col>
+          <Col>
+            {loadingUsers ? (
+              <span>Loading...</span>
+            ) : (
+              <GenericDropdownSelector
+                state={issue?.assignee?.id ?? null}
+                setState={handleAssigneeChange}
+                dropdownValues={getUserDropdownOptions()}
+                placeholder="Select assignee"
+                currentLabel={getAssigneeLabel()}
+              />
             )}
           </Col>
         </Row>
