@@ -33,16 +33,14 @@ export const formatBOMImageData = (entry, type) => {
         <DokulyImage
           src={formatCloudImageUri(entry?.thumbnail)}
           alt="Thumbnail"
+          lazy={true}
+          defaultSrc=""
           style={{
             maxWidth: "70px",
             maxHeight: "70px",
             objectFit: "contain",
             display: "block",
             margin: "auto",
-          }}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = ""; // set default image to no image
           }}
         />
       </div>
@@ -55,13 +53,11 @@ export const formatBOMImageData = (entry, type) => {
         <DokulyImage
           src={`api/files/download/file/${entry?.pcb_renders[0]}`}
           alt="Thumbnail"
+          lazy={true}
+          defaultSrc=""
           style={{
             height: "70px",
             maxWidth: "70px",
-          }}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = ""; // set default image to no image
           }}
         />
       );
@@ -72,6 +68,12 @@ export const formatBOMImageData = (entry, type) => {
             src="../../static/icons/pcb.svg"
             alt="PCBA Icon"
             title={"Printed circuit board assembly"}
+            loading="lazy"
+            style={{
+              maxWidth: "70px",
+              maxHeight: "70px",
+              objectFit: "contain",
+            }}
           />
         </div>
       );
@@ -88,6 +90,7 @@ export const formatBOMImageData = (entry, type) => {
               alt="Part Image"
               src={entry.image_url}
               title={entry?.part_type?.description || ""}
+              loading="lazy"
             />
           </div>
         );
@@ -103,6 +106,12 @@ export const formatBOMImageData = (entry, type) => {
               src={entry.part_type.icon_url}
               alt="icon"
               title={entry.part_type.description || ""}
+              loading="lazy"
+              style={{
+                maxWidth: "70px",
+                maxHeight: "70px",
+                objectFit: "contain",
+              }}
             />
           </div>
         );
@@ -117,8 +126,14 @@ export const formatBOMImageData = (entry, type) => {
       <div style={containerStyle}>
         <img
           src="../../static/icons/assembly.svg"
-          alt="Assemvly icon"
+          alt="Assembly icon"
           title={"Assembly"}
+          loading="lazy"
+          style={{
+            maxWidth: "70px",
+            maxHeight: "70px",
+            objectFit: "contain",
+          }}
         />
       </div>
     );

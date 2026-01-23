@@ -25,16 +25,14 @@ export const thumbnailFormatter = (row) => {
         <DokulyImage
           src={formatCloudImageUri(row?.thumbnail)}
           alt="Thumbnail"
+          lazy={true}
+          defaultSrc=""
           style={{
             maxWidth: "70px",
             maxHeight: "70px",
             objectFit: "contain",
             display: "block",
             margin: "auto",
-          }}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = ""; // set default image to no image
           }}
         />
       </div>
@@ -46,16 +44,14 @@ export const thumbnailFormatter = (row) => {
         <DokulyImage
           src={row?.image_url}
           alt="Thumbnail"
+          lazy={true}
+          defaultSrc=""
           style={{
             maxWidth: "70px",
             maxHeight: "70px",
             objectFit: "contain",
             display: "block",
             margin: "auto",
-          }}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = ""; // set default image to no image
           }}
         />
       </div>
@@ -64,7 +60,16 @@ export const thumbnailFormatter = (row) => {
   if(row?.part_type?.icon_url) {
     return (
       <div style={containerStyle}>
-        <img src={row?.part_type?.icon_url} alt="icon" />
+        <img 
+          src={row?.part_type?.icon_url} 
+          alt="icon" 
+          loading="lazy"
+          style={{
+            maxWidth: "70px",
+            maxHeight: "70px",
+            objectFit: "contain",
+          }}
+        />
       </div>
     );
   }
