@@ -209,7 +209,6 @@ class PartSerializerNoAlternate(serializers.ModelSerializer):
 
 class PartTableSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
-    organization = serializers.SerializerMethodField()
     is_starred = serializers.SerializerMethodField()
 
     class Meta:
@@ -228,35 +227,13 @@ class PartTableSerializer(serializers.ModelSerializer):
             "project",
             "last_updated",
             "formatted_revision",
-            "revision_count_major",
-            "revision_count_minor",
             "is_latest_revision",
             "is_archived",
             "manufacturer",
-            "current_total_stock",
             "external_part_number",
             "tags",
-            "organization",
             "is_starred",
         ]
-
-    def get_organization(self, obj):
-        """Get organization revision settings for the current user."""
-        request = self.context.get('request')
-        if request and hasattr(request, 'user') and request.user.is_authenticated:
-            try:
-                from profiles.models import Profile
-                profile = Profile.objects.get(user=request.user)
-                if profile.organization_id:
-                    from organizations.models import Organization
-                    org = Organization.objects.get(id=profile.organization_id)
-                    return {
-                        'use_number_revisions': org.use_number_revisions,
-                        'revision_format': org.revision_format,
-                    }
-            except:
-                pass
-        return None
 
     def get_is_starred(self, obj):
         """Check if the part is starred for the current user."""
