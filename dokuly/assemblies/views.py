@@ -1,4 +1,4 @@
-from assemblies.models import Assembly
+from assemblies.models import Assembly, StarredAssembly
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, renderer_classes, permission_classes
 from organizations.permissions import APIAndProjectAccess
@@ -266,10 +266,83 @@ def get_latest_revisions(request, **kwargs):
             )
 
         assemblies_query = assemblies_query.select_related("project", "part_type").prefetch_related("tags")
-        serializer = AssemblyTableSerializer(assemblies_query, many=True, context={'request': request})
+
+        # Get starred assemblies for the current user
+        starred_assembly_ids = set()
+        if hasattr(user, 'is_authenticated') and user.is_authenticated:
+            starred_assembly_ids = set(
+                StarredAssembly.objects.filter(user=user).values_list('assembly_id', flat=True)
+            )
+
+        serializer = AssemblyTableSerializer(assemblies_query, many=True, context={
+            'request': request,
+            'starred_assembly_ids': starred_assembly_ids
+        })
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(f"Error: {str(e)}", status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(("POST", "PUT"))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def star_assembly(request, pk, **kwargs):
+    """Star an assembly. Stars are always personal (only visible to the user)."""
+    user = request.user
+
+    try:
+        assembly = get_object_or_404(Assembly, id=pk)
+
+        # Check if user has access to the assembly's project
+        if assembly.project:
+            if not (
+                (
+                    assembly.project.project_members.filter(id=user.id).exists()
+                    or APIAndProjectAccess.has_validated_key(request)
+                )
+                and APIAndProjectAccess.check_project_access(request, assembly.project.id)
+            ):
+                return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+        # Create or get existing star (always personal)
+        starred, created = StarredAssembly.objects.get_or_create(
+            user=user,
+            assembly=assembly
+        )
+
+        return Response({
+            'starred': True,
+            'assembly_id': assembly.id
+        }, status=status.HTTP_200_OK)
+    except Assembly.DoesNotExist:
+        return Response("Assembly not found", status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(f"Error: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(("DELETE",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def unstar_assembly(request, pk, **kwargs):
+    """Unstar an assembly."""
+    user = request.user
+
+    try:
+        assembly = get_object_or_404(Assembly, id=pk)
+        starred = StarredAssembly.objects.filter(user=user, assembly=assembly).first()
+
+        if starred:
+            starred.delete()
+            return Response({
+                'starred': False,
+                'assembly_id': assembly.id
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response("Assembly not starred", status=status.HTTP_404_NOT_FOUND)
+    except Assembly.DoesNotExist:
+        return Response("Assembly not found", status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(f"Error: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(("GET",))

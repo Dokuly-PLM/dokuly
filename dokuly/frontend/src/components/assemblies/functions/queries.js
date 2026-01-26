@@ -515,3 +515,32 @@ export const getUnArchivedAssemblies = () => {
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+/**
+ * Star an assembly. Stars are always personal (only visible to the user).
+ * @param {number} assemblyId - The assembly ID to star
+ * @returns {Promise} The axios response
+ */
+export const starAssembly = (assemblyId) => {
+  const promise = axios.post(
+    `api/assemblies/star/${assemblyId}/`,
+    {},
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Unstar an assembly.
+ * @param {number} assemblyId - The assembly ID to unstar
+ * @returns {Promise} The axios response
+ */
+export const unstarAssembly = (assemblyId) => {
+  const promise = axios.delete(
+    `api/assemblies/unstar/${assemblyId}/`,
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};

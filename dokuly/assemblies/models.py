@@ -126,3 +126,23 @@ class Assembly(models.Model):
 
     # DEPRECATED.  # TODO delete. The assembly BOMs reference to the assembly. Use that reference instead.
     bom_id = models.IntegerField(null=True, blank=True)
+
+
+class StarredAssembly(models.Model):
+    """Model for tracking starred assemblies.
+    Allows users to star assemblies for quick access.
+    Stars are always personal (only visible to the user who starred them).
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="starred_assemblies")
+    assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE, related_name="starred_by")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [["user", "assembly"]]
+        indexes = [
+            models.Index(fields=["user"]),
+            models.Index(fields=["assembly"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} starred {self.assembly.full_part_number}"
