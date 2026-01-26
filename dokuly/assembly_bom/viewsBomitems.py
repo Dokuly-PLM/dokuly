@@ -12,6 +12,7 @@ from .serializers import Assembly_bomSerializer, BomItemSerializer
 from django.db import transaction
 from .models import Assembly_bom, Part, Pcba, Assembly, Bom_item
 from profiles.views import check_user_auth_and_app_permission
+from traceability.utilities import log_bom_edited_event
 
 
 @api_view(("GET",))
@@ -126,6 +127,31 @@ def edit_bom_item(request, itemId):
 
         bom_item.save()
 
+        # Log traceability event for BOM edit
+        bom = bom_item.bom
+        if bom.pcba:
+            log_bom_edited_event(
+                app_type="pcbas",
+                item_id=bom.pcba.id,
+                user=request.user,
+                bom_id=bom.id,
+                revision=bom.pcba.formatted_revision or bom.pcba.revision,
+                details=f"Edited BOM item: {bom_item.designator}",
+            )
+        elif bom.assembly_id:
+            try:
+                assembly = Assembly.objects.get(id=bom.assembly_id)
+                log_bom_edited_event(
+                    app_type="assemblies",
+                    item_id=assembly.id,
+                    user=request.user,
+                    bom_id=bom.id,
+                    revision=assembly.formatted_revision or assembly.revision,
+                    details=f"Edited BOM item: {bom_item.designator}",
+                )
+            except Assembly.DoesNotExist:
+                pass
+
         # Serialize the updated object
         serializer = BomItemSerializer(bom_item)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -150,6 +176,32 @@ def remove_bom_item(request, itemId):
         return Response("Item not found", status=status.HTTP_404_NOT_FOUND)
 
     try:
+        # Log traceability event for BOM item removal before deleting
+        bom = bom_item.bom
+        designator = bom_item.designator
+        if bom.pcba:
+            log_bom_edited_event(
+                app_type="pcbas",
+                item_id=bom.pcba.id,
+                user=request.user,
+                bom_id=bom.id,
+                revision=bom.pcba.formatted_revision or bom.pcba.revision,
+                details=f"Removed BOM item: {designator}",
+            )
+        elif bom.assembly_id:
+            try:
+                assembly = Assembly.objects.get(id=bom.assembly_id)
+                log_bom_edited_event(
+                    app_type="assemblies",
+                    item_id=assembly.id,
+                    user=request.user,
+                    bom_id=bom.id,
+                    revision=assembly.formatted_revision or assembly.revision,
+                    details=f"Removed BOM item: {designator}",
+                )
+            except Assembly.DoesNotExist:
+                pass
+
         bom_item.delete()
         return Response(status=status.HTTP_200_OK)
     except Exception as e:
@@ -197,6 +249,32 @@ def add_bom_item(request, bomId):
         new_bom_item = Bom_item(bom_id=bomId, designator=new_designator)
 
         new_bom_item.save()
+
+        # Log traceability event for BOM item addition
+        bom = new_bom_item.bom
+        if bom.pcba:
+            log_bom_edited_event(
+                app_type="pcbas",
+                item_id=bom.pcba.id,
+                user=request.user,
+                bom_id=bom.id,
+                revision=bom.pcba.formatted_revision or bom.pcba.revision,
+                details=f"Added BOM item: {new_bom_item.designator}",
+            )
+        elif bom.assembly_id:
+            try:
+                assembly = Assembly.objects.get(id=bom.assembly_id)
+                log_bom_edited_event(
+                    app_type="assemblies",
+                    item_id=assembly.id,
+                    user=request.user,
+                    bom_id=bom.id,
+                    revision=assembly.formatted_revision or assembly.revision,
+                    details=f"Added BOM item: {new_bom_item.designator}",
+                )
+            except Assembly.DoesNotExist:
+                pass
+
         serializer = BomItemSerializer(new_bom_item)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
@@ -227,6 +305,31 @@ def add_bom_item_with_contents(request, bomId):
             temporary_mpn=get_data(data, "temporary_mpn", None),
             is_mounted=get_data(data, "is_mounted", True),
         )
+
+        # Log traceability event for BOM item addition with contents
+        bom = new_bom_item.bom
+        if bom.pcba:
+            log_bom_edited_event(
+                app_type="pcbas",
+                item_id=bom.pcba.id,
+                user=request.user,
+                bom_id=bom.id,
+                revision=bom.pcba.formatted_revision or bom.pcba.revision,
+                details=f"Added BOM item with contents: {new_bom_item.designator}",
+            )
+        elif bom.assembly_id:
+            try:
+                assembly = Assembly.objects.get(id=bom.assembly_id)
+                log_bom_edited_event(
+                    app_type="assemblies",
+                    item_id=assembly.id,
+                    user=request.user,
+                    bom_id=bom.id,
+                    revision=assembly.formatted_revision or assembly.revision,
+                    details=f"Added BOM item with contents: {new_bom_item.designator}",
+                )
+            except Assembly.DoesNotExist:
+                pass
 
         # Serialize the newly created Bom_item instance
         serializer = BomItemSerializer(new_bom_item)

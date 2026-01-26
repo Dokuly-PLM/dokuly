@@ -18,6 +18,7 @@ import PartInformationCard from "../dokuly_components/partInfoCard";
 import RevisionsTable from "../dokuly_components/revisionsTable/revisionsTable";
 import RevisionNotes from "../dokuly_components/revisionNotes/revisionNotes";
 import PriceCard from "../common/priceCard/priceCard";
+import TraceabilityTable from "../dokuly_components/traceabilityTable/traceabilityTable";
 import NoPermission from "../dokuly_components/noPermission";
 import MarkDownNotes from "../common/markDownNotes/markDownNotes";
 import { updatePartField } from "./functions/utilities";
@@ -392,6 +393,23 @@ const DisplayPart = (props) => {
                 item={part}
                 setRevisionListParent={setRevisionList}
               />
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      eventKey: "traceability",
+      title: "Traceability",
+      content: (
+        <>
+          {part == null || part === undefined ? (
+            <div className="d-flex m-5 justify-content-center">
+              <div className="spinner-border" role="status" />
+            </div>
+          ) : (
+            <div className="row m-3">
+              <TraceabilityTable app={"parts"} item={part} />
             </div>
           )}
         </>

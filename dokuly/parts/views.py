@@ -53,6 +53,12 @@ from projects.viewsIssues import link_issues_on_new_object_revision
 from profiles.utilityFunctions import (
     notify_on_new_revision, notify_on_release_approval,
     notify_on_state_change_to_release)
+from traceability.utilities import (
+    log_revision_created_event,
+    log_approved_event,
+    log_released_event,
+    log_updated_event,
+)
 
 from projects.viewsTags import check_for_and_create_new_tags
 from parts.viewUtilities import (
@@ -1208,6 +1214,7 @@ def edit_part(request, pk, **kwargs):
             )
 
         if "release_state" in data and data["release_state"] != part.release_state:
+            old_state = part.release_state
             part.release_state = data["release_state"]
 
             notify_on_state_change_to_release(
@@ -1217,11 +1224,40 @@ def edit_part(request, pk, **kwargs):
                 app_name="parts",
             )
 
+            # Log traceability event for state change
+            state_change_details = f"State changed from {old_state} to {data['release_state']}"
             if data["release_state"] == "Released":
                 part.released_date = datetime.now()
 
                 # Auto-push to Odoo if enabled
                 auto_push_on_release(part, 'parts', user)
+
+                # Log traceability event for release
+                log_released_event(
+                    app_type="parts",
+                    item_id=part.id,
+                    user=user,
+                    revision=part.formatted_revision or part.revision,
+                    details=state_change_details,
+                )
+            elif data["release_state"] == "Review":
+                # Log state change to Review
+                log_updated_event(
+                    app_type="parts",
+                    item_id=part.id,
+                    user=user,
+                    revision=part.formatted_revision or part.revision,
+                    details=state_change_details,
+                )
+            else:
+                # Log other state changes (e.g., Draft)
+                log_updated_event(
+                    app_type="parts",
+                    item_id=part.id,
+                    user=user,
+                    revision=part.formatted_revision or part.revision,
+                    details=state_change_details,
+                )
 
         user = request.user
         if "is_approved_for_release" in data:
@@ -1232,57 +1268,98 @@ def edit_part(request, pk, **kwargs):
                 data["is_approved_for_release"] == True
                 and part.quality_assurance == None
             ):
+                approval_user = user
                 if APIAndProjectAccess.has_validated_key(request):
                     if "created_by" in data:
-                        profile = Profile.objects.get(
-                            user__id=data["created_by"])
+                        approval_user = User.objects.get(id=data["created_by"])
+                        profile = Profile.objects.get(user=approval_user)
+                        part.quality_assurance = profile
+                    else:
+                        # For API key requests without created_by, use the API key user
+                        profile = Profile.objects.get(user=user)
                         part.quality_assurance = profile
                 else:
                     profile = Profile.objects.get(user__pk=user.id)
                     part.quality_assurance = profile
 
-                notify_on_release_approval(item=part, user=user, app_name="parts")
+                notify_on_release_approval(item=part, user=approval_user, app_name="parts")
 
+                # Log traceability event for approval (only once, when QA is first set)
+                log_approved_event(
+                    app_type="parts",
+                    item_id=part.id,
+                    user=approval_user,
+                    revision=part.formatted_revision or part.revision,
+                    details="Approved for release",
+                )
+
+        # Track which fields were updated for traceability
+        updated_fields = []
+        
         if "description" in data:
+            if part.description != data["description"]:
+                updated_fields.append("description")
             part.description = data["description"]
 
         if "datasheet" in data:
+            if part.datasheet != data["datasheet"]:
+                updated_fields.append("datasheet")
             part.datasheet = data["datasheet"]
             # If datasheet has a value, download it and attach as file
             if part.datasheet and part.datasheet.strip():
                 download_datasheet_and_attach(part, part.datasheet, user)
 
         if "display_name" in data:
+            if part.display_name != data["display_name"]:
+                updated_fields.append("display_name")
             part.display_name = data["display_name"]
 
         if "git_link" in data:
+            if part.git_link != data["git_link"]:
+                updated_fields.append("git_link")
             part.git_link = data["git_link"]
 
         if "image_url" in data:
+            if part.image_url != data["image_url"]:
+                updated_fields.append("image_url")
             part.image_url = data["image_url"]
             # If image_url has a value, download it to create thumbnail
             if part.image_url and part.image_url.strip():
                 download_image_and_create_thumbnail(part, part.image_url, user)
 
         if "internal" in data:
+            if part.internal != data["internal"]:
+                updated_fields.append("internal")
             part.internal = data["internal"]
 
         if "manufacturer" in data:
+            if part.manufacturer != data["manufacturer"]:
+                updated_fields.append("manufacturer")
             part.manufacturer = data["manufacturer"]
 
         if "mpn" in data:
+            if part.mpn != data["mpn"]:
+                updated_fields.append("mpn")
             part.mpn = data["mpn"]
 
         if "part_type" in data:
+            if part.part_type_id != data["part_type"]:
+                updated_fields.append("part_type")
             part.part_type_id = data["part_type"]
 
         if "unit" in data:
+            if part.unit != data["unit"]:
+                updated_fields.append("unit")
             part.unit = data["unit"]
 
         if "price" in data:
+            if part.price != data["price"]:
+                updated_fields.append("price")
             part.price = data["price"]
 
         if "currency" in data:
+            if part.currency != data["currency"]:
+                updated_fields.append("currency")
             part.currency = data["currency"]
 
         if "is_rohs_compliant" in data:
@@ -1333,6 +1410,28 @@ def edit_part(request, pk, **kwargs):
             part.external_part_number = data.get("external_part_number", "")
 
         part.save()
+        
+        # Log traceability event for field updates (if any fields were actually changed)
+        # Only log if we have field updates and it's not just a state change or approval (those are logged separately)
+        # Also skip if only markdown_notes, tags, or price_update were changed (these are allowed on released items)
+        if updated_fields:
+            # Check if this was just a state change or approval (already logged)
+            is_state_or_approval_change = "release_state" in data or "is_approved_for_release" in data
+            # Check if only "safe" fields were changed (markdown_notes, tags, price_update)
+            safe_fields_only = (
+                len(updated_fields) == 0 or
+                all(field in ["markdown_notes", "tags", "price", "currency"] for field in updated_fields)
+            )
+            
+            if not is_state_or_approval_change and not safe_fields_only:
+                log_updated_event(
+                    app_type="parts",
+                    item_id=part.id,
+                    user=user,
+                    revision=part.formatted_revision or part.revision,
+                    details=f"Updated fields: {', '.join(updated_fields)}",
+                )
+        
         serializer = PartSerializer(part, many=False)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -1552,6 +1651,15 @@ def new_revision(request, pk, **kwargs):
     link_issues_on_new_object_revision('parts', old_part_rev, new_part_rev)
 
     notify_on_new_revision(new_revision=new_part_rev, app_name="parts", user=request.user)
+
+    # Log traceability event for revision creation
+    log_revision_created_event(
+        app_type="parts",
+        item_id=new_part_rev.id,
+        user=request.user,
+        revision=new_part_rev.formatted_revision or new_part_rev.revision,
+        details=new_part_rev.revision_notes,
+    )
 
     serializer = PartSerializer(new_part_rev)
     return Response(serializer.data, status=status.HTTP_200_OK)

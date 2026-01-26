@@ -34,6 +34,12 @@ from projects.viewsIssues import link_issues_on_new_object_revision
 from profiles.utilityFunctions import (
     notify_on_new_revision, notify_on_release_approval,
     notify_on_state_change_to_release)
+from traceability.utilities import (
+    log_revision_created_event,
+    log_approved_event,
+    log_released_event,
+    log_updated_event,
+)
 from projects.viewsTags import check_for_and_create_new_tags
 from parts.viewUtilities import copy_markdown_tabs_to_new_revision, resolve_part_type_for_module
 
@@ -416,6 +422,15 @@ def new_revision(request, pk, **kwargs):
 
     notify_on_new_revision(new_revision=new_pcba, app_name="pcbas", user=user)
 
+    # Log traceability event for revision creation
+    log_revision_created_event(
+        app_type="pcbas",
+        item_id=new_pcba.id,
+        user=user,
+        revision=new_pcba.formatted_revision or new_pcba.revision,
+        details=new_pcba.revision_notes,
+    )
+
     data = {"id": new_pcba.id}
 
     return Response(data, status=status.HTTP_200_OK)
@@ -487,21 +502,58 @@ def edit_pcba(request, pk, **kwargs):
                 "Can't edit a released pcba!", status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Track which fields were updated for traceability
+        updated_fields = []
+        
         if "display_name" in data:
+            if pcba.display_name != data["display_name"]:
+                updated_fields.append("display_name")
             pcba.display_name = data["display_name"]
         if "description" in data:
+            if pcba.description != data["description"]:
+                updated_fields.append("description")
             pcba.description = data["description"]
         if "release_state" in data and data["release_state"] != pcba.release_state:
+            old_state = pcba.release_state
             pcba.release_state = data["release_state"]
 
             notify_on_state_change_to_release(user=user, item=pcba,
                                               new_state=data["release_state"], app_name="pcbas")
 
+            # Log traceability event for state change
+            state_change_details = f"State changed from {old_state} to {data['release_state']}"
             if data["release_state"] == "Released":
                 pcba.released_date = datetime.now()
 
                 # Auto-push to Odoo if enabled
                 auto_push_on_release(pcba, 'pcbas', user)
+
+                # Log traceability event for release
+                log_released_event(
+                    app_type="pcbas",
+                    item_id=pcba.id,
+                    user=user,
+                    revision=pcba.formatted_revision or pcba.revision,
+                    details=state_change_details,
+                )
+            elif data["release_state"] == "Review":
+                # Log state change to Review
+                log_updated_event(
+                    app_type="pcbas",
+                    item_id=pcba.id,
+                    user=user,
+                    revision=pcba.formatted_revision or pcba.revision,
+                    details=state_change_details,
+                )
+            else:
+                # Log other state changes (e.g., Draft)
+                log_updated_event(
+                    app_type="pcbas",
+                    item_id=pcba.id,
+                    user=user,
+                    revision=pcba.formatted_revision or pcba.revision,
+                    details=state_change_details,
+                )
 
         user = request.user
         if "is_approved_for_release" in data:
@@ -512,17 +564,34 @@ def edit_pcba(request, pk, **kwargs):
                 data["is_approved_for_release"] == True
                 and pcba.quality_assurance == None
             ):
+                approval_user = user
                 if APIAndProjectAccess.has_validated_key(request):
                     if "user_qa_id" in data:
-                        user = User.objects.get(pk=data["user_qa_id"])
+                        approval_user = User.objects.get(pk=data["user_qa_id"])
+                        profile = Profile.objects.get(user=approval_user)
+                        pcba.quality_assurance = profile
+                    else:
+                        # For API key requests without user_qa_id, use the API key user
                         profile = Profile.objects.get(user=user)
                         pcba.quality_assurance = profile
                 else:
                     profile = Profile.objects.get(user__pk=user.id)
                     pcba.quality_assurance = profile
-                    notify_on_release_approval(item=pcba, user=user, app_name="pcbas")
+
+                notify_on_release_approval(item=pcba, user=approval_user, app_name="pcbas")
+
+                # Log traceability event for approval (only once, when QA is first set)
+                log_approved_event(
+                    app_type="pcbas",
+                    item_id=pcba.id,
+                    user=approval_user,
+                    revision=pcba.formatted_revision or pcba.revision,
+                    details="Approved for release",
+                )
 
         if "revision_notes" in data:
+            if pcba.revision_notes != data["revision_notes"]:
+                updated_fields.append("revision_notes")
             pcba.revision_notes = data["revision_notes"]
 
         if "project" in data:
@@ -531,11 +600,17 @@ def edit_pcba(request, pk, **kwargs):
                     return Response(f"Not Authorized for project {data['project']}", status=status.HTTP_401_UNAUTHORIZED)
 
             project = Project.objects.get(pk=data["project"])
+            if pcba.project_id != project.id:
+                updated_fields.append("project")
             pcba.project = project
         if "attributes" in data:
+            if pcba.attributes != data["attributes"]:
+                updated_fields.append("attributes")
             pcba.attributes = data["attributes"]
 
         if "external_part_number" in data:
+            if pcba.external_part_number != data.get("external_part_number", ""):
+                updated_fields.append("external_part_number")
             pcba.external_part_number = data.get("external_part_number", "")
 
         if "part_type" in data:
@@ -544,6 +619,8 @@ def edit_pcba(request, pk, **kwargs):
             )
             if part_type_error:
                 return part_type_error
+            if pcba.part_type_id != (part_type.id if part_type else None):
+                updated_fields.append("part_type")
             pcba.part_type = part_type
 
         if "tags" in data:
@@ -553,6 +630,26 @@ def edit_pcba(request, pk, **kwargs):
             pcba.tags.set(tag_ids)
 
         pcba.save()
+        
+        # Log traceability event for field updates (if any fields were actually changed)
+        # Only log if we have field updates and it's not just a state change or approval (those are logged separately)
+        if updated_fields:
+            # Check if this was just a state change or approval (already logged)
+            is_state_or_approval_change = "release_state" in data or "is_approved_for_release" in data
+            # Check if only "safe" fields were changed (markdown_notes, tags, price_update)
+            safe_fields_only = (
+                len(updated_fields) == 0 or
+                all(field in ["markdown_notes", "tags", "price", "currency"] for field in updated_fields)
+            )
+            
+            if not is_state_or_approval_change and not safe_fields_only:
+                log_updated_event(
+                    app_type="pcbas",
+                    item_id=pcba.id,
+                    user=user,
+                    revision=pcba.formatted_revision or pcba.revision,
+                    details=f"Updated fields: {', '.join(updated_fields)}",
+                )
 
         return Response(status=status.HTTP_200_OK)
     except Exception as e:

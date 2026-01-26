@@ -21,6 +21,12 @@ from assembly_bom.utilityFuncitons import cloneBom
 from profiles.utilityFunctions import (
     notify_on_new_revision, notify_on_release_approval,
     notify_on_state_change_to_release)
+from traceability.utilities import (
+    log_revision_created_event,
+    log_approved_event,
+    log_released_event,
+    log_updated_event,
+)
 
 from profiles.views import check_user_auth_and_app_permission
 from purchasing.priceUtilities import copy_price_to_new_revision
@@ -490,6 +496,15 @@ def new_revision(request, pk, **kwargs):
 
             notify_on_new_revision(newRevision, "assemblies", request.user)
 
+            # Log traceability event for revision creation
+            log_revision_created_event(
+                app_type="assemblies",
+                item_id=newRevision.id,
+                user=request.user,
+                revision=newRevision.formatted_revision or newRevision.revision,
+                details=newRevision.revision_notes,
+            )
+
             # Handle data overwrite
             if "copyBom" in data:
                 if data["copyBom"] == 1:
@@ -614,50 +629,109 @@ def update_info(request, pk, **kwargs):
             "Can't edit a released asm!", status=status.HTTP_400_BAD_REQUEST
         )
 
+    # Track which fields were updated for traceability
+    updated_fields = []
+
     if "display_name" in data:
+        if asm.display_name != data["display_name"]:
+            updated_fields.append("display_name")
         asm.display_name = data["display_name"]
     # if "price" in data:
     #    asm.price = data["price"]   # DEPRECATED
     if "model_url" in data:
+        if asm.model_url != data["model_url"]:
+            updated_fields.append("model_url")
         asm.model_url = data["model_url"]
     if "revision" in data:
+        if asm.revision != data["revision"]:
+            updated_fields.append("revision")
         asm.revision = data["revision"]
     if "description" in data:
+        if asm.description != data["description"]:
+            updated_fields.append("description")
         asm.description = data["description"]
     if "part_number" in data:
+        if asm.part_number != data["part_number"]:
+            updated_fields.append("part_number")
         asm.part_number = data["part_number"]
     if "last_updated" in data:
         asm.last_updated = data["last_updated"]
 
     if "release_state" in data and data["release_state"] != asm.release_state:
+        old_state = asm.release_state
         asm.release_state = data["release_state"]
         if not APIAndProjectAccess.has_validated_key(request):
 
             notify_on_state_change_to_release(user, asm, data["release_state"], "assemblies")
 
+        # Log traceability event for state change
+        state_change_details = f"State changed from {old_state} to {data['release_state']}"
         if data["release_state"] == "Released":
             asm.released_date = datetime.now()
 
             # Auto-push to Odoo if enabled
             auto_push_on_release(asm, 'assemblies', user, include_bom=True)
 
+            # Log traceability event for release
+            log_released_event(
+                app_type="assemblies",
+                item_id=asm.id,
+                user=user,
+                revision=asm.formatted_revision or asm.revision,
+                details=state_change_details,
+            )
+        elif data["release_state"] == "Review":
+            # Log state change to Review
+            log_updated_event(
+                app_type="assemblies",
+                item_id=asm.id,
+                user=user,
+                revision=asm.formatted_revision or asm.revision,
+                details=state_change_details,
+            )
+        else:
+            # Log other state changes (e.g., Draft)
+            log_updated_event(
+                app_type="assemblies",
+                item_id=asm.id,
+                user=user,
+                revision=asm.formatted_revision or asm.revision,
+                details=state_change_details,
+            )
+
     if "is_approved_for_release" in data:
         if data["is_approved_for_release"] == False:
             asm.quality_assurance = None
         # Ensures QA is only set once, not every time the form is updated.
         if data["is_approved_for_release"] == True and asm.quality_assurance == None:
+            approval_user = user
             if APIAndProjectAccess.has_validated_key(request):
                 if "quality_assurance" in data:
-                    user = User.objects.get(id=data["quality_assurance"])
+                    approval_user = User.objects.get(id=data["quality_assurance"])
                     asm.quality_assurance = Profile.objects.get(
-                        user__pk=user.id)
+                        user__pk=approval_user.id)
+                else:
+                    # For API key requests without quality_assurance, use the API key user
+                    profile = Profile.objects.get(user=user)
+                    asm.quality_assurance = profile
             else:
                 profile = Profile.objects.get(user__pk=user.id)
                 asm.quality_assurance = profile
 
-                notify_on_release_approval(asm, user, "assemblies")
+            notify_on_release_approval(asm, approval_user, "assemblies")
+
+            # Log traceability event for approval (only once, when QA is first set)
+            log_approved_event(
+                app_type="assemblies",
+                item_id=asm.id,
+                user=approval_user,
+                revision=asm.formatted_revision or asm.revision,
+                details="Approved for release",
+            )
 
     if "external_part_number" in data:
+        if asm.external_part_number != data.get("external_part_number", ""):
+            updated_fields.append("external_part_number")
         asm.external_part_number = data.get("external_part_number", "")
 
     if "part_type" in data:
@@ -666,9 +740,31 @@ def update_info(request, pk, **kwargs):
         )
         if part_type_error:
             return part_type_error
+        if asm.part_type_id != (part_type.id if part_type else None):
+            updated_fields.append("part_type")
         asm.part_type = part_type
 
     asm.save()
+    
+    # Log traceability event for field updates (if any fields were actually changed)
+    # Only log if we have field updates and it's not just a state change or approval (those are logged separately)
+    if updated_fields:
+        # Check if this was just a state change or approval (already logged)
+        is_state_or_approval_change = "release_state" in data or "is_approved_for_release" in data
+        # Check if only "safe" fields were changed (markdown_notes, tags, price_update)
+        safe_fields_only = (
+            len(updated_fields) == 0 or
+            all(field in ["markdown_notes", "tags", "price", "currency"] for field in updated_fields)
+        )
+        
+        if not is_state_or_approval_change and not safe_fields_only:
+            log_updated_event(
+                app_type="assemblies",
+                item_id=asm.id,
+                user=user,
+                revision=asm.formatted_revision or asm.revision,
+                details=f"Updated fields: {', '.join(updated_fields)}",
+            )
 
     serializer = AssemblySerializer(asm, many=False)
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
