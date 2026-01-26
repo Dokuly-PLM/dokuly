@@ -45,7 +45,7 @@ from purchasing.serializers import PriceSerializer
 from profiles.models import Profile
 from profiles.views import check_user_auth_and_app_permission
 from projects.models import Project
-from organizations.odoo_service import auto_push_on_release
+from organizations.odoo_service import auto_push_on_release_async
 from organizations.permissions import APIAndProjectAccess
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
@@ -1222,8 +1222,8 @@ def edit_part(request, pk, **kwargs):
             if data["release_state"] == "Released":
                 part.released_date = datetime.now()
 
-                # Auto-push to Odoo if enabled
-                auto_push_on_release(part, 'parts', user)
+                # Auto-push to Odoo if enabled (runs in background)
+                auto_push_on_release_async(part, 'parts', user)
 
         user = request.user
         if "is_approved_for_release" in data:
