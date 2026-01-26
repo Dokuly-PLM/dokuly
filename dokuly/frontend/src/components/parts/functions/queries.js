@@ -134,6 +134,35 @@ export const getPartsTable = () => {
   return dataPromise;
 };
 
+/**
+ * Star a part. Stars are always personal (only visible to the user).
+ * @param {number} partId - The part ID to star
+ * @returns {Promise} The axios response
+ */
+export const starPart = (partId) => {
+  const promise = axios.post(
+    `api/parts/star/${partId}/`,
+    {},
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Unstar a part.
+ * @param {number} partId - The part ID to unstar
+ * @returns {Promise} The axios response
+ */
+export const unstarPart = (partId) => {
+  const promise = axios.delete(
+    `api/parts/unstar/${partId}/`,
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
 export const archivePart = (id) => {
   const promise = axios.put(`api/parts/archivePart/${id}/`, {}, tokenConfig());
   const dataPromise = promise.then((res) => res.data);

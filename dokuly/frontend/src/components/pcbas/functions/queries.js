@@ -273,3 +273,32 @@ export const removeGerberFile = (pcbaId) => {
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+/**
+ * Star a PCBA. Stars are always personal (only visible to the user).
+ * @param {number} pcbaId - The PCBA ID to star
+ * @returns {Promise} The axios response
+ */
+export const starPcba = (pcbaId) => {
+  const promise = axios.post(
+    `api/pcbas/star/${pcbaId}/`,
+    {},
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
+/**
+ * Unstar a PCBA.
+ * @param {number} pcbaId - The PCBA ID to unstar
+ * @returns {Promise} The axios response
+ */
+export const unstarPcba = (pcbaId) => {
+  const promise = axios.delete(
+    `api/pcbas/unstar/${pcbaId}/`,
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};

@@ -10,6 +10,8 @@ urlpatterns = [
     # Pcba
     path("api/pcbas/fetch/pcbas/", views.fetch_pcbas),
     path("api/pcbas/get/latestRevisions/", views.get_latest_revisions),
+    path("api/pcbas/star/<int:pk>/", views.star_pcba),
+    path("api/pcbas/unstar/<int:pk>/", views.unstar_pcba),
     path("api/pcbas/fetch/pcba/<int:pk>/", views.fetch_single_pcba),
     path("api/pcbas/fetchPcba/<int:pk>/", views.fetch_single_pcba),
     path("api/pcbas/edit/<int:pk>/", views.edit_pcba),

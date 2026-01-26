@@ -47,6 +47,7 @@ class PcbaTableSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     part_type = PartTypeIconSerializer()
     organization = serializers.SerializerMethodField()
+    is_starred = serializers.SerializerMethodField()
 
     class Meta:
         model = Pcba
@@ -68,6 +69,7 @@ class PcbaTableSerializer(serializers.ModelSerializer):
             "part_type",
             "organization",
             "external_part_number",
+            "is_starred",
         )
 
     def get_organization(self, obj):
@@ -87,6 +89,11 @@ class PcbaTableSerializer(serializers.ModelSerializer):
             except:
                 pass
         return None
+
+    def get_is_starred(self, obj):
+        """Check if the PCBA is starred for the current user."""
+        starred_pcba_ids = self.context.get('starred_pcba_ids', set())
+        return obj.id in starred_pcba_ids
 
 
 class PcbaSerializerFull(serializers.ModelSerializer):

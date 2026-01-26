@@ -169,3 +169,23 @@ class Pcba(models.Model):
     prev_pcba = ArrayField(
         models.CharField(null=True, max_length=20), blank=True, null=True
     )
+
+
+class StarredPcba(models.Model):
+    """Model for tracking starred PCBAs.
+    Allows users to star PCBAs for quick access.
+    Stars are always personal (only visible to the user who starred them).
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="starred_pcbas")
+    pcba = models.ForeignKey(Pcba, on_delete=models.CASCADE, related_name="starred_by")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [["user", "pcba"]]
+        indexes = [
+            models.Index(fields=["user"]),
+            models.Index(fields=["pcba"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} starred {self.pcba.full_part_number}"
