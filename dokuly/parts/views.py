@@ -33,7 +33,7 @@ from projects.models import Project
 
 from organizations.views import get_subscription_type
 from files.models import Image
-from parts.models import Part, PartType
+from parts.models import Part, PartType, StarredPart
 from pcbas.models import Pcba
 from documents.models import Document
 from part_numbers.methods import get_next_part_number
@@ -406,8 +406,74 @@ def get_parts_table(request):
         .prefetch_related("tags")
     )
 
-    serializer = PartTableSerializer(parts, many=True, context={'request': request})
+    # Get starred parts for the current user
+    starred_part_ids = set(
+        StarredPart.objects.filter(user=user).values_list('part_id', flat=True)
+    )
+
+    serializer = PartTableSerializer(parts, many=True, context={
+        'request': request,
+        'starred_part_ids': starred_part_ids
+    })
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(("POST", "PUT"))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def star_part(request, pk, **kwargs):
+    """Star a part. Stars are always personal (only visible to the user)."""
+    user = request.user
+
+    try:
+        part = get_object_or_404(Part, id=pk)
+
+        # Check if user has access to the part's project
+        if part.project:
+            if not (part.project.project_members.filter(id=user.id).exists() or
+                    (APIAndProjectAccess.has_validated_key(request) and
+                    APIAndProjectAccess.check_project_access(request, part.project.id))):
+                return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+        # Create or get existing star (always personal)
+        starred, created = StarredPart.objects.get_or_create(
+            user=user,
+            part=part
+        )
+
+        return Response({
+            'starred': True,
+            'part_id': part.id
+        }, status=status.HTTP_200_OK)
+    except Part.DoesNotExist:
+        return Response("Part not found", status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(f"Error: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(("DELETE",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def unstar_part(request, pk, **kwargs):
+    """Unstar a part."""
+    user = request.user
+
+    try:
+        part = get_object_or_404(Part, id=pk)
+        starred = StarredPart.objects.filter(user=user, part=part).first()
+
+        if starred:
+            starred.delete()
+            return Response({
+                'starred': False,
+                'part_id': part.id
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response("Part not starred", status=status.HTTP_404_NOT_FOUND)
+    except Part.DoesNotExist:
+        return Response("Part not found", status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(f"Error: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(("GET",))

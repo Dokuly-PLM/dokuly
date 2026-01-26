@@ -16,6 +16,8 @@ import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
 import { releaseStateFormatter } from "../dokuly_components/formatters/releaseStateFormatter";
 import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
 import { useSyncedSearchParam } from "../common/hooks/useSyncedSearchParam";
+import { starFormatter } from "../dokuly_components/formatters/starFormatter";
+import { starPcba, unstarPcba } from "./functions/queries";
 
 export default function PcbaTable(props) {
   const [refresh, setRefresh] = useState(true);
@@ -59,7 +61,7 @@ export default function PcbaTable(props) {
       }
     }
 
-    if (pcbas === [] || pcbas == null || props?.refresh === true) {
+    if (pcbas === [] || pcbas == null || refresh === true) {
       fetchNewestPcbaRevisions()
         .then((res) => {
           if (res.status === 200) {
@@ -75,7 +77,7 @@ export default function PcbaTable(props) {
           }
         });
     }
-    if (customers === [] || customers == null || props?.refresh === true) {
+    if (customers === [] || customers == null || refresh === true) {
       fetchCustomers()
         .then((res) => {
           setCustomers(res.data);
@@ -89,7 +91,7 @@ export default function PcbaTable(props) {
           }
         });
     }
-    if (projects === [] || projects == null || props?.refresh === true) {
+    if (projects === [] || projects == null || refresh === true) {
       fetchProjects()
         .then((res) => {
           setProjecs(res.data);
@@ -107,6 +109,13 @@ export default function PcbaTable(props) {
 
     // Updates tab title
     document.title = "PCBA | Dokuly";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refresh]);
+
+  useEffect(() => {
+    if (props?.refresh === true) {
+      setRefresh(true);
+    }
   }, [props.refresh]);
 
   useEffect(() => {
@@ -136,7 +145,84 @@ export default function PcbaTable(props) {
       navigate(target);
     }
   };
+
+  const handleStarClick = (e, row) => {
+    e.stopPropagation();
+    if (row.is_starred) {
+      // Unstar
+      // Optimistically update the UI
+      setPcbas((prevPcbas) =>
+        prevPcbas.map((pcba) =>
+          pcba.id === row.id ? { ...pcba, is_starred: false } : pcba
+        )
+      );
+      unstarPcba(row.id)
+        .then((res) => {
+          if (res.status === 200) {
+            // Force refresh - fetch data again
+            fetchNewestPcbaRevisions()
+              .then((fetchRes) => {
+                if (fetchRes.status === 200) {
+                  setPcbas(fetchRes.data);
+                  localStorage.setItem("pcbas", JSON.stringify(fetchRes.data));
+                }
+              })
+              .catch((err) => {
+                console.error("Error fetching PCBAs:", err);
+              });
+          }
+        })
+        .catch((err) => {
+          console.error("Error unstarring PCBA:", err);
+          // Revert on error - refresh to get correct state
+          setRefresh(true);
+        });
+    } else {
+      // Star (always personal)
+      // Optimistically update the UI
+      setPcbas((prevPcbas) =>
+        prevPcbas.map((pcba) =>
+          pcba.id === row.id ? { ...pcba, is_starred: true } : pcba
+        )
+      );
+      starPcba(row.id)
+        .then((res) => {
+          if (res.status === 200) {
+            // Force refresh - fetch data again
+            fetchNewestPcbaRevisions()
+              .then((fetchRes) => {
+                if (fetchRes.status === 200) {
+                  setPcbas(fetchRes.data);
+                  localStorage.setItem("pcbas", JSON.stringify(fetchRes.data));
+                }
+              })
+              .catch((err) => {
+                console.error("Error fetching PCBAs:", err);
+              });
+          }
+        })
+        .catch((err) => {
+          console.error("Error starring PCBA:", err);
+          // Revert on error - refresh to get correct state
+          setRefresh(true);
+        });
+    }
+  };
+
+  const starColumnFormatter = (row) => {
+    return starFormatter(row, "pcbas", handleStarClick);
+  };
+
   const columns = [
+    {
+      key: "star",
+      header: "",
+      formatter: starColumnFormatter,
+      filterable: false,
+      sortable: false,
+      maxWidth: "50px",
+      defaultShowColumn: true,
+    },
     {
       key: "full_part_number",
       header: "Part number",

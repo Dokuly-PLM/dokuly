@@ -16,6 +16,8 @@ import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
 import { getUser } from "../layout/queries";
 import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
 import { useSyncedSearchParam } from "../common/hooks/useSyncedSearchParam";
+import { starFormatter } from "../dokuly_components/formatters/starFormatter";
+import { starPart, unstarPart } from "./functions/queries";
 
 export default function PartsTable(props) {
   const [refresh, setRefresh] = useState(true);
@@ -166,7 +168,47 @@ export default function PartsTable(props) {
     }
   };
 
+  const handleStarClick = (e, row) => {
+    e.stopPropagation();
+    if (row.is_starred) {
+      // Unstar
+      unstarPart(row.id)
+        .then((res) => {
+          if (res.status === 200) {
+            setRefresh(true);
+          }
+        })
+        .catch((err) => {
+          console.error("Error unstarring part:", err);
+        });
+    } else {
+      // Star (always personal)
+      starPart(row.id)
+        .then((res) => {
+          if (res.status === 200) {
+            setRefresh(true);
+          }
+        })
+        .catch((err) => {
+          console.error("Error starring part:", err);
+        });
+    }
+  };
+
+  const starColumnFormatter = (row) => {
+    return starFormatter(row, "parts", handleStarClick);
+  };
+
   const columns = [
+    {
+      key: "star",
+      header: "",
+      formatter: starColumnFormatter,
+      filterable: false,
+      sortable: false,
+      maxWidth: "50px",
+      defaultShowColumn: true,
+    },
     {
       key: "full_part_number",
       header: "Part Number",

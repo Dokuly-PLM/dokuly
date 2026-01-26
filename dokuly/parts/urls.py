@@ -38,6 +38,8 @@ urlpatterns = [
     path("api/parts/get/unarchived/", views.get_unarchived_parts),
     path("api/parts/get/latestRevisions/", views.get_latest_revisions),
     path("api/parts/get/parts_table/", views.get_parts_table),
+    path("api/parts/star/<int:pk>/", views.star_part),
+    path("api/parts/unstar/<int:pk>/", views.unstar_part),
     path("api/parts/archivePart/<int:pk>/", views.archive_part),
     path("api/parts/put/revisionNotes/<int:partId>/", views.edit_revision_notes),
     path("api/parts/update/errata/<int:partId>/", views.edit_errata),

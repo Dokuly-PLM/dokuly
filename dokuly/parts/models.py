@@ -241,6 +241,26 @@ class Part(models.Model):
     pcb_length = models.CharField(max_length=6, blank=True, null=True)
 
 
+class StarredPart(models.Model):
+    """Model for tracking starred parts.
+    Allows users to star parts for quick access.
+    Stars are always personal (only visible to the user who starred them).
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="starred_parts")
+    part = models.ForeignKey(Part, on_delete=models.CASCADE, related_name="starred_by")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [["user", "part"]]
+        indexes = [
+            models.Index(fields=["user"]),
+            models.Index(fields=["part"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} starred {self.part.full_part_number}"
+
+
 class PartType(models.Model):
     """Custom part types."""
 

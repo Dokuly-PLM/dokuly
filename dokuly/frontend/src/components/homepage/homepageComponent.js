@@ -126,7 +126,11 @@ const HomepageComponent = () => {
   const pcbas = data?.pcbas || [];
   const issues = data?.issues || [];
   const ecos = data?.ecos || [];
+  const starredParts = data?.starred_parts || [];
+  const starredAssemblies = data?.starred_assemblies || [];
+  const starredPcbas = data?.starred_pcbas || [];
   const isEcoEnabled = organization?.eco_is_enabled === true;
+  const starredCount = starredParts.length + starredAssemblies.length + starredPcbas.length;
 
   // Define columns for parts table - compact
   const partsColumns = [
@@ -295,7 +299,7 @@ const HomepageComponent = () => {
     },
   ];
 
-  const StatCard = ({ count, label, icon, accentColor, onClick }) => {
+  const StatCard = ({ count, label, icon, accentColor, onClick, iconStyle, breakdown }) => {
     const cardStyle = {
       background: "#ffffff",
       border: "1px solid #e5e7eb",
@@ -320,7 +324,7 @@ const HomepageComponent = () => {
       marginBottom: "0.75rem",
     };
 
-    const iconStyle = {
+    const defaultIconStyle = {
       width: "20px",
       height: "20px",
       filter: "invert(31%) sepia(56%) saturate(489%) hue-rotate(123deg) brightness(91%) contrast(87%)",
@@ -332,6 +336,9 @@ const HomepageComponent = () => {
       color: "#1f2937",
       marginBottom: "0.25rem",
       lineHeight: "1.2",
+      display: "flex",
+      alignItems: "baseline",
+      gap: "0.5rem",
     };
 
     const labelStyle = {
@@ -339,6 +346,28 @@ const HomepageComponent = () => {
       fontWeight: "500",
       color: "#6b7280",
       marginBottom: "0",
+    };
+
+    const breakdownStyle = {
+      display: "flex",
+      alignItems: "center",
+      gap: "0.75rem",
+      fontSize: "0.875rem",
+      color: "#6b7280",
+      fontWeight: "400",
+      marginLeft: "0.5rem",
+    };
+
+    const breakdownItemStyle = {
+      display: "flex",
+      alignItems: "center",
+      gap: "0.20rem",
+    };
+
+    const breakdownIconStyle = {
+      width: "16px",
+      height: "16px",
+      filter: "invert(31%) sepia(56%) saturate(489%) hue-rotate(123deg) brightness(91%) contrast(87%)",
     };
 
     return (
@@ -365,10 +394,26 @@ const HomepageComponent = () => {
           }}
         >
           <div style={iconContainerStyle}>
-            <img src={icon} alt={label} style={iconStyle} />
+            <img src={icon} alt={label} style={iconStyle || defaultIconStyle} />
           </div>
           <div style={{ flex: 1 }}>
-            <h3 style={countStyle}>{count || 0}</h3>
+            <div style={countStyle}>
+              <span>{count || 0}</span>
+              {breakdown && breakdown.length > 0 && (
+                <div style={breakdownStyle}>
+                  {breakdown.map((item, index) => (
+                    <div key={index} style={breakdownItemStyle}>
+                      <img
+                        src={item.icon}
+                        alt={item.label}
+                        style={breakdownIconStyle}
+                      />
+                      <span>{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <p style={labelStyle}>{label}</p>
           </div>
         </div>
@@ -386,11 +431,11 @@ const HomepageComponent = () => {
               For You
             </h1>
             <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0" }}>
-              Your unreleased items and open issues
+              Your unreleased items, open issues, and starred items
             </p>
           </div>
 
-          {/* Stats Cards - 5 cards in one row, filling the whole row */}
+          {/* Stats Cards - 6 cards in one row, filling the whole row */}
           <Row className="mb-4" style={{ display: "flex" }}>
             <div style={{ flex: 1, paddingRight: "7.5px" }} className="mb-3">
               <StatCard
@@ -426,6 +471,43 @@ const HomepageComponent = () => {
                 icon="../../static/icons/alert-circle.svg"
                 accentColor="#165216"
                 onClick={() => navigate("/projects")}
+              />
+            </div>
+            <div style={{ flex: 1, paddingLeft: "7.5px", paddingRight: "7.5px" }} className="mb-3">
+              <StatCard
+                count={starredCount}
+                label="Starred Items"
+                icon="../../static/icons/star.svg"
+                accentColor="#fbbf24"
+                onClick={() => {
+                  // Scroll to starred section
+                  const starredSection = document.querySelector('[data-starred-section]');
+                  if (starredSection) {
+                    starredSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+                iconStyle={{
+                  width: "20px",
+                  height: "20px",
+                  filter: "invert(70%) sepia(100%) saturate(2000%) hue-rotate(0deg) brightness(1) contrast(1)",
+                }}
+                breakdown={[
+                  ...(starredParts.length > 0 ? [{
+                    icon: "../../static/icons/puzzle.svg",
+                    label: "Parts",
+                    count: starredParts.length
+                  }] : []),
+                  ...(starredAssemblies.length > 0 ? [{
+                    icon: "../../static/icons/assembly.svg",
+                    label: "Assemblies",
+                    count: starredAssemblies.length
+                  }] : []),
+                  ...(starredPcbas.length > 0 ? [{
+                    icon: "../../static/icons/pcb.svg",
+                    label: "PCBAs",
+                    count: starredPcbas.length
+                  }] : [])
+                ]}
               />
             </div>
             {isEcoEnabled ? (
@@ -701,8 +783,185 @@ const HomepageComponent = () => {
             )}
           </Row>
 
+          {/* Starred Items Section */}
+          {(starredParts.length > 0 || starredAssemblies.length > 0 || starredPcbas.length > 0) && (
+            <Row className="mb-1" data-starred-section>
+              <Col md={12} className="mb-1">
+                <div style={{ display: "flex", alignItems: "center", marginBottom: "1rem" }}>
+                  <img
+                    src="../../static/icons/star.svg"
+                    alt="starred items"
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      marginRight: "0.75rem",
+                      filter: "invert(70%) sepia(100%) saturate(2000%) hue-rotate(0deg) brightness(1) contrast(1)",
+                    }}
+                  />
+                  <h3 style={{ fontSize: "1.75rem", fontWeight: "600", color: "#1f2937", margin: 0 }}>
+                    Starred Items
+                  </h3>
+                </div>
+              </Col>
+            </Row>
+          )}
+
+          <Row className="mb-3">
+            {starredParts.length > 0 && (
+              <Col md={6} className="mb-3" style={{ paddingLeft: 0, paddingRight: "7.5px" }}>
+                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+                    <div
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "6px",
+                        backgroundColor: "#16521615",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: "0.5rem",
+                      }}
+                    >
+                      <img
+                        src="../../static/icons/puzzle.svg"
+                        alt="starred parts"
+                        style={{ width: "16px", height: "16px" }}
+                      />
+                    </div>
+                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Starred Parts</h5>
+                    {starredParts.length > 5 && (
+                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                        {starredParts.length} total
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ overflowX: "auto" }}>
+                    <DokulyTable
+                      data={starredParts.slice(0, 5)}
+                      columns={partsColumns}
+                      defaultSort={{ columnNumber: 0, order: "desc" }}
+                      defaultSortColumn="last_updated"
+                      defaultSortDirection="desc"
+                      showSearch={false}
+                      showPagination={false}
+                      showCsvDownload={false}
+                      itemsPerPage={5}
+                      textSize="13px"
+                      onRowClick={handlePartRowClick}
+                      navigateColumn={true}
+                      onNavigate={handlePartNavigate}
+                    />
+                  </div>
+                </DokulyCard>
+              </Col>
+            )}
+
+            {starredAssemblies.length > 0 && (
+              <Col md={6} className="mb-3" style={{ paddingLeft: starredParts.length === 0 ? 0 : "7.5px", paddingRight: 0 }}>
+                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+                    <div
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "6px",
+                        backgroundColor: "#108e8215",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: "0.5rem",
+                      }}
+                    >
+                      <img
+                        src="../../static/icons/assembly.svg"
+                        alt="starred assemblies"
+                        style={{ width: "16px", height: "16px" }}
+                      />
+                    </div>
+                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Starred Assemblies</h5>
+                    {starredAssemblies.length > 5 && (
+                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                        {starredAssemblies.length} total
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ overflowX: "auto" }}>
+                    <DokulyTable
+                      data={starredAssemblies.slice(0, 5)}
+                      columns={assembliesColumns}
+                      defaultSort={{ columnNumber: 0, order: "desc" }}
+                      defaultSortColumn="last_updated"
+                      defaultSortDirection="desc"
+                      showSearch={false}
+                      showPagination={false}
+                      showCsvDownload={false}
+                      itemsPerPage={5}
+                      textSize="13px"
+                      onRowClick={handleAssemblyRowClick}
+                      navigateColumn={true}
+                      onNavigate={handleAssemblyNavigate}
+                    />
+                  </div>
+                </DokulyCard>
+              </Col>
+            )}
+          </Row>
+
+          {starredPcbas.length > 0 && (
+            <Row className="mb-3">
+              <Col md={6} className="mb-3" style={{ paddingLeft: 0, paddingRight: "7.5px" }}>
+                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+                    <div
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "6px",
+                        backgroundColor: "#da467815",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: "0.5rem",
+                      }}
+                    >
+                      <img
+                        src="../../static/icons/pcb.svg"
+                        alt="starred pcbas"
+                        style={{ width: "16px", height: "16px" }}
+                      />
+                    </div>
+                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Starred PCBAs</h5>
+                    {starredPcbas.length > 5 && (
+                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                        {starredPcbas.length} total
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ overflowX: "auto" }}>
+                    <DokulyTable
+                      data={starredPcbas.slice(0, 5)}
+                      columns={pcbasColumns}
+                      defaultSort={{ columnNumber: 0, order: "desc" }}
+                      defaultSortColumn="last_updated"
+                      defaultSortDirection="desc"
+                      showSearch={false}
+                      showPagination={false}
+                      showCsvDownload={false}
+                      itemsPerPage={5}
+                      textSize="13px"
+                      onRowClick={handlePcbaRowClick}
+                      navigateColumn={true}
+                      onNavigate={handlePcbaNavigate}
+                    />
+                  </div>
+                </DokulyCard>
+              </Col>
+            </Row>
+          )}
+
           {/* Empty State */}
-          {parts.length === 0 && assemblies.length === 0 && pcbas.length === 0 && issues.length === 0 && (!isEcoEnabled || ecos.length === 0) && (
+          {parts.length === 0 && assemblies.length === 0 && pcbas.length === 0 && issues.length === 0 && (!isEcoEnabled || ecos.length === 0) && starredParts.length === 0 && starredAssemblies.length === 0 && starredPcbas.length === 0 && (
             <DokulyCard>
               <div className="text-center py-5">
                 <div

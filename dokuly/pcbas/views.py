@@ -15,7 +15,7 @@ import os
 from datetime import datetime
 from django.shortcuts import get_object_or_404
 
-from pcbas.models import Pcba
+from pcbas.models import Pcba, StarredPcba
 from projects.models import Project
 from documents.models import MarkdownText, Reference_List
 from part_numbers.methods import get_next_part_number
@@ -253,9 +253,75 @@ def get_latest_revisions(request, **kwargs):
         pcba = pcba.filter(Q(project__project_members=user)
                            | Q(project__isnull=True))
 
-    serializer = PcbaTableSerializer(pcba, many=True, context={'request': request})
+    # Get starred PCBAs for the current user
+    starred_pcba_ids = set(
+        StarredPcba.objects.filter(user=user).values_list('pcba_id', flat=True)
+    )
+
+    serializer = PcbaTableSerializer(pcba, many=True, context={
+        'request': request,
+        'starred_pcba_ids': starred_pcba_ids
+    })
     data = serializer.data
     return Response(data)
+
+
+@api_view(("POST", "PUT"))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def star_pcba(request, pk, **kwargs):
+    """Star a PCBA. Stars are always personal (only visible to the user)."""
+    user = request.user
+
+    try:
+        pcba = get_object_or_404(Pcba, id=pk)
+
+        # Check if user has access to the pcba's project
+        if pcba.project:
+            if not (pcba.project.project_members.filter(id=user.id).exists() or
+                    (APIAndProjectAccess.has_validated_key(request) and
+                     APIAndProjectAccess.check_project_access(request, pcba.project.id))):
+                return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+        # Create or get existing star (always personal)
+        starred, created = StarredPcba.objects.get_or_create(
+            user=user,
+            pcba=pcba
+        )
+
+        return Response({
+            'starred': True,
+            'pcba_id': pcba.id
+        }, status=status.HTTP_200_OK)
+    except Pcba.DoesNotExist:
+        return Response("PCBA not found", status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(f"Error: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(("DELETE",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def unstar_pcba(request, pk, **kwargs):
+    """Unstar a PCBA."""
+    user = request.user
+
+    try:
+        pcba = get_object_or_404(Pcba, id=pk)
+        starred = StarredPcba.objects.filter(user=user, pcba=pcba).first()
+
+        if starred:
+            starred.delete()
+            return Response({
+                'starred': False,
+                'pcba_id': pcba.id
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response("PCBA not starred", status=status.HTTP_404_NOT_FOUND)
+    except Pcba.DoesNotExist:
+        return Response("PCBA not found", status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(f"Error: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
 
 
 @swagger_auto_schema(

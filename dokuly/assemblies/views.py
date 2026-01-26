@@ -268,11 +268,9 @@ def get_latest_revisions(request, **kwargs):
         assemblies_query = assemblies_query.select_related("project", "part_type").prefetch_related("tags")
 
         # Get starred assemblies for the current user
-        starred_assembly_ids = set()
-        if hasattr(user, 'is_authenticated') and user.is_authenticated:
-            starred_assembly_ids = set(
-                StarredAssembly.objects.filter(user=user).values_list('assembly_id', flat=True)
-            )
+        starred_assembly_ids = set(
+            StarredAssembly.objects.filter(user=user).values_list('assembly_id', flat=True)
+        )
 
         serializer = AssemblyTableSerializer(assemblies_query, many=True, context={
             'request': request,
@@ -295,13 +293,9 @@ def star_assembly(request, pk, **kwargs):
 
         # Check if user has access to the assembly's project
         if assembly.project:
-            if not (
-                (
-                    assembly.project.project_members.filter(id=user.id).exists()
-                    or APIAndProjectAccess.has_validated_key(request)
-                )
-                and APIAndProjectAccess.check_project_access(request, assembly.project.id)
-            ):
+            if not (assembly.project.project_members.filter(id=user.id).exists() or
+                    (APIAndProjectAccess.has_validated_key(request) and
+                    APIAndProjectAccess.check_project_access(request, assembly.project.id))):
                 return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
 
         # Create or get existing star (always personal)

@@ -210,6 +210,7 @@ class PartSerializerNoAlternate(serializers.ModelSerializer):
 class PartTableSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     organization = serializers.SerializerMethodField()
+    is_starred = serializers.SerializerMethodField()
 
     class Meta:
         model = Part
@@ -236,6 +237,7 @@ class PartTableSerializer(serializers.ModelSerializer):
             "external_part_number",
             "tags",
             "organization",
+            "is_starred",
         ]
 
     def get_organization(self, obj):
@@ -255,6 +257,11 @@ class PartTableSerializer(serializers.ModelSerializer):
             except:
                 pass
         return None
+
+    def get_is_starred(self, obj):
+        """Check if the part is starred for the current user."""
+        starred_part_ids = self.context.get('starred_part_ids', set())
+        return obj.id in starred_part_ids
 
 
 class PartSerializerWithProject(serializers.ModelSerializer):
