@@ -21,6 +21,10 @@ from assembly_bom.utilityFuncitons import cloneBom
 from profiles.utilityFunctions import (
     notify_on_new_revision, notify_on_release_approval,
     notify_on_state_change_to_release)
+from traceability.utilities import (
+    log_revision_created_event,
+    log_field_changes,
+)
 
 from profiles.views import check_user_auth_and_app_permission
 from purchasing.priceUtilities import copy_price_to_new_revision
@@ -561,6 +565,15 @@ def new_revision(request, pk, **kwargs):
 
             notify_on_new_revision(newRevision, "assemblies", request.user)
 
+            # Log traceability event for revision creation
+            log_revision_created_event(
+                app_type="assemblies",
+                item_id=newRevision.id,
+                user=request.user,
+                revision=newRevision.formatted_revision or newRevision.revision,
+                details=f"Created new revision {newRevision.full_part_number}",
+            )
+
             # Handle data overwrite
             if "copyBom" in data:
                 if data["copyBom"] == 1:
@@ -685,50 +698,77 @@ def update_info(request, pk, **kwargs):
             "Can't edit a released asm!", status=status.HTTP_400_BAD_REQUEST
         )
 
+    changes = []
+
     if "display_name" in data:
+        if asm.display_name != data["display_name"]:
+            changes.append({"field": "display_name", "old": asm.display_name or "", "new": data["display_name"]})
         asm.display_name = data["display_name"]
-    # if "price" in data:
-    #    asm.price = data["price"]   # DEPRECATED
     if "model_url" in data:
+        if asm.model_url != data["model_url"]:
+            changes.append({"field": "model_url", "old": asm.model_url or "", "new": data["model_url"]})
         asm.model_url = data["model_url"]
     if "revision" in data:
+        if asm.revision != data["revision"]:
+            changes.append({"field": "revision", "old": asm.revision or "", "new": data["revision"]})
         asm.revision = data["revision"]
     if "description" in data:
+        if asm.description != data["description"]:
+            changes.append({"field": "description", "old": asm.description or "", "new": data["description"]})
         asm.description = data["description"]
     if "part_number" in data:
+        if asm.part_number != data["part_number"]:
+            changes.append({"field": "part_number", "old": str(asm.part_number) if asm.part_number is not None else "", "new": str(data["part_number"])})
         asm.part_number = data["part_number"]
     if "last_updated" in data:
         asm.last_updated = data["last_updated"]
 
     if "release_state" in data and data["release_state"] != asm.release_state:
+        old_state = asm.release_state
         asm.release_state = data["release_state"]
-        if not APIAndProjectAccess.has_validated_key(request):
+        changes.append({
+            "field": "release_state",
+            "old": old_state or "",
+            "new": data["release_state"],
+            "event_type": "released" if data["release_state"] == "Released" else "updated",
+        })
 
+        if not APIAndProjectAccess.has_validated_key(request):
             notify_on_state_change_to_release(user, asm, data["release_state"], "assemblies")
 
         if data["release_state"] == "Released":
             asm.released_date = datetime.now()
-
-            # Auto-push to Odoo if enabled (runs in background)
             auto_push_on_release_async(asm, 'assemblies', user, include_bom=True)
 
     if "is_approved_for_release" in data:
         if data["is_approved_for_release"] == False:
             asm.quality_assurance = None
-        # Ensures QA is only set once, not every time the form is updated.
         if data["is_approved_for_release"] == True and asm.quality_assurance == None:
+            approval_user = user
             if APIAndProjectAccess.has_validated_key(request):
                 if "quality_assurance" in data:
-                    user = User.objects.get(id=data["quality_assurance"])
+                    approval_user = User.objects.get(id=data["quality_assurance"])
                     asm.quality_assurance = Profile.objects.get(
-                        user__pk=user.id)
+                        user__pk=approval_user.id)
+                else:
+                    profile = Profile.objects.get(user=user)
+                    asm.quality_assurance = profile
             else:
                 profile = Profile.objects.get(user__pk=user.id)
                 asm.quality_assurance = profile
 
-                notify_on_release_approval(asm, user, "assemblies")
+            notify_on_release_approval(asm, approval_user, "assemblies")
+            changes.append({
+                "field": "approved_for_release",
+                "old": "false",
+                "new": "true",
+                "event_type": "approved",
+                "user": approval_user,
+            })
 
     if "external_part_number" in data:
+        if asm.external_part_number != data.get("external_part_number", ""):
+            changes.append({"field": "external_part_number", "old": asm.external_part_number or "", "new": data.get("external_part_number", "")})
         asm.external_part_number = data.get("external_part_number", "")
 
     if "part_type" in data:
@@ -737,9 +777,23 @@ def update_info(request, pk, **kwargs):
         )
         if part_type_error:
             return part_type_error
+        if asm.part_type_id != (part_type.id if part_type else None):
+            old_pt = asm.part_type
+            old_display = (old_pt.prefix or old_pt.name or str(asm.part_type_id)) if old_pt else ""
+            new_display = (part_type.prefix or part_type.name or str(part_type.id)) if part_type else ""
+            changes.append({"field": "part type", "old": old_display, "new": new_display})
         asm.part_type = part_type
 
     asm.save()
+
+    if changes:
+        log_field_changes(
+            app_type="assemblies",
+            item_id=asm.id,
+            user=user,
+            revision=asm.formatted_revision or asm.revision,
+            changes=changes,
+        )
 
     serializer = AssemblySerializer(asm, many=False)
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)

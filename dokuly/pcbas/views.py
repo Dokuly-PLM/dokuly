@@ -34,6 +34,10 @@ from projects.viewsIssues import link_issues_on_new_object_revision
 from profiles.utilityFunctions import (
     notify_on_new_revision, notify_on_release_approval,
     notify_on_state_change_to_release)
+from traceability.utilities import (
+    log_revision_created_event,
+    log_field_changes,
+)
 from projects.viewsTags import check_for_and_create_new_tags
 from parts.viewUtilities import copy_markdown_tabs_to_new_revision, resolve_part_type_for_module
 
@@ -485,6 +489,15 @@ def new_revision(request, pk, **kwargs):
 
     notify_on_new_revision(new_revision=new_pcba, app_name="pcbas", user=user)
 
+    # Log traceability event for revision creation
+    log_revision_created_event(
+        app_type="pcbas",
+        item_id=new_pcba.id,
+        user=user,
+        revision=new_pcba.formatted_revision or new_pcba.revision,
+        details=f"Created new revision {new_pcba.full_part_number}",
+    )
+
     data = {"id": new_pcba.id}
 
     return Response(data, status=status.HTTP_200_OK)
@@ -556,42 +569,66 @@ def edit_pcba(request, pk, **kwargs):
                 "Can't edit a released pcba!", status=status.HTTP_400_BAD_REQUEST
             )
 
+        changes = []
+
         if "display_name" in data:
+            if pcba.display_name != data["display_name"]:
+                changes.append({"field": "display_name", "old": pcba.display_name or "", "new": data["display_name"]})
             pcba.display_name = data["display_name"]
         if "description" in data:
+            if pcba.description != data["description"]:
+                changes.append({"field": "description", "old": pcba.description or "", "new": data["description"]})
             pcba.description = data["description"]
         if "release_state" in data and data["release_state"] != pcba.release_state:
+            old_state = pcba.release_state
             pcba.release_state = data["release_state"]
+            changes.append({
+                "field": "release_state",
+                "old": old_state or "",
+                "new": data["release_state"],
+                "event_type": "released" if data["release_state"] == "Released" else "updated",
+            })
 
             notify_on_state_change_to_release(user=user, item=pcba,
                                               new_state=data["release_state"], app_name="pcbas")
 
             if data["release_state"] == "Released":
                 pcba.released_date = datetime.now()
-
-                # Auto-push to Odoo if enabled (runs in background)
                 auto_push_on_release_async(pcba, 'pcbas', user)
 
         user = request.user
         if "is_approved_for_release" in data:
             if data["is_approved_for_release"] == False:
                 pcba.quality_assurance = None
-            # Ensures QA is only set once, not every time the form is updated.
             if (
                 data["is_approved_for_release"] == True
                 and pcba.quality_assurance == None
             ):
+                approval_user = user
                 if APIAndProjectAccess.has_validated_key(request):
                     if "user_qa_id" in data:
-                        user = User.objects.get(pk=data["user_qa_id"])
+                        approval_user = User.objects.get(pk=data["user_qa_id"])
+                        profile = Profile.objects.get(user=approval_user)
+                        pcba.quality_assurance = profile
+                    else:
                         profile = Profile.objects.get(user=user)
                         pcba.quality_assurance = profile
                 else:
                     profile = Profile.objects.get(user__pk=user.id)
                     pcba.quality_assurance = profile
-                    notify_on_release_approval(item=pcba, user=user, app_name="pcbas")
+
+                notify_on_release_approval(item=pcba, user=approval_user, app_name="pcbas")
+                changes.append({
+                    "field": "approved_for_release",
+                    "old": "false",
+                    "new": "true",
+                    "event_type": "approved",
+                    "user": approval_user,
+                })
 
         if "revision_notes" in data:
+            if pcba.revision_notes != data["revision_notes"]:
+                changes.append({"field": "revision_notes", "old": pcba.revision_notes or "", "new": data["revision_notes"]})
             pcba.revision_notes = data["revision_notes"]
 
         if "project" in data:
@@ -600,11 +637,17 @@ def edit_pcba(request, pk, **kwargs):
                     return Response(f"Not Authorized for project {data['project']}", status=status.HTTP_401_UNAUTHORIZED)
 
             project = Project.objects.get(pk=data["project"])
+            if pcba.project_id != project.id:
+                changes.append({"field": "project", "old": str(pcba.project_id or ""), "new": str(project.id)})
             pcba.project = project
         if "attributes" in data:
+            if pcba.attributes != data["attributes"]:
+                changes.append({"field": "attributes", "old": str(pcba.attributes or ""), "new": str(data["attributes"])})
             pcba.attributes = data["attributes"]
 
         if "external_part_number" in data:
+            if pcba.external_part_number != data.get("external_part_number", ""):
+                changes.append({"field": "external_part_number", "old": pcba.external_part_number or "", "new": data.get("external_part_number", "")})
             pcba.external_part_number = data.get("external_part_number", "")
 
         if "part_type" in data:
@@ -613,6 +656,11 @@ def edit_pcba(request, pk, **kwargs):
             )
             if part_type_error:
                 return part_type_error
+            if pcba.part_type_id != (part_type.id if part_type else None):
+                old_pt = pcba.part_type
+                old_display = (old_pt.prefix or old_pt.name or str(pcba.part_type_id)) if old_pt else ""
+                new_display = (part_type.prefix or part_type.name or str(part_type.id)) if part_type else ""
+                changes.append({"field": "part type", "old": old_display, "new": new_display})
             pcba.part_type = part_type
 
         if "tags" in data:
@@ -622,6 +670,15 @@ def edit_pcba(request, pk, **kwargs):
             pcba.tags.set(tag_ids)
 
         pcba.save()
+
+        if changes:
+            log_field_changes(
+                app_type="pcbas",
+                item_id=pcba.id,
+                user=user,
+                revision=pcba.formatted_revision or pcba.revision,
+                changes=changes,
+            )
 
         return Response(status=status.HTTP_200_OK)
     except Exception as e:

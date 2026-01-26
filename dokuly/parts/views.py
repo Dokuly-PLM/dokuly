@@ -53,6 +53,10 @@ from projects.viewsIssues import link_issues_on_new_object_revision
 from profiles.utilityFunctions import (
     notify_on_new_revision, notify_on_release_approval,
     notify_on_state_change_to_release)
+from traceability.utilities import (
+    log_revision_created_event,
+    log_field_changes,
+)
 
 from projects.viewsTags import check_for_and_create_new_tags
 from parts.viewUtilities import (
@@ -1275,8 +1279,18 @@ def edit_part(request, pk, **kwargs):
                 "Can't edit a released part!", status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Collect traceability changes (field_name, old, new) for generic logging
+        changes = []
+
         if "release_state" in data and data["release_state"] != part.release_state:
+            old_state = part.release_state
             part.release_state = data["release_state"]
+            changes.append({
+                "field": "release_state",
+                "old": old_state or "",
+                "new": data["release_state"],
+                "event_type": "released" if data["release_state"] == "Released" else "updated",
+            })
 
             notify_on_state_change_to_release(
                 user=user,
@@ -1300,57 +1314,94 @@ def edit_part(request, pk, **kwargs):
                 data["is_approved_for_release"] == True
                 and part.quality_assurance == None
             ):
+                approval_user = user
                 if APIAndProjectAccess.has_validated_key(request):
                     if "created_by" in data:
-                        profile = Profile.objects.get(
-                            user__id=data["created_by"])
+                        approval_user = User.objects.get(id=data["created_by"])
+                        profile = Profile.objects.get(user=approval_user)
+                        part.quality_assurance = profile
+                    else:
+                        profile = Profile.objects.get(user=user)
                         part.quality_assurance = profile
                 else:
                     profile = Profile.objects.get(user__pk=user.id)
                     part.quality_assurance = profile
 
-                notify_on_release_approval(item=part, user=user, app_name="parts")
+                notify_on_release_approval(item=part, user=approval_user, app_name="parts")
+                changes.append({
+                    "field": "approved_for_release",
+                    "old": "false",
+                    "new": "true",
+                    "event_type": "approved",
+                    "user": approval_user,
+                })
 
         if "description" in data:
+            if part.description != data["description"]:
+                changes.append({"field": "description", "old": part.description or "", "new": data["description"]})
             part.description = data["description"]
 
         if "datasheet" in data:
+            if part.datasheet != data["datasheet"]:
+                changes.append({"field": "datasheet", "old": part.datasheet or "", "new": data["datasheet"]})
             part.datasheet = data["datasheet"]
-            # If datasheet has a value, download it and attach as file
             if part.datasheet and part.datasheet.strip():
                 download_datasheet_and_attach(part, part.datasheet, user)
 
         if "display_name" in data:
+            if part.display_name != data["display_name"]:
+                changes.append({"field": "display_name", "old": part.display_name or "", "new": data["display_name"]})
             part.display_name = data["display_name"]
 
         if "git_link" in data:
+            if part.git_link != data["git_link"]:
+                changes.append({"field": "git_link", "old": part.git_link or "", "new": data["git_link"]})
             part.git_link = data["git_link"]
 
         if "image_url" in data:
+            if part.image_url != data["image_url"]:
+                changes.append({"field": "image_url", "old": part.image_url or "", "new": data["image_url"]})
             part.image_url = data["image_url"]
-            # If image_url has a value, download it to create thumbnail
             if part.image_url and part.image_url.strip():
                 download_image_and_create_thumbnail(part, part.image_url, user)
 
         if "internal" in data:
+            if part.internal != data["internal"]:
+                changes.append({"field": "internal", "old": str(part.internal) if part.internal is not None else "", "new": str(data["internal"])})
             part.internal = data["internal"]
 
         if "manufacturer" in data:
+            if part.manufacturer != data["manufacturer"]:
+                changes.append({"field": "manufacturer", "old": part.manufacturer or "", "new": data["manufacturer"]})
             part.manufacturer = data["manufacturer"]
 
         if "mpn" in data:
+            if part.mpn != data["mpn"]:
+                changes.append({"field": "mpn", "old": part.mpn or "", "new": data["mpn"]})
             part.mpn = data["mpn"]
 
         if "part_type" in data:
+            if part.part_type_id != data["part_type"]:
+                old_pt = part.part_type
+                new_pt = PartType.objects.filter(pk=data["part_type"]).first() if data["part_type"] else None
+                old_display = (old_pt.prefix or old_pt.name or str(old_pt.id)) if old_pt else ""
+                new_display = (new_pt.prefix or new_pt.name or str(data["part_type"])) if new_pt else ""
+                changes.append({"field": "part type", "old": old_display, "new": new_display})
             part.part_type_id = data["part_type"]
 
         if "unit" in data:
+            if part.unit != data["unit"]:
+                changes.append({"field": "unit", "old": part.unit or "", "new": data["unit"]})
             part.unit = data["unit"]
 
         if "price" in data:
+            if part.price != data["price"]:
+                changes.append({"field": "price", "old": str(part.price) if part.price is not None else "", "new": str(data["price"])})
             part.price = data["price"]
 
         if "currency" in data:
+            if part.currency != data["currency"]:
+                changes.append({"field": "currency", "old": part.currency or "", "new": data["currency"]})
             part.currency = data["currency"]
 
         if "is_rohs_compliant" in data:
@@ -1401,6 +1452,16 @@ def edit_part(request, pk, **kwargs):
             part.external_part_number = data.get("external_part_number", "")
 
         part.save()
+
+        if changes:
+            log_field_changes(
+                app_type="parts",
+                item_id=part.id,
+                user=user,
+                revision=part.formatted_revision or part.revision,
+                changes=changes,
+            )
+
         serializer = PartSerializer(part, many=False)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -1620,6 +1681,15 @@ def new_revision(request, pk, **kwargs):
     link_issues_on_new_object_revision('parts', old_part_rev, new_part_rev)
 
     notify_on_new_revision(new_revision=new_part_rev, app_name="parts", user=request.user)
+
+    # Log traceability event for revision creation
+    log_revision_created_event(
+        app_type="parts",
+        item_id=new_part_rev.id,
+        user=request.user,
+        revision=new_part_rev.formatted_revision or new_part_rev.revision,
+        details=f"Created new revision {new_part_rev.full_part_number}",
+    )
 
     serializer = PartSerializer(new_part_rev)
     return Response(serializer.data, status=status.HTTP_200_OK)

@@ -115,6 +115,10 @@ function DokulyTableContents({
   searchTerm: controlledSearchTerm,
   onSearchTermChange,
   highlightedRowId = null,
+  serverSidePagination = false,
+  totalItemCount = 0,
+  onPageChange: onPageChangeProp = null,
+  currentPage: controlledCurrentPage = null,
 }) {
 
   const [tableSettings, updateTableSetting] = useTableSettings(tableName);
@@ -378,7 +382,11 @@ function DokulyTableContents({
   });
 
   const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
+    if (serverSidePagination && onPageChangeProp) {
+      onPageChangeProp(pageNumber);
+    } else {
+      setCurrentPage(pageNumber);
+    }
   };
 
   const handleHeaderClick = (column) => {
@@ -540,22 +548,34 @@ function DokulyTableContents({
   const filteredData = filterData(tableData);
   const sortedData = sortData(filteredData, sortedColumn, sortOrder);
   const visibleData = getVisibleData(sortedData);
-  const totalFilteredItems = visibleData.length;
+  const effectiveCurrentPage =
+    serverSidePagination && controlledCurrentPage != null
+      ? controlledCurrentPage
+      : currentPage;
+  const totalFilteredItems = serverSidePagination
+    ? totalItemCount
+    : visibleData.length;
   const totalPages = Math.ceil(totalFilteredItems / itemsPerPage);
-  
-  // Reset to page 1 if current page is beyond available pages after filtering
+
+  // Reset to page 1 if current page is beyond available pages after filtering (client-side only)
   useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
+    if (
+      !serverSidePagination &&
+      currentPage > totalPages &&
+      totalPages > 0
+    ) {
       setCurrentPage(1);
     }
-  }, [totalPages, currentPage]);
-  
-  const paginatedData = visibleData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  }, [totalPages, currentPage, serverSidePagination]);
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedData = serverSidePagination
+    ? visibleData
+    : visibleData.slice(
+        (effectiveCurrentPage - 1) * itemsPerPage,
+        effectiveCurrentPage * itemsPerPage
+      );
+
+  const startIndex = (effectiveCurrentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
 
   const handleRowKeyDown = (e, row_id) => {
@@ -933,11 +953,11 @@ function DokulyTableContents({
                 alt="Previous Page"
                 style={{
                   cursor: "pointer",
-                  opacity: currentPage > 1 ? 1 : 0,
+                  opacity: effectiveCurrentPage > 1 ? 1 : 0,
                 }}
                 onClick={() => {
-                  if (currentPage > 1) {
-                    handlePageChange(currentPage - 1);
+                  if (effectiveCurrentPage > 1) {
+                    handlePageChange(effectiveCurrentPage - 1);
                   }
                 }}
                 // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
@@ -950,7 +970,7 @@ function DokulyTableContents({
               (!isMarkdownTable && (
                 <div className="d-flex align-items-center">
                   <span style={{ fontSize: textSize }}>
-                    {totalPages > 0 ? currentPage : 0} of {totalPages}
+                    {totalPages > 0 ? effectiveCurrentPage : 0} of {totalPages}
                   </span>
                 </div>
               ))}
@@ -962,11 +982,11 @@ function DokulyTableContents({
                 alt="Next Page"
                 style={{
                   cursor: "pointer",
-                  opacity: currentPage < totalPages ? 1 : 0,
+                  opacity: effectiveCurrentPage < totalPages ? 1 : 0,
                 }}
                 onClick={() => {
-                  if (currentPage < totalPages) {
-                    handlePageChange(currentPage + 1);
+                  if (effectiveCurrentPage < totalPages) {
+                    handlePageChange(effectiveCurrentPage + 1);
                   }
                 }}
                 // biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
