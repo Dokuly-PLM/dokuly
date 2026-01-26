@@ -62,7 +62,7 @@ class AssemblyTableSerializer(serializers.ModelSerializer):
         )
 
     def get_is_starred(self, obj):
-        """Check if the assembly is starred for the current user."""
+        """Check if the assembly is starred for the current user"""
         starred_assembly_ids = self.context.get('starred_assembly_ids', set())
         return obj.id in starred_assembly_ids
 
