@@ -504,7 +504,7 @@ const OdooSettings = ({
               <div className="d-flex align-items-center gap-2">
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-success"
+                  className="btn btn-sm btn-outline-success mr-2"
                   onClick={handleTestConnection}
                   disabled={loading || testingConnection || !odooEnabled || !odooUrl || !odooDatabase || !odooUsername || !odooApiKey}
                 >
