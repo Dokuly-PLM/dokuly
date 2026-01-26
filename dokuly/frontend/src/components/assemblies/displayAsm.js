@@ -17,6 +17,7 @@ import AsmEditForm from "./forms/asmEditForm";
 import RevisionNotes from "../dokuly_components/revisionNotes/revisionNotes";
 import RevisionsTable from "../dokuly_components/revisionsTable/revisionsTable";
 import Errata from "../common/errata/errata";
+import TraceabilityTable from "../dokuly_components/traceabilityTable/traceabilityTable";
 import PriceCard from "../common/priceCard/priceCard";
 import NoPermission from "../dokuly_components/noPermission";
 import { updateAsmField } from "./functions/utilities";
@@ -477,6 +478,23 @@ const DisplayASM = (props) => {
         <div className="row m-3">
           <RevisionsTable app={"assemblies"} item={asmDetailed} />
         </div>
+      ),
+    },
+    {
+      eventKey: "traceability",
+      title: "Traceability",
+      content: (
+        <>
+          {asmDetailed == null || asmDetailed === undefined ? (
+            <div className="d-flex m-5 justify-content-center">
+              <div className="spinner-border" role="status" />
+            </div>
+          ) : (
+            <div className="row m-3">
+              <TraceabilityTable app={"assemblies"} item={asmDetailed} />
+            </div>
+          )}
+        </>
       ),
     },
     {
