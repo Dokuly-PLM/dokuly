@@ -38,7 +38,6 @@ class AssemblySerializer(serializers.ModelSerializer):
 class AssemblyTableSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     part_type = PartTypeIconSerializer()
-    organization = serializers.SerializerMethodField()
     is_starred = serializers.SerializerMethodField()
 
     class Meta:
@@ -58,33 +57,16 @@ class AssemblyTableSerializer(serializers.ModelSerializer):
             "project",
             "tags",
             "part_type",
-            "organization",
             "external_part_number",
             "is_starred"
         )
-
-    def get_organization(self, obj):
-        """Get organization revision settings for the current user."""
-        request = self.context.get('request')
-        if request and hasattr(request, 'user') and request.user.is_authenticated:
-            try:
-                from profiles.models import Profile
-                profile = Profile.objects.get(user=request.user)
-                if profile.organization_id:
-                    from organizations.models import Organization
-                    org = Organization.objects.get(id=profile.organization_id)
-                    return {
-                        'use_number_revisions': org.use_number_revisions,
-                        'revision_format': org.revision_format,
-                    }
-            except:
-                pass
-        return None
 
     def get_is_starred(self, obj):
         """Check if the assembly is starred for the current user."""
         starred_assembly_ids = self.context.get('starred_assembly_ids', set())
         return obj.id in starred_assembly_ids
+
+
 class AssemblyReleaseStateManagementSerializer(serializers.ModelSerializer):
 
     class Meta:
