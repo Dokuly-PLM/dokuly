@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { updateUserProfile, alterAllowedApps, adminResetUserPassword } from "../../functions/queries";
+import { updateUserProfile, alterAllowedApps, adminResetUserPassword, adminResetUser2FA } from "../../functions/queries";
 import { toast } from "react-toastify";
 import SubmitButton from "../../../dokuly_components/submitButton";
 
@@ -115,6 +115,10 @@ const EditUserProfile = (props) => {
     return false;
   };
 
+  const isOwner = () => {
+    return props?.loggedUser?.role === "Owner";
+  };
+
   useEffect(() => {
     // Calculate subscription and user counts
     const newSubscriptionCounts = {};
@@ -221,6 +225,26 @@ const EditUserProfile = (props) => {
           toast.error("Failed to reset password");
         }
       });
+  };
+
+  const handleReset2FA = () => {
+    if (window.confirm("Are you sure you want to reset 2FA for this user? They will need to set up 2FA again on their next login.")) {
+      adminResetUser2FA(user.user)
+        .then((res) => {
+          if (res.status === 200) {
+            toast.success("2FA reset successfully");
+          }
+        })
+        .catch((err) => {
+          if (err?.response?.status === 403) {
+            toast.error("Only Owner can reset 2FA");
+          } else if (err?.response?.status === 404) {
+            toast.error("User not found");
+          } else {
+            toast.error("Failed to reset 2FA");
+          }
+        });
+    }
   };
 
   return (
@@ -365,6 +389,8 @@ const EditUserProfile = (props) => {
                     type="button"
                     className="btn btn-sm dokuly-btn-primary"
                     onClick={() => setShowPasswordReset(!showPasswordReset)}
+                    disabled={!isOwner()}
+                    title={!isOwner() ? "Only owner can reset passwords" : ""}
                   >
                     {showPasswordReset ? "Cancel" : "Reset Password"}
                   </button>
@@ -410,6 +436,21 @@ const EditUserProfile = (props) => {
                     </SubmitButton>
                   </div>
                 )}
+              </div>
+
+              <div className="form-group mt-3">
+                <div className="d-flex align-items-center justify-content-between">
+                  <label className="mb-0">Reset 2FA</label>
+                  <button
+                    type="button"
+                    className="btn btn-sm dokuly-btn-primary"
+                    onClick={handleReset2FA}
+                    disabled={!isOwner()}
+                    title={!isOwner() ? "Only owner can reset 2FA" : ""}
+                  >
+                    Reset 2FA
+                  </button>
+                </div>
               </div>
             </div>
             <div className="modal-footer float-left">

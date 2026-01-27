@@ -45,11 +45,6 @@ const InformationList = (props) => {
   };
 
   const submit = () => {
-    if (prevEnforce2FA && orgData?.enforce_2fa && !enforce2FA) {
-      setConfirm2FA(true);
-      setRefresh(true);
-      return;
-    }
     if (name === "" || name.length < 1) {
       toast.error("Enter a name");
       return;
