@@ -107,6 +107,7 @@ const PartNumberEditor = ({
 
       // Item doesn't exist, proceed with normal flow
       const data = { [idField]: selected_item.id };
+      setSelectedItem(null); // Clear immediately so refetch/re-render doesn't re-trigger this effect
 
       editBomItem(row.id, data)
         .then((response) => {
