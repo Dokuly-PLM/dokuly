@@ -2,6 +2,15 @@
 API v1 file upload and download views for Parts, Assemblies, and PCBAs.
 These views are specifically designed for external API access with API key authentication.
 """
+from organizations.permissions import APIAndProjectAccess
+from django.db import transaction
+import uuid
+from pcbas.models import Pcba
+from assemblies.models import Assembly
+from parts.models import Part
+from files.serializers import ImageSerializer
+from files.views import check_file_sizes_vs_limit, get_organization_by_user_id, get_organization_by_id, update_org_current_storage_size, compress_image
+from files.models import File, Image
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from rest_framework.decorators import api_view, renderer_classes, permission_classes
 from rest_framework.renderers import JSONRenderer, BaseRenderer
@@ -19,7 +28,7 @@ class BinaryFileRenderer(BaseRenderer):
     """Renderer for binary file responses (ZIP files, etc.)"""
     media_type = 'application/zip'
     format = 'zip'
-    
+
     def render(self, data, media_type=None, renderer_context=None):
         # If data is already bytes (HttpResponse content), return it
         if isinstance(data, bytes):
@@ -28,16 +37,6 @@ class BinaryFileRenderer(BaseRenderer):
         if isinstance(data, HttpResponse):
             return data.content
         return data
-
-from organizations.permissions import APIAndProjectAccess
-from files.models import File, Image
-from files.views import check_file_sizes_vs_limit, get_organization_by_user_id, get_organization_by_id, update_org_current_storage_size, compress_image
-from files.serializers import ImageSerializer
-from parts.models import Part
-from assemblies.models import Assembly
-from pcbas.models import Pcba
-import uuid
-from django.db import transaction
 
 
 def str_to_bool(value):
@@ -107,7 +106,7 @@ def str_to_bool(value):
 def upload_file_to_part(request, part_id, **kwargs):
     """
     Upload a file to a part.
-    
+
     Request must be multipart/form-data with:
     - file: The file to upload (required)
     - display_name: Name for the file (required, max 250 chars)
@@ -153,10 +152,10 @@ def upload_file_to_part(request, part_id, **kwargs):
 
     try:
         part = Part.objects.get(pk=part_id)
-        
+
         # Check project access for API key requests
         if APIAndProjectAccess.has_validated_key(request):
-            if not APIAndProjectAccess.check_project_access(request, part.project.pk):
+            if part.project is not None and not APIAndProjectAccess.check_project_access(request, part.project.pk):
                 return Response(
                     {"error": "Not authorized - no access to this project"},
                     status=status.HTTP_401_UNAUTHORIZED
@@ -250,10 +249,10 @@ def download_files_from_part(request, part_id, **kwargs):
     """
     try:
         part = Part.objects.get(pk=part_id)
-        
+
         # Check project access for API key requests
         if APIAndProjectAccess.has_validated_key(request):
-            if not APIAndProjectAccess.check_project_access(request, part.project.pk):
+            if part.project is not None and not APIAndProjectAccess.check_project_access(request, part.project.pk):
                 return Response(
                     {"error": "Not authorized - no access to this project"},
                     status=status.HTTP_401_UNAUTHORIZED
@@ -261,7 +260,7 @@ def download_files_from_part(request, part_id, **kwargs):
 
         # Get all files for this part
         files = part.files.filter(file__isnull=False).exclude(file='')
-        
+
         if not files.exists():
             return Response(
                 {"error": "No files found for this part"},
@@ -278,7 +277,7 @@ def download_files_from_part(request, part_id, **kwargs):
                         file_obj.file.open('rb')
                         file_content = file_obj.file.read()
                         file_obj.file.close()
-                        
+
                         # Get filename - prefer display_name but ensure it has extension
                         if file_obj.display_name:
                             # Check if display_name already has an extension
@@ -291,7 +290,7 @@ def download_files_from_part(request, part_id, **kwargs):
                         else:
                             # No display_name, use the actual file name
                             filename = os.path.basename(file_obj.file.name)
-                        
+
                         # Ensure unique filenames in ZIP
                         zip_path = filename
                         counter = 1
@@ -299,9 +298,9 @@ def download_files_from_part(request, part_id, **kwargs):
                             name, ext = os.path.splitext(filename)
                             zip_path = f"{name}_{counter}{ext}"
                             counter += 1
-                        
+
                         zip_file.writestr(zip_path, file_content)
-                        
+
                         # Increment download count
                         file_obj.download_count += 1
                         file_obj.save()
@@ -312,7 +311,7 @@ def download_files_from_part(request, part_id, **kwargs):
         zip_buffer.seek(0)
         zip_data = zip_buffer.getvalue()
         zip_buffer.close()
-        
+
         # Return bytes directly - BinaryFileRenderer will handle it
         response = Response(
             zip_data,
@@ -322,7 +321,7 @@ def download_files_from_part(request, part_id, **kwargs):
         response['Content-Disposition'] = f'attachment; filename="part_{part_id}_files.zip"'
         response['Content-Length'] = str(len(zip_data))
         return response
-        
+
     except Part.DoesNotExist:
         return Response(
             {"error": "Part not found"},
@@ -393,7 +392,7 @@ def download_files_from_part(request, part_id, **kwargs):
 def upload_file_to_assembly(request, assembly_id, **kwargs):
     """
     Upload a file to an assembly.
-    
+
     Request must be multipart/form-data with:
     - file: The file to upload (required)
     - display_name: Name for the file (required, max 250 chars)
@@ -439,7 +438,7 @@ def upload_file_to_assembly(request, assembly_id, **kwargs):
 
     try:
         assembly = Assembly.objects.get(pk=assembly_id)
-        
+
         # Check project access for API key requests
         if APIAndProjectAccess.has_validated_key(request):
             if not APIAndProjectAccess.check_project_access(request, assembly.project.pk):
@@ -536,7 +535,7 @@ def download_files_from_assembly(request, assembly_id, **kwargs):
     """
     try:
         assembly = Assembly.objects.get(pk=assembly_id)
-        
+
         # Check project access for API key requests
         if APIAndProjectAccess.has_validated_key(request):
             if not APIAndProjectAccess.check_project_access(request, assembly.project.pk):
@@ -547,7 +546,7 @@ def download_files_from_assembly(request, assembly_id, **kwargs):
 
         # Get all files for this assembly
         files = assembly.files.filter(file__isnull=False).exclude(file='')
-        
+
         if not files.exists():
             return Response(
                 {"error": "No files found for this assembly"},
@@ -564,7 +563,7 @@ def download_files_from_assembly(request, assembly_id, **kwargs):
                         file_obj.file.open('rb')
                         file_content = file_obj.file.read()
                         file_obj.file.close()
-                        
+
                         # Get filename - prefer display_name but ensure it has extension
                         if file_obj.display_name:
                             # Check if display_name already has an extension
@@ -577,7 +576,7 @@ def download_files_from_assembly(request, assembly_id, **kwargs):
                         else:
                             # No display_name, use the actual file name
                             filename = os.path.basename(file_obj.file.name)
-                        
+
                         # Ensure unique filenames in ZIP
                         zip_path = filename
                         counter = 1
@@ -585,9 +584,9 @@ def download_files_from_assembly(request, assembly_id, **kwargs):
                             name, ext = os.path.splitext(filename)
                             zip_path = f"{name}_{counter}{ext}"
                             counter += 1
-                        
+
                         zip_file.writestr(zip_path, file_content)
-                        
+
                         # Increment download count
                         file_obj.download_count += 1
                         file_obj.save()
@@ -598,7 +597,7 @@ def download_files_from_assembly(request, assembly_id, **kwargs):
         zip_buffer.seek(0)
         zip_data = zip_buffer.getvalue()
         zip_buffer.close()
-        
+
         # Return bytes directly - BinaryFileRenderer will handle it
         response = Response(
             zip_data,
@@ -608,7 +607,7 @@ def download_files_from_assembly(request, assembly_id, **kwargs):
         response['Content-Disposition'] = f'attachment; filename="assembly_{assembly_id}_files.zip"'
         response['Content-Length'] = str(len(zip_data))
         return response
-        
+
     except Assembly.DoesNotExist:
         return Response(
             {"error": "Assembly not found"},
@@ -663,7 +662,7 @@ def download_files_from_pcba(request, pcba_id, **kwargs):
     """
     try:
         pcba = Pcba.objects.get(pk=pcba_id)
-        
+
         # Check project access for API key requests
         if APIAndProjectAccess.has_validated_key(request):
             if not APIAndProjectAccess.check_project_access(request, pcba.project.pk):
@@ -674,7 +673,7 @@ def download_files_from_pcba(request, pcba_id, **kwargs):
 
         # Get all files for this PCBA (generic_files)
         files = pcba.generic_files.filter(file__isnull=False).exclude(file='')
-        
+
         if not files.exists():
             return Response(
                 {"error": "No files found for this PCBA"},
@@ -691,7 +690,7 @@ def download_files_from_pcba(request, pcba_id, **kwargs):
                         file_obj.file.open('rb')
                         file_content = file_obj.file.read()
                         file_obj.file.close()
-                        
+
                         # Get filename - prefer display_name but ensure it has extension
                         if file_obj.display_name:
                             # Check if display_name already has an extension
@@ -704,7 +703,7 @@ def download_files_from_pcba(request, pcba_id, **kwargs):
                         else:
                             # No display_name, use the actual file name
                             filename = os.path.basename(file_obj.file.name)
-                        
+
                         # Ensure unique filenames in ZIP
                         zip_path = filename
                         counter = 1
@@ -712,9 +711,9 @@ def download_files_from_pcba(request, pcba_id, **kwargs):
                             name, ext = os.path.splitext(filename)
                             zip_path = f"{name}_{counter}{ext}"
                             counter += 1
-                        
+
                         zip_file.writestr(zip_path, file_content)
-                        
+
                         # Increment download count
                         file_obj.download_count += 1
                         file_obj.save()
@@ -725,7 +724,7 @@ def download_files_from_pcba(request, pcba_id, **kwargs):
         zip_buffer.seek(0)
         zip_data = zip_buffer.getvalue()
         zip_buffer.close()
-        
+
         # Return bytes directly - BinaryFileRenderer will handle it
         response = Response(
             zip_data,
@@ -735,7 +734,7 @@ def download_files_from_pcba(request, pcba_id, **kwargs):
         response['Content-Disposition'] = f'attachment; filename="pcba_{pcba_id}_files.zip"'
         response['Content-Length'] = str(len(zip_data))
         return response
-        
+
     except Pcba.DoesNotExist:
         return Response(
             {"error": "PCBA not found"},
@@ -796,7 +795,7 @@ def download_files_from_pcba(request, pcba_id, **kwargs):
 def upload_image_to_part(request, part_id, **kwargs):
     """
     Upload an image to a part.
-    
+
     Request must be multipart/form-data with:
     - file: The image file to upload (required)
     - display_name: Name for the image (optional)
@@ -834,15 +833,14 @@ def upload_image_to_part(request, part_id, **kwargs):
 
     try:
         part = Part.objects.get(pk=part_id)
-        
+
         # Check project access for API key requests (only if project exists)
         if APIAndProjectAccess.has_validated_key(request):
-            if part.project is not None:
-                if not APIAndProjectAccess.check_project_access(request, part.project.pk):
-                    return Response(
-                        {"error": "Not authorized - no access to this project"},
-                        status=status.HTTP_401_UNAUTHORIZED
-                    )
+            if part.project is not None and not APIAndProjectAccess.check_project_access(request, part.project.pk):
+                return Response(
+                    {"error": "Not authorized - no access to this project"},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
 
         if part.release_state == "Released":
             return Response(
@@ -927,7 +925,7 @@ def upload_image_to_part(request, part_id, **kwargs):
 def upload_image_to_assembly(request, assembly_id, **kwargs):
     """
     Upload an image to an assembly.
-    
+
     Request must be multipart/form-data with:
     - file: The image file to upload (required)
     - display_name: Name for the image (optional)
@@ -965,7 +963,7 @@ def upload_image_to_assembly(request, assembly_id, **kwargs):
 
     try:
         assembly = Assembly.objects.get(pk=assembly_id)
-        
+
         # Check project access for API key requests (only if project exists)
         if APIAndProjectAccess.has_validated_key(request):
             if assembly.project is not None:
@@ -1058,7 +1056,7 @@ def upload_image_to_assembly(request, assembly_id, **kwargs):
 def upload_image_to_pcba(request, pcba_id, **kwargs):
     """
     Upload an image to a PCBA.
-    
+
     Request must be multipart/form-data with:
     - file: The image file to upload (required)
     - display_name: Name for the image (optional)
@@ -1096,7 +1094,7 @@ def upload_image_to_pcba(request, pcba_id, **kwargs):
 
     try:
         pcba = Pcba.objects.get(pk=pcba_id)
-        
+
         # Check project access for API key requests (only if project exists)
         if APIAndProjectAccess.has_validated_key(request):
             if pcba.project is not None:
