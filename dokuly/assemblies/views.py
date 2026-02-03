@@ -268,9 +268,13 @@ def get_latest_revisions(request, **kwargs):
         assemblies_query = assemblies_query.select_related("project", "part_type").prefetch_related("tags")
 
         # Get starred assemblies for the current user
-        starred_assembly_ids = set(
-            StarredAssembly.objects.filter(user=user).values_list('assembly_id', flat=True)
-        )
+
+        starred_assembly_ids = set()
+        if request.user.is_authenticated:
+            starred_assembly_ids = set(
+                StarredAssembly.objects.filter(user=request.user)
+                .values_list("assembly_id", flat=True)
+            )
 
         serializer = AssemblyTableSerializer(assemblies_query, many=True, context={
             'request': request,

@@ -254,9 +254,12 @@ def get_latest_revisions(request, **kwargs):
                            | Q(project__isnull=True))
 
     # Get starred PCBAs for the current user
-    starred_pcba_ids = set(
-        StarredPcba.objects.filter(user=user).values_list('pcba_id', flat=True)
-    )
+    starred_pcba_ids = set()
+    if request.user.is_authenticated:
+        starred_pcba_ids = set(
+            StarredPcba.objects.filter(user=request.user)
+            .values_list("pcba_id", flat=True)
+        )
 
     serializer = PcbaTableSerializer(pcba, many=True, context={
         'request': request,
