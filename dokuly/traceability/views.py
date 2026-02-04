@@ -19,9 +19,27 @@ def get_traceability_events(request, app_type, item_id):
     Query params: page (default 1), page_size (default 50).
     Returns: { "results": [...], "count": total_count }.
     """
-    page = max(1, int(request.query_params.get("page", 1)))
-    page_size = min(100, max(1, int(request.query_params.get("page_size", 50))))
+    page_param = request.query_params.get("page", "1")
+    page_size_param = request.query_params.get("page_size", "50")
 
+    try:
+        page = int(page_param)
+    except (TypeError, ValueError):
+        return Response(
+            {"detail": "Invalid 'page' query parameter. It must be an integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        page_size = int(page_size_param)
+    except (TypeError, ValueError):
+        return Response(
+            {"detail": "Invalid 'page_size' query parameter. It must be an integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    page = max(1, page)
+    page_size = min(100, max(1, page_size))
     qs = TraceabilityEvent.objects.filter(
         app_type=app_type, item_id=item_id
     ).select_related("user", "profile").order_by("-timestamp")
