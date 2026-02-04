@@ -21,6 +21,7 @@ import PartInformationCard from "../dokuly_components/partInfoCard";
 import PcbaBom from "./tabs/pcbaBom";
 import RevisionsTable from "../dokuly_components/revisionsTable/revisionsTable";
 import PriceCard from "../common/priceCard/priceCard";
+import TraceabilityTable from "../dokuly_components/traceabilityTable/traceabilityTable";
 import NoPermission from "../dokuly_components/noPermission";
 import MarkDownNotes from "../common/markDownNotes/markDownNotes";
 import { updatePcbaField } from "./functions/utilities";
@@ -384,6 +385,23 @@ const DisplayPcba = (props) => {
               setRevisionListParent={setRevisionList}
             />
           </div>
+        </>
+      ),
+    },
+    {
+      eventKey: "traceability",
+      title: "Traceability",
+      content: (
+        <>
+          {pcba == null || pcba === undefined ? (
+            <div className="d-flex m-5 justify-content-center">
+              <div className="spinner-border" role="status" />
+            </div>
+          ) : (
+            <div className="row m-3">
+              <TraceabilityTable app={"pcbas"} item={pcba} />
+            </div>
+          )}
         </>
       ),
     },

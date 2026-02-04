@@ -44,6 +44,7 @@ urlpatterns = [
     path("", include("organizations.urls")),
     path("", include("tenants.urls")),
     path("", include("eco.urls")),
+    path("", include("traceability.urls")),
 
     # Dokuly API
     path("", include("API.v1.urls_assemblies")),

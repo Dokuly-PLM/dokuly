@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     "requirements",
     "assembly_bom",
     "eco",
+    "traceability",
     "django_expiring_token",
 ]
 

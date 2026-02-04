@@ -17,6 +17,7 @@ import AsmEditForm from "./forms/asmEditForm";
 import RevisionNotes from "../dokuly_components/revisionNotes/revisionNotes";
 import RevisionsTable from "../dokuly_components/revisionsTable/revisionsTable";
 import Errata from "../common/errata/errata";
+import TraceabilityTable from "../dokuly_components/traceabilityTable/traceabilityTable";
 import PriceCard from "../common/priceCard/priceCard";
 import NoPermission from "../dokuly_components/noPermission";
 import { updateAsmField } from "./functions/utilities";
@@ -110,10 +111,10 @@ const DisplayASM = (props) => {
   const [asmDetailed, setASMDetailed] = useState(
     props?.location?.state?.asm !== undefined
       ? props?.location?.state?.asm
-      : null
+      : null,
   );
   const [loading, setLoading] = useState(
-    props?.location?.state?.asm === undefined
+    props?.location?.state?.asm === undefined,
   );
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -186,7 +187,7 @@ const DisplayASM = (props) => {
           }
           if (err?.response?.status === 404) {
             setErrorMessage(
-              "You do not have access to this assembly, or it does not exist. Contact the project administrator."
+              "You do not have access to this assembly, or it does not exist. Contact the project administrator.",
             );
           }
           setError(true);
@@ -212,7 +213,7 @@ const DisplayASM = (props) => {
             }
             if (err?.response?.status === 404) {
               setErrorMessage(
-                "You do not have access to this assembly, or it does not exist. Contact the project administrator."
+                "You do not have access to this assembly, or it does not exist. Contact the project administrator.",
               );
             }
             setError(true);
@@ -238,7 +239,7 @@ const DisplayASM = (props) => {
             }
             if (err?.response?.status === 404) {
               setErrorMessage(
-                "You do not have access to this assembly, or it does not exist. Contact the project administrator."
+                "You do not have access to this assembly, or it does not exist. Contact the project administrator.",
               );
             }
             setError(true);
@@ -257,7 +258,7 @@ const DisplayASM = (props) => {
             }
             if (err?.response?.status === 404) {
               setErrorMessage(
-                "You do not have access to this assembly, or it does not exist. Contact the project administrator."
+                "You do not have access to this assembly, or it does not exist. Contact the project administrator.",
               );
             }
             setError(true);
@@ -324,24 +325,24 @@ const DisplayASM = (props) => {
       eventKey: "overview",
       title: "Overview",
       content: (
-          <>
-            <Row>
-              <AsmNewRevision
-                asm={asmDetailed}
-                profiles={profiles}
-                liftUpState={liftUpState}
-              />
-              {asmDetailed.release_state !== "Released" && (
-                <AsmEditForm asm={asmDetailed} setRefresh={setRefresh} />
-              )}
-              <PushToOdooButton 
-                itemType="assemblies" 
-                itemId={asmDetailed?.id} 
-                itemName={asmDetailed?.full_part_number}
-                onSuccess={() => setRefresh(true)}
-              />
-            </Row>
-            <Row>
+        <>
+          <Row>
+            <AsmNewRevision
+              asm={asmDetailed}
+              profiles={profiles}
+              liftUpState={liftUpState}
+            />
+            {asmDetailed.release_state !== "Released" && (
+              <AsmEditForm asm={asmDetailed} setRefresh={setRefresh} />
+            )}
+            <PushToOdooButton
+              itemType="assemblies"
+              itemId={asmDetailed?.id}
+              itemName={asmDetailed?.full_part_number}
+              onSuccess={() => setRefresh(true)}
+            />
+          </Row>
+          <Row>
             <Col>
               <Row>
                 <PartInformationCard
@@ -480,13 +481,30 @@ const DisplayASM = (props) => {
       ),
     },
     {
+      eventKey: "traceability",
+      title: "Traceability",
+      content: (
+        <>
+          {asmDetailed == null || asmDetailed === undefined ? (
+            <div className="d-flex m-5 justify-content-center">
+              <div className="spinner-border" role="status" />
+            </div>
+          ) : (
+            <div className="row m-3">
+              <TraceabilityTable app={"assemblies"} item={asmDetailed} />
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
       eventKey: "where-used",
       title: "Where Used",
       content: (
         <div className="row m-3">
-          <WhereUsedTable 
-            app="assemblies" 
-            itemId={currentASMID} 
+          <WhereUsedTable
+            app="assemblies"
+            itemId={currentASMID}
             itemType="Assembly"
           />
         </div>
