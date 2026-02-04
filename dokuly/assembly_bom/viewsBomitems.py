@@ -189,7 +189,7 @@ def edit_bom_item(request, itemId):
         if app_type and parent_id is not None:
             user = request.user
 
-            if "designator" in data and (old_designator or data["designator"]) and old_designator != data.get("designator"):
+            if "designator" in data and old_designator != data.get("designator"):
                 log_bom_change(
                     app_type=app_type,
                     item_id=parent_id,
