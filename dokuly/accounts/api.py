@@ -80,9 +80,9 @@ class Login2FaAPI(generics.GenericAPIView):
             return Response(status=status.HTTP_202_ACCEPTED)
         
         # If org enforces 2FA, check 2FA status
-        if profile.mfa_validated and profile.mfa_hash != None:
+        if profile.mfa_validated and profile.mfa_hash is not None:
             return Response(status=status.HTTP_200_OK)
-        elif not profile.mfa_validated and profile.mfa_hash == None and org.enforce_2fa:
+        elif not profile.mfa_validated and profile.mfa_hash is None and org.enforce_2fa:
             return Response(status=status.HTTP_201_CREATED)
         elif not profile.mfa_validated and org.enforce_2fa:
             return Response(status=status.HTTP_201_CREATED)
