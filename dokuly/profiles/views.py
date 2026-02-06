@@ -814,3 +814,41 @@ def admin_reset_user_password(request, userId):
             
     except Exception as e:
         return Response(f"admin_reset_user_password failed: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(('PUT',))
+@renderer_classes((JSONRenderer, ))
+def admin_reset_user_2fa(request, userId):
+    """
+    Admin-only endpoint to reset a user's 2FA settings.
+    Resets mfa_hash and mfa_validated for the target user.
+    Similar to the 2FA reset in organization enforce_2fa handling.
+    """
+    try:
+        # Check authentication
+        if not request.user or not request.user.is_authenticated:
+            return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user is Owner
+        try:
+            user_profile = Profile.objects.get(user=request.user)
+            if user_profile.role not in ["Owner"]:
+                return Response("Only Owner can reset 2FA", status=status.HTTP_403_FORBIDDEN)
+        except Profile.DoesNotExist:
+            return Response("User profile not found", status=status.HTTP_404_NOT_FOUND)
+        
+        # Reset the 2FA for target user
+        try:
+            target_user = User.objects.get(id=userId)
+            target_profile = Profile.objects.get(user=target_user)
+            target_profile.mfa_hash = None
+            target_profile.mfa_validated = False
+            target_profile.save()
+            return Response("2FA reset successfully", status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response("User not found", status=status.HTTP_404_NOT_FOUND)
+        except Profile.DoesNotExist:
+            return Response("User profile not found", status=status.HTTP_404_NOT_FOUND)
+            
+    except Exception as e:
+        return Response(f"admin_reset_user_2fa failed: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)

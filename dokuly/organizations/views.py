@@ -226,6 +226,8 @@ def create_organization(request):
 @login_required(login_url="/login")
 def update_organization(request, id):
     organization = get_object_or_404(Organization, id=id)
+    org_2fa = organization.enforce_2fa
+
     data = request.data
 
     with transaction.atomic():
@@ -266,9 +268,9 @@ def update_organization(request, id):
             file = request.FILES["logo"]
             organization.logo.save(f"{uuid.uuid4().hex}/{file.name}", file)
 
-        if "enforce_2fa" in data and organization.enforce_2fa != data["enforce_2fa"]:
+        if "enforce_2fa" in data and org_2fa != data["enforce_2fa"]:
             if not data["enforce_2fa"]:
-                Profile.objects.all().update(mfa_hash=None, mfa_validated=False)
+                Profile.objects.filter(organization_id=organization.id).update(mfa_hash=None, mfa_validated=False)
 
         # Check if revision system settings changed and trigger migration
         revision_settings_changed = False

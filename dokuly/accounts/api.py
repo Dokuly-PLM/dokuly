@@ -74,9 +74,15 @@ class Login2FaAPI(generics.GenericAPIView):
         if not profile.is_active:
             return Response("User is not active, contact admin", status=status.HTTP_401_UNAUTHORIZED)
         org = Organization.objects.get(id=profile.organization_id)
-        if profile.mfa_validated and profile.mfa_hash != None:
+        
+        # If org doesn't enforce 2FA, allow login regardless of 2FA state
+        if not org.enforce_2fa:
+            return Response(status=status.HTTP_202_ACCEPTED)
+        
+        # If org enforces 2FA, check 2FA status
+        if profile.mfa_validated and profile.mfa_hash is not None:
             return Response(status=status.HTTP_200_OK)
-        elif not profile.mfa_validated and profile.mfa_hash == None and org.enforce_2fa:
+        elif not profile.mfa_validated and profile.mfa_hash is None and org.enforce_2fa:
             return Response(status=status.HTTP_201_CREATED)
         elif not profile.mfa_validated and org.enforce_2fa:
             return Response(status=status.HTTP_201_CREATED)
