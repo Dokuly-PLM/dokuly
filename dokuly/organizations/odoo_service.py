@@ -488,6 +488,54 @@ def find_odoo_category_by_name(models, uid, database, api_key, category_name):
         return None
 
 
+def get_odoo_product_default_codes(integration_settings):
+    """
+    Fetch the set of internal references (default_code) for all products in Odoo.
+    Used to determine which Dokuly parts already exist in Odoo for batch sync.
+
+    Args:
+        integration_settings: IntegrationSettings model instance
+
+    Returns:
+        set of str: default_code values (internal references). Empty set on error.
+    """
+    try:
+        common, models, uid = get_odoo_connection(integration_settings)
+        database = integration_settings.odoo_database
+        api_key = integration_settings.odoo_api_key
+
+        domain = [['default_code', '!=', False]]
+        batch_size = 10000
+        default_codes = set()
+        offset = 0
+
+        while True:
+            records = models.execute_kw(
+                database, uid, api_key,
+                'product.product', 'search_read',
+                [domain],
+                {'fields': ['default_code'], 'limit': batch_size, 'offset': offset}
+            )
+            if not records:
+                break
+            for rec in records:
+                code = rec.get('default_code')
+                if code and isinstance(code, str):
+                    default_codes.add(code.strip())
+            if len(records) < batch_size:
+                break
+            offset += batch_size
+
+        logger.info(f"Fetched {len(default_codes)} product default_codes from Odoo")
+        return default_codes
+    except (OdooConnectionError, OdooAuthenticationError, OdooAPIError) as e:
+        logger.warning(f"Could not fetch Odoo product default_codes: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching Odoo product default_codes: {e}")
+        raise OdooAPIError(f"Failed to fetch Odoo product list: {str(e)}")
+
+
 def find_odoo_uom_by_name(models, uid, database, api_key, unit_name):
     """
     Find Odoo UoM (Unit of Measure) by name.
@@ -533,8 +581,9 @@ def find_odoo_uom_by_name(models, uid, database, api_key, unit_name):
             'milliliters': ['mL', 'Milliliter', 'Milliliters'],
         }
 
-        # Get list of names to try
-        search_names = unit_mappings.get(unit_name.lower(), [unit_name])
+        # Try the part's unit string first, then common Odoo name variants
+        mapping_names = unit_mappings.get(unit_name.lower(), [unit_name])
+        search_names = [unit_name] + [n for n in mapping_names if n != unit_name]
 
         # Try each name variant
         for search_name in search_names:
@@ -562,35 +611,62 @@ def find_odoo_uom_by_name(models, uid, database, api_key, unit_name):
                 logger.info(f"Found Odoo UoM ID {uom_ids[0]} for unit '{unit_name}' (matched as '{search_name}' with ilike)")
                 return uom_ids[0]
 
-        # Last resort: try to get default "Units" UoM by searching for active unit category
+        # Last resort: try to get default "Units" UoM via uom.category (may not exist in all Odoo versions)
         logger.warning(f"Could not find specific Odoo UoM for unit '{unit_name}', attempting to get default Units")
-        # First find the Unit category
-        category_ids = models.execute_kw(
-            database, uid, api_key,
-            'uom.category', 'search',
-            [[['name', '=', 'Unit']]],
-            {'limit': 1}
-        )
-
-        if category_ids:
-            # Then find UoM with that category and uom_type = 'reference'
-            uom_ids = models.execute_kw(
+        try:
+            category_ids = models.execute_kw(
                 database, uid, api_key,
-                'uom.uom', 'search',
-                [[['category_id', '=', category_ids[0]], ['uom_type', '=', 'reference']]],
+                'uom.category', 'search',
+                [[['name', '=', 'Unit']]],
                 {'limit': 1}
             )
 
-            if uom_ids:
-                logger.info(f"Using default Units UoM ID {uom_ids[0]} for unit '{unit_name}'")
-                return uom_ids[0]
+            if category_ids:
+                uom_ids = models.execute_kw(
+                    database, uid, api_key,
+                    'uom.uom', 'search',
+                    [[['category_id', '=', category_ids[0]], ['uom_type', '=', 'reference']]],
+                    {'limit': 1}
+                )
 
-        logger.error(f"Could not find any suitable Odoo UoM for unit '{unit_name}'")
+                if uom_ids:
+                    logger.info(f"Using default Units UoM ID {uom_ids[0]} for unit '{unit_name}'")
+                    return uom_ids[0]
+        except Exception as e:
+            logger.debug(f"Default UoM fallback not available (uom.category may not exist in this Odoo): {e}")
+
+        logger.warning(f"Could not find any suitable Odoo UoM for unit '{unit_name}'")
         return None
 
     except Exception as e:
         logger.error(f"Error finding Odoo UoM for '{unit_name}': {e}")
         return None
+
+
+def get_odoo_uom_list(integration_settings):
+    """
+    Fetch the list of UoMs (Units of Measure) from Odoo for user selection.
+
+    Args:
+        integration_settings: IntegrationSettings model instance
+
+    Returns:
+        list of dict: [{"id": int, "name": str}, ...] ordered by name.
+
+    Raises:
+        OdooConnectionError, OdooAuthenticationError, OdooAPIError: On connection/API failure
+    """
+    common, models, uid = get_odoo_connection(integration_settings)
+    database = integration_settings.odoo_database
+    api_key = integration_settings.odoo_api_key
+
+    records = models.execute_kw(
+        database, uid, api_key,
+        'uom.uom', 'search_read',
+        [[]],
+        {'fields': ['id', 'name'], 'order': 'name'}
+    )
+    return [{'id': rec['id'], 'name': rec.get('name', '') or ''} for rec in records]
 
 
 def push_product_to_odoo(item, item_type, integration_settings, user, include_bom=False):
@@ -694,16 +770,22 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
             )
             if uom_id:
                 template_data['uom_id'] = uom_id
-                template_data['uom_po_id'] = uom_id
             else:
-                # Fallback to default UoM if configured
-                if integration_settings.odoo_default_uom_id:
-                    template_data['uom_id'] = integration_settings.odoo_default_uom_id
-                    template_data['uom_po_id'] = integration_settings.odoo_default_uom_id
+                # Unit does not match any Odoo UoM: return structured response for user to choose
+                try:
+                    odoo_uoms = get_odoo_uom_list(integration_settings)
+                except (OdooConnectionError, OdooAuthenticationError, OdooAPIError):
+                    raise
+                return {
+                    'success': False,
+                    'reason': 'uom_mismatch',
+                    'message': f"Part unit '{item.unit}' could not be matched to an Odoo UoM. Select an Odoo UoM and update the part in Dokuly.",
+                    'current_unit': item.unit,
+                    'odoo_uoms': odoo_uoms,
+                }
         elif integration_settings.odoo_default_uom_id:
             # Use default UoM if item has no unit
             template_data['uom_id'] = integration_settings.odoo_default_uom_id
-            template_data['uom_po_id'] = integration_settings.odoo_default_uom_id
 
         # Handle image (template-level field)
         if hasattr(item, 'thumbnail') and item.thumbnail:

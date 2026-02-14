@@ -16,7 +16,14 @@ from parts.models import Part
 from pcbas.models import Pcba
 from assemblies.models import Assembly
 from parts.nexar_client import get_nexar_client
-from organizations.odoo_service import push_product_to_odoo, test_odoo_connection as test_odoo_connection_service
+from organizations.odoo_service import (
+    push_product_to_odoo,
+    test_odoo_connection as test_odoo_connection_service,
+    get_odoo_product_default_codes,
+    OdooConnectionError,
+    OdooAuthenticationError,
+    OdooAPIError,
+)
 from .models import Organization, IntegrationSettings
 
 logger = logging.getLogger(__name__)
@@ -506,13 +513,116 @@ def push_to_odoo(request, item_type, item_id):
         
         if result['success']:
             return Response(result, status=status.HTTP_200_OK)
-        else:
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        if result.get('reason') == 'uom_mismatch':
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(result, status=status.HTTP_400_BAD_REQUEST)
     
     except Exception as e:
         logger.error(f"Error pushing {item_type} {item_id} to Odoo: {e}")
         return Response(
             {"error": "Failed to push to Odoo", "details": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(["POST"])
+@renderer_classes([JSONRenderer])
+def sync_parts_to_odoo(request):
+    """
+    Batch sync: push/update all released parts that already exist in Odoo (by internal reference).
+    Only parts whose full_part_number matches an Odoo product default_code are synced.
+    """
+    try:
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                "Not Authorized",
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        organization = get_user_organization(request.user)
+        if not organization:
+            return Response(
+                {"error": "User organization not found"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        integration_settings, _ = IntegrationSettings.objects.get_or_create(
+            organization=organization
+        )
+        if not integration_settings.odoo_enabled:
+            return Response(
+                {"error": "Odoo integration is not enabled"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            odoo_default_codes = get_odoo_product_default_codes(integration_settings)
+        except (OdooConnectionError, OdooAuthenticationError, OdooAPIError) as e:
+            return Response(
+                {"error": "Could not connect to Odoo", "details": str(e)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        if not odoo_default_codes:
+            return Response({
+                "synced_count": 0,
+                "failed_count": 0,
+                "total_found": 0,
+                "errors": [],
+                "message": "No products found in Odoo, or Odoo returned no internal references."
+            }, status=status.HTTP_200_OK)
+
+        parts = Part.objects.filter(
+            release_state='Released',
+            full_part_number__in=odoo_default_codes
+        ).exclude(
+            full_part_number__isnull=True
+        ).exclude(
+            full_part_number=''
+        ).order_by('id')
+
+        total_found = parts.count()
+        synced_count = 0
+        failed_count = 0
+        errors = []
+
+        for part in parts:
+            try:
+                result = push_product_to_odoo(
+                    item=part,
+                    item_type='parts',
+                    integration_settings=integration_settings,
+                    user=request.user,
+                    include_bom=False
+                )
+                if result.get('success'):
+                    synced_count += 1
+                else:
+                    failed_count += 1
+                    errors.append({
+                        "part_id": part.id,
+                        "full_part_number": part.full_part_number or '',
+                        "message": result.get('message', 'Unknown error')
+                    })
+            except Exception as e:
+                failed_count += 1
+                errors.append({
+                    "part_id": part.id,
+                    "full_part_number": part.full_part_number or '',
+                    "message": str(e)
+                })
+
+        return Response({
+            "synced_count": synced_count,
+            "failed_count": failed_count,
+            "total_found": total_found,
+            "errors": errors,
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.error(f"Error in sync_parts_to_odoo: {e}")
+        return Response(
+            {"error": "Batch sync failed", "details": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 

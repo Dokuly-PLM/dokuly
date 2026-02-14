@@ -44,6 +44,8 @@ const OdooSettings = ({
   setOdooUpdateFieldsExisting,
   handleTestConnection,
   testingConnection,
+  onSyncParts,
+  syncingParts,
   handleSubmit,
 }) => {
   // Automatic field mappings - read-only display
@@ -194,6 +196,19 @@ const OdooSettings = ({
               <small className="text-muted d-block mt-1">
                 When enabled, parts, PCBAs, and assemblies will automatically be pushed to Odoo when released.
                 You can also manually push items using the "Push to Odoo" button on each item's page.
+              </small>
+            </div>
+
+            <div className="mt-4">
+              <Button
+                className="btn btn-bg-transparent"
+                onClick={onSyncParts}
+                disabled={!odooEnabled || !hasOdooCredentials || syncingParts}
+              >
+                <span className="btn-text">{syncingParts ? "Syncing…" : "Sync parts with Odoo"}</span>
+              </Button>
+              <small className="text-muted d-block mt-1">
+                Updates all released parts that already exist in Odoo (by part number). This may take a minute for many parts.
               </small>
             </div>
 

@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { toast } from "react-toastify";
 import { pushToOdoo } from "../../admin/functions/queries";
 import { fetchIntegrationSettings } from "../../admin/functions/queries";
+import { tokenConfig } from "../../../configs/auth";
 import DokulyModal from "../../dokuly_components/dokulyModal";
+import { Form } from "react-bootstrap";
 
 /**
  * Reusable Push to Odoo button component
  * Shows button only if Odoo integration is enabled
  * For assemblies, shows a modal to ask if BOM should be included
+ * For parts, on UoM mismatch shows modal to select Odoo UoM and update part
  */
 const PushToOdooButton = ({ itemType, itemId, itemName, onSuccess }) => {
   const [odooEnabled, setOdooEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pushing, setPushing] = useState(false);
   const [showBomModal, setShowBomModal] = useState(false);
+  const [showUomModal, setShowUomModal] = useState(false);
+  const [uomMismatchData, setUomMismatchData] = useState(null);
+  const [selectedUomName, setSelectedUomName] = useState("");
+  const [updatingPartUnit, setUpdatingPartUnit] = useState(false);
 
   useEffect(() => {
     // Check if Odoo integration is enabled
@@ -43,6 +51,8 @@ const PushToOdooButton = ({ itemType, itemId, itemName, onSuccess }) => {
   const performPush = (includeBom) => {
     setPushing(true);
     setShowBomModal(false);
+    setShowUomModal(false);
+    setUomMismatchData(null);
 
     pushToOdoo(itemType, itemId, includeBom)
       .then((res) => {
@@ -60,6 +70,11 @@ const PushToOdooButton = ({ itemType, itemId, itemName, onSuccess }) => {
           if (onSuccess) {
             onSuccess(res.data);
           }
+        } else if (res.status === 200 && res.data.success === false && res.data.reason === "uom_mismatch" && itemType === "parts") {
+          setUomMismatchData(res.data);
+          const firstUom = res.data.odoo_uoms && res.data.odoo_uoms[0];
+          setSelectedUomName(firstUom ? firstUom.name : "");
+          setShowUomModal(true);
         } else {
           const errorMsg = res.data.message || "Failed to push to Odoo";
           toast.error(errorMsg);
@@ -75,6 +90,27 @@ const PushToOdooButton = ({ itemType, itemId, itemName, onSuccess }) => {
       })
       .finally(() => {
         setPushing(false);
+      });
+  };
+
+  const handleUpdatePartUnitAndPush = () => {
+    if (itemType !== "parts" || !selectedUomName) return;
+    setUpdatingPartUnit(true);
+    axios
+      .put(`api/parts/editPart/${itemId}/`, { unit: selectedUomName }, tokenConfig())
+      .then(() => {
+        setShowUomModal(false);
+        setUomMismatchData(null);
+        setSelectedUomName("");
+        performPush(false);
+      })
+      .catch((err) => {
+        console.error("Error updating part unit:", err);
+        const errorMsg = err.response?.data?.message || err.response?.data?.error || "Failed to update part unit";
+        toast.error(errorMsg);
+      })
+      .finally(() => {
+        setUpdatingPartUnit(false);
       });
   };
 
@@ -149,6 +185,53 @@ const PushToOdooButton = ({ itemType, itemId, itemName, onSuccess }) => {
               onClick={() => performPush(true)}
             >
               With BOM
+            </button>
+          </div>
+        </div>
+      </DokulyModal>
+
+      {/* UoM mismatch modal for parts */}
+      <DokulyModal
+        show={showUomModal}
+        onHide={() => { setShowUomModal(false); setUomMismatchData(null); setSelectedUomName(""); }}
+        title="Unit does not match Odoo"
+        size="md"
+      >
+        <div className="p-4">
+          <p className="mb-3">
+            The part unit <strong>{uomMismatchData?.current_unit ?? ""}</strong> could not be matched to an Odoo UoM.
+            Choose the Odoo UoM to use and update the part in Dokuly, then push again.
+          </p>
+          <Form.Group className="mb-3">
+            <Form.Label>Odoo UoM</Form.Label>
+            <Form.Select
+              value={selectedUomName}
+              onChange={(e) => setSelectedUomName(e.target.value)}
+              aria-label="Select Odoo UoM"
+            >
+              {(uomMismatchData?.odoo_uoms || []).map((uom) => (
+                <option key={uom.id} value={uom.name}>
+                  {uom.name}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+          <div className="d-flex justify-content-end mt-4">
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => { setShowUomModal(false); setUomMismatchData(null); setSelectedUomName(""); }}
+              style={{ marginRight: "8px" }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm dokuly-bg-primary"
+              onClick={handleUpdatePartUnitAndPush}
+              disabled={!selectedUomName || updatingPartUnit}
+            >
+              {updatingPartUnit ? "Updating…" : "Update part and push"}
             </button>
           </div>
         </div>
