@@ -44,6 +44,8 @@ const OdooSettings = ({
   setOdooUpdateFieldsExisting,
   handleTestConnection,
   testingConnection,
+  onSyncParts,
+  syncingParts,
   handleSubmit,
 }) => {
   // Automatic field mappings - read-only display
@@ -53,6 +55,8 @@ const OdooSettings = ({
     { dokuly: "Description", description: "Automatically populated in the Product Description field" },
     { dokuly: "Unit (e.g., pcs, kg, m)", description: "Automatically mapped to the corresponding Odoo Unit of Measure" },
     { dokuly: "Thumbnail Image", description: "Automatically uploaded as the product image in Odoo" },
+    { dokuly: "Manufacturer", description: "Mapped to Odoo custom field flyt_manufacturer (Parts only)" },
+    { dokuly: "Manufacturer PN", description: "Mapped to Odoo custom field flyt_manufacturer_pn (Parts only)" },
     { dokuly: "Release State", description: "Only released items can be pushed to Odoo (manual or automatic)" },
   ];
 
@@ -192,6 +196,19 @@ const OdooSettings = ({
               <small className="text-muted d-block mt-1">
                 When enabled, parts, PCBAs, and assemblies will automatically be pushed to Odoo when released.
                 You can also manually push items using the "Push to Odoo" button on each item's page.
+              </small>
+            </div>
+
+            <div className="mt-4">
+              <Button
+                className="btn btn-bg-transparent"
+                onClick={onSyncParts}
+                disabled={!odooEnabled || !hasOdooCredentials || syncingParts}
+              >
+                <span className="btn-text">{syncingParts ? "Syncing…" : "Sync parts with Odoo"}</span>
+              </Button>
+              <small className="text-muted d-block mt-1">
+                Updates all released parts that already exist in Odoo (by part number). This may take a minute for many parts.
               </small>
             </div>
 

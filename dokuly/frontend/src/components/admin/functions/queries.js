@@ -1666,6 +1666,19 @@ export const pushToOdoo = (itemType, itemId, includeBom = false) => {
 };
 
 /**
+ * Batch sync parts to Odoo: push/update all released parts that already exist in Odoo.
+ * @return {Promise<AxiosResponse<any>>} Response with synced_count, failed_count, total_found, errors.
+ */
+export const syncPartsToOdoo = () => {
+  const promise = axios.post(
+    "api/integrations/odoo/sync-parts/",
+    {},
+    tokenConfig()
+  );
+  return promise.then((res) => res);
+};
+
+/**
  * Test Odoo API connection
  * @return {Promise<AxiosResponse<any>>} The axios data promise.
  */

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Row, Col, Card } from "react-bootstrap";
 import DokulyCard from "../../dokuly_components/dokulyCard";
-import { fetchIntegrationSettings, updateIntegrationSettings, testDigikeyConnection, testOdooConnection } from "../functions/queries";
+import { fetchIntegrationSettings, updateIntegrationSettings, testDigikeyConnection, testOdooConnection, syncPartsToOdoo } from "../functions/queries";
 import { getSuppliers, updateSupplier } from "../../suppliers/functions/queries";
 import { createSupplier } from "../../suppliers/functions/queries";
 import { toast } from "react-toastify";
@@ -40,6 +40,7 @@ const AdminIntegrations = ({ setRefresh }) => {
   const [odooDefaultUomId, setOdooDefaultUomId] = useState(null);
   const [odooDefaultProductType, setOdooDefaultProductType] = useState("product");
   const [testingOdooConnection, setTestingOdooConnection] = useState(false);
+  const [syncingParts, setSyncingParts] = useState(false);
   
   // New Odoo configuration fields
   const [odooDefaultSaleOk, setOdooDefaultSaleOk] = useState(false);
@@ -368,6 +369,30 @@ const AdminIntegrations = ({ setRefresh }) => {
       });
   };
 
+  const handleSyncPartsToOdoo = () => {
+    setSyncingParts(true);
+    syncPartsToOdoo()
+      .then((res) => {
+        const data = res?.data || {};
+        const { synced_count = 0, failed_count = 0, total_found = 0 } = data;
+        if (failed_count > 0) {
+          toast.warning(`Synced ${synced_count} parts. ${failed_count} failed.`);
+        } else {
+          toast.success(`Synced ${synced_count} parts with Odoo.`);
+        }
+        if (total_found === 0 && synced_count === 0) {
+          toast.info("No released parts found in Odoo to sync.");
+        }
+      })
+      .catch((err) => {
+        const errorMsg = err.response?.data?.error || err.response?.data?.details || "Sync failed";
+        toast.error(errorMsg);
+      })
+      .finally(() => {
+        setSyncingParts(false);
+      });
+  };
+
   const handleTestConnection = () => {
     if (!digikeyClientId || !digikeyClientId.trim()) {
       toast.error("Please enter Client ID before testing");
@@ -517,6 +542,8 @@ const AdminIntegrations = ({ setRefresh }) => {
         setOdooUpdateFieldsExisting={setOdooUpdateFieldsExisting}
         handleTestConnection={handleTestOdooConnection}
         testingConnection={testingOdooConnection}
+        onSyncParts={handleSyncPartsToOdoo}
+        syncingParts={syncingParts}
         handleSubmit={handleOdooSubmit}
       />
     );

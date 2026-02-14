@@ -50,6 +50,7 @@ urlpatterns = [
     
     # Odoo integration
     path("api/integrations/odoo/push/<str:item_type>/<int:item_id>/", viewsIntegrations.push_to_odoo),
+    path("api/integrations/odoo/sync-parts/", viewsIntegrations.sync_parts_to_odoo),
     path("api/integrations/odoo/test/", viewsIntegrations.test_odoo_connection),
     
     # Revision system fixes
