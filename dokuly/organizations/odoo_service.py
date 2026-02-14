@@ -209,6 +209,11 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data, 
                 if 'image' in update_fields and template_data and 'image_1920' in template_data:
                     update_template_data['image_1920'] = template_data['image_1920']
 
+                if template_data and 'flyt_manufacturer' in template_data:
+                    update_template_data['flyt_manufacturer'] = template_data['flyt_manufacturer']
+                if template_data and 'flyt_manufacturer_pn' in template_data:
+                    update_template_data['flyt_manufacturer_pn'] = template_data['flyt_manufacturer_pn']
+
                 if update_template_data:
                     models.execute_kw(
                         database, uid, api_key,
@@ -705,6 +710,11 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
             image_base64 = get_image_as_base64(item.thumbnail)
             if image_base64:
                 template_data['image_1920'] = image_base64
+
+        # Manufacturer and Manufacturer PN (Parts only; Odoo custom fields on product.template)
+        if item_type == 'parts':
+            template_data['flyt_manufacturer'] = (item.manufacturer or '').strip()
+            template_data['flyt_manufacturer_pn'] = (item.mpn or '').strip()
 
         # Create or update product
         product_id = create_or_update_odoo_product(

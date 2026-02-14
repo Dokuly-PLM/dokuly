@@ -53,6 +53,8 @@ const OdooSettings = ({
     { dokuly: "Description", description: "Automatically populated in the Product Description field" },
     { dokuly: "Unit (e.g., pcs, kg, m)", description: "Automatically mapped to the corresponding Odoo Unit of Measure" },
     { dokuly: "Thumbnail Image", description: "Automatically uploaded as the product image in Odoo" },
+    { dokuly: "Manufacturer", description: "Mapped to Odoo custom field flyt_manufacturer (Parts only)" },
+    { dokuly: "Manufacturer PN", description: "Mapped to Odoo custom field flyt_manufacturer_pn (Parts only)" },
     { dokuly: "Release State", description: "Only released items can be pushed to Odoo (manual or automatic)" },
   ];
 
