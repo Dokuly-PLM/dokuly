@@ -314,7 +314,7 @@ export default function PcbaTable(props) {
           columns={columns}
           itemsPerPage={100}
           onRowClick={handleRowClick}
-          defaultSort={{ columnNumber: 8, order: "desc" }}
+          defaultSort={{ columnNumber: 9, order: "desc" }}
           showColumnFilters={true}
           showFilterChips={true}
           showSavedViews={true}

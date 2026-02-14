@@ -70,6 +70,12 @@ from profiles.utilityFunctions import (
     notify_on_state_change_to_release)
 from projects.viewsTags import check_for_and_create_new_tags
 from django.core.files.base import ContentFile
+from traceability.utilities import (
+    log_created_event,
+    log_revision_created_event,
+    log_field_changes,
+    log_traceability_event,
+)
 
 
 def generate_pdf_thumbnail(pdf_file, document_title="thumbnail"):
@@ -360,6 +366,15 @@ def create_new_document(request, **kwargs):
                     "Template document does not exist", status=status.HTTP_201_CREATED
                 )
 
+        # Log creation event
+        log_created_event(
+            app_type="documents",
+            item_id=document.id,
+            user=document.created_by,
+            revision=document.formatted_revision,
+            details=f"Created document {document.full_doc_number}"
+        )
+
         serializer = DocumentSerializer(document)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -386,42 +401,67 @@ def edit_document_info(request, documentId):
         return Response(serializer.data, status=status.HTTP_200_OK)
     data = request.data
     document = Document.objects.get(id=documentId)
-    if "title" in data:
+    
+    # Track changes for traceability
+    changes = []
+    
+    if "title" in data and document.title != data["title"]:
+        changes.append({"field": "title", "old": document.title, "new": data["title"]})
         document.title = data["title"]
-    if "document_type" in data:
+    if "document_type" in data and document.document_type != data["document_type"]:
+        changes.append({"field": "document_type", "old": document.document_type, "new": data["document_type"]})
         document.document_type = data["document_type"]
-    if "description" in data:
+    if "description" in data and document.description != data["description"]:
+        changes.append({"field": "description", "old": document.description, "new": data["description"]})
         document.description = data["description"]
     if "project" in data:
         try:
             project = Project.objects.get(id=data["project"])
-            document.project = project
+            if document.project != project:
+                old_project = document.project.full_project_number if document.project else None
+                new_project = project.full_project_number if project else None
+                changes.append({"field": "project", "old": old_project, "new": new_project})
+                document.project = project
         except Project.DoesNotExist:
             pass
 
-    if "language" in data:
+    if "language" in data and document.language != data["language"]:
+        changes.append({"field": "language", "old": document.language, "new": data["language"]})
         document.language = data["language"]
 
     if "last_updated" in data:
         document.last_updated = data["last_updated"]
     if "protection_level" in data and data["protection_level"] not in ("null", "undefined", "", -1):
-        document.protection_level_id = data["protection_level"]
-    if "prefix_id" in data:
+        new_protection_level = int(data["protection_level"])
+        if document.protection_level_id != new_protection_level:
+            changes.append({"field": "protection_level", "old": document.protection_level_id, "new": new_protection_level})
+            document.protection_level_id = new_protection_level
+    if "prefix_id" in data and document.prefix_id != data["prefix_id"]:
+        changes.append({"field": "prefix_id", "old": document.prefix_id, "new": data["prefix_id"]})
         document.prefix_id = data["prefix_id"]
-    if "summary" in data:
+    if "summary" in data and document.summary != data["summary"]:
+        changes.append({"field": "summary", "old": document.summary, "new": data["summary"]})
         document.summary = data["summary"]
-    if "fullDN" in data:
+    if "fullDN" in data and document.full_doc_number != data["fullDN"]:
+        changes.append({"field": "full_doc_number", "old": document.full_doc_number, "new": data["fullDN"]})
         document.full_doc_number = data["fullDN"]
-    if "shared_document_link" in data:
+    if "shared_document_link" in data and document.shared_document_link != data["shared_document_link"]:
+        changes.append({"field": "shared_document_link", "old": document.shared_document_link, "new": data["shared_document_link"]})
         document.shared_document_link = data["shared_document_link"]
 
     if "release_state" in data and data["release_state"] != document.release_state:
+        old_state = document.release_state
+        new_state = data["release_state"]
+        event_type = "released" if new_state == "Released" else "updated"
+        changes.append({"field": "release_state", "old": old_state, "new": new_state, "event_type": event_type})
         document.release_state = data["release_state"]
         notify_on_state_change_to_release(user, document, data["release_state"], "documents")
 
     if "quality_assurance" in data:
-        document.quality_assurance_id = data["quality_assurance"]
-        notify_on_release_approval(document, user, "documents")
+        if document.quality_assurance_id != data["quality_assurance"]:
+            changes.append({"field": "quality_assurance", "old": document.quality_assurance_id, "new": data["quality_assurance"], "event_type": "approved"})
+            document.quality_assurance_id = data["quality_assurance"]
+            notify_on_release_approval(document, user, "documents")
 
     if "tags" in data:
         error, message, tag_ids = check_for_and_create_new_tags(document.project, data["tags"])
@@ -430,6 +470,16 @@ def edit_document_info(request, documentId):
         document.tags.set(tag_ids)
 
     document.save()
+    
+    # Log field changes to traceability
+    if changes:
+        log_field_changes(
+            app_type="documents",
+            item_id=document.id,
+            user=user,
+            revision=document.formatted_revision,
+            changes=changes
+        )
 
     if "no_data_return" in data and data.get("no_data_return", False) == True:
         return Response("Document updated", status=status.HTTP_200_OK)
@@ -880,8 +930,28 @@ def update_revision_notes(request, documentId):
                 "No data sent to server, try again", status=status.HTTP_400_BAD_REQUEST
             )
         document = Document.objects.get(id=documentId)
-        document.revision_notes = data["revision_notes"]
-        document.save()
+        
+        # Track changes for traceability
+        old_revision_notes = document.revision_notes
+        new_revision_notes = data["revision_notes"]
+        
+        if old_revision_notes != new_revision_notes:
+            document.revision_notes = new_revision_notes
+            document.save()
+            
+            # Log field change to traceability
+            log_field_changes(
+                app_type="documents",
+                item_id=document.id,
+                user=user,
+                revision=document.formatted_revision,
+                changes=[{
+                    "field": "revision_notes",
+                    "old": old_revision_notes,
+                    "new": new_revision_notes
+                }]
+            )
+        
         serializer = DocumentSerializer(document, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
@@ -1027,6 +1097,15 @@ def auto_new_revision(request, pk, **kwargs):
         new_revision.save()
 
         notify_on_new_revision(new_revision=new_revision, app_name="documents", user=request.user)
+        
+        # Log revision creation event
+        log_revision_created_event(
+            app_type="documents",
+            item_id=new_revision.id,
+            user=request.user,
+            revision=new_revision.formatted_revision,
+            details=f"Created new revision {new_revision.formatted_revision} from {old_revision.formatted_revision}"
+        )
 
         if new_revision.title != new_revision.title:
             return Response(
@@ -1220,6 +1299,9 @@ def update_doc(request, pk, **kwargs):
         # Need to check if transactions are supported by the storage class.
         try:
             document = Document.objects.get(id=pk)
+            
+            # Track changes for traceability
+            changes = []
 
             org_id = -1
             if APIAndProjectAccess.has_validated_key(request):
@@ -1230,22 +1312,34 @@ def update_doc(request, pk, **kwargs):
             # Update all fields present in form.
             if "shared_document_link" in data:
                 if data["shared_document_link"] != "null":
-                    document.shared_document_link = data["shared_document_link"]
+                    if document.shared_document_link != data["shared_document_link"]:
+                        changes.append({"field": "shared_document_link", "old": document.shared_document_link, "new": data["shared_document_link"]})
+                        document.shared_document_link = data["shared_document_link"]
 
-            if "title" in data:
+            if "title" in data and document.title != data["title"]:
+                changes.append({"field": "title", "old": document.title, "new": data["title"]})
                 document.title = data["title"]
-            if "description" in data:
+            if "description" in data and document.description != data["description"]:
+                changes.append({"field": "description", "old": document.description, "new": data["description"]})
                 document.description = data["description"]
-            if "summary" in data:
+            if "summary" in data and document.summary != data["summary"]:
+                changes.append({"field": "summary", "old": document.summary, "new": data["summary"]})
                 document.summary = data["summary"]
             
             if "protection_level" in data and data["protection_level"] not in ("null", "undefined", "", -1):
-                document.protection_level_id = data["protection_level"]
+                new_protection_level = int(data["protection_level"])
+                if document.protection_level_id != new_protection_level:
+                    changes.append({"field": "protection_level", "old": document.protection_level_id, "new": new_protection_level})
+                    document.protection_level_id = new_protection_level
 
             if (
                 "release_state" in data
                 and data["release_state"] != document.release_state
             ):
+                old_state = document.release_state
+                new_state = data["release_state"]
+                event_type = "released" if new_state == "Released" else "updated"
+                changes.append({"field": "release_state", "old": old_state, "new": new_state, "event_type": event_type})
                 document.release_state = data["release_state"]
                 notify_on_state_change_to_release(
                     user=user,
@@ -1274,6 +1368,13 @@ def update_doc(request, pk, **kwargs):
                     and document.quality_assurance == None
                 ):
                     profile = Profile.objects.get(user__pk=user.id)
+                    changes.append({
+                        "field": "approved_for_release",
+                        "old": "false",
+                        "new": "true",
+                        "event_type": "approved",
+                        "user": user,
+                    })
                     document.quality_assurance = profile
                     notify_on_release_approval(
                         item=document,
@@ -1295,11 +1396,6 @@ def update_doc(request, pk, **kwargs):
 
             if "pdf_raw" in data:
                 file = request.FILES["pdf_raw"]
-                if not fileViews.check_file_sizes_vs_limit(
-                    fileViews.get_organization_by_user_id(request), file.size, request
-                ):
-                    return Response("Storage full!", status=status.HTTP_409_CONFLICT)
-
                 try:
                     # Delete the old pdf_raw file before saving the new one
                     if document.pdf_raw:
@@ -1321,6 +1417,9 @@ def update_doc(request, pk, **kwargs):
                 if thumbnail:
                     document.thumbnail = thumbnail
                     document.save()
+                    
+                # Log file upload
+                changes.append({"field": "pdf_raw", "old": None, "new": cleaned_file_name})
 
             if "document_file" in data:
                 file = request.FILES["document_file"]
@@ -1339,10 +1438,23 @@ def update_doc(request, pk, **kwargs):
                 cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
                 formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
                 document.document_file.save(f"{uuid.uuid4().hex}/{formatted_file_name[:220]}", file)
+                
+                # Log file upload
+                changes.append({"field": "document_file", "old": None, "new": cleaned_file_name})
 
             process_pdf(pk, org_id)
 
             find_referenced_items(pk)
+            
+            # Log field changes to traceability
+            if changes:
+                log_field_changes(
+                    app_type="documents",
+                    item_id=document.id,
+                    user=user,
+                    revision=document.formatted_revision,
+                    changes=changes
+                )
 
             newObject = Document.objects.get(id=pk)
             serializer = DocumentSerializer(newObject, many=False)
