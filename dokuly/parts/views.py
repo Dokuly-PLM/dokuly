@@ -1438,10 +1438,6 @@ def edit_part(request, pk, **kwargs):
                 supplier = Supplier.objects.get(pk=data["supplier"])
                 part.supplier = supplier
 
-        if "component_vault_id" in data:
-            if data["urls"] != None:
-                part.component_vault_id = int(data["component_vault_id"])
-
         if "tags" in data:
             error, message, tag_ids = check_for_and_create_new_tags(part.project, data["tags"])
             if error:
