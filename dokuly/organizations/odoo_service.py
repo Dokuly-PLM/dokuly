@@ -506,10 +506,12 @@ def get_odoo_product_default_codes(integration_settings):
 
         domain = [['default_code', '!=', False]]
         batch_size = 10000
+        max_batches = 100  # cap at 1M products to avoid infinite or runaway loops
         default_codes = set()
         offset = 0
+        batch_count = 0
 
-        while True:
+        while batch_count < max_batches:
             records = models.execute_kw(
                 database, uid, api_key,
                 'product.product', 'search_read',
@@ -525,6 +527,9 @@ def get_odoo_product_default_codes(integration_settings):
             if len(records) < batch_size:
                 break
             offset += batch_size
+            batch_count += 1
+        else:
+            logger.warning(f"Stopped after {max_batches} batches ({batch_size * max_batches} products); more may exist in Odoo")
 
         logger.info(f"Fetched {len(default_codes)} product default_codes from Odoo")
         return default_codes
