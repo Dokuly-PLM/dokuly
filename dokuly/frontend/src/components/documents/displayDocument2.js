@@ -26,6 +26,7 @@ import useIssues from "../common/hooks/useIssues";
 import NotificationTabItem from "../dokuly_components/dokulyIssues/notificationTabItem";
 import IssuesTable from "../dokuly_components/dokulyIssues/issuesTable";
 import { updateDocumentField } from "./functions/helperFunctions";
+import TraceabilityTable from "../dokuly_components/traceabilityTable/traceabilityTable";
 
 const DisplayDocument = (props) => {
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
@@ -381,6 +382,23 @@ const DisplayDocument = (props) => {
             setRevisionListParent={setRevisionList}
           />
         </div>
+      ),
+    },
+    {
+      eventKey: "traceability",
+      title: "Traceability",
+      content: (
+        <>
+          {selectedDocument == null || selectedDocument === undefined ? (
+            <div className="d-flex m-5 justify-content-center">
+              <div className="spinner-border" role="status" />
+            </div>
+          ) : (
+            <div className="row m-3">
+              <TraceabilityTable app={"documents"} item={selectedDocument} />
+            </div>
+          )}
+        </>
       ),
     },
   ];
