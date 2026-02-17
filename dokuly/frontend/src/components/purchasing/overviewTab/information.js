@@ -26,7 +26,7 @@ const Information = (props) => {
 
   const [loading, setLoading] = useState(true);
   const [purchaseOrder, setPurchaseOrder] = useState(
-    props.purchaseOrder !== undefined ? props.purchaseOrder : null
+    props.purchaseOrder !== undefined ? props.purchaseOrder : null,
   );
   const [supplierName, setSupplierName] = useState("");
   // New state for edit mode and edited status
@@ -179,7 +179,7 @@ const Information = (props) => {
               <b>Payment terms:</b>
               <QuestionToolTip
                 optionalHelpText={getPaymentTermsDescription(
-                  purchaseOrder?.payment_terms
+                  purchaseOrder?.payment_terms,
                 )}
                 placement="right"
               />
@@ -191,7 +191,7 @@ const Information = (props) => {
               <b>Shipment terms:</b>
               <QuestionToolTip
                 optionalHelpText={getIncotermDescription(
-                  purchaseOrder?.incoterms
+                  purchaseOrder?.incoterms,
                 )}
                 placement="right"
               />

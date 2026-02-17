@@ -258,14 +258,8 @@ function App() {
                             />
                           }
                         >
-                          <Route
-                            path="/"
-                            element={<HomepageDashboard />}
-                          />
-                          <Route
-                            path="/home"
-                            element={<HomepageDashboard />}
-                          />
+                          <Route path="/" element={<HomepageDashboard />} />
+                          <Route path="/home" element={<HomepageDashboard />} />
 
                           {adminPaths.map((path) => (
                             <Route
@@ -449,9 +443,4 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("App")).render(
-  <HashRouter>
-    {/* Track page view when route changes */}
-    <App />
-  </HashRouter>
-);
+export default App;

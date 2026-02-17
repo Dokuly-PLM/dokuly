@@ -48,7 +48,8 @@ docker-compose -f docker-compose-dev-mac.yml logs web
 
 ### Frontend (React)
 - **Framework**: React 18.2.0
-- **Build Tool**: Webpack 5
+- **Build Tool**: Vite
+- **Package manager / runtime**: Bun
 - **UI Components**: React Bootstrap, custom components
 - **State Management**: React hooks and context
 - **Routing**: React Router v6
@@ -976,7 +977,7 @@ This color scheme ensures a consistent, professional appearance throughout the D
 2. **API Integration**: Use axios for API calls
 3. **State Management**: Use React hooks and context
 4. **Styling**: Use Bootstrap classes and custom CSS
-5. **Build**: Run `npm run dev` for development, `npm run build` for production
+5. **Build**: Run `bun run dev` for development, `bun run build` for production
 
 ### Database Management
 - **Migrations**: Django handles schema changes
@@ -1152,7 +1153,7 @@ start_major_revision_at_one = models.BooleanField(
 
 ### Prerequisites
 - Docker and Docker Compose
-- Node.js and npm
+- Bun ([https://bun.sh](https://bun.sh)) for frontend
 - Python 3.x (for local development without Docker)
 - PostgreSQL (included in Docker setup)
 
@@ -1172,8 +1173,8 @@ docker-compose up --build
 
 ### Frontend Setup
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 ### Manual Backend Setup (Alternative)
@@ -1347,15 +1348,15 @@ The system uses several key dependency patterns:
 - `react-router-dom` - Routing
 - `axios` - HTTP client
 - `react-bootstrap` - UI components
-- `webpack` - Build system
+- `vite` - Build tool (Bun as package manager)
 
 ### Dependency Management
 ```bash
 # Backend dependencies
 pip install -r requirements.txt
 
-# Frontend dependencies  
-npm install
+# Frontend dependencies (requires Bun: https://bun.sh)
+bun install
 
 # Docker dependencies (recommended)
 docker-compose up --build
@@ -1876,14 +1877,14 @@ docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokul
 
 **Testing Commands:**
 ```bash
-# Run frontend tests
-npm test
+# Run frontend tests (if configured)
+bun test
 
-# Run tests in watch mode
-npm run test:watch
+# Run tests in watch mode (if configured)
+bun run test:watch
 
-# Run tests with coverage
-npm run test:coverage
+# Run tests with coverage (if configured)
+bun run test:coverage
 ```
 
 ## Deployment
@@ -1908,7 +1909,7 @@ npm run test:coverage
 1. **Database migrations**: Ensure all migrations are applied using `docker-compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py migrate`
 2. **File permissions**: Check file storage permissions
 3. **API authentication**: Verify token validity and project access
-4. **Frontend build**: Clear node_modules and reinstall dependencies
+4. **Frontend build**: Clear dependency cache and reinstall with `rm -rf node_modules && bun install`
 5. **Database connections**: Check PostgreSQL connection settings in Docker Compose
 6. **Docker container issues**: Use `docker-compose -f docker-compose-dev-mac.yml logs web` to check backend logs
 7. **Django shell access**: Use the correct file path `/dokuly_image/dokuly/manage.py` when running shell commands

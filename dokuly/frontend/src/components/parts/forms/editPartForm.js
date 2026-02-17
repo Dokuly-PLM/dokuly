@@ -10,9 +10,7 @@ import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
 import DropdownFormSection from "../../dokuly_components/dokulyForm/dropdownFormSection";
 import ReactCountryFlag from "react-country-flag";
-import FlagSelect, {
-  generateCountryList,
-} from "../../dokuly_components/dokulyForm/functions/generateCountryList";
+import { generateCountryList } from "../../dokuly_components/dokulyForm/functions/generateCountryList";
 import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 
 const EditPartForm = (props) => {

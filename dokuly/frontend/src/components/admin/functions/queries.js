@@ -1456,6 +1456,8 @@ export const fetchAPIKeyFromOrg = () => {
   return dataPromise;
 };
 
+export { fetchAPIKeyFromOrg as fetchAPIKeysFromOrg };
+
 export const paddleCheckoutDetails = (data) => {
   const toastPromise = axios
     .put("api/subscriptions/getProducts/", data, tokenConfig())

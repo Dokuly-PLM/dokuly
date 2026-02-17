@@ -54,14 +54,14 @@ or for mac / linux:
 docker compose -f docker-compose-dev-mac.yml build
 ```
 
-### Build frontend using npm
+### Build frontend using Bun
 
 ```bash
-npm i
+bun install
 ```
 
 ```bash
-npm run build
+bun run build
 ```
 
 ### Run the project
@@ -91,7 +91,7 @@ This can be used to login with for the first time to start using and configuring
 
 ## Setup self hosting of Dokuly
 
-To start hosting the service on your own machine you have to have all dependencies installed. This includes docker and node. See the table of contents for more information on installing these dependencies. 
+To start hosting the service on your own machine you have to have all dependencies installed. This includes docker and Bun. See the table of contents for more information on installing these dependencies. 
 <a name="nginx_proxy" />
 
 ### Nginx proxy
@@ -220,12 +220,8 @@ If this doesn't help, a reboot might be necessary (on Windows).
 
    localServer.ps1 builds both Django and PostgreSQL services
 
-5. Run start_webpack ( or `npm run dev` ) to build main.
-   If Node.js is not installed, follow steps 2 and 12 for Install Remaining Dependencies
-   Make sure to install with Node.js version 14.19.0 and npm 6.14.16.
-   Download from [here](https://community.chocolatey.org/packages/nodejs.install/14.19.0).
-
-   Install webpack `npm install --save-dev webpack`.
+5. Run `bun run dev` to start the frontend development server with hot reloading.
+   If Bun is not installed, install it from [https://bun.sh](https://bun.sh) (or run `curl -fsSL https://bun.sh/install | bash` on Linux/macOS).
 
    Local Django development server should run on localhost:8000
 
@@ -315,24 +311,19 @@ If working on Debian Linux. Run the script debain_install_dependencies, to insta
 
 #### Build Front-End Main Entry Point
 
-The Docker stack needs the compiled JSX from the Frontend Django Application. Building the entry point is done with webpack, which needs to be running in order to watch live changes appear while developing. NOTE: Remember that the main entry point is built before pushing any changes to git.
+The Docker stack needs the compiled JSX from the Frontend Django Application. Building the entry point is done with Vite (run `bun run build` for production, or `bun run dev` for development with hot reloading). NOTE: Remember that the main entry point is built before pushing any changes to git.
 
-1. Install necessary dependencies.
+1. Install Bun if needed (see [https://bun.sh](https://bun.sh)).
 
-   ```bash
-   dnf install npm
-   npm install --save-dev webpack
-   ```
-
-2. Start the development server with hot reloading.
+2. Install dependencies and start the development server with hot reloading.
 
    ```bash
-   npm i
-   npm run dev
+   bun install
+   bun run dev
    ```
 
-3. **Important**: Use the browser-sync URL for hot reloading:
-   - ✅ **Hot reloading**: `http://localhost:3000` (browser-sync proxy)
+3. **Important**: Use the Vite dev server URL for hot reloading:
+   - ✅ **Hot reloading**: `http://localhost:3000` (Vite dev server)
    - ❌ **No hot reloading**: `http://localhost:8000` (direct Django)
 
 
@@ -759,8 +750,8 @@ const ParentComponent = (props) => {
 Dokuly runs on the Django framework, where different entities are their own Django application, including the frontend. From top to bottom:
 
 1. Frontend
-   Technologies: React Redux (Mix of hooks and classes) and Bootstrap CSS
-   Package manager: Node.js and npm
+   Technologies: React (hooks and context) and Bootstrap CSS
+   Package manager: Bun. Build tool: Vite
 
 2. Middleware
    Standard Django middleware, configured in the settings.py file, found at ./dokuly/dokuly/

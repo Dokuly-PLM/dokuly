@@ -531,7 +531,6 @@ const DisplayASM = (props) => {
           src="../../static/icons/arrow-left.svg"
           alt="arrow left"
         />
-
         <Heading
           item_number={asmDetailed?.full_part_number}
           display_name={asmDetailed?.display_name}
@@ -541,7 +540,6 @@ const DisplayASM = (props) => {
           organization={asmDetailed?.organization}
           icon_url={asmDetailed?.part_type?.icon_url}
         />
-
         <DokulyTabs
           tabs={tabs.filter((tab) => !tab.hidden)}
           basePath={`/assemblies/${currentASMID}`}

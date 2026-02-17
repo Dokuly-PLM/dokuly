@@ -9,7 +9,6 @@ import { AuthContext } from "../App";
 import DokulyPriceFormatter from "../dokuly_components/formatters/priceFormatter";
 import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
 import { ThumbnailFormatter } from "../dokuly_components/dokulyTable/functions/formatters";
-import { getTotalPOPrice } from "./overviewTab/information";
 import useOrganization from "../common/hooks/useOrganization";
 import { loadingSpinner } from "../admin/functions/helperFunctions";
 import { releaseStateFormatterNoObject } from "../dokuly_components/formatters/releaseStateFormatter";
@@ -98,14 +97,14 @@ export default function PurchaseOrderTable() {
       temporaryPurchaseOrders = temporaryPurchaseOrders.filter(
         (purchaseOrder) => {
           return purchaseOrder?.is_completed === false;
-        }
+        },
       );
     }
     if (!showDiscardedPurchaseOrders) {
       temporaryPurchaseOrders = temporaryPurchaseOrders.filter(
         (purchaseOrder) => {
           return purchaseOrder?.status?.toLowerCase() !== "discarded";
-        }
+        },
       );
     }
 

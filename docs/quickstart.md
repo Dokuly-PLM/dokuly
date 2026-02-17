@@ -18,9 +18,9 @@ Then follow these steps:
   </li>
   <li>
     <strong>Build the frontend:</strong>
-    <p>Install dependencies and build:</p>
-    <pre><code>npm i</code></pre>
-    <pre><code>npm run build</code></pre>
+    <p>Install dependencies and build (requires <a href="https://bun.sh" target="_blank">Bun</a>):</p>
+    <pre><code>bun install</code></pre>
+    <pre><code>bun run build</code></pre>
   </li>
   <li>
     <strong>Run the project:</strong>
@@ -52,7 +52,7 @@ Then follow these steps:
 
 ## Configure self hosting of Dokuly
 
-To start hosting the service on your own machine you have to have all dependencies installed. This includes docker and node. See the table of contents for more information on installing these dependencies. 
+To start hosting the service on your own machine you have to have all dependencies installed. This includes docker and Bun. See the table of contents for more information on installing these dependencies. 
 <a name="nginx_proxy" />
 
 ### Nginx proxy

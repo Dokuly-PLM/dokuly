@@ -6,6 +6,10 @@ dokuly/frontend/static/media/**
 !dokuly/frontend/static/media/nd_related_images/**
 
 dokuly/frontend/static/frontend/main.js
+dokuly/frontend/static/frontend/index.*
+dokuly/frontend/static/frontend/purify.*
+dokuly/frontend/static/frontend/ui-*
+dokuly/frontend/static/frontend/vendor-*
 dokuly/public_page/static/main.js
 backendScripts/generateDocument/temp/
 *.pyc
@@ -21,6 +25,8 @@ database_backup.sql
 gs_temp.json
 dokuly/frontend/static/frontend/vendors-node_modules_canvg_lib_index_es_js.js
 dokuly/frontend/static/frontend/vendors-node_modules_dompurify_dist_purify_js.js
+dokuly/frontend/static/frontend/index-*
+dokuly/frontend/static/frontend/assets
 
 /backups/*
 backups/*

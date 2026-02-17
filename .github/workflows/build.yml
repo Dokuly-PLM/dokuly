@@ -52,35 +52,18 @@ jobs:
           d_s_k: "asdofnasdfnasdioufasdioufasdifujnsdfaiun"
         run: python ./dokuly/manage.py test profiles.tests
 
-      # Setup Node
-  build_node:
+  build_frontend:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.x]
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+      - uses: actions/checkout@v4
 
-      - name: Cache node modules
-        id: cache-npm
-        uses: actions/cache@v3
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-  
-      - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
-        name: List the state of node modules
-        continue-on-error: true
-        run: npm list
+          bun-version: latest
 
       - name: Install dependencies
-        run: npm install
-      - run: npm run build --if-present
+        run: bun install --frozen-lockfile
+
+      - name: Build frontend
+        run: bun run build
