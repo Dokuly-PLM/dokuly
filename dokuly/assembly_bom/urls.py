@@ -29,6 +29,10 @@ urlpatterns = [
         "api/assembly_bom/getItems/pcbas/<int:pcba_id>/",
         viewsBomitems.get_bom_items_by_pcba_id,
     ),
+    path(
+        "api/assembly_bom/getItemsWithLinkedParts/<str:app>/<int:item_id>/",
+        viewsBomitems.get_bom_items_with_linked_parts,
+    ),
     path("api/assembly_bom/editItem/<int:itemId>/", viewsBomitems.edit_bom_item),
     path("api/assembly_bom/removeItem/<int:itemId>/", viewsBomitems.remove_bom_item),
     path("api/assembly_bom/<int:bomId>/clearBom/", viewsBomitems.clear_bomb_items),

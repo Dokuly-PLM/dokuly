@@ -30,7 +30,6 @@ class BOMCostCalculator:
             visited = set()
 
         if (app, id) in visited:
-            print(f"Skipping {app} with ID {id} to prevent infinite recursion")
             return {}
 
         visited.add((app, id))
