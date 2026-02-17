@@ -18,7 +18,6 @@ import { getBomTableColumns } from "../../dokuly_components/dokulyBom/getBomCols
 import BomToPOForm from "../../dokuly_components/dokulyBom/bomToPOForm";
 import useSuppliers from "../hooks/useSuppliers";
 import NoDataFound from "../../dokuly_components/dokulyTable/components/noDataFound";
-import { loadingSpinner } from "../../admin/functions/helperFunctions";
 
 export const convertPriceToOrganizationCurrency = (
   price,
