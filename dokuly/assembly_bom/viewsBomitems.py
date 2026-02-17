@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from rest_framework.renderers import JSONRenderer
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Max
+from django.db.models import Max, Q
 import re
 
 from .serializers import Assembly_bomSerializer, BomItemSerializer
@@ -13,6 +13,9 @@ from django.db import transaction
 from .models import Assembly_bom, Part, Pcba, Assembly, Bom_item
 from profiles.views import check_user_auth_and_app_permission
 from traceability.utilities import log_bom_change
+from parts.views import fetch_all_prices
+from parts.serializers import BomPartSerializer, SimpleAsmSerializer, SimplePcbaSerializer
+from purchasing.serializers import PriceSerializer
 
 
 def _bom_linked_item_display(bom_item):
@@ -86,7 +89,9 @@ def get_bom_items_by_pcba_id(request, pcba_id):
             bom.save()
 
         # Query Bom_item instances related to the assembly
-        bom_items = Bom_item.objects.filter(bom=bom)
+        bom_items = Bom_item.objects.filter(bom=bom).select_related(
+            "part", "pcba", "assembly"
+        )
 
         # Serialize the query set
         serializer = BomItemSerializer(bom_items, many=True)
@@ -94,6 +99,156 @@ def get_bom_items_by_pcba_id(request, pcba_id):
     except Exception as e:
         return Response(
             f"get_bom_items_by_pcba_id failed: {e}",
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+def _fetch_linked_parts_response(user, assembly_ids, part_ids, pcba_ids):
+    """Build the same structure as parts.views.get_bom_items for linked parts/assemblies/pcbas with prices."""
+    res = {}
+    if assembly_ids:
+        asmsQs = (
+            Assembly.objects.filter(
+                (Q(project__project_members=user) | Q(project__isnull=True)),
+                id__in=assembly_ids,
+                is_archived=False,
+            )
+            .select_related("part_type")
+            .only(
+                "id", "part_number", "full_part_number", "display_name",
+                "revision", "is_latest_revision", "release_state",
+                "price", "model_url", "thumbnail", "external_part_number",
+                "part_type_id", "part_type__prefix", "part_type__icon_url",
+            )
+            .order_by("-revision")
+        )
+        asm_prices = fetch_all_prices("assemblies", assembly_ids)
+        res["asms"] = [
+            {
+                **SimpleAsmSerializer(asm).data,
+                "prices": [PriceSerializer(price).data for price in asm_prices.get(asm.id, [])],
+            }
+            for asm in asmsQs
+        ]
+    else:
+        res["asms"] = []
+
+    if part_ids:
+        partQs = (
+            Part.objects.filter(
+                (Q(project__project_members=user) | Q(project__isnull=True)),
+                Q(is_archived=False) | Q(is_archived=None),
+                id__in=part_ids,
+            )
+            .select_related("part_type")
+            .only(
+                "id", "part_number", "full_part_number", "part_type",
+                "display_name", "revision", "release_state",
+                "is_latest_revision", "mpn", "image_url",
+                "unit", "git_link", "manufacturer", "datasheet",
+                "part_information", "thumbnail", "is_rohs_compliant",
+                "external_part_number", "part_type_id", "part_type__name", "part_type__icon_url",
+            )
+            .order_by("-revision")
+        )
+        part_prices = fetch_all_prices("parts", part_ids)
+        res["parts"] = [
+            {
+                **BomPartSerializer(part).data,
+                "prices": [PriceSerializer(price).data for price in part_prices.get(part.id, [])],
+            }
+            for part in partQs
+        ]
+    else:
+        res["parts"] = []
+
+    if pcba_ids:
+        pcbaQs = (
+            Pcba.objects.filter(
+                (Q(project__project_members=user) | Q(project__isnull=True)),
+                id__in=pcba_ids,
+                is_archived__in=[False, None],
+            )
+            .select_related("part_type")
+            .only(
+                "id", "part_number", "full_part_number", "display_name",
+                "revision", "release_state", "is_latest_revision",
+                "thumbnail", "external_part_number",
+                "part_type_id", "part_type__name", "part_type__icon_url",
+            )
+            .order_by("-revision")
+        )
+        pcba_prices = fetch_all_prices("pcbas", pcba_ids)
+        res["pcbas"] = [
+            {
+                **SimplePcbaSerializer(pcba).data,
+                "prices": [PriceSerializer(price).data for price in pcba_prices.get(pcba.id, [])],
+            }
+            for pcba in pcbaQs
+        ]
+    else:
+        res["pcbas"] = []
+
+    return res
+
+
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="/login")
+def get_bom_items_with_linked_parts(request, app, item_id):
+    """Return BOM metadata, BOM items, and linked parts/assemblies/pcbas with prices in one response."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    if item_id is None or item_id == -1:
+        return Response("Invalid item id", status=status.HTTP_400_BAD_REQUEST)
+
+    if app not in ("assemblies", "pcbas"):
+        return Response("Invalid app", status=status.HTTP_400_BAD_REQUEST)
+
+    user = request.user
+    if user is None:
+        return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        if app == "assemblies":
+            bom, created = Assembly_bom.objects.get_or_create(assembly_id=item_id)
+        else:
+            bom, created = Assembly_bom.objects.get_or_create(pcba__id=item_id)
+            if created:
+                bom.pcba_id = item_id
+                bom.save()
+
+        bom_items = Bom_item.objects.filter(bom=bom).select_related("part", "pcba", "assembly")
+        bom_items_data = BomItemSerializer(bom_items, many=True).data
+
+        assembly_ids = []
+        part_ids = []
+        pcba_ids = []
+        for item in bom_items:
+            if item.assembly_id:
+                assembly_ids.append(item.assembly_id)
+            if item.part_id:
+                part_ids.append(item.part_id)
+            if item.pcba_id:
+                pcba_ids.append(item.pcba_id)
+
+        linked = _fetch_linked_parts_response(user, assembly_ids, part_ids, pcba_ids)
+
+        return Response(
+            {
+                "bom": Assembly_bomSerializer(bom).data,
+                "bom_items": bom_items_data,
+                "parts": linked["parts"],
+                "asms": linked["asms"],
+                "pcbas": linked["pcbas"],
+            },
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        return Response(
+            f"get_bom_items_with_linked_parts failed: {e}",
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

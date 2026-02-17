@@ -23,6 +23,14 @@ export const getBomItemsById = (id, app) => {
   return promise.then((res) => res.data);
 };
 
+export const getBomWithLinkedParts = (id, app) => {
+  const promise = axios.get(
+    `api/assembly_bom/getItemsWithLinkedParts/${app}/${id}/`,
+    tokenConfig(),
+  );
+  return promise.then((res) => res.data);
+};
+
 export const getLinkedParts = (assembly_ids, part_ids, pcba_ids) => {
   const assemblyIdStr =
     assembly_ids && assembly_ids.length > 0 ? assembly_ids.join(",") : "-1";

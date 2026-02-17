@@ -3,9 +3,8 @@ import { toast } from "react-toastify";
 import { Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import DokulyTable from "../../dokuly_components/dokulyTable/dokulyTable";
-import { getBom, getBomItemsById, getLinkedParts } from "./functions/queries";
+import { getBomWithLinkedParts } from "./functions/queries";
 import { buildBomObject } from "./functions/buildBomObject";
-import { separateBomItemIDs } from "./functions/separateBomItemIDs";
 import { thumbnailFormatter } from "../../dokuly_components/formatters/thumbnailFormatter";
 import AddItemButton from "./addItemButton";
 import { releaseStateFormatter } from "../../dokuly_components/formatters/releaseStateFormatter";
@@ -59,7 +58,9 @@ const BomTable = ({
 
   const [tableTextSize, setTableTextSize] = useState("14px");
 
-  const [refresh_bom, setRefreshBom] = useState(true);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  const setRefreshBom = useCallback(() => setRefreshCounter((c) => c + 1), []);
+  const [loadingBom, setLoadingBom] = useState(true);
   const [database_bom, setDatatbaseBom] = useState(null);
   const [bom, setBom] = useState([]);
   const [bom_items, setBomItems] = useState([]);
@@ -77,19 +78,38 @@ const BomTable = ({
   const [suppliers, refreshSuppliers, loadingSuppliers, errorSuppliers] =
     useSuppliers();
 
-  const fetchBomData = useCallback(() => {
-    if (id) {
-      getBom(id, app).then((res) => {
-        if (res.status === 200) {
-          setDatatbaseBom(res.data);
-        }
-      });
+  const mergeAndSetBom = useCallback(
+    (bomItems, partsList, pcbasList, assembliesList) => {
+      if (
+        !bomItems ||
+        !Array.isArray(bomItems) ||
+        !partsList ||
+        !pcbasList ||
+        !assembliesList
+      ) {
+        return;
+      }
+      const mergedBom = buildBomObject(
+        bomItems,
+        partsList,
+        pcbasList,
+        assembliesList,
+        partTypes,
+      );
+      mergedBom.sort((a, b) => {
+        const aIsNew =
+          a?.temporary_mpn === "-" || a?.mpn === undefined || a?.mpn === "";
+        const bIsNew =
+          b?.temporary_mpn === "-" || b?.mpn === undefined || b?.mpn === "";
 
-      getBomItemsById(id, app).then((res) => {
-        setBomItems(res);
+        if (aIsNew && !bIsNew) return -1;
+        if (bIsNew && !aIsNew) return 1;
+        return 0;
       });
-    }
-  }, [id, app]);
+      setBom(mergedBom);
+    },
+    [partTypes],
+  );
 
   let designator_header = "F/N";
   let designator_header_tooltip =
@@ -101,63 +121,47 @@ const BomTable = ({
   }
 
   useEffect(() => {
-    if (refresh_bom === false) {
+    if (!id) {
+      setLoadingBom(false);
       return;
     }
+    void refreshCounter; // trigger refetch when mutations call setRefreshBom()
+    setLoadingBom(true);
 
-    fetchBomData();
-    refreshBomIssues();
-    setRefreshBom(false);
-  }, [refresh_bom, fetchBomData]);
-
-  useEffect(() => {
-    fetchBomData();
-  }, [id, fetchBomData]);
-
-  useEffect(() => {
-    const { pcbaIds, assemblyIds, partIds } = separateBomItemIDs(bom_items);
-    if (bom_items) {
-      getLinkedParts(assemblyIds, partIds, pcbaIds)
-        .then((res) => {
-          setParts(res?.parts || []);
-          setAssemblies(res?.asms || []);
-          setPcbas(res?.pcbas || []);
-        })
-        .catch((err) => {
-          toast.error(err.message || "Error fetching BOM items");
-          setParts([]);
-          setAssemblies([]);
-          setPcbas([]);
-        });
-    }
-  }, [bom_items]);
-
-  useEffect(() => {
-    if (bom_items && Array.isArray(bom_items) && parts && pcbas && assemblies) {
-      const mergedBom = buildBomObject(
-        bom_items,
-        parts,
-        pcbas,
-        assemblies,
-        partTypes,
-      );
-
-      // Make new rows with placeholder MPN ("-") appear at the top
-      mergedBom.sort((a, b) => {
-        const aIsNew =
-          a?.temporary_mpn === "-" || a?.mpn === undefined || a?.mpn === "";
-        const bIsNew =
-          b?.temporary_mpn === "-" || b?.mpn === undefined || b?.mpn === "";
-
-        if (aIsNew && !bIsNew) return -1; // a goes first
-        if (bIsNew && !aIsNew) return 1; // b goes first
-        return 0; // Otherwise, no change
+    getBomWithLinkedParts(id, app)
+      .then((res) => {
+        setDatatbaseBom(res?.bom ?? null);
+        setBomItems(res?.bom_items ?? []);
+        setParts(res?.parts ?? []);
+        setAssemblies(res?.asms ?? []);
+        setPcbas(res?.pcbas ?? []);
+      })
+      .catch((err) => {
+        toast.error(err?.message || "Error fetching BOM");
+        setBomItems([]);
+        setParts([]);
+        setAssemblies([]);
+        setPcbas([]);
+        setBom([]);
+      })
+      .finally(() => {
+        setLoadingBom(false);
       });
 
-      setBom(mergedBom);
-    }
-  }, [bom_items, pcbas, assemblies, parts, partTypes]);
+    refreshBomIssues();
+  }, [id, app, refreshCounter, refreshBomIssues]);
 
+  useEffect(() => {
+    if (!bom_items || !Array.isArray(bom_items)) return;
+    if (bom_items.length === 0) {
+      setBom([]);
+      return;
+    }
+    if (!parts || !pcbas || !assemblies) return;
+    mergeAndSetBom(bom_items, parts, pcbas, assemblies);
+  }, [bom_items, parts, pcbas, assemblies, mergeAndSetBom]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchCurrencyConversions is not memoized in the hook
   useEffect(() => {
     if (organization) {
       fetchCurrencyConversions(organization.currency).then(() => {
@@ -168,22 +172,15 @@ const BomTable = ({
 
   useEffect(() => {
     const uniqueKeys = new Set();
-    parts.forEach((part) => {
+    for (const part of parts) {
       if (part.part_information) {
-        Object.keys(part.part_information).forEach((key) => {
+        for (const key of Object.keys(part.part_information)) {
           uniqueKeys.add(key);
-        });
+        }
       }
-    });
+    }
     setPartInformationColumns(Array.from(uniqueKeys));
   }, [parts]);
-
-  // Trigger recalculation when currency data is loaded
-  useEffect(() => {
-    if (isCorrectCurrencySet && !loadingCurrency && currencyPairs) {
-      setRefreshBom(true);
-    }
-  }, [loadingCurrency, currencyPairs]);
 
   const handleDuplicateFound = useCallback((existingItemId) => {
     setHighlightedItemId(existingItemId);
