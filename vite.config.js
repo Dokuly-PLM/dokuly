@@ -48,7 +48,7 @@ export default defineConfig(({ command }) => {
     esbuild: {
       // Treat .js like JSX so Vite can parse it during import analysis
       loader: "jsx",
-      include: /src\/.*\.js$/,
+      include: /src[\\/].*\.js$/,
       exclude: [], // important: don't exclude node_modules by default patterns
       jsx: "automatic",
     },
