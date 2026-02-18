@@ -38,7 +38,7 @@ export default defineConfig(({ command }) => {
     },
     build: {
       outDir: path.resolve(frontendRoot, "static/frontend"),
-      emptyOutDir: false,
+      emptyOutDir: true,
       rollupOptions: {
         // We keep JS input, but the “Vite-native” approach is input: index.html.
         input: path.resolve(frontendRoot, "src/index.js"),
