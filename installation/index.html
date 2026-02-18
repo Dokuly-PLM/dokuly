@@ -154,12 +154,9 @@
    ```</p>
 <p>localServer.ps1 builds both Django and PostgreSQL services</p>
 <ol>
-<li>Run start_webpack ( or <code>npm run dev</code> ) to build main.
-   If Node.js is not installed, follow steps 2 and 12 for Install Remaining Dependencies
-   Make sure to install with Node.js version 14.19.0 and npm 6.14.16.
-   Download from <a href="https://community.chocolatey.org/packages/nodejs.install/14.19.0">here</a>.</li>
+<li>Run <code>bun run dev</code> to start the frontend development server.
+   If Bun is not installed, install it from <a href="https://bun.sh">https://bun.sh</a> (or run <code>curl -fsSL https://bun.sh/install | bash</code> on Linux/macOS).</li>
 </ol>
-<p>Install webpack <code>npm install --save-dev webpack</code>.</p>
 <p>Local Django development server should run on localhost:8000</p>
 <p>Both db (postgres / psql) and Django are accessible through CLI in the docker desktop</p>
 <p><a name="development_with_docker_mac"/></p>
