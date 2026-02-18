@@ -7,7 +7,6 @@ import DeleteButton from "../../dokuly_components/deleteButton";
 import { useNavigate } from "react-router";
 import DokulyPriceFormatter from "../../dokuly_components/formatters/priceFormatter";
 import QuestionToolTip from "../../dokuly_components/questionToolTip";
-import { getTotalPOPrice } from "../overviewTab/information";
 import useOrganization from "../../common/hooks/useOrganization";
 import PaymentTermsSelect from "../components/paymentTermsSelect";
 import ShippingTermsSelect from "../components/shippingTermsSelect";
@@ -85,7 +84,7 @@ const EditPurchaseOrderForm = (props) => {
 
   const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState("");
   const [orderDate, setOrderDate] = useState(
-    new Date().toISOString().slice(0, 10)
+    new Date().toISOString().slice(0, 10),
   );
   const [paymentTermsInDays, setPaymentTermsInDays] = useState(30);
   const [totalPrice, setTotalPrice] = useState(0);

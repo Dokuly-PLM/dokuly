@@ -10,7 +10,6 @@ import DokulyImage from "../../dokuly_components/dokulyImage";
 import { toast } from "react-toastify";
 import OrderItemsTable from "../orderItems/orderItemsTable";
 import DokulyMarkdown from "../../dokuly_components/dokulyMarkdown/dokulyMarkdown";
-import { exchangeTotalPrice, getExchangeRate } from "./information";
 import AddButton from "../../dokuly_components/AddButton";
 import SubmitButton from "../../dokuly_components/submitButton";
 

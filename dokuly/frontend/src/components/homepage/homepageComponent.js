@@ -103,11 +103,7 @@ const HomepageComponent = () => {
   };
 
   if (loading) {
-    return (
-      <div className="container-fluid mt-2">
-        {loadingSpinner()}
-      </div>
-    );
+    return <div className="container-fluid mt-2">{loadingSpinner()}</div>;
   }
 
   if (error) {
@@ -130,7 +126,8 @@ const HomepageComponent = () => {
   const starredAssemblies = data?.starred_assemblies || [];
   const starredPcbas = data?.starred_pcbas || [];
   const isEcoEnabled = organization?.eco_is_enabled === true;
-  const starredCount = starredParts.length + starredAssemblies.length + starredPcbas.length;
+  const starredCount =
+    starredParts.length + starredAssemblies.length + starredPcbas.length;
 
   // Define columns for parts table - compact
   const partsColumns = [
@@ -260,7 +257,9 @@ const HomepageComponent = () => {
           Critical: "danger",
         };
         return (
-          <span className={`badge badge-pill badge-${colorMap[criticality] || "info"}`}>
+          <span
+            className={`badge badge-pill badge-${colorMap[criticality] || "info"}`}
+          >
             {criticality}
           </span>
         );
@@ -299,7 +298,15 @@ const HomepageComponent = () => {
     },
   ];
 
-  const StatCard = ({ count, label, icon, accentColor, onClick, iconStyle, breakdown }) => {
+  const StatCard = ({
+    count,
+    label,
+    icon,
+    accentColor,
+    onClick,
+    iconStyle,
+    breakdown,
+  }) => {
     const cardStyle = {
       background: "#ffffff",
       border: "1px solid #e5e7eb",
@@ -327,7 +334,8 @@ const HomepageComponent = () => {
     const defaultIconStyle = {
       width: "20px",
       height: "20px",
-      filter: "invert(31%) sepia(56%) saturate(489%) hue-rotate(123deg) brightness(91%) contrast(87%)",
+      filter:
+        "invert(31%) sepia(56%) saturate(489%) hue-rotate(123deg) brightness(91%) contrast(87%)",
     };
 
     const countStyle = {
@@ -367,7 +375,8 @@ const HomepageComponent = () => {
     const breakdownIconStyle = {
       width: "16px",
       height: "16px",
-      filter: "invert(31%) sepia(56%) saturate(489%) hue-rotate(123deg) brightness(91%) contrast(87%)",
+      filter:
+        "invert(31%) sepia(56%) saturate(489%) hue-rotate(123deg) brightness(91%) contrast(87%)",
     };
 
     return (
@@ -424,13 +433,29 @@ const HomepageComponent = () => {
   return (
     <ErrorBoundary>
       <Fragment>
-        <div className="container-fluid mt-2 mainContainerWidth" style={{ paddingBottom: "1rem", maxWidth: "87.77vw" }}>
+        <div
+          className="container-fluid mt-2 mainContainerWidth"
+          style={{ paddingBottom: "1rem", maxWidth: "87.77vw" }}
+        >
           {/* Header */}
           <div className="mb-4">
-            <h1 style={{ fontSize: "1.875rem", fontWeight: "700", color: "#1f2937", marginBottom: "0.25rem" }}>
+            <h1
+              style={{
+                fontSize: "1.875rem",
+                fontWeight: "700",
+                color: "#1f2937",
+                marginBottom: "0.25rem",
+              }}
+            >
               For You
             </h1>
-            <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0" }}>
+            <p
+              style={{
+                fontSize: "0.875rem",
+                color: "#6b7280",
+                marginBottom: "0",
+              }}
+            >
               Your unreleased items, open issues, and starred items
             </p>
           </div>
@@ -446,7 +471,10 @@ const HomepageComponent = () => {
                 onClick={() => navigate("/parts")}
               />
             </div>
-            <div style={{ flex: 1, paddingLeft: "7.5px", paddingRight: "7.5px" }} className="mb-3">
+            <div
+              style={{ flex: 1, paddingLeft: "7.5px", paddingRight: "7.5px" }}
+              className="mb-3"
+            >
               <StatCard
                 count={stats.unreleased_assemblies_count || 0}
                 label="Unreleased Assemblies"
@@ -455,7 +483,10 @@ const HomepageComponent = () => {
                 onClick={() => navigate("/assemblies")}
               />
             </div>
-            <div style={{ flex: 1, paddingLeft: "7.5px", paddingRight: "7.5px" }} className="mb-3">
+            <div
+              style={{ flex: 1, paddingLeft: "7.5px", paddingRight: "7.5px" }}
+              className="mb-3"
+            >
               <StatCard
                 count={stats.unreleased_pcbas_count || 0}
                 label="Unreleased PCBAs"
@@ -464,7 +495,10 @@ const HomepageComponent = () => {
                 onClick={() => navigate("/pcbas")}
               />
             </div>
-            <div style={{ flex: 1, paddingLeft: "7.5px", paddingRight: "7.5px" }} className="mb-3">
+            <div
+              style={{ flex: 1, paddingLeft: "7.5px", paddingRight: "7.5px" }}
+              className="mb-3"
+            >
               <StatCard
                 count={stats.open_issues_count || 0}
                 label="Open Issues"
@@ -473,7 +507,10 @@ const HomepageComponent = () => {
                 onClick={() => navigate("/projects")}
               />
             </div>
-            <div style={{ flex: 1, paddingLeft: "7.5px", paddingRight: "7.5px" }} className="mb-3">
+            <div
+              style={{ flex: 1, paddingLeft: "7.5px", paddingRight: "7.5px" }}
+              className="mb-3"
+            >
               <StatCard
                 count={starredCount}
                 label="Starred Items"
@@ -481,37 +518,58 @@ const HomepageComponent = () => {
                 accentColor="#fbbf24"
                 onClick={() => {
                   // Scroll to starred section
-                  const starredSection = document.querySelector('[data-starred-section]');
+                  const starredSection = document.querySelector(
+                    "[data-starred-section]",
+                  );
                   if (starredSection) {
-                    starredSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    starredSection.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
                   }
                 }}
                 iconStyle={{
                   width: "20px",
                   height: "20px",
-                  filter: "invert(70%) sepia(100%) saturate(2000%) hue-rotate(0deg) brightness(1) contrast(1)",
+                  filter:
+                    "invert(70%) sepia(100%) saturate(2000%) hue-rotate(0deg) brightness(1) contrast(1)",
                 }}
                 breakdown={[
-                  ...(starredParts.length > 0 ? [{
-                    icon: "../../static/icons/puzzle.svg",
-                    label: "Parts",
-                    count: starredParts.length
-                  }] : []),
-                  ...(starredAssemblies.length > 0 ? [{
-                    icon: "../../static/icons/assembly.svg",
-                    label: "Assemblies",
-                    count: starredAssemblies.length
-                  }] : []),
-                  ...(starredPcbas.length > 0 ? [{
-                    icon: "../../static/icons/pcb.svg",
-                    label: "PCBAs",
-                    count: starredPcbas.length
-                  }] : [])
+                  ...(starredParts.length > 0
+                    ? [
+                        {
+                          icon: "../../static/icons/puzzle.svg",
+                          label: "Parts",
+                          count: starredParts.length,
+                        },
+                      ]
+                    : []),
+                  ...(starredAssemblies.length > 0
+                    ? [
+                        {
+                          icon: "../../static/icons/assembly.svg",
+                          label: "Assemblies",
+                          count: starredAssemblies.length,
+                        },
+                      ]
+                    : []),
+                  ...(starredPcbas.length > 0
+                    ? [
+                        {
+                          icon: "../../static/icons/pcb.svg",
+                          label: "PCBAs",
+                          count: starredPcbas.length,
+                        },
+                      ]
+                    : []),
                 ]}
               />
             </div>
             {isEcoEnabled ? (
-              <div style={{ flex: 1, paddingLeft: "7.5px", paddingRight: 0 }} className="mb-3">
+              <div
+                style={{ flex: 1, paddingLeft: "7.5px", paddingRight: 0 }}
+                className="mb-3"
+              >
                 <StatCard
                   count={stats.unreleased_ecos_count || 0}
                   label="Unreleased ECOs"
@@ -521,7 +579,10 @@ const HomepageComponent = () => {
                 />
               </div>
             ) : (
-              <div style={{ flex: 1, paddingLeft: "7.5px", paddingRight: 0 }} className="mb-3">
+              <div
+                style={{ flex: 1, paddingLeft: "7.5px", paddingRight: 0 }}
+                className="mb-3"
+              >
                 {/* Empty space when ECO is disabled */}
               </div>
             )}
@@ -530,9 +591,22 @@ const HomepageComponent = () => {
           {/* Tables - 2 per row layout */}
           <Row className="mb-3">
             {parts.length > 0 && (
-              <Col md={6} className="mb-3" style={{ paddingLeft: 0, paddingRight: "7.5px" }}>
-                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+              <Col
+                md={6}
+                className="mb-3"
+                style={{ paddingLeft: 0, paddingRight: "7.5px" }}
+              >
+                <DokulyCard
+                  className="card rounded p-3"
+                  style={{ padding: "1rem", height: "100%", margin: 0 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
                     <div
                       style={{
                         width: "28px",
@@ -545,15 +619,29 @@ const HomepageComponent = () => {
                         marginRight: "0.5rem",
                       }}
                     >
-                    <img
-                      src="../../static/icons/puzzle.svg"
-                      alt="parts"
-                      style={{ width: "16px", height: "16px" }}
-                    />
+                      <img
+                        src="../../static/icons/puzzle.svg"
+                        alt="parts"
+                        style={{ width: "16px", height: "16px" }}
+                      />
                     </div>
-                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Unreleased Parts</h5>
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Unreleased Parts
+                    </h5>
                     {parts.length > 5 && (
-                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: "0.75rem",
+                          color: "#6b7280",
+                        }}
+                      >
                         {parts.length} total
                       </span>
                     )}
@@ -580,9 +668,22 @@ const HomepageComponent = () => {
             )}
 
             {assemblies.length > 0 && (
-              <Col md={6} className="mb-3" style={{ paddingLeft: "7.5px", paddingRight: 0 }}>
-                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+              <Col
+                md={6}
+                className="mb-3"
+                style={{ paddingLeft: "7.5px", paddingRight: 0 }}
+              >
+                <DokulyCard
+                  className="card rounded p-3"
+                  style={{ padding: "1rem", height: "100%", margin: 0 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
                     <div
                       style={{
                         width: "28px",
@@ -601,9 +702,23 @@ const HomepageComponent = () => {
                         style={{ width: "16px", height: "16px" }}
                       />
                     </div>
-                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Unreleased Assemblies</h5>
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Unreleased Assemblies
+                    </h5>
                     {assemblies.length > 5 && (
-                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: "0.75rem",
+                          color: "#6b7280",
+                        }}
+                      >
                         {assemblies.length} total
                       </span>
                     )}
@@ -632,9 +747,22 @@ const HomepageComponent = () => {
 
           <Row className="mb-3">
             {pcbas.length > 0 && (
-              <Col md={6} className="mb-3" style={{ paddingLeft: 0, paddingRight: "7.5px" }}>
-                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+              <Col
+                md={6}
+                className="mb-3"
+                style={{ paddingLeft: 0, paddingRight: "7.5px" }}
+              >
+                <DokulyCard
+                  className="card rounded p-3"
+                  style={{ padding: "1rem", height: "100%", margin: 0 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
                     <div
                       style={{
                         width: "28px",
@@ -653,9 +781,23 @@ const HomepageComponent = () => {
                         style={{ width: "16px", height: "16px" }}
                       />
                     </div>
-                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Unreleased PCBAs</h5>
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Unreleased PCBAs
+                    </h5>
                     {pcbas.length > 5 && (
-                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: "0.75rem",
+                          color: "#6b7280",
+                        }}
+                      >
                         {pcbas.length} total
                       </span>
                     )}
@@ -682,9 +824,22 @@ const HomepageComponent = () => {
             )}
 
             {issues.length > 0 && (
-              <Col md={6} className="mb-3" style={{ paddingLeft: "7.5px", paddingRight: 0 }}>
-                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+              <Col
+                md={6}
+                className="mb-3"
+                style={{ paddingLeft: "7.5px", paddingRight: 0 }}
+              >
+                <DokulyCard
+                  className="card rounded p-3"
+                  style={{ padding: "1rem", height: "100%", margin: 0 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
                     <div
                       style={{
                         width: "28px",
@@ -703,9 +858,23 @@ const HomepageComponent = () => {
                         style={{ width: "16px", height: "16px" }}
                       />
                     </div>
-                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Open Issues</h5>
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Open Issues
+                    </h5>
                     {issues.length > 5 && (
-                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: "0.75rem",
+                          color: "#6b7280",
+                        }}
+                      >
                         {issues.length} total
                       </span>
                     )}
@@ -733,9 +902,25 @@ const HomepageComponent = () => {
 
             {/* Unreleased ECOs */}
             {isEcoEnabled && ecos.length > 0 && (
-              <Col md={6} className="mb-3" style={{ paddingLeft: issues.length === 0 ? 0 : "7.5px", paddingRight: 0 }}>
-                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+              <Col
+                md={6}
+                className="mb-3"
+                style={{
+                  paddingLeft: issues.length === 0 ? 0 : "7.5px",
+                  paddingRight: 0,
+                }}
+              >
+                <DokulyCard
+                  className="card rounded p-3"
+                  style={{ padding: "1rem", height: "100%", margin: 0 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
                     <div
                       style={{
                         width: "28px",
@@ -754,9 +939,23 @@ const HomepageComponent = () => {
                         style={{ width: "16px", height: "16px" }}
                       />
                     </div>
-                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Unreleased ECOs</h5>
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Unreleased ECOs
+                    </h5>
                     {ecos.length > 5 && (
-                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: "0.75rem",
+                          color: "#6b7280",
+                        }}
+                      >
                         {ecos.length} total
                       </span>
                     )}
@@ -784,10 +983,18 @@ const HomepageComponent = () => {
           </Row>
 
           {/* Starred Items Section */}
-          {(starredParts.length > 0 || starredAssemblies.length > 0 || starredPcbas.length > 0) && (
+          {(starredParts.length > 0 ||
+            starredAssemblies.length > 0 ||
+            starredPcbas.length > 0) && (
             <Row className="mb-1" data-starred-section>
               <Col md={12} className="mb-1">
-                <div style={{ display: "flex", alignItems: "center", marginBottom: "1rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: "1rem",
+                  }}
+                >
                   <img
                     src="../../static/icons/star.svg"
                     alt="starred items"
@@ -795,10 +1002,18 @@ const HomepageComponent = () => {
                       width: "28px",
                       height: "28px",
                       marginRight: "0.75rem",
-                      filter: "invert(70%) sepia(100%) saturate(2000%) hue-rotate(0deg) brightness(1) contrast(1)",
+                      filter:
+                        "invert(70%) sepia(100%) saturate(2000%) hue-rotate(0deg) brightness(1) contrast(1)",
                     }}
                   />
-                  <h3 style={{ fontSize: "1.75rem", fontWeight: "600", color: "#1f2937", margin: 0 }}>
+                  <h3
+                    style={{
+                      fontSize: "1.75rem",
+                      fontWeight: "600",
+                      color: "#1f2937",
+                      margin: 0,
+                    }}
+                  >
                     Starred Items
                   </h3>
                 </div>
@@ -808,9 +1023,22 @@ const HomepageComponent = () => {
 
           <Row className="mb-3">
             {starredParts.length > 0 && (
-              <Col md={6} className="mb-3" style={{ paddingLeft: 0, paddingRight: "7.5px" }}>
-                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+              <Col
+                md={6}
+                className="mb-3"
+                style={{ paddingLeft: 0, paddingRight: "7.5px" }}
+              >
+                <DokulyCard
+                  className="card rounded p-3"
+                  style={{ padding: "1rem", height: "100%", margin: 0 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
                     <div
                       style={{
                         width: "28px",
@@ -829,9 +1057,23 @@ const HomepageComponent = () => {
                         style={{ width: "16px", height: "16px" }}
                       />
                     </div>
-                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Starred Parts</h5>
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Starred Parts
+                    </h5>
                     {starredParts.length > 5 && (
-                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: "0.75rem",
+                          color: "#6b7280",
+                        }}
+                      >
                         {starredParts.length} total
                       </span>
                     )}
@@ -858,9 +1100,25 @@ const HomepageComponent = () => {
             )}
 
             {starredAssemblies.length > 0 && (
-              <Col md={6} className="mb-3" style={{ paddingLeft: starredParts.length === 0 ? 0 : "7.5px", paddingRight: 0 }}>
-                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+              <Col
+                md={6}
+                className="mb-3"
+                style={{
+                  paddingLeft: starredParts.length === 0 ? 0 : "7.5px",
+                  paddingRight: 0,
+                }}
+              >
+                <DokulyCard
+                  className="card rounded p-3"
+                  style={{ padding: "1rem", height: "100%", margin: 0 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
                     <div
                       style={{
                         width: "28px",
@@ -879,9 +1137,23 @@ const HomepageComponent = () => {
                         style={{ width: "16px", height: "16px" }}
                       />
                     </div>
-                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Starred Assemblies</h5>
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Starred Assemblies
+                    </h5>
                     {starredAssemblies.length > 5 && (
-                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: "0.75rem",
+                          color: "#6b7280",
+                        }}
+                      >
                         {starredAssemblies.length} total
                       </span>
                     )}
@@ -910,9 +1182,22 @@ const HomepageComponent = () => {
 
           {starredPcbas.length > 0 && (
             <Row className="mb-3">
-              <Col md={6} className="mb-3" style={{ paddingLeft: 0, paddingRight: "7.5px" }}>
-                <DokulyCard className="card rounded p-3" style={{ padding: "1rem", height: "100%", margin: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+              <Col
+                md={6}
+                className="mb-3"
+                style={{ paddingLeft: 0, paddingRight: "7.5px" }}
+              >
+                <DokulyCard
+                  className="card rounded p-3"
+                  style={{ padding: "1rem", height: "100%", margin: 0 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
                     <div
                       style={{
                         width: "28px",
@@ -931,9 +1216,23 @@ const HomepageComponent = () => {
                         style={{ width: "16px", height: "16px" }}
                       />
                     </div>
-                    <h5 style={{ margin: 0, fontSize: "0.875rem", fontWeight: "600" }}>Starred PCBAs</h5>
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Starred PCBAs
+                    </h5>
                     {starredPcbas.length > 5 && (
-                      <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#6b7280" }}>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: "0.75rem",
+                          color: "#6b7280",
+                        }}
+                      >
                         {starredPcbas.length} total
                       </span>
                     )}
@@ -961,38 +1260,60 @@ const HomepageComponent = () => {
           )}
 
           {/* Empty State */}
-          {parts.length === 0 && assemblies.length === 0 && pcbas.length === 0 && issues.length === 0 && (!isEcoEnabled || ecos.length === 0) && starredParts.length === 0 && starredAssemblies.length === 0 && starredPcbas.length === 0 && (
-            <DokulyCard>
-              <div className="text-center py-5">
-                <div
-                  style={{
-                    width: "64px",
-                    height: "64px",
-                    borderRadius: "12px",
-                    backgroundColor: "#16521615",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 1.5rem",
-                  }}
-                >
-                  <img
-                    src="../../static/icons/circle-check.svg"
-                    alt="all caught up"
+          {parts.length === 0 &&
+            assemblies.length === 0 &&
+            pcbas.length === 0 &&
+            issues.length === 0 &&
+            (!isEcoEnabled || ecos.length === 0) &&
+            starredParts.length === 0 &&
+            starredAssemblies.length === 0 &&
+            starredPcbas.length === 0 && (
+              <DokulyCard>
+                <div className="text-center py-5">
+                  <div
                     style={{
-                      width: "32px",
-                      height: "32px",
-                      filter: "invert(31%) sepia(56%) saturate(489%) hue-rotate(123deg) brightness(91%) contrast(87%)",
+                      width: "64px",
+                      height: "64px",
+                      borderRadius: "12px",
+                      backgroundColor: "#16521615",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 1.5rem",
                     }}
-                  />
+                  >
+                    <img
+                      src="../../static/icons/circle-check.svg"
+                      alt="all caught up"
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        filter:
+                          "invert(31%) sepia(56%) saturate(489%) hue-rotate(123deg) brightness(91%) contrast(87%)",
+                      }}
+                    />
+                  </div>
+                  <h3
+                    style={{
+                      color: "#1f2937",
+                      marginBottom: "0.5rem",
+                      fontWeight: "600",
+                    }}
+                  >
+                    All caught up!
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: "0.875rem",
+                      color: "#6b7280",
+                      marginBottom: "0",
+                    }}
+                  >
+                    You don't have any unreleased items or open issues.
+                  </p>
                 </div>
-                <h3 style={{ color: "#1f2937", marginBottom: "0.5rem", fontWeight: "600" }}>All caught up!</h3>
-                <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0" }}>
-                  You don't have any unreleased items or open issues.
-                </p>
-              </div>
-            </DokulyCard>
-          )}
+              </DokulyCard>
+            )}
         </div>
       </Fragment>
     </ErrorBoundary>
@@ -1000,4 +1321,3 @@ const HomepageComponent = () => {
 };
 
 export default HomepageComponent;
-

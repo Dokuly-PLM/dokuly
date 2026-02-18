@@ -8,7 +8,6 @@ import {
   getPaginationRowModel,
   useReactTable,
   getSortedRowModel,
-  SortingState,
 } from "@tanstack/react-table";
 import { Row } from "react-bootstrap";
 import { getTotalHours } from "../functions/helperFunctions";
@@ -25,7 +24,7 @@ const TimetrackAdminTable = ({
   allTasks,
 }) => {
   const [data, setData] = useState(
-    timetracks !== null && timetracks !== undefined ? timetracks : []
+    timetracks !== null && timetracks !== undefined ? timetracks : [],
   );
   const [canGetNextPage, setCanGetNextPage] = useState(true);
   const [canGetPreviousPage, setCanGetPreviousPage] = useState(false);
@@ -33,10 +32,10 @@ const TimetrackAdminTable = ({
 
   const getCustomerValue = (cellValue, rowValue) => {
     const project = projects?.find(
-      (project) => project.id === rowValue.original.project
+      (project) => project.id === rowValue.original.project,
     );
     const customer = customers?.find(
-      (customer) => customer.id === project?.customer
+      (customer) => customer.id === project?.customer,
     );
     return customer?.name ?? "Unknown Customer";
   };
@@ -49,7 +48,7 @@ const TimetrackAdminTable = ({
       let names = "";
       rowValue.original.multiple_users.forEach((id, index) => {
         const profile = profiles?.find(
-          (profile) => parseInt(profile.user) === parseInt(id)
+          (profile) => parseInt(profile.user) === parseInt(id),
         );
         if (index === rowValue.original.multiple_users.length - 1) {
           names += `${profile.first_name}`;
@@ -66,14 +65,14 @@ const TimetrackAdminTable = ({
       );
     }
     const profile = profiles?.find(
-      (profile) => profile.user === rowValue.original.user
+      (profile) => profile.user === rowValue.original.user,
     );
     return `${profile.first_name} ${profile.last_name}`;
   };
 
   const getProjectValue = (cellValue, rowValue) => {
     const project = projects?.find(
-      (project) => project.id === rowValue.original.project
+      (project) => project.id === rowValue.original.project,
     );
     return project?.title ?? "--";
   };
@@ -98,7 +97,7 @@ const TimetrackAdminTable = ({
     const task = allTasks?.find(
       (task) =>
         task?.id === rowValue?.original?.task_id &&
-        task?.project_id === rowValue?.original?.project
+        task?.project_id === rowValue?.original?.project,
     );
     return task?.title ?? "--";
   };
@@ -230,7 +229,7 @@ const TimetrackAdminTable = ({
                               >
                                 {flexRender(
                                   header.column.columnDef.header,
-                                  header.getContext()
+                                  header.getContext(),
                                 )}
                                 {{
                                   asc: (
@@ -261,7 +260,7 @@ const TimetrackAdminTable = ({
                         <td key={cell.id}>
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </td>
                       ))}

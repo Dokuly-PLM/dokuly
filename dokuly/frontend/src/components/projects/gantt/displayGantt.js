@@ -1,12 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Gantt,
-  Task,
-  EventOption,
-  StylingOption,
-  ViewMode,
-  DisplayOption,
-} from "gantt-task-react";
+import { Gantt } from "gantt-task-react";
 import "gantt-task-react/dist/index.css";
 import {
   createGantt,
@@ -103,7 +96,7 @@ const DisplayGantt = (props) => {
         let hoursFormatted = "N/A";
         if (taskTime && workload > 0) {
           hoursFormatted = ` ${taskTime.accumulated_time_hours.toFixed(
-            1
+            1,
           )} / ${workload.toFixed(1)} h`;
         }
 
@@ -195,7 +188,7 @@ const DisplayGantt = (props) => {
 
   const getStartEndDateForProject = (tasksArray, projectId) => {
     const projectTasks = tasksArray.filter(
-      (t) => t.originalTask.parent_task === parseInt(projectId)
+      (t) => t.originalTask.parent_task === parseInt(projectId),
     );
 
     if (projectTasks.length === 0) {
@@ -222,16 +215,16 @@ const DisplayGantt = (props) => {
 
     // Find all child tasks belonging to the project
     const childTasks = tasks.filter(
-      (t) => t.originalTask.parent_task === projectId
+      (t) => t.originalTask.parent_task === projectId,
     );
 
     if (childTasks.length > 0) {
       // Find the earliest start and latest end dates among the child tasks
       const earliestStart = new Date(
-        Math.min(...childTasks.map((t) => new Date(t.start).getTime()))
+        Math.min(...childTasks.map((t) => new Date(t.start).getTime())),
       );
       const latestEnd = new Date(
-        Math.max(...childTasks.map((t) => new Date(t.end).getTime()))
+        Math.max(...childTasks.map((t) => new Date(t.end).getTime())),
       );
 
       // Find the parent (project) task
@@ -252,7 +245,7 @@ const DisplayGantt = (props) => {
         };
 
         const updatedTasks = tasks.map((t) =>
-          t.id === projectId.toString() ? updatedProject : t
+          t.id === projectId.toString() ? updatedProject : t,
         );
         setTasks(updatedTasks);
 
@@ -286,10 +279,10 @@ const DisplayGantt = (props) => {
       if (parentTaskId) {
         const [start, end] = getStartEndDateForProject(
           tasksArray,
-          parentTaskId
+          parentTaskId,
         );
         const parentTaskIndex = tasksArray.findIndex(
-          (t) => t.id === parentTaskId.toString()
+          (t) => t.id === parentTaskId.toString(),
         );
         const parentTask = tasksArray[parentTaskIndex];
         if (
@@ -331,7 +324,7 @@ const DisplayGantt = (props) => {
           if (parentTaskId) {
             parentTasksToUpdate.push(parentTaskId);
             const parentTask = newTasks.find(
-              (t) => t.id === parentTaskId.toString()
+              (t) => t.id === parentTaskId.toString(),
             );
             if (parentTask) {
               collectParentTasks(parentTask);
@@ -344,7 +337,7 @@ const DisplayGantt = (props) => {
         // Now, update each parent task in the backend
         parentTasksToUpdate.forEach((parentTaskId) => {
           const parentTask = newTasks.find(
-            (t) => t.id === parentTaskId.toString()
+            (t) => t.id === parentTaskId.toString(),
           );
           if (parentTask) {
             const parentData = {
@@ -419,7 +412,7 @@ const DisplayGantt = (props) => {
     if (rawTasks.length > 0) {
       const taskCount = rawTasks.length;
       const tasksCompleted = rawTasks.filter(
-        (task) => task.is_complete === true
+        (task) => task.is_complete === true,
       ).length;
       setTaskCount(taskCount);
       setTasksCompleted(tasksCompleted);

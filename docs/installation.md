@@ -29,12 +29,8 @@
 
    localServer.ps1 builds both Django and PostgreSQL services
 
-5. Run start_webpack ( or `npm run dev` ) to build main.
-   If Node.js is not installed, follow steps 2 and 12 for Install Remaining Dependencies
-   Make sure to install with Node.js version 14.19.0 and npm 6.14.16.
-   Download from [here](https://community.chocolatey.org/packages/nodejs.install/14.19.0).
-
-   Install webpack `npm install --save-dev webpack`.
+5. Run `bun run dev` to start the frontend development server.
+   If Bun is not installed, install it from [https://bun.sh](https://bun.sh) (or run `curl -fsSL https://bun.sh/install | bash` on Linux/macOS).
 
    Local Django development server should run on localhost:8000
 
