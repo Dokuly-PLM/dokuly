@@ -1448,13 +1448,12 @@ export const archiveLocation = async (id) => {
 };
 
 export const fetchAPIKeyFromOrg = () => {
-  const promise = axios.get(
-    "api/organizations/get/byUserId/",
-    tokenConfig(),
-  );
+  const promise = axios.get("api/organizations/get/byUserId/", tokenConfig());
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+export { fetchAPIKeyFromOrg as fetchAPIKeysFromOrg };
 
 export const paddleCheckoutDetails = (data) => {
   const toastPromise = axios
@@ -1565,7 +1564,7 @@ export const previewPartNumberTemplate = (data) => {
   const promise = axios.post(
     "api/organizations/previewPartNumberTemplate/",
     data,
-    tokenConfig()
+    tokenConfig(),
   );
   const dataPromise = promise.then((res) => res);
   return dataPromise;
@@ -1575,7 +1574,7 @@ export const previewFormattedRevisionTemplate = (data) => {
   const promise = axios.post(
     "api/organizations/previewFormattedRevisionTemplate/",
     data,
-    tokenConfig()
+    tokenConfig(),
   );
   const dataPromise = promise.then((res) => res);
   return dataPromise;
@@ -1585,7 +1584,7 @@ export const previewDocumentNumberTemplate = (data) => {
   const promise = axios.post(
     "api/organizations/previewDocumentNumberTemplate/",
     data,
-    tokenConfig()
+    tokenConfig(),
   );
   const dataPromise = promise.then((res) => res);
   return dataPromise;
@@ -1642,7 +1641,7 @@ export const testDigikeyConnection = (testKeyword = "resistor") => {
   const promise = axios.post(
     "api/parts/digikey/test_connection/",
     { test_keyword: testKeyword },
-    tokenConfig()
+    tokenConfig(),
   );
   const dataPromise = promise.then((res) => res);
   return dataPromise;
@@ -1659,7 +1658,7 @@ export const pushToOdoo = (itemType, itemId, includeBom = false) => {
   const promise = axios.post(
     `api/integrations/odoo/push/${itemType}/${itemId}/`,
     { include_bom: includeBom },
-    tokenConfig()
+    tokenConfig(),
   );
   const dataPromise = promise.then((res) => res);
   return dataPromise;
@@ -1673,7 +1672,7 @@ export const syncPartsToOdoo = () => {
   const promise = axios.post(
     "api/integrations/odoo/sync-parts/",
     {},
-    tokenConfig()
+    tokenConfig(),
   );
   return promise.then((res) => res);
 };

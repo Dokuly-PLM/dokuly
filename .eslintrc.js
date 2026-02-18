@@ -25,7 +25,10 @@ module.exports = {
     "no-console": "warn",
     "prefer-const": "error",
     "no-var": "error",
-    "react-refresh/only-export-components": "warn",
+    "react-refresh/only-export-components": [
+      "warn",
+      { allowConstantExport: true },
+    ],
   },
   settings: {
     react: {
