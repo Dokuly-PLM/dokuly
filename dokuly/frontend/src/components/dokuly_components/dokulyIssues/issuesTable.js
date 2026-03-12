@@ -453,7 +453,7 @@ const IssuesTable = ({
       formatter: (row) => {
         const ecos = row?.linked_ecos ?? [];
         if (ecos.length === 0) return "-";
-        return <EcoPillList ecos={ecos} size="sm" showPeek={false} />;
+        return <EcoPillList ecos={ecos} size="sm" showPeek={true} />;
       },
     },
     {
