@@ -142,7 +142,7 @@ def create_new_issue(request):
         if error_response:
             return error_response
         object = model.objects.get(id=object_id)
-        current_revision = object.revision
+        current_revision = (object.revision_count_major or 0, object.revision_count_minor or 0)
         latest_revision = object.is_latest_revision
 
         issue = Issues()
@@ -151,10 +151,7 @@ def create_new_issue(request):
         connect_issue_status_to_related_object(issue, f'opened_in_{model_string}', object)
         issue.save()  # Need to save ID before setting m2m field
         if not latest_revision:
-            subsequent_revision_ids = [
-                rev['id'] for rev in revision_list if rev['revision'] > current_revision
-            ]
-            subsequent_revisions = model.objects.filter(id__in=subsequent_revision_ids)
+            subsequent_revisions = get_subsequent_revisions(model, object)
             for rev in subsequent_revisions:
                 add_issue_to_object(issue, f'{app}', rev)
         add_issue_to_object(issue, f'{app}', object)
@@ -198,16 +195,10 @@ def close_issue(request, issue_id):
         issue.closed_by = request.user
         issue.closed_at = timezone.now()
         object_closed_in = model.objects.get(id=object_id)
-        # REmove issues from subsequent revisions
-        revision_list = request.data.get('revision_list', [])
-        current_revision = object_closed_in.revision
-        if len(revision_list) != 0 and not object_closed_in.is_latest_revision:
-            subsequent_revision_ids = [
-                rev['id'] for rev in revision_list if rev['revision'] > current_revision
-            ]
-            # Get subsequent revisions objects
-            subsequent_revisions = model.objects.filter(id__in=subsequent_revision_ids)
-            # Remove issue from subsequent revisions
+        
+        # Remove issues from subsequent revisions
+        if not object_closed_in.is_latest_revision:
+            subsequent_revisions = get_subsequent_revisions(model, object_closed_in)
             remove_issue_from_object(issue, f'{app}', subsequent_revisions)
 
         send_issue_closure_notifications(issue, object_closed_in, app, object_id, issue_id, user=request.user)
@@ -320,6 +311,46 @@ def link_issues_on_new_object_revision(app_name, current_instance, new_instance)
             new_issues.add(issue)
 
     new_instance.save()  # Save the new instance to ensure all M2M relationships are updated
+
+
+def get_subsequent_revisions(model, current_object):
+    """
+    Finds all revisions of the same object that are newer than the current one.
+    """
+    current_major = current_object.revision_count_major or 0
+    current_minor = current_object.revision_count_minor or 0
+    
+    query = None
+    
+    # Identify all revisions using the same logic as get_revisions views
+    if hasattr(current_object, 'part_number') and current_object.part_number not in [None, -1]:
+        # Logic for Part, PCBA, Assembly and Document (if part_number set)
+        query = model.objects.filter(part_number=current_object.part_number)
+    elif hasattr(current_object, 'document_number') and hasattr(current_object, 'prefix_id'):
+        # Fallback for Document if part_number is missing
+        query = model.objects.filter(
+            document_number=current_object.document_number,
+            prefix_id=current_object.prefix_id
+        )
+        if hasattr(current_object, 'project') and current_object.project:
+            query = query.filter(project=current_object.project)
+            
+    if query is None:
+        return []
+
+    # Filter out archived and self
+    query = query.exclude(is_archived=True).exclude(pk=current_object.pk)
+    
+    subsequent = []
+    for rev in query:
+        rev_major = rev.revision_count_major or 0
+        rev_minor = rev.revision_count_minor or 0
+        
+        # Tuple comparison for major/minor
+        if (rev_major, rev_minor) > (current_major, current_minor):
+            subsequent.append(rev)
+            
+    return subsequent
 
 
 def reopen_issue_instance(issue: Issues, object_instance, app: str):
