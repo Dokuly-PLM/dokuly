@@ -114,3 +114,40 @@ export const getEcoMissingBomItems = (ecoId) => {
   const promise = axios.get(`/api/eco/${ecoId}/missingBomItems/`, tokenConfig());
   return promise;
 };
+
+
+// Affected Item Issues
+
+export const addIssueToAffectedItem = (affectedItemId, issueId) => {
+  const promise = axios.put(
+    `/api/eco/affectedItems/${affectedItemId}/addIssue/`,
+    { issue_id: issueId },
+    tokenConfig()
+  );
+  return promise;
+};
+
+export const removeIssueFromAffectedItem = (affectedItemId, issueId) => {
+  const promise = axios.put(
+    `/api/eco/affectedItems/${affectedItemId}/removeIssue/`,
+    { issue_id: issueId },
+    tokenConfig()
+  );
+  return promise;
+};
+
+export const searchIssues = (query) => {
+  const promise = axios.get(
+    `/api/eco/issues/search/?q=${encodeURIComponent(query)}`,
+    tokenConfig()
+  );
+  return promise;
+};
+
+export const getEcosForIssue = (issueId) => {
+  const promise = axios.get(
+    `/api/eco/forIssue/${issueId}/`,
+    tokenConfig()
+  );
+  return promise;
+};

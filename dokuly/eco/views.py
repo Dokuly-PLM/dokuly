@@ -8,7 +8,7 @@ from django.db import transaction
 from datetime import datetime
 
 from .models import Eco, AffectedItem
-from .serializers import EcoSerializer, AffectedItemSerializer, AffectedItemDetailSerializer
+from .serializers import EcoSerializer, AffectedItemSerializer, AffectedItemDetailSerializer, IssuePillSerializer
 from profiles.views import check_user_auth_and_app_permission
 from profiles.models import Profile
 from documents.models import MarkdownText, Document
@@ -16,6 +16,7 @@ from parts.models import Part
 from pcbas.models import Pcba
 from assemblies.models import Assembly
 from projects.models import Project, Tag
+from projects.issuesModel import Issues
 from projects.viewsTags import check_for_and_create_new_tags
 from assembly_bom.models import Assembly_bom, Bom_item
 
@@ -488,6 +489,7 @@ def edit_affected_item(request, pk):
         return Response("Cannot modify a released ECO!", status=status.HTTP_400_BAD_REQUEST)
 
     data = request.data
+    item_changed = False
 
     # Clear all item references first when setting a new one
     if "part_id" in data or "pcba_id" in data or "assembly_id" in data or "document_id" in data:
@@ -495,6 +497,7 @@ def edit_affected_item(request, pk):
         affected_item.pcba = None
         affected_item.assembly = None
         affected_item.document = None
+        item_changed = True
 
     if "part_id" in data:
         if data["part_id"]:
@@ -529,7 +532,84 @@ def edit_affected_item(request, pk):
 
     affected_item.save()
 
+    # Auto-attach issues when an item is newly linked
+    if item_changed:
+        affected_item.issues.clear()
+        linked_item = affected_item.part or affected_item.pcba or affected_item.assembly or affected_item.document
+        if linked_item:
+            app_field_map = {
+                Part: "parts_issues",
+                Pcba: "pcbas_issues",
+                Assembly: "assemblies_issues",
+                Document: "documents_issues",
+            }
+            field_name = app_field_map.get(type(linked_item))
+            if field_name:
+                issues = getattr(linked_item, field_name).all()
+                affected_item.issues.set(issues)
+
     # Update the ECO's last_updated timestamp
+    affected_item.eco.save()
+
+    serializer = AffectedItemDetailSerializer(affected_item)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def add_issue_to_affected_item(request, pk):
+    """Add an issue to an affected item."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    try:
+        affected_item = AffectedItem.objects.get(pk=pk)
+    except AffectedItem.DoesNotExist:
+        return Response("Affected item not found", status=status.HTTP_404_NOT_FOUND)
+
+    if affected_item.eco.release_state == "Released":
+        return Response("Cannot modify a released ECO!", status=status.HTTP_400_BAD_REQUEST)
+
+    issue_id = request.data.get("issue_id")
+    if not issue_id:
+        return Response("issue_id is required", status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        issue = Issues.objects.get(pk=issue_id)
+    except Issues.DoesNotExist:
+        return Response("Issue not found", status=status.HTTP_404_NOT_FOUND)
+
+    affected_item.issues.add(issue)
+    affected_item.eco.save()
+
+    serializer = AffectedItemDetailSerializer(affected_item)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(("PUT",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def remove_issue_from_affected_item(request, pk):
+    """Remove an issue from an affected item."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    try:
+        affected_item = AffectedItem.objects.get(pk=pk)
+    except AffectedItem.DoesNotExist:
+        return Response("Affected item not found", status=status.HTTP_404_NOT_FOUND)
+
+    if affected_item.eco.release_state == "Released":
+        return Response("Cannot modify a released ECO!", status=status.HTTP_400_BAD_REQUEST)
+
+    issue_id = request.data.get("issue_id")
+    if not issue_id:
+        return Response("issue_id is required", status=status.HTTP_400_BAD_REQUEST)
+
+    affected_item.issues.remove(issue_id)
     affected_item.eco.save()
 
     serializer = AffectedItemDetailSerializer(affected_item)
@@ -669,3 +749,62 @@ def get_eco_missing_bom_items_api(request, eco_id):
         'missing_items': missing_items,
         'count': len(missing_items),
     }, status=status.HTTP_200_OK)
+
+
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def search_issues(request):
+    """Search issues by ID or title for adding to affected items."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    query = request.GET.get("q", "").strip()
+    if not query:
+        return Response([], status=status.HTTP_200_OK)
+
+    results = Issues.objects.none()
+
+    # Search by issue ID if query is numeric
+    if query.lstrip("#").isdigit():
+        issue_id = int(query.lstrip("#"))
+        results = Issues.objects.filter(pk=issue_id)
+    else:
+        # Search by title
+        results = Issues.objects.filter(title__icontains=query)[:20]
+
+    serializer = IssuePillSerializer(results, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def get_ecos_for_issue(request, issue_id):
+    """Get all ECOs that reference a specific issue via affected items."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    affected_items = AffectedItem.objects.filter(issues__id=issue_id).select_related('eco')
+
+    ecos_data = []
+    seen_eco_ids = set()
+
+    for affected_item in affected_items:
+        eco = affected_item.eco
+        if eco.id not in seen_eco_ids:
+            seen_eco_ids.add(eco.id)
+            affected_count = AffectedItem.objects.filter(eco=eco).count()
+            ecos_data.append({
+                'id': eco.id,
+                'display_name': eco.display_name,
+                'release_state': eco.release_state,
+                'description_text': eco.description.text if eco.description else '',
+                'affected_items_count': affected_count,
+                'created_at': eco.created_at,
+                'last_updated': eco.last_updated,
+            })
+
+    return Response(ecos_data, status=status.HTTP_200_OK)
