@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
+import { OverlayTrigger, Popover } from "react-bootstrap";
 import {
   addIssueToAffectedItem,
   removeIssueFromAffectedItem,
@@ -120,10 +121,33 @@ const IssuePills = ({ issues = [], affectedItemId, readOnly = false, onRefresh }
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
       {sortedIssues.map((issue) => (
-        <div
+        <OverlayTrigger
           key={issue.id}
+          trigger={["hover", "focus"]}
+          placement="top"
+          delay={{ show: 300, hide: 100 }}
+          overlay={
+            <Popover id={`issue-peek-${issue.id}`}>
+              <Popover.Body style={{ padding: "8px 12px" }}>
+                <div style={{ fontWeight: 600, fontSize: "13px" }}>
+                  #{issue.id}
+                </div>
+                {issue.title && (
+                  <div style={{ fontSize: "12px", color: "#555", marginTop: "2px" }}>
+                    {issue.title}
+                  </div>
+                )}
+                {issue.is_closed && (
+                  <div style={{ fontSize: "11px", color: "#888", marginTop: "4px" }}>
+                    Closed
+                  </div>
+                )}
+              </Popover.Body>
+            </Popover>
+          }
+        >
+        <div
           onClick={(e) => handlePillClick(e, issue.id)}
-          title={`${issue.title || ""}${issue.is_closed ? " (Closed)" : ""}\nCtrl+click to open`}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -158,6 +182,7 @@ const IssuePills = ({ issues = [], affectedItemId, readOnly = false, onRefresh }
             </span>
           )}
         </div>
+        </OverlayTrigger>
       ))}
 
       {/* Add issue button/input */}
