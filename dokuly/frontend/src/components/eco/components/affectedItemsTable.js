@@ -15,6 +15,7 @@ import {
   deleteAffectedItem,
 } from "../functions/queries";
 import InlineItemSelector from "../../dokuly_components/dokulyTable/components/inlineItemSelector";
+import DokulyMarkdown from "../../dokuly_components/dokulyMarkdown/dokulyMarkdown";
 
 const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAffectedItemsChange = null }) => {
   const navigate = useNavigate();
@@ -280,8 +281,9 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
           overflow: "hidden",
           textOverflow: "ellipsis",
         }}>
-          {row.revision_notes || "-"}
+          <DokulyMarkdown markdownText={row.revision_notes || "-"} />
         </div>
+        
       ),
     },
     {
