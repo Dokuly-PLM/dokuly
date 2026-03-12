@@ -125,6 +125,12 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
       defaultShowColumn: true,
       maxWidth: "100px",
       formatter: releaseStateFormatter,
+      sortFunction: (a, b, order) => {
+        const priority = { "Review": 0, "Draft": 1, "Released": 2 };
+        const aVal = priority[a.release_state] ?? 99;
+        const bVal = priority[b.release_state] ?? 99;
+        return order === "asc" ? aVal - bVal : bVal - aVal;
+      },
     },
     {
       key: "responsible",
@@ -198,7 +204,7 @@ const EcoTable = ({ refresh: externalRefresh, setRefresh: setExternalRefresh }) 
           showColumnSelector={true}
           itemsPerPage={50}
           onRowClick={handleRowClick}
-          defaultSort={{ columnNumber: 6, order: "asc" }}
+          defaultSort={{ columnNumber: 4, order: "asc" }}
           textSize={tableTextSize}
           setTextSize={setTableTextSize}
           showTableSettings={true}
