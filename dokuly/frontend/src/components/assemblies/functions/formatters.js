@@ -1,6 +1,7 @@
 import React from "react";
 import { formatCloudImageUri } from "../../pcbas/functions/productionHelpers";
 import DokulyImage from "../../dokuly_components/dokulyImage";
+import ThumbnailHoverZoom from "../../dokuly_components/formatters/thumbnailHoverZoom";
 
 export const numberFormatter = (row) => {
   if (row !== undefined && row != null) {
@@ -21,40 +22,44 @@ export const thumbnailFormatter = (row) => {
 
   if (row?.thumbnail !== undefined && row?.thumbnail !== null) {
     return (
-      <div style={containerStyle}>
-        <DokulyImage
-          src={formatCloudImageUri(row?.thumbnail)}
-          alt="Thumbnail"
-          lazy={true}
-          defaultSrc=""
-          style={{
-            maxWidth: "70px",
-            maxHeight: "70px",
-            objectFit: "contain",
-            display: "block",
-            margin: "auto",
-          }}
-        />
-      </div>
+      <ThumbnailHoverZoom>
+        <div style={containerStyle}>
+          <DokulyImage
+            src={formatCloudImageUri(row?.thumbnail)}
+            alt="Thumbnail"
+            lazy={true}
+            defaultSrc=""
+            style={{
+              maxWidth: "70px",
+              maxHeight: "70px",
+              objectFit: "contain",
+              display: "block",
+              margin: "auto",
+            }}
+          />
+        </div>
+      </ThumbnailHoverZoom>
     );
   }
   if (row?.image_url !== undefined && row?.image_url !== null) {
     return (
-      <div style={containerStyle}>
-        <DokulyImage
-          src={row?.image_url}
-          alt="Thumbnail"
-          lazy={true}
-          defaultSrc=""
-          style={{
-            maxWidth: "70px",
-            maxHeight: "70px",
-            objectFit: "contain",
-            display: "block",
-            margin: "auto",
-          }}
-        />
-      </div>
+      <ThumbnailHoverZoom>
+        <div style={containerStyle}>
+          <DokulyImage
+            src={row?.image_url}
+            alt="Thumbnail"
+            lazy={true}
+            defaultSrc=""
+            style={{
+              maxWidth: "70px",
+              maxHeight: "70px",
+              objectFit: "contain",
+              display: "block",
+              margin: "auto",
+            }}
+          />
+        </div>
+      </ThumbnailHoverZoom>
     );
   }
   if(row?.part_type?.icon_url) {

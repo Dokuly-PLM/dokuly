@@ -1,6 +1,7 @@
 import React from "react";
 import { formatCloudImageUri } from "../../pcbas/functions/productionHelpers";
 import DokulyImage from "../../dokuly_components/dokulyImage";
+import ThumbnailHoverZoom from "../../dokuly_components/formatters/thumbnailHoverZoom";
 
 export const numberFormatter = (cell, row) => {
   if (row !== undefined && row != null) {
@@ -21,40 +22,44 @@ export const imageFormatter = (cell, row, partTypes) => {
 
   if (row?.thumbnail !== undefined && row?.thumbnail !== null) {
     return (
-      <div style={containerStyle}>
-        <DokulyImage
-          src={formatCloudImageUri(row?.thumbnail)}
-          alt="Thumbnail"
-          lazy={true}
-          defaultSrc=""
-          style={{
-            maxWidth: "70px",
-            maxHeight: "70px",
-            objectFit: "contain",
-            display: "block",
-            margin: "auto",
-          }}
-        />
-      </div>
+      <ThumbnailHoverZoom>
+        <div style={containerStyle}>
+          <DokulyImage
+            src={formatCloudImageUri(row?.thumbnail)}
+            alt="Thumbnail"
+            lazy={true}
+            defaultSrc=""
+            style={{
+              maxWidth: "70px",
+              maxHeight: "70px",
+              objectFit: "contain",
+              display: "block",
+              margin: "auto",
+            }}
+          />
+        </div>
+      </ThumbnailHoverZoom>
     );
   }
 
   if (row?.image_url !== "" && row?.image_url !== null) {
     return (
-      <div style={containerStyle}>
-        <img
-          className="rounded float-left"
-          width="40px"
-          height="40px"
-          alt="Part thumbnail"
-          src={row.image_url}
-          loading="lazy"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = ""; // set default image to no image
-          }}
-        />
-      </div>
+      <ThumbnailHoverZoom>
+        <div style={containerStyle}>
+          <img
+            className="rounded float-left"
+            width="40px"
+            height="40px"
+            alt="Part thumbnail"
+            src={row.image_url}
+            loading="lazy"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = ""; // set default image to no image
+            }}
+          />
+        </div>
+      </ThumbnailHoverZoom>
     );
   }
   if (partTypes !== undefined && partTypes != null) {
