@@ -128,20 +128,28 @@ const IssuePills = ({ issues = [], affectedItemId, readOnly = false, onRefresh }
           delay={{ show: 300, hide: 100 }}
           overlay={
             <Popover id={`issue-peek-${issue.id}`}>
-              <Popover.Body style={{ padding: "8px 12px" }}>
-                <div style={{ fontWeight: 600, fontSize: "13px" }}>
-                  #{issue.id}
+              <Popover.Body>
+                <div style={{ minWidth: "250px", maxWidth: "350px" }}>
+                  <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
+                    #{issue.id}: {issue.title || "Untitled"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.875rem",
+                      color: "#666",
+                      marginBottom: "8px",
+                      borderLeft: `2px solid ${getIssuePillColor(issue)}`,
+                      paddingLeft: "8px",
+                    }}
+                  >
+                    {issue.criticality || "Low"} criticality
+                  </div>
+                  <div style={{ fontSize: "0.75rem", color: "#888" }}>
+                    <span>
+                      <strong>Status:</strong> {issue.is_closed ? "Closed" : "Open"}
+                    </span>
+                  </div>
                 </div>
-                {issue.title && (
-                  <div style={{ fontSize: "12px", color: "#555", marginTop: "2px" }}>
-                    {issue.title}
-                  </div>
-                )}
-                {issue.is_closed && (
-                  <div style={{ fontSize: "11px", color: "#888", marginTop: "4px" }}>
-                    Closed
-                  </div>
-                )}
               </Popover.Body>
             </Popover>
           }
