@@ -114,7 +114,7 @@ def process_pdf(
         doc_checker = None
 
     customer_name = data.project.customer.name
-    full_project_number = str(project_data.full_project_number)
+    project_title = str(project_data.title)
     released_date = data.released_date
     timestamp_obj = released_date
     release_state = data.release_state
@@ -185,7 +185,7 @@ def process_pdf(
                 released_date=date_string,
                 classification=classification,
                 customer=customer_name,
-                project=full_project_number,
+                project=project_title,
                 author=doc_author,
                 doc_checker=doc_checker,
                 summary=summary,
