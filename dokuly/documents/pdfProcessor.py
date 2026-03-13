@@ -114,7 +114,7 @@ def process_pdf(
         doc_checker = None
 
     customer_name = data.project.customer.name
-    full_project_number = str(project_data.full_project_number)
+    project_title = str(project_data.title)
     released_date = data.released_date
     timestamp_obj = released_date
     release_state = data.release_state
@@ -139,10 +139,10 @@ def process_pdf(
         if org_obj != None:
             try:
                 logo = Image.objects.get(id=org_obj.logo_id)
-                os.mkdir(unique_path + "/images")
                 try:
                     with logo.file.open() as file:
                         logo_path = f"{unique_path}{file.name}"
+                        os.makedirs(os.path.dirname(logo_path), exist_ok=True)
                         try:
                             with open(logo_path, "wb+") as logo_file:
                                 logo_file.write(file.read())
@@ -160,6 +160,7 @@ def process_pdf(
                 if organization_obj != None:
                     with organization_obj.logo.open() as file:
                         logo_path = f"{unique_path}{file.name}"
+                        os.makedirs(os.path.dirname(logo_path), exist_ok=True)
                         with open(logo_path, "wb+") as logo_file:
                             logo_file.write(file.read())
             except:
@@ -184,7 +185,7 @@ def process_pdf(
                 released_date=date_string,
                 classification=classification,
                 customer=customer_name,
-                project=full_project_number,
+                project=project_title,
                 author=doc_author,
                 doc_checker=doc_checker,
                 summary=summary,

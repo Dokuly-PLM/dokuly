@@ -30,7 +30,7 @@ export const PartNewRevision = (props) => {
 
   return (
     <React.Fragment>
-      {props.part?.release_state === "Released" ? (
+      {props.part?.release_state === "Released" && props.part?.is_latest_revision === true ? (
         <div>
           <button
             className={"btn btn-bg-transparent "}

@@ -183,7 +183,7 @@ const AsmNewRevision = (props) => {
     <div className="ml-3 my-1">
       <animated.div style={fadeReverse}>
         <div className="row">
-          {props?.asm?.release_state === "Released" ? (
+          {props?.asm?.release_state === "Released" && props?.asm?.is_latest_revision === true ? (
             <button
               className={
                 props?.asm?.is_latest_revision &&

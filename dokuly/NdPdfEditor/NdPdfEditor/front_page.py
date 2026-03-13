@@ -157,7 +157,7 @@ def add_front_page( self,
         self.table_row_dual( parameter='Checked',     value=doc_checker,    column_size_ratio=colum_ratio, text_size=tab_text_size, row_height=tab_row_height, table_width_mm=tab_width, align='center' )
 
     self.table_row_dual( parameter='Project',         value=project,        column_size_ratio=colum_ratio, text_size=tab_text_size, row_height=tab_row_height, table_width_mm=tab_width, align='center' )
-    self.table_row_dual( parameter='Customer',        value=customer,       column_size_ratio=colum_ratio, text_size=tab_text_size, row_height=tab_row_height, table_width_mm=tab_width, align='center' )
+    #self.table_row_dual( parameter='Customer',        value=customer,       column_size_ratio=colum_ratio, text_size=tab_text_size, row_height=tab_row_height, table_width_mm=tab_width, align='center' ) # Customer is deprecated.
     if released_date:
         self.table_row_dual( parameter='Date',            value=released_date,   column_size_ratio=colum_ratio, text_size=tab_text_size, row_height=tab_row_height, table_width_mm=tab_width, align='center' )
     self.table_row_dual( parameter='Classification',  value=classification, column_size_ratio=colum_ratio, text_size=tab_text_size, row_height=tab_row_height, table_width_mm=tab_width, align='center' )
