@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Col, Row } from "react-bootstrap";
 import { formatCloudImageUri } from "./productionHelpers";
 import DokulyImage from "../../dokuly_components/dokulyImage";
+import ThumbnailHoverZoom from "../../dokuly_components/formatters/thumbnailHoverZoom";
 
 export const numberFormatter = (row) => {
   if (row) {
@@ -152,18 +153,18 @@ export function ThumbnailFormatterComponent({ row }) {
   }
 
   return (
-    <div style={containerStyle}>
-      <DokulyImage
-        src={thumbnailUrl}
-        defaultSrc={defaultSrc}
-        alt="Thumbnail"
-        lazy={true}
-        style={imageStyle}
-        onLoad={handleImageLoad}
-        // Remove onError handler - let DokulyImage handle errors internally
-        // It will use defaultSrc on error, which is already set above
-      />
-    </div>
+    <ThumbnailHoverZoom>
+      <div style={containerStyle}>
+        <DokulyImage
+          src={thumbnailUrl}
+          defaultSrc={defaultSrc}
+          alt="Thumbnail"
+          lazy={true}
+          style={imageStyle}
+          onLoad={handleImageLoad}
+        />
+      </div>
+    </ThumbnailHoverZoom>
   );
 }
 

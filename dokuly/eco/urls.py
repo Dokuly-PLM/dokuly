@@ -20,4 +20,14 @@ urlpatterns = [
     path("api/eco/<int:eco_id>/affectedItems/add/", views.add_affected_item, name="add_affected_item"),
     path("api/eco/affectedItems/<int:pk>/edit/", views.edit_affected_item, name="edit_affected_item"),
     path("api/eco/affectedItems/<int:pk>/delete/", views.delete_affected_item, name="delete_affected_item"),
+
+    # Affected Item Issues
+    path("api/eco/affectedItems/<int:pk>/addIssue/", views.add_issue_to_affected_item, name="add_issue_to_affected_item"),
+    path("api/eco/affectedItems/<int:pk>/removeIssue/", views.remove_issue_from_affected_item, name="remove_issue_from_affected_item"),
+
+    # Issue search for adding to affected items
+    path("api/eco/issues/search/", views.search_issues, name="search_issues"),
+
+    # Get ECOs for a specific issue
+    path("api/eco/forIssue/<int:issue_id>/", views.get_ecos_for_issue, name="get_ecos_for_issue"),
 ]

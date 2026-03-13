@@ -10,6 +10,8 @@ import { formatCloudImageUri } from "../../../pcbas/functions/productionHelpers"
 import DokulyDateFormat from "../../formatters/dateFormatter";
 import GenericDropdownSelector from "../../dokulyTable/components/genericDropdownSelector";
 import { fetchUsers } from "../../../admin/functions/queries";
+import { getEcosForIssue } from "../../../eco/functions/queries";
+import { EcoPillList } from "../../ecoPill/ecoPill";
 
 export const getIssueProject = (issue, returnObject = false) => {
   if (issue?.parts && issue.parts.length > 0) {
@@ -43,6 +45,7 @@ const IssueInfoCard = ({
 }) => {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [issueEcos, setIssueEcos] = useState([]);
 
   const backgroundColor =
     issue?.criticality === "Critical"
@@ -67,6 +70,18 @@ const IssueInfoCard = ({
         setLoadingUsers(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (issue?.id) {
+      getEcosForIssue(issue.id)
+        .then((res) => {
+          if (res.status === 200) {
+            setIssueEcos(res.data || []);
+          }
+        })
+        .catch(() => setIssueEcos([]));
+    }
+  }, [issue?.id]);
 
   const navigateToRelatedPart = (id) => {
     navigate(`/${app}/${id}/issues`);
@@ -290,6 +305,19 @@ const IssueInfoCard = ({
         </Row>
 
         <hr />
+
+        {issueEcos && issueEcos.length > 0 && (
+          <>
+            <Row className="mt-2">
+              <Col xs="6" sm="6" md="6" lg="4" xl="6">
+                <b>ECO:</b>
+              </Col>
+              <Col>
+                <EcoPillList ecos={issueEcos} size="sm" />
+              </Col>
+            </Row>
+          </>
+        )}
 
         <Row className="mt-2 align-items-top">
           <Col className="col-lg-6 col-xl-6">

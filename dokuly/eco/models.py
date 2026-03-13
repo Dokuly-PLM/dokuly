@@ -6,6 +6,7 @@ from pcbas.models import Pcba
 from assemblies.models import Assembly
 from documents.models import Document
 from projects.models import Project, Tag
+from projects.issuesModel import Issues
 
 
 class Eco(models.Model):
@@ -71,5 +72,10 @@ class AffectedItem(models.Model):
 
     # Optional comment about what changed
     description = models.CharField(max_length=500, blank=True, null=True)
+
+    # Issues linked to this affected item
+    issues = models.ManyToManyField(
+        Issues, blank=True, related_name="eco_affected_items"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)

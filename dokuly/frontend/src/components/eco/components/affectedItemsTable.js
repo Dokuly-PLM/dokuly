@@ -15,6 +15,8 @@ import {
   deleteAffectedItem,
 } from "../functions/queries";
 import InlineItemSelector from "../../dokuly_components/dokulyTable/components/inlineItemSelector";
+import DokulyMarkdown from "../../dokuly_components/dokulyMarkdown/dokulyMarkdown";
+import IssuePills from "./issuePills";
 
 const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAffectedItemsChange = null }) => {
   const navigate = useNavigate();
@@ -46,6 +48,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
               document: item.document,
               description: item.description || "",
               created_at: item.created_at,
+              issues: item.issues || [],
               // Flattened fields for display
               full_part_number: linkedItem?.full_part_number || linkedItem?.full_doc_number || "",
               display_name: linkedItem?.display_name || linkedItem?.title || "",
@@ -270,6 +273,23 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
       ),
     },
     {
+      key: "issues",
+      header: "Issues",
+      formatter: (row) => {
+        if (!row.part && !row.pcba && !row.assembly && !row.document) {
+          return null;
+        }
+        return (
+          <IssuePills
+            issues={row.issues || []}
+            affectedItemId={row.id}
+            readOnly={isLocked}
+            onRefresh={() => setRefresh(true)}
+          />
+        );
+      },
+    },
+    {
       key: "revision_notes",
       header: "Revision Notes",
       formatter: (row) => (
@@ -280,8 +300,9 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
           overflow: "hidden",
           textOverflow: "ellipsis",
         }}>
-          {row.revision_notes || "-"}
+          <DokulyMarkdown markdownText={row.revision_notes || "-"} />
         </div>
+        
       ),
     },
     {

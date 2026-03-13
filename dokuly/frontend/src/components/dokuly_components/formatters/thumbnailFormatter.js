@@ -1,6 +1,7 @@
 import React from "react";
 import { formatCloudImageUri } from "../../pcbas/functions/productionHelpers";
 import DokulyImage from "../../dokuly_components/dokulyImage";
+import ThumbnailHoverZoom from "./thumbnailHoverZoom";
 
 export const thumbnailFormatter = (row) => {
   const containerStyle = {
@@ -15,44 +16,48 @@ export const thumbnailFormatter = (row) => {
   }
   if (row?.thumbnail !== undefined && row?.thumbnail !== null) {
     return (
-      <div style={containerStyle}>
-        <DokulyImage
-          src={formatCloudImageUri(row?.thumbnail)}
-          alt="Thumbnail"
-          style={{
-            maxWidth: "70px",
-            maxHeight: "70px",
-            objectFit: "contain",
-            display: "block",
-            margin: "auto",
-          }}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = ""; // set default image to no image
-          }}
-        />
-      </div>
+      <ThumbnailHoverZoom>
+        <div style={containerStyle}>
+          <DokulyImage
+            src={formatCloudImageUri(row?.thumbnail)}
+            alt="Thumbnail"
+            style={{
+              maxWidth: "70px",
+              maxHeight: "70px",
+              objectFit: "contain",
+              display: "block",
+              margin: "auto",
+            }}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = ""; // set default image to no image
+            }}
+          />
+        </div>
+      </ThumbnailHoverZoom>
     );
   }
   if (row?.image_url !== undefined && row?.image_url !== null) {
     return (
-      <div style={containerStyle}>
-        <DokulyImage
-          src={row?.image_url}
-          alt="Thumbnail"
-          style={{
-            maxWidth: "70px",
-            maxHeight: "70px",
-            objectFit: "contain",
-            display: "block",
-            margin: "auto",
-          }}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = ""; // set default image to no image
-          }}
-        />
-      </div>
+      <ThumbnailHoverZoom>
+        <div style={containerStyle}>
+          <DokulyImage
+            src={row?.image_url}
+            alt="Thumbnail"
+            style={{
+              maxWidth: "70px",
+              maxHeight: "70px",
+              objectFit: "contain",
+              display: "block",
+              margin: "auto",
+            }}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = ""; // set default image to no image
+            }}
+          />
+        </div>
+      </ThumbnailHoverZoom>
     );
   }
   return "";

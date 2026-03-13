@@ -96,10 +96,26 @@ class IssuesSerializer(serializers.ModelSerializer):
     closed_in_document = IssueDocumentSerializer(read_only=True)
 
     tags = TaskTagSerializer(many=True)
+    linked_ecos = serializers.SerializerMethodField()
 
     class Meta:
         model = Issues
         fields = '__all__'
+
+    def get_linked_ecos(self, obj):
+        affected_items = obj.eco_affected_items.select_related('eco').all()
+        seen = set()
+        ecos = []
+        for ai in affected_items:
+            eco = ai.eco
+            if eco.id not in seen:
+                seen.add(eco.id)
+                ecos.append({
+                    'id': eco.id,
+                    'display_name': eco.display_name,
+                    'release_state': eco.release_state,
+                })
+        return ecos
 
 
 class TagSerializer(serializers.ModelSerializer):

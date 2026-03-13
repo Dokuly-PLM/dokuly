@@ -1,6 +1,7 @@
 import React from "react";
 import { formatCloudImageUri } from "../../../common/functions";
 import DokulyImage from "../../dokulyImage";
+import ThumbnailHoverZoom from "../../formatters/thumbnailHoverZoom";
 
 export function ThumbnailFormatter({ thumbnail }) {
   const containerStyle = {
@@ -24,16 +25,18 @@ export function ThumbnailFormatter({ thumbnail }) {
   }
 
   return (
-    <div style={containerStyle}>
-      <DokulyImage
-        src={formatCloudImageUri(thumbnail)}
-        alt="Thumbnail"
-        style={imageStyle}
-        onError={(e) => {
-          e.target.onerror = null;
-          e.target.src = ""; // set default image to no image
-        }}
-      />
-    </div>
+    <ThumbnailHoverZoom>
+      <div style={containerStyle}>
+        <DokulyImage
+          src={formatCloudImageUri(thumbnail)}
+          alt="Thumbnail"
+          style={imageStyle}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = ""; // set default image to no image
+          }}
+        />
+      </div>
+    </ThumbnailHoverZoom>
   );
 }

@@ -6,6 +6,7 @@ from pcbas.serializers import PcbaBomSerializer
 from assemblies.serializers import AssemblyBomSerializer
 from documents.serializers import DocumentTableSerializer
 from projects.serializers import ProjectTitleSerializer, TagSerializer
+from projects.issuesModel import Issues
 
 
 class EcoSerializer(serializers.ModelSerializer):
@@ -34,12 +35,25 @@ class AffectedItemSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class IssuePillSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for issue pills in ECO affected items."""
+    is_closed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Issues
+        fields = ['id', 'title', 'criticality', 'is_closed']
+
+    def get_is_closed(self, obj):
+        return obj.closed_at is not None
+
+
 class AffectedItemDetailSerializer(serializers.ModelSerializer):
     """Serializer with nested item details for display."""
     part = PartBomSerializer(read_only=True)
     pcba = PcbaBomSerializer(read_only=True)
     assembly = AssemblyBomSerializer(read_only=True)
     document = DocumentTableSerializer(read_only=True)
+    issues = IssuePillSerializer(many=True, read_only=True)
 
     class Meta:
         model = AffectedItem

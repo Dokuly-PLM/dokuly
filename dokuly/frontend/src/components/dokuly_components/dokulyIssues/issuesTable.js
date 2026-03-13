@@ -27,6 +27,7 @@ import DokulyTags from "../dokulyTags/dokulyTags";
 import NoDataFound from "../dokulyTable/components/noDataFound";
 import DokulyImage from "../dokulyImage";
 import { formatCloudImageUri } from "../../pcbas/functions/productionHelpers";
+import { EcoPillList } from "../ecoPill/ecoPill";
 
 export const appToModelName = {
   assemblies: "assembly",
@@ -442,6 +443,18 @@ const IssuesTable = ({
       },
       csvFormatter: (row) => (row?.tags ? row.tags : ""),
       defaultShowColumn: true,
+    },
+    {
+      key: "linked_ecos",
+      header: "ECO",
+      headerTooltip: "Engineering Change Orders referencing this issue",
+      maxWidth: "120px",
+      defaultShowColumn: true,
+      formatter: (row) => {
+        const ecos = row?.linked_ecos ?? [];
+        if (ecos.length === 0) return "-";
+        return <EcoPillList ecos={ecos} size="sm" showPeek={true} />;
+      },
     },
     {
       key: "",
