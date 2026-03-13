@@ -139,10 +139,10 @@ def process_pdf(
         if org_obj != None:
             try:
                 logo = Image.objects.get(id=org_obj.logo_id)
-                os.mkdir(unique_path + "/images")
                 try:
                     with logo.file.open() as file:
                         logo_path = f"{unique_path}{file.name}"
+                        os.makedirs(os.path.dirname(logo_path), exist_ok=True)
                         try:
                             with open(logo_path, "wb+") as logo_file:
                                 logo_file.write(file.read())
@@ -160,6 +160,7 @@ def process_pdf(
                 if organization_obj != None:
                     with organization_obj.logo.open() as file:
                         logo_path = f"{unique_path}{file.name}"
+                        os.makedirs(os.path.dirname(logo_path), exist_ok=True)
                         with open(logo_path, "wb+") as logo_file:
                             logo_file.write(file.read())
             except:
