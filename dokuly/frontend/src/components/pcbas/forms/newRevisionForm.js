@@ -41,7 +41,7 @@ const PcbaForm = (props) => {
 
 	return (
 		<div className="container-fluid">
-			{pcba?.release_state === "Released" ? (
+			{pcba?.release_state === "Released" && pcba?.is_latest_revision === true ? (
 				<button
 					type="button"
 					className="btn btn-bg-transparent mt-2 mb-2"
