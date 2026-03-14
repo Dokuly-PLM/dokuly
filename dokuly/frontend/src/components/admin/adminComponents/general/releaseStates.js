@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import DokulyTable from "../../../dokuly_components/dokulyTable/dokulyTable";
+import DokulySearchBar from "../../../dokuly_components/dokulySearchBar";
 
-import { editReleaseState, getParts } from "../../../parts/functions/queries";
-import { fetchPcbas } from "../../../pcbas/functions/queries";
+import { editReleaseState, searchReleaseItems } from "../../../parts/functions/queries";
 import GenericDropdownSelector from "../../../dokuly_components/dokulyTable/components/genericDropdownSelector";
-import { getUnArchivedAssemblies } from "../../../assemblies/functions/queries";
-import { getAllDocuments } from "../../../documents/functions/queries";
 
 const ReleaseStates = ({ setRefresh }) => {
-  const [parts, setParts] = useState([]);
-  const [pcbas, setPcbas] = useState([]);
-  const [assemblies, setAssemblies] = useState([]);
-  const [documents, setDocuments] = useState([]);
   const [items, setItems] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const pageSize = 50;
 
   const states = [
     { value: "Draft", label: "Draft" },
@@ -21,45 +19,40 @@ const ReleaseStates = ({ setRefresh }) => {
     { value: "Released", label: "Released" },
   ];
 
-  useEffect(() => {
-    // Fetch initial data
-    getParts().then((response) => {
-      if (response.status === 200) {
-        setParts(response.data);
-      }
-    });
-    fetchPcbas().then((response) => {
-      if (response.status === 200) {
-        setPcbas(response.data);
-      }
-    });
-    getUnArchivedAssemblies().then((response) => {
-      if (response.status === 200) {
-        setAssemblies(response.data);
-      }
-    });
-    getAllDocuments().then((response) => {
-      if (response.status === 200) {
-        setDocuments(response.data);
+  const fetchItems = useCallback((search, page) => {
+    if (!search) {
+      setItems([]);
+      setTotalCount(0);
+      return;
+    }
+    searchReleaseItems(search, page, pageSize).then((res) => {
+      if (res.status === 200) {
+        setItems(res.data.results);
+        setTotalCount(res.data.total);
       }
     });
   }, []);
 
   useEffect(() => {
-    // Construct items array
-    const combinedItems = [
-      ...parts.map((part) => ({ ...part, app: "parts" })),
-      ...pcbas.map((pcba) => ({ ...pcba, app: "pcbas" })),
-      ...assemblies.map((assembly) => ({ ...assembly, app: "assemblies" })),
-      ...documents.map((document) => ({ ...document, app: "documents" })),
-    ];
-    setItems(combinedItems);
-  }, [pcbas, parts, assemblies, documents]);
+    if (searchTerm) {
+      fetchItems(searchTerm, currentPage);
+    }
+  }, [currentPage]);
+
+  const handleSearchChange = useCallback((term) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
+    fetchItems(term, 1);
+  }, [fetchItems]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   const handleStateChange = (id, app, newState) => {
     editReleaseState(id, app, newState).then((data) => {
       if (data) {
-        setRefresh(true);
+        fetchItems(searchTerm, currentPage);
       }
     });
   };
@@ -68,15 +61,6 @@ const ReleaseStates = ({ setRefresh }) => {
     {
       key: "full_part_number",
       header: "Part number",
-      formatter: (row) => {
-        if (row.app === "documents") {
-          return row.full_doc_number || "N/A";
-        }
-        
-        // Handle parts, pcbas, and assemblies
-        // full_part_number already contains the properly formatted part number with revision
-        return row.full_part_number;
-      },
     },
     {
       key: "release_state",
@@ -106,12 +90,23 @@ const ReleaseStates = ({ setRefresh }) => {
           to change it.
         </small>
       </p>
+      <DokulySearchBar
+        onChange={handleSearchChange}
+        placeholder="Search by part number or name..."
+        syncWithUrl={true}
+        urlParamName="search"
+      />
       <DokulyTable
         data={items}
         columns={columns}
-        itemsPerPage={50}
-        showSearch={true}
+        itemsPerPage={pageSize}
+        showSearch={false}
+        showCsvDownload={false}
         showPagination={true}
+        serverSidePagination={true}
+        totalItemCount={totalCount}
+        onPageChange={handlePageChange}
+        currentPage={currentPage}
       />
     </div>
   );

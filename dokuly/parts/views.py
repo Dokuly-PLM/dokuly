@@ -120,6 +120,120 @@ def edit_release_state(request):
         )
 
 
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def search_release_items(request):
+    """Backend search for the Release Management table.
+    Searches across parts, pcbas, assemblies, and documents.
+    Supports pagination and text search on part number and display name.
+    """
+    permission, response = check_user_auth_and_app_permission(request, "parts")
+    if not permission:
+        return response
+
+    search = request.GET.get("search", "").strip()
+    page = int(request.GET.get("page", 1))
+    page_size = int(request.GET.get("page_size", 50))
+
+    results = []
+
+    # Parts
+    parts_qs = Part.objects.filter(
+        is_latest_revision=True
+    ).exclude(is_archived=True)
+    if search:
+        parts_qs = parts_qs.filter(
+            Q(full_part_number__icontains=search) | Q(display_name__icontains=search)
+        )
+    for p in parts_qs.values(
+        'id', 'full_part_number', 'display_name', 'release_state', 'thumbnail'
+    ):
+        results.append({
+            'id': p['id'],
+            'full_part_number': p['full_part_number'] or '',
+            'display_name': p['display_name'] or '',
+            'release_state': p['release_state'] or '',
+            'thumbnail': p['thumbnail'],
+            'app': 'parts',
+        })
+
+    # PCBAs
+    pcbas_qs = Pcba.objects.filter(
+        is_latest_revision=True
+    ).exclude(is_archived=True)
+    if search:
+        pcbas_qs = pcbas_qs.filter(
+            Q(full_part_number__icontains=search) | Q(display_name__icontains=search)
+        )
+    for p in pcbas_qs.values(
+        'id', 'full_part_number', 'display_name', 'release_state', 'thumbnail'
+    ):
+        results.append({
+            'id': p['id'],
+            'full_part_number': p['full_part_number'] or '',
+            'display_name': p['display_name'] or '',
+            'release_state': p['release_state'] or '',
+            'thumbnail': p['thumbnail'],
+            'app': 'pcbas',
+        })
+
+    # Assemblies
+    asms_qs = Assembly.objects.filter(
+        is_latest_revision=True
+    ).exclude(is_archived=True)
+    if search:
+        asms_qs = asms_qs.filter(
+            Q(full_part_number__icontains=search) | Q(display_name__icontains=search)
+        )
+    for a in asms_qs.values(
+        'id', 'full_part_number', 'display_name', 'release_state', 'thumbnail'
+    ):
+        results.append({
+            'id': a['id'],
+            'full_part_number': a['full_part_number'] or '',
+            'display_name': a['display_name'] or '',
+            'release_state': a['release_state'] or '',
+            'thumbnail': a['thumbnail'],
+            'app': 'assemblies',
+        })
+
+    # Documents
+    docs_qs = Document.objects.filter(
+        is_latest_revision=True
+    ).exclude(is_archived=True)
+    if search:
+        docs_qs = docs_qs.filter(
+            Q(full_doc_number__icontains=search) | Q(title__icontains=search)
+        )
+    for d in docs_qs.values(
+        'id', 'full_doc_number', 'title', 'release_state', 'thumbnail'
+    ):
+        results.append({
+            'id': d['id'],
+            'full_part_number': d['full_doc_number'] or '',
+            'display_name': d['title'] or '',
+            'release_state': d['release_state'] or '',
+            'thumbnail': d['thumbnail'],
+            'app': 'documents',
+        })
+
+    # Sort by part number
+    results.sort(key=lambda x: x['full_part_number'])
+
+    total = len(results)
+    start = (page - 1) * page_size
+    end = start + page_size
+    page_results = results[start:end]
+
+    return Response({
+        'results': page_results,
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+    }, status=status.HTTP_200_OK)
+
+
 @api_view(["GET"])
 @renderer_classes([JSONRenderer])
 @permission_classes([IsAuthenticated | APIAndProjectAccess])

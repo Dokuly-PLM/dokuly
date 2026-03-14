@@ -109,6 +109,7 @@ urlpatterns = [
     path("api/parts/digikey/clear_cache/", viewsDigikey.clear_digikey_cache),
     # Common views between parts, PCBAs and assemblies
     path("api/items/edit/releaseState/", views.edit_release_state),
+    path("api/items/search/releaseManagement/", views.search_release_items),
 ]
 
 urlpatterns += router.urls
