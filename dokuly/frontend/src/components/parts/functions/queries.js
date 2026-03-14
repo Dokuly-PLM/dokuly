@@ -309,16 +309,6 @@ export const editFullPart = (id, part) => {
   return dataPromise;
 };
 
-export const clearPartSellers = (id) => {
-  const promise = axios.put(`/api/parts/update/sellers/${id}/`, tokenConfig());
-  const dataPromise = promise.then((res) => res.data);
-  const error = promise.catch((err) => err);
-  if (error != null) {
-    return error;
-  }
-  return dataPromise;
-};
-
 export const findUsedInPCBA = (id) => {
   const promise = axios.get(`api/parts/get/usedIdPcba/${id}/`, tokenConfig());
   const dataPromise = promise.then((res) => res.data);

@@ -14,9 +14,6 @@ export function partSearch(searchString, parts) {
     part.searchString = part.searchString.concat(part.customer_name);
     part.searchString = part.searchString.concat(part.project_name);
     part.searchString = part.searchString.concat(part.mpn);
-    part.specs != null
-      ? (part.searchString = part.searchString.concat(part.specs))
-      : "";
     part.searchString = part.searchString.toLowerCase().replace(/\s/g, "");
 
     partsWithSearchString.push(part);

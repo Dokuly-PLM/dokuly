@@ -172,12 +172,23 @@ const BomTable = ({
 
   useEffect(() => {
     const uniqueKeys = new Set();
+    const rejectedKeys = new Set();
     for (const part of parts) {
       if (part.part_information) {
-        for (const key of Object.keys(part.part_information)) {
-          uniqueKeys.add(key);
+        for (const [key, value] of Object.entries(part.part_information)) {
+          // Only allow scalar key-value pairs (string, number, boolean)
+          // This is to filter out any metadata or incorrect formatted data that may be in part_information.
+          if (value !== null && typeof value === "object") {
+            rejectedKeys.add(key);
+          } else {
+            uniqueKeys.add(key);
+          }
         }
       }
+    }
+    // Exclude keys that have non-scalar values in any part
+    for (const key of rejectedKeys) {
+      uniqueKeys.delete(key);
     }
     setPartInformationColumns(Array.from(uniqueKeys));
   }, [parts]);
