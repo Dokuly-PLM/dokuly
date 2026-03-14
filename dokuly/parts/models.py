@@ -114,10 +114,9 @@ class Part(models.Model):
 
     estimated_factory_lead_days = models.IntegerField(blank=True, null=True)
 
-    # Technical specifications and metadata from external sources (Nexar, DigiKey, Component Vault)
-    # Stores flexible JSON data including:
+    # Technical specifications from external sources (Nexar, DigiKey)
     # - Technical specifications (e.g., voltage, temperature ranges, package type)
-    # - Integration metadata (source identifier, stock quantities, pricing tiers)
+    # Only Key-value pairs that don't fit into dedicated fields should be stored here.
     # - Custom attributes that don't fit into dedicated fields
     # Note: Display data like MPN, manufacturer, datasheet should use dedicated fields above
     part_information = models.JSONField(blank=True, null=True)
@@ -220,12 +219,6 @@ class Part(models.Model):
     price_history = ArrayField(
         models.JSONField(null=True, blank=True), blank=True, null=True
     )
-
-    # DEPRECATED - replaced by part_information JSONField (see main section above)
-    # After Octopart integration, these TextField fields are DEPRECATED
-    # Legacy parts may still use these fields for compatibility during revision copies
-    sellers = models.TextField(max_length=50000, blank=True, null=True)
-    specs = models.TextField(max_length=50000, blank=True, null=True)
 
     # DEPRECATED file field. TODO: delete.
     # Change this part file, structure to a separate file model through foreign key (integer array field).

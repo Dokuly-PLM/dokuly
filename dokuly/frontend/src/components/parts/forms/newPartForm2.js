@@ -256,7 +256,6 @@ const PartNewForm = (props) => {
   };
 
   const applyNexarResult = (result) => {
-    
     // Auto-populate form with Nexar data
     if (result.mpn) setMpn(result.mpn);
     if (result.manufacturer) setManufacturer(result.manufacturer);
@@ -265,17 +264,23 @@ const PartNewForm = (props) => {
     if (result.image_url) setImageUrl(result.image_url);
     if (result.display_name) {}
     
-    // Store Nexar part ID and seller data for future reference
+    // Store Nexar part data
     if (result.nexar_part_id) {
-      // We'll send this when creating the part, including sellers for price creation
+      // Flatten technical_specs array into key-value pairs for part_information
+      const flatSpecs = {};
+      for (const spec of result.technical_specs || []) {
+        if (spec.name && spec.value != null) {
+          flatSpecs[spec.name] = String(spec.value);
+        }
+      }
       const newPartInfo = {
         ...part_information,
         source: "nexar",
         nexar_part_id: result.nexar_part_id,
         category: result.category,
         manufacturer_id: result.manufacturer_id,
-        specifications: result.technical_specs || [],
-        sellers: result.sellers || [], // Store seller offers for price creation
+        sellers: result.sellers || [], // Kept temporarily for price creation, cleaned before save
+        ...flatSpecs,
       };
       setPartInformation(newPartInfo);
     }
@@ -460,19 +465,38 @@ const PartNewForm = (props) => {
       datasheet: datasheet,
       image_url: image_url,
       currency: currency,
-      // Clean part_information - remove fields that are stored in separate model fields or only used temporarily
+      // Clean part_information - keep only scalar key-value pairs (technical specs)
       part_information: (() => {
         if (!part_information) return null;
         const {
+          // Fields stored in separate model fields
           production_status: _production_status,
           is_rohs_compliant: _is_rohs_compliant,
           is_reach_compliant: _is_reach_compliant,
           export_control_classification_number: _export_control_classification_number,
           estimated_factory_lead_days: _estimated_factory_lead_days,
-          currency: _currency, // Only used temporarily for price creation, not stored in part_information
-          ...cleaned
+          // Metadata and temporary fields (not technical specs)
+          currency: _currency,
+          source: _source,
+          sellers: _sellers,
+          specifications: _specifications,
+          nexar_part_id: _nexar_part_id,
+          category: _category,
+          manufacturer_id: _manufacturer_id,
+          digikey_part_number: _digikey_part_number,
+          digikey_product_id: _digikey_product_id,
+          unit_price: _unit_price,
+          pricing_tiers: _pricing_tiers,
+          ...rest
         } = part_information;
-        return cleaned;
+        // Final safety filter: only keep scalar values
+        const cleaned = {};
+        for (const [key, value] of Object.entries(rest)) {
+          if (value === null || typeof value !== "object") {
+            cleaned[key] = value;
+          }
+        }
+        return Object.keys(cleaned).length > 0 ? cleaned : null;
       })(),
       urls: urls,
       external_part_number: externalPartNumber,
