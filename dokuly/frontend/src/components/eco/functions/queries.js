@@ -151,3 +151,10 @@ export const getEcosForIssue = (issueId) => {
   );
   return promise;
 };
+
+export const getDownstreamImpact = (ecoId) => {
+  return axios.get(
+    `/api/eco/${ecoId}/downstreamImpact/`,
+    tokenConfig()
+  );
+};

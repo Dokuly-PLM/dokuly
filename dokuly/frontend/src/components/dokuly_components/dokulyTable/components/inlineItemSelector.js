@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import GlobalPartSelection from "../../globalPartSelector/globalPartSelection";
+import DokulyImage from "../../dokulyImage";
+import { formatCloudImageUri } from "../../../pcbas/functions/productionHelpers";
+import ThumbnailHoverZoom from "../../formatters/thumbnailHoverZoom";
 
 function not_latest_rev_warning(item) {
   return item?.is_latest_revision === false ? (
@@ -19,9 +22,7 @@ function not_latest_rev_warning(item) {
         width="40px"
       />
     </span>
-  ) : (
-    ""
-  );
+  ) : null;
 }
 
 const InlineItemSelector = ({ 
@@ -31,6 +32,7 @@ const InlineItemSelector = ({
   searchTerm,
   includeTables = ["parts", "pcbas", "assemblies"],
   latestOnly = false,
+  showDetailedView = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [selected_item, setSelectedItem] = useState(null);
@@ -89,32 +91,68 @@ const InlineItemSelector = ({
     }
   }, [isEditing]);
 
-  function get_display_string() {
-    if (!(row.part || row.assembly || row.pcba || row.document)) {
-      return "-";
+  const hasItem = !!(row.part || row.assembly || row.pcba || row.document);
+
+  const renderSimpleDisplay = () => {
+    if (!hasItem) return "-";
+    return (
+      <React.Fragment>
+        {row?.full_part_number || row?.full_doc_number || "Unknown"}{" "}
+        {not_latest_rev_warning(row)}
+      </React.Fragment>
+    );
+  };
+
+  const renderDetailedDisplay = () => {
+    if (!hasItem) {
+      return <span style={{ color: "#999" }}>-</span>;
     }
 
-    const displayPartNumber =
-      row?.full_part_number || row?.full_doc_number || row?.revision ? (
-        <React.Fragment>
-          {row?.full_part_number || row?.full_doc_number}{" "}
-          {not_latest_rev_warning(row)}
-        </React.Fragment>
-      ) : isEditing ? (
-        ""
-      ) : (
-        "Unknown"
-      );
+    const imageSrc = row.thumbnail
+      ? formatCloudImageUri(row.thumbnail)
+      : row.image_url || null;
 
-    return displayPartNumber;
-  }
+    return (
+      <div className="d-flex align-items-center" style={{ gap: "8px" }}>
+        {imageSrc && (
+          <ThumbnailHoverZoom>
+            <DokulyImage
+              src={imageSrc}
+              alt="Thumbnail"
+              style={{
+                width: "50px",
+                height: "50px",
+                objectFit: "contain",
+                flexShrink: 0,
+              }}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.style.display = "none";
+              }}
+            />
+          </ThumbnailHoverZoom>
+        )}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {row.full_part_number || row.full_doc_number || "Unknown"}
+          </div>
+          {row.display_name && (
+            <div style={{ fontSize: "11px", color: "#666", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {row.display_name}
+            </div>
+          )}
+        </div>
+        {not_latest_rev_warning(row)}
+      </div>
+    );
+  };
 
-  const displayPartNumber = get_display_string();
+  const renderDisplay = showDetailedView ? renderDetailedDisplay : renderSimpleDisplay;
 
   return (
     <div ref={editorRef} className="d-flex w-100" style={{ minWidth: "200px" }}>
       {readOnly ? (
-        <span>{displayPartNumber}</span>
+        renderDisplay()
       ) : isEditing ? (
         <div ref={globalPartSelectionRef}>
           <GlobalPartSelection
@@ -125,8 +163,8 @@ const InlineItemSelector = ({
           />
         </div>
       ) : (
-        <div className="w-100" onClick={() => setIsEditing(true)}>
-          {displayPartNumber}
+        <div className="w-100" style={{ cursor: "pointer" }} onClick={() => setIsEditing(true)}>
+          {renderDisplay()}
         </div>
       )}
     </div>

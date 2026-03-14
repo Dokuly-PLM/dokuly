@@ -18,7 +18,7 @@ import InlineItemSelector from "../../dokuly_components/dokulyTable/components/i
 import DokulyMarkdown from "../../dokuly_components/dokulyMarkdown/dokulyMarkdown";
 import IssuePills from "./issuePills";
 
-const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAffectedItemsChange = null }) => {
+const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAffectedItemsChange = null, externalRefresh = 0 }) => {
   const navigate = useNavigate();
 
   const [affectedItems, setAffectedItems] = useState([]);
@@ -94,6 +94,12 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
   useEffect(() => {
     fetchAffectedItems();
   }, [ecoId, fetchAffectedItems]);
+
+  useEffect(() => {
+    if (externalRefresh > 0) {
+      fetchAffectedItems();
+    }
+  }, [externalRefresh]);
 
   // Add new item row
   const handleAddItem = () => {
@@ -223,10 +229,10 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
     {
       key: "item",
       header: "Item",
-      maxWidth: "180px",
+      maxWidth: "250px",
       formatter: (row) => {
-        // If no item attached yet, show the inline selector
-        if (!row.part && !row.pcba && !row.assembly && !row.document) {
+        const hasItem = row.part || row.pcba || row.assembly || row.document;
+        if (!hasItem) {
           return (
             <InlineItemSelector
               row={row}
@@ -235,27 +241,20 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
               searchTerm=""
               includeTables={["parts", "pcbas", "assemblies", "documents"]}
               latestOnly={true}
+              showDetailedView={true}
             />
           );
         }
-        // Show compressed view: thumbnail + part number above, display name below
         return (
-          <div className="d-flex align-items-center">
-            <div style={{ marginRight: "10px" }}>
-              {thumbnailFormatter(row)}
-            </div>
-            <div>
-              <div style={{ fontWeight: "bold", marginBottom: "2px" }}>
-                {row.full_part_number || "-"}
-              </div>
-              <div style={{ fontSize: "0.875rem", color: "#6c757d" }}>
-                {row.display_name || "-"}
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "#6c757d", marginTop: "2px" }}>
-                {row.item_type}
-              </div>
-            </div>
-          </div>
+          <InlineItemSelector
+            row={row}
+            readOnly={isLocked}
+            onSelectItem={handleSelectItem}
+            searchTerm={row.full_part_number || ""}
+            includeTables={["parts", "pcbas", "assemblies", "documents"]}
+            latestOnly={true}
+            showDetailedView={true}
+          />
         );
       },
     },
@@ -300,7 +299,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
           overflow: "hidden",
           textOverflow: "ellipsis",
         }}>
-          <DokulyMarkdown markdownText={row.revision_notes || "-"} />
+          <DokulyMarkdown markdownText={row.revision_notes || "--"} />
         </div>
         
       ),

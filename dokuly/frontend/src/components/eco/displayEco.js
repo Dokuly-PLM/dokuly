@@ -12,6 +12,7 @@ import CardTitle from "../dokuly_components/cardTitle";
 import Heading from "../dokuly_components/Heading";
 import EcoInfoCard from "./components/ecoInfoCard";
 import AffectedItemsTable from "./components/affectedItemsTable";
+import DownstreamImpactCard from "./components/downstreamImpactCard";
 import EditEcoForm from "./forms/editEcoForm";
 import { AuthContext } from "../App";
 import { loadingSpinner } from "../admin/functions/helperFunctions";
@@ -31,6 +32,7 @@ const DisplayEco = () => {
   const [profiles, setProfiles] = useState([]);
   const [readOnly, setReadOnly] = useState(false);
   const [affectedItems, setAffectedItems] = useState([]);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   // Parse the ID from URL params
   const id = ecoId ? Number.parseInt(ecoId) : -1;
@@ -196,6 +198,16 @@ const DisplayEco = () => {
             isReleased={isReleased}
             readOnly={readOnly}
             onAffectedItemsChange={setAffectedItems}
+            externalRefresh={refreshCounter}
+          />
+
+          {/* Downstream Impact */}
+          <DownstreamImpactCard
+            ecoId={id}
+            affectedItems={affectedItems}
+            isReleased={isReleased}
+            readOnly={readOnly}
+            onItemAdded={() => setRefreshCounter((c) => c + 1)}
           />
         </Col>
       </Row>
