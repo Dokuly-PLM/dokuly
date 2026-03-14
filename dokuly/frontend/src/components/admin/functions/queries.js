@@ -1686,3 +1686,13 @@ export const testOdooConnection = () => {
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+export const testCurrencyConnection = () => {
+  const promise = axios.post(
+    "api/integrations/currency/test/",
+    {},
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
