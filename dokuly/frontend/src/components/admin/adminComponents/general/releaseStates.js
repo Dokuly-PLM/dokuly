@@ -94,6 +94,8 @@ const ReleaseStates = ({ setRefresh }) => {
       <DokulySearchBar
         onChange={handleSearchChange}
         placeholder="Search by part number or name..."
+        syncWithUrl={true}
+        urlParamName="search"
       />
       <DokulyTable
         data={items}
