@@ -17,6 +17,13 @@ export const editReleaseState = (id, app, releaseState) => {
   return dataPromise;
 };
 
+export const searchReleaseItems = (search = "", page = 1, pageSize = 50) => {
+  return axios.get(
+    `api/items/search/releaseManagement/?search=${encodeURIComponent(search)}&page=${page}&page_size=${pageSize}`,
+    tokenConfig()
+  );
+};
+
 export const getParts = () => {
   const promise = axios.get("api/parts/get/unarchived/", tokenConfig());
   const dataPromise = promise.then((res) => res.data);
