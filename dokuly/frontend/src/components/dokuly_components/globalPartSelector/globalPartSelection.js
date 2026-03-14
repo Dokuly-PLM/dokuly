@@ -17,6 +17,7 @@ const GlobalPartSelection = ({
   const [results, setResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchInputRef = useRef(null);
+  const hasAutoSearched = useRef(false);
 
   useEffect(() => {
     if (searchInputRef.current) {
@@ -47,9 +48,10 @@ const GlobalPartSelection = ({
     [includeTables, latestOnly],
   );
 
-  // Effect to automatically search when searchTerm changes
+  // Auto-search once on mount with the initial searchTerm
   useEffect(() => {
-    if (searchTerm) {
+    if (searchTerm && !hasAutoSearched.current) {
+      hasAutoSearched.current = true;
       handleSearch(searchTerm);
     }
   }, [searchTerm, handleSearch]);
