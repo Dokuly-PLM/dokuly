@@ -30,4 +30,7 @@ urlpatterns = [
 
     # Get ECOs for a specific issue
     path("api/eco/forIssue/<int:issue_id>/", views.get_ecos_for_issue, name="get_ecos_for_issue"),
+
+    # Downstream impact analysis
+    path("api/eco/<int:eco_id>/downstreamImpact/", views.get_downstream_impact, name="get_downstream_impact"),
 ]

@@ -18,7 +18,7 @@ import InlineItemSelector from "../../dokuly_components/dokulyTable/components/i
 import DokulyMarkdown from "../../dokuly_components/dokulyMarkdown/dokulyMarkdown";
 import IssuePills from "./issuePills";
 
-const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAffectedItemsChange = null }) => {
+const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAffectedItemsChange = null, externalRefresh = 0 }) => {
   const navigate = useNavigate();
 
   const [affectedItems, setAffectedItems] = useState([]);
@@ -94,6 +94,12 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
   useEffect(() => {
     fetchAffectedItems();
   }, [ecoId, fetchAffectedItems]);
+
+  useEffect(() => {
+    if (externalRefresh > 0) {
+      fetchAffectedItems();
+    }
+  }, [externalRefresh]);
 
   // Add new item row
   const handleAddItem = () => {
