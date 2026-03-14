@@ -413,6 +413,14 @@ def get_nexar_client():
     return _nexar_client
 
 
+def clear_nexar_cache():
+    """Purge cached Nexar token and reset the singleton client.
+    Call this whenever nexar_client_id or nexar_client_secret are changed."""
+    global _nexar_client
+    cache.delete(NexarClient.TOKEN_CACHE_KEY)
+    cache.delete(NexarClient.TOKEN_EXPIRY_KEY)
+    _nexar_client = None
+    logger.info("Nexar token cache and client singleton cleared")
 
 
 def is_nexar_configured():

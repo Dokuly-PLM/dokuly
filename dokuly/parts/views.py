@@ -895,25 +895,6 @@ def edit_errata(request, partId):
         )
 
 
-@api_view(("PUT",))
-@renderer_classes((JSONRenderer,))
-@login_required(login_url="/login")
-def clear_sellers_data(request, partId):
-    permission, response = check_user_auth_and_app_permission(request, "parts")
-    if not permission:
-        return response
-    Part.objects.filter(id=partId).update(sellers=None)
-    updatedPart = Part.objects.get(id=partId)
-    if updatedPart.sellers != None:
-        return Response(updatedPart.sellers, status=status.HTTP_409_CONFLICT)
-    serializer = PartSerializer(updatedPart, many=False)
-    return Response(
-        {"res": "Data cleared for part %d" %
-            (partId), "new_part": serializer.data},
-        status=status.HTTP_200_OK,
-    )
-
-
 @swagger_auto_schema(
     method='post',
     operation_id='create_new_part',
@@ -1028,6 +1009,7 @@ def create_new_part(request, **kwargs):
 
         new_part.display_name = data["display_name"]
         new_part.internal = data["internal"]
+        
         if "description" in data:
             new_part.description = data["description"]
 
@@ -1035,19 +1017,15 @@ def create_new_part(request, **kwargs):
 
         if "git_link" in data:
             new_part.git_link = data["git_link"]
+        
         if "manufacturer" in data:
             new_part.manufacturer = data["manufacturer"]
+        
         if "mpn" in data:
             new_part.mpn = data["mpn"]
-
+        
         if "unit" in data:
             new_part.unit = data["unit"]
-        if "price" in data:
-            new_part.price = data["price"]
-        if "currency" in data:
-            new_part.currency = data["currency"]
-        if "distributor" in data:
-            new_part.distributor = data["distributor"]
 
         if "model_url" in data:
             new_part.model_url = data["model_url"]
@@ -1061,10 +1039,6 @@ def create_new_part(request, **kwargs):
                     new_part.project = project
                 except Project.DoesNotExist:
                     pass
-        if "supplier" in data:
-            if data["supplier"] != -1 and data["supplier"] != None:
-                supplier = Supplier.objects.get(pk=data["supplier"])
-                new_part.supplier = supplier
         if "part_information" in data:
             if data["part_information"] != None:
                 new_part.part_information = data["part_information"]
@@ -1592,9 +1566,7 @@ def new_revision(request, pk, **kwargs):
     new_part_rev.production_status = old_part_rev.production_status
     new_part_rev.rohs_status_code = old_part_rev.rohs_status_code
     new_part_rev.distributor = old_part_rev.distributor
-    new_part_rev.sellers = old_part_rev.sellers
-    new_part_rev.specs = old_part_rev.specs
-    new_part_rev.customSpecs = old_part_rev.customSpecs
+
     new_part_rev.alternative_parts = old_part_rev.alternative_parts
     new_part_rev.git_link = old_part_rev.git_link
     new_part_rev.is_reach_compliant = old_part_rev.is_reach_compliant
