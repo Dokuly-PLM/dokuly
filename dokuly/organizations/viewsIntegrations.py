@@ -226,6 +226,14 @@ def update_integration_settings(request):
                 # Keep existing secret if masked value is provided
                 pass
         
+        # Purge cached Nexar token when credentials change
+        if "nexar_client_id" in data or "nexar_client_secret" in data:
+            try:
+                from parts.nexar_client import clear_nexar_cache
+                clear_nexar_cache()
+            except Exception as e:
+                logger.warning(f"Could not clear Nexar cache: {e}")
+        
         # Update Odoo settings
         if "odoo_enabled" in data:
             integration_settings.odoo_enabled = bool(data["odoo_enabled"])
