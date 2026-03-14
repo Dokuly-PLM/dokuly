@@ -1,4 +1,6 @@
 import React from "react";
+import DokulyImage from "../dokulyImage";
+import { formatCloudImageUri } from "../../pcbas/functions/productionHelpers";
 
 export const PartSuggestions = ({
   suggestions,
@@ -40,12 +42,52 @@ export const PartSuggestions = ({
             <li
               key={`${full_part_number}-${revision}`}
               className="list-group-item d-flex align-items-center"
+              style={{ gap: "10px", cursor: "pointer" }}
               onClick={() => {
                 onSelectSuggestion(suggestion);
                 onHide();
               }}
             >
-              <span>{highlightSearchTerm(combinedText)}</span>
+              <div
+                style={{
+                  flex: "0 0 40px",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "40px",
+                }}
+              >
+                {(suggestion.thumbnail || suggestion.image_url) ? (
+                  <DokulyImage
+                    src={
+                      suggestion.thumbnail
+                        ? formatCloudImageUri(suggestion.thumbnail)
+                        : suggestion.image_url
+                    }
+                    alt="Thumbnail"
+                    style={{
+                      maxWidth: "40px",
+                      maxHeight: "40px",
+                      objectFit: "contain",
+                      display: "block",
+                    }}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      backgroundColor: "#f0f0f0",
+                      borderRadius: "3px",
+                    }}
+                  />
+                )}
+              </div>
+              <span style={{ flex: 1, minWidth: 0 }}>{highlightSearchTerm(combinedText)}</span>
             </li>
           );
         })}
