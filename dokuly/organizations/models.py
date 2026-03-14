@@ -522,6 +522,14 @@ class IntegrationSettings(models.Model):
         help_text="List of fields to update when product already exists in Odoo. Options: name, description, image"
     )
     
+    # Currency API settings
+    currency_api_key = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="API key for ExchangeRate-API (v6.exchangerate-api.com)"
+    )
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

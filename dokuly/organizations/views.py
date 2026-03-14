@@ -364,14 +364,37 @@ def fetch_test_user(request):
 def update_currency_pairs():
     """View to update the currency pairs."""
     organization = Organization.objects.get(id=1)
-    from_currency = Organization.objects.get(id=1).currency
-    # TODO: Incorporate basic currency based on organization
-    if settings.CURRENCY_API == None or settings.CURRENCY_API == "":
-        data = {"USD": 1}
-        return data
+    from_currency = organization.currency
+    
+    # Try DB-stored API key first, fallback to env var
+    api_key = None
+    try:
+        from .models import IntegrationSettings
+        integration_settings = IntegrationSettings.objects.filter(
+            organization=organization
+        ).first()
+        if integration_settings and integration_settings.currency_api_key:
+            api_key = integration_settings.currency_api_key
+    except Exception:
+        pass
+    
+    if not api_key:
+        # Fallback to env var (legacy support)
+        env_url = getattr(settings, 'CURRENCY_API', None)
+        if env_url:
+            # env_url is the full URL like "https://v6.exchangerate-api.com/v6/<key>/latest/"
+            # Extract key from URL pattern
+            api_key = None  # Use env_url directly below
+        else:
+            data = {"USD": 1}
+            return data
     
     try:
-        url = f"{settings.CURRENCY_API}{from_currency}"
+        if api_key:
+            url = f"https://v6.exchangerate-api.com/v6/{api_key}/latest/{from_currency}"
+        else:
+            # Legacy: env var contains full base URL
+            url = f"{settings.CURRENCY_API}{from_currency}"
         response = requests.get(url, timeout=5)  # Add timeout to prevent hanging
         response.raise_for_status()  # Raise exception for bad status codes
         data = response.json()

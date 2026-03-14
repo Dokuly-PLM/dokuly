@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Row, Col, Card } from "react-bootstrap";
 import DokulyCard from "../../dokuly_components/dokulyCard";
-import { fetchIntegrationSettings, updateIntegrationSettings, testDigikeyConnection, testOdooConnection, syncPartsToOdoo } from "../functions/queries";
+import { fetchIntegrationSettings, updateIntegrationSettings, testDigikeyConnection, testOdooConnection, syncPartsToOdoo, testCurrencyConnection } from "../functions/queries";
 import { getSuppliers, updateSupplier } from "../../suppliers/functions/queries";
 import { createSupplier } from "../../suppliers/functions/queries";
 import { toast } from "react-toastify";
 import DigikeySettings from "../adminComponents/integrations/digikeySettings";
 import NexarSettings from "../adminComponents/integrations/nexarSettings";
 import OdooSettings from "../adminComponents/integrations/odooSettings";
+import CurrencySettings from "../adminComponents/integrations/currencySettings";
 
 const AdminIntegrations = ({ setRefresh }) => {
   const [activeSection, setActiveSection] = useState("digikey");
@@ -62,10 +63,16 @@ const AdminIntegrations = ({ setRefresh }) => {
   // Nexar supplier mappings: { supplierId: nexarSellerId }
   const [nexarSupplierMappings, setNexarSupplierMappings] = useState({});
 
+  // State for Currency API settings
+  const [currencyApiKey, setCurrencyApiKey] = useState("");
+  const [hasCurrencyCredentials, setHasCurrencyCredentials] = useState(false);
+  const [testingCurrencyConnection, setTestingCurrencyConnection] = useState(false);
+
   const sections = [
     { id: "digikey", title: "DigiKey", icon: "search", disabled: false },
     { id: "nexar", title: "Nexar", icon: "search", disabled: false },
     { id: "odoo", title: "Odoo", icon: "cloud-upload", disabled: false },
+    { id: "currency", title: "Currency", icon: "cash", disabled: false },
   ];
 
   // Load settings and suppliers on component mount
@@ -204,6 +211,10 @@ const AdminIntegrations = ({ setRefresh }) => {
           setOdooCategoryPcbas(res.data.odoo_category_pcbas || "Purchased Goods");
           setOdooCategoryAssemblies(res.data.odoo_category_assemblies || "Manufactured");
           setOdooUpdateFieldsExisting(res.data.odoo_update_fields_existing || ["name", "description", "image"]);
+
+          // Currency API settings
+          setCurrencyApiKey(res.data.currency_api_key || "");
+          setHasCurrencyCredentials(res.data.has_currency_credentials || false);
         }
         setLoading(false);
       })
@@ -393,6 +404,57 @@ const AdminIntegrations = ({ setRefresh }) => {
       });
   };
 
+  const handleCurrencySubmit = () => {
+    const data = {
+      currency_api_key: currencyApiKey,
+    };
+
+    updateIntegrationSettings(data)
+      .then((res) => {
+        if (res.status === 200) {
+          toast.success("Currency settings updated successfully");
+          loadSettings();
+        }
+      })
+      .catch((err) => {
+        console.error("Error updating currency settings:", err);
+        toast.error("Failed to update currency settings");
+      });
+  };
+
+  const handleTestCurrencyConnection = () => {
+    if (!currencyApiKey || !currencyApiKey.trim()) {
+      toast.error("Please enter an API key before testing");
+      return;
+    }
+
+    setTestingCurrencyConnection(true);
+
+    const saveFirst = currencyApiKey !== "***"
+      ? updateIntegrationSettings({ currency_api_key: currencyApiKey.trim() })
+      : Promise.resolve();
+
+    saveFirst
+      .then(() => testCurrencyConnection())
+      .then((res) => {
+        if (res.status === 200 && res.data.success) {
+          toast.success(res.data.message || "Connection successful!");
+        } else {
+          toast.error(res.data.message || "Connection failed");
+        }
+      })
+      .catch((err) => {
+        const errorMsg =
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Connection test failed";
+        toast.error(errorMsg);
+      })
+      .finally(() => {
+        setTestingCurrencyConnection(false);
+      });
+  };
+
   const handleTestConnection = () => {
     if (!digikeyClientId || !digikeyClientId.trim()) {
       toast.error("Please enter Client ID before testing");
@@ -549,7 +611,19 @@ const AdminIntegrations = ({ setRefresh }) => {
     );
   };
 
-
+  const renderCurrency = () => {
+    return (
+      <CurrencySettings
+        loading={loading}
+        currencyApiKey={currencyApiKey}
+        setCurrencyApiKey={setCurrencyApiKey}
+        hasCurrencyCredentials={hasCurrencyCredentials}
+        handleTestConnection={handleTestCurrencyConnection}
+        testingConnection={testingCurrencyConnection}
+        handleSubmit={handleCurrencySubmit}
+      />
+    );
+  };
 
   const renderSectionContent = () => {
     switch (activeSection) {
@@ -559,6 +633,8 @@ const AdminIntegrations = ({ setRefresh }) => {
         return renderNexar();
       case "odoo":
         return renderOdoo();
+      case "currency":
+        return renderCurrency();
       default:
         return renderDigikey();
     }
