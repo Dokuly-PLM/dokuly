@@ -129,6 +129,7 @@ class AssemblyBomSerializer(serializers.ModelSerializer):
             "display_name",
             "revision",
             "release_state",
+            "is_latest_revision",
             "released_date",
             "last_updated",
             "thumbnail",
