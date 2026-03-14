@@ -52,7 +52,6 @@ const ReleaseStates = ({ setRefresh }) => {
   const handleStateChange = (id, app, newState) => {
     editReleaseState(id, app, newState).then((data) => {
       if (data) {
-        setRefresh(true);
         fetchItems(searchTerm, currentPage);
       }
     });
