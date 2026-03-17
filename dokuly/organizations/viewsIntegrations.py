@@ -4,6 +4,7 @@ Handles DigiKey, Nexar, and other integration configurations
 """
 
 import logging
+import requests
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -116,7 +117,11 @@ def get_integration_settings(request):
                 integration_settings.odoo_database and
                 integration_settings.odoo_username and
                 integration_settings.odoo_api_key
-            )
+            ),
+            
+            # Currency API settings
+            "currency_api_key": "***" if integration_settings.currency_api_key else "",
+            "has_currency_credentials": bool(integration_settings.currency_api_key),
         }
         
         return Response(response_data, status=status.HTTP_200_OK)
@@ -305,6 +310,14 @@ def update_integration_settings(request):
                 valid_fields = ['name', 'description', 'image']
                 integration_settings.odoo_update_fields_existing = [f for f in update_fields if f in valid_fields]
         
+        # Update Currency API key
+        if "currency_api_key" in data:
+            api_key = data["currency_api_key"]
+            if api_key and api_key != "***" and api_key.strip():
+                integration_settings.currency_api_key = api_key.strip()
+            elif not api_key or api_key == "***":
+                pass
+        
         integration_settings.save()
         
         # Return updated settings
@@ -353,7 +366,11 @@ def update_integration_settings(request):
                 integration_settings.odoo_database and
                 integration_settings.odoo_username and
                 integration_settings.odoo_api_key
-            )
+            ),
+            
+            # Currency API settings
+            "currency_api_key": "***" if integration_settings.currency_api_key else "",
+            "has_currency_credentials": bool(integration_settings.currency_api_key),
         }
         
         return Response(response_data, status=status.HTTP_200_OK)
@@ -676,4 +693,65 @@ def test_odoo_connection(request):
         return Response(
             {"error": "Failed to test Odoo connection", "details": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(["POST"])
+@renderer_classes([JSONRenderer])
+def test_currency_connection(request):
+    """Test the currency API connection using the stored API key."""
+    try:
+        if not request.user or not request.user.is_authenticated:
+            return Response("Not Authorized", status=status.HTTP_401_UNAUTHORIZED)
+
+        organization = get_user_organization(request.user)
+        if not organization:
+            return Response(
+                {"error": "User organization not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        integration_settings, _ = IntegrationSettings.objects.get_or_create(
+            organization=organization
+        )
+
+        api_key = integration_settings.currency_api_key
+        if not api_key:
+            return Response(
+                {"success": False, "message": "No currency API key configured"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from_currency = organization.currency or "USD"
+        url = f"https://v6.exchangerate-api.com/v6/{api_key}/latest/{from_currency}"
+        response = requests.get(url, timeout=10)
+        data = response.json()
+
+        if data.get("result") == "success":
+            return Response(
+                {
+                    "success": True,
+                    "message": f"Connection successful! Base currency: {data.get('base_code', from_currency)}",
+                    "base_code": data.get("base_code"),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        error_type = data.get("error-type", "unknown")
+        return Response(
+            {"success": False, "message": f"API returned error: {error_type}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    except requests.RequestException as e:
+        logger.error(f"Currency API connection test failed: {e}")
+        return Response(
+            {"success": False, "message": f"Connection failed: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except Exception as e:
+        logger.error(f"Error testing currency connection: {e}")
+        return Response(
+            {"error": "Failed to test currency connection", "details": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

@@ -521,6 +521,7 @@ def edit_document_info(request, documentId):
     )
 
 
+# DEPRECSATED
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
 @login_required(login_url="/login")
@@ -1046,10 +1047,11 @@ def auto_new_revision(request, pk, **kwargs):
         
         new_revision.created_by = old_revision.created_by
         # new_revision.revision_author = request.user.id # TODO see models.py
-        new_revision.previoius_revision_id = pk
+        new_revision.previouis_revision_id = pk
         new_revision.release_state = "Draft"
         new_revision.shared_document_link = ""
         new_revision.language = old_revision.language
+        new_revision.protection_level = old_revision.protection_level
 
         new_revision.prefix_id = old_revision.prefix_id
         new_revision.document_type = old_revision.document_type

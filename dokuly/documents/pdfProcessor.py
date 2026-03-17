@@ -1,4 +1,4 @@
-from documents.models import Document, Document_Prefix
+from documents.models import Document, Document_Prefix, Protection_Level
 
 from organizations.models import Organization
 from projects.models import Project
@@ -121,16 +121,16 @@ def process_pdf(
     summary = data.summary
     date_string = datetime_to_iso_string(timestamp_obj)
 
-    # Get classification from protection level, fallback to internal field for backwards compatibility
-    classification = "Externally Shareable"  # Default
+    # Get classification from protection level
     if data.protection_level is not None:
         classification = data.protection_level.name
-    elif data.internal is not None:
-        # Fallback to deprecated internal field
-        if bool(data.internal) == True:
-            classification = "Company Protected"
+    else:
+        # If no protection level is set, use the lowest level from the table
+        lowest_protection_level = Protection_Level.objects.order_by('level').first()
+        if lowest_protection_level is not None:
+            classification = lowest_protection_level.name
         else:
-            classification = "Externally Shareable"
+            classification = "No protection levels configured"  # Fallback if table is empty
 
     # Fetch logo from customers admin database.
     logo_path = ""
