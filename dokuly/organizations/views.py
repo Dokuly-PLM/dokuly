@@ -14,6 +14,7 @@ from .serializers import (
     SubscriptionSerializer,
     RulesSerializer,
 )
+from .models import IntegrationSettings
 from .models import Organization, Subscription, Rules
 from django.contrib.auth.decorators import login_required
 import os
@@ -369,7 +370,6 @@ def update_currency_pairs():
     # Try DB-stored API key first, fallback to env var
     api_key = None
     try:
-        from .models import IntegrationSettings
         integration_settings = IntegrationSettings.objects.filter(
             organization=organization
         ).first()
