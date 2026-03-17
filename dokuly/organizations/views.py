@@ -364,7 +364,7 @@ def fetch_test_user(request):
 
 def update_currency_pairs():
     """View to update the currency pairs."""
-    organization = Organization.objects.get(id=1)
+    organization = Organization.objects.get(id=1)   # TODO hardcoded org ID, need to change
     from_currency = organization.currency
     
     # Try DB-stored API key first, fallback to env var

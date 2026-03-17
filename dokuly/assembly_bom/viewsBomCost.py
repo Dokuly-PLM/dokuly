@@ -234,7 +234,7 @@ def get_bom_cost(request, app, id):
             app = "assembly"
 
         # Get updated currency conversion rates
-        organization = Organization.objects.get(id=1)
+        organization = Organization.objects.get(id=1)   # TODO hardcoded org ID, need to change
 
         calculator = BOMCostCalculator(
             organization.currency, organization.currency_conversion_rates
