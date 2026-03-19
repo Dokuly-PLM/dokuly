@@ -17,6 +17,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from parts.models import PartType
+from files.views import delete_image_with_cleanup
 
 if __name__ == "__main__":
     import doctest
@@ -134,12 +135,7 @@ def download_image_and_create_thumbnail(part, image_url, user=None):
 
             # Delete old thumbnail if exists
             if part.thumbnail:
-                old_thumbnail = Image.objects.get(id=part.thumbnail.pk)
-                if old_thumbnail.file:
-                    old_thumbnail.file.delete()
-                if old_thumbnail.image_compressed:
-                    old_thumbnail.image_compressed.delete()
-                old_thumbnail.delete()
+                delete_image_with_cleanup(part.thumbnail)
 
             # Create new thumbnail
             new_thumbnail = Image(

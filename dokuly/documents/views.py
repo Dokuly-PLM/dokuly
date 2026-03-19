@@ -59,6 +59,7 @@ from profiles.views import (
 
 import files.views as fileViews
 from files.models import Image
+from files.views import delete_image_with_cleanup
 from .viewUtilities import (
     assemble_full_document_number,
     assemble_full_document_number_no_prefix_db_call,
@@ -1452,13 +1453,7 @@ def update_doc(request, pk, **kwargs):
                 # Archive old thumbnail if it exists
                 if document.thumbnail:
                     try:
-                        old_thumbnail = document.thumbnail
-                        # Delete the old thumbnail file
-                        if old_thumbnail.file:
-                            old_thumbnail.file.delete()
-                        if old_thumbnail.image_compressed:
-                            old_thumbnail.image_compressed.delete()
-                        old_thumbnail.delete()
+                        delete_image_with_cleanup(document.thumbnail)
                     except Exception as e:
                         print(f"Failed to delete old thumbnail: {e}")
                 
