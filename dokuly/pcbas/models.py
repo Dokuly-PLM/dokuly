@@ -109,17 +109,17 @@ class Pcba(models.Model):
     pcb = models.ForeignKey(Part, on_delete=models.SET_NULL, null=True)
 
     # Assembly drawing of the PCBA. This shows where componenes are to be placed.
-    assembly_pdf = models.FileField(upload_to="assembly_pdf", blank=True, null=True)
+    assembly_pdf = models.FileField(upload_to="assembly_pdf", blank=True, null=True) # DEPRECATED There may be legacy data here we need to migrate.
     # Manufacture drawing. This is the documentation related to the PCB manufacturing, and should be shown in the accompanying PCB part.
-    manufacture_pdf = models.FileField(
+    manufacture_pdf = models.FileField(  # DEPRECATED There may be legacy data here we need to migrate.
         upload_to="manufacture_pdf", blank=True, null=True
     )
     # This field should be used for a file showing e.g. the PCB or PCBA.
     layout_image = models.FileField(upload_to="layout_image", blank=True, null=True)
     thumbnail = models.ForeignKey(Image, on_delete=models.SET_NULL, null=True)
 
-    schematic_pdf = models.FileField(upload_to="schematic_pdf", blank=True, null=True)
-    schematic_pdf_monochrome = models.FileField(
+    schematic_pdf = models.FileField(upload_to="schematic_pdf", blank=True, null=True) # DEPRECATED There may be legacy data here we need to migrate.
+    schematic_pdf_monochrome = models.FileField( # DEPRECATED There may be legacy data here we need to migrate.
         upload_to="schematic_pdf_monochrome", blank=True, null=True
     )
 
