@@ -45,6 +45,47 @@ from purchasing.models import Supplier, PurchaseOrder
 from django.contrib.auth.models import User
 from profiles.models import Profile
 
+def delete_image_with_cleanup(image):
+    """
+    Delete an Image object and all its associated files.
+    
+    This helper ensures proper cleanup of:
+    - Main file (image.file)
+    - Compressed version (image.image_compressed)
+    - The Image database record
+    
+    Args:
+        image: Image model instance to delete
+        
+    Returns:
+        None
+    """
+    if not image:
+        return
+    
+    try:
+        # Delete main file
+        if image.file:
+            try:
+                image.file.delete(save=False)
+            except Exception as e:
+                print(f"Failed to delete image file: {e}")
+        
+        # Delete compressed version
+        if image.image_compressed:
+            try:
+                image.image_compressed.delete(save=False)
+            except Exception as e:
+                print(f"Failed to delete compressed image: {e}")
+        
+        # Delete the database record
+        image.delete()
+        
+    except Exception as e:
+        print(f"Failed to delete image with cleanup: {e}")
+        raise
+
+
 MODEL_MAPPING = {
     "Part": Part,
     "parts": Part,
@@ -636,9 +677,7 @@ def upload_thumbnail(request, **kwargs):
 
         with transaction.atomic():
             if item.thumbnail:
-                old_file = Image.objects.get(id=item.thumbnail.pk)
-                old_file.file.delete()
-                old_file.delete()
+                delete_image_with_cleanup(item.thumbnail)
 
             newFile = Image(image_name=data["display_name"])
             newFile.save()
@@ -683,9 +722,7 @@ def delete_thumbnail(request):
 
         with transaction.atomic():
             if item.thumbnail:
-                old_file = Image.objects.get(id=item.thumbnail.pk)
-                old_file.file.delete()
-                old_file.delete()
+                delete_image_with_cleanup(item.thumbnail)
             item.thumbnail = None
             item.save()
         return Response("Thumbnail deleted", status=status.HTTP_200_OK)

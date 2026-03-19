@@ -9,7 +9,7 @@ from pcbas.models import Pcba
 from assemblies.models import Assembly
 from parts.models import Part
 from files.serializers import ImageSerializer
-from files.views import check_file_sizes_vs_limit, get_organization_by_user_id, get_organization_by_id, update_org_current_storage_size, compress_image
+from files.views import check_file_sizes_vs_limit, get_organization_by_user_id, get_organization_by_id, update_org_current_storage_size, compress_image, delete_image_with_cleanup
 from files.models import File, Image
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from rest_framework.decorators import api_view, renderer_classes, permission_classes
@@ -851,9 +851,7 @@ def upload_image_to_part(request, part_id, **kwargs):
         with transaction.atomic():
             # Delete old thumbnail if exists
             if part.thumbnail:
-                old_file = Image.objects.get(id=part.thumbnail.pk)
-                old_file.file.delete()
-                old_file.delete()
+                delete_image_with_cleanup(part.thumbnail)
 
             # Compress and save image
             compressed_file = compress_image(file, file.name, "parts")
@@ -982,9 +980,7 @@ def upload_image_to_assembly(request, assembly_id, **kwargs):
         with transaction.atomic():
             # Delete old thumbnail if exists
             if assembly.thumbnail:
-                old_file = Image.objects.get(id=assembly.thumbnail.pk)
-                old_file.file.delete()
-                old_file.delete()
+                delete_image_with_cleanup(assembly.thumbnail)
 
             # Compress and save image
             compressed_file = compress_image(file, file.name, "assemblies")
@@ -1113,9 +1109,7 @@ def upload_image_to_pcba(request, pcba_id, **kwargs):
         with transaction.atomic():
             # Delete old thumbnail if exists
             if pcba.thumbnail:
-                old_file = Image.objects.get(id=pcba.thumbnail.pk)
-                old_file.file.delete()
-                old_file.delete()
+                delete_image_with_cleanup(pcba.thumbnail)
 
             # Compress and save image
             compressed_file = compress_image(file, file.name, "pcbas")
