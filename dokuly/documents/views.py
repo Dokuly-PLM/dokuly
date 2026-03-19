@@ -1390,12 +1390,18 @@ def update_doc(request, pk, **kwargs):
             # apply_ipr_fe = eval(data['apply_ipr'].title())
             revision_table_fe = eval(data["revision_table"].title())
 
+            # Track if front page or revision table changed (requires thumbnail regeneration)
+            front_page_changed = document.front_page != front_page_fe
+            revision_table_changed = document.revision_table != revision_table_fe
+            
             document.front_page = front_page_fe
             # document.update(apply_ipr=apply_ipr_fe)
             document.revision_table = revision_table_fe
 
             document.save()
 
+            pdf_updated = False  # Track if we need to regenerate thumbnail
+            
             if "pdf_raw" in data:
                 file = request.FILES["pdf_raw"]
                 try:
@@ -1405,20 +1411,10 @@ def update_doc(request, pk, **kwargs):
                 except Exception as e:
                     pass
 
-                # Read file content before saving (since save() consumes the file)
-                file.seek(0)
-                pdf_content = file.read()
-                
                 cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
                 formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
-                file.seek(0)
                 document.pdf_raw.save(formatted_file_name, file)
-                
-                # Generate thumbnail from the first page of the PDF
-                thumbnail = generate_pdf_thumbnail(BytesIO(pdf_content), document.title)
-                if thumbnail:
-                    document.thumbnail = thumbnail
-                    document.save()
+                pdf_updated = True
                     
                 # Log file upload
                 changes.append({"field": "pdf_raw", "old": None, "new": cleaned_file_name})
@@ -1440,11 +1436,43 @@ def update_doc(request, pk, **kwargs):
                 cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
                 formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
                 document.document_file.save(f"{uuid.uuid4().hex}/{formatted_file_name[:220]}", file)
+                pdf_updated = True
                 
                 # Log file upload
                 changes.append({"field": "document_file", "old": None, "new": cleaned_file_name})
 
+            # Process PDF (adds front page, revision table, etc.)
             process_pdf(pk, org_id)
+            
+            # Regenerate thumbnail if PDF was updated or front page/revision table changed
+            if pdf_updated or front_page_changed or revision_table_changed:
+                # Refresh document to get the updated pdf field from process_pdf
+                document.refresh_from_db()
+                
+                # Archive old thumbnail if it exists
+                if document.thumbnail:
+                    try:
+                        old_thumbnail = document.thumbnail
+                        # Delete the old thumbnail file
+                        if old_thumbnail.file:
+                            old_thumbnail.file.delete()
+                        if old_thumbnail.image_compressed:
+                            old_thumbnail.image_compressed.delete()
+                        old_thumbnail.delete()
+                    except Exception as e:
+                        print(f"Failed to delete old thumbnail: {e}")
+                
+                # Generate new thumbnail from the final processed PDF
+                if document.pdf:
+                    try:
+                        with document.pdf.open('rb') as pdf_file:
+                            thumbnail = generate_pdf_thumbnail(pdf_file, document.title)
+                            if thumbnail:
+                                document.thumbnail = thumbnail
+                                document.save()
+                                print(f"Generated thumbnail for document {pk}")
+                    except Exception as e:
+                        print(f"Failed to generate thumbnail: {e}")
 
             find_referenced_items(pk)
             
