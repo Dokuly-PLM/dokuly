@@ -1465,7 +1465,6 @@ def update_doc(request, pk, **kwargs):
                             if thumbnail:
                                 document.thumbnail = thumbnail
                                 document.save()
-                                print(f"Generated thumbnail for document {pk}")
                     except Exception as e:
                         print(f"Failed to generate thumbnail: {e}")
 
