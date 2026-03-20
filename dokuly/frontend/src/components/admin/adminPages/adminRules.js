@@ -3,7 +3,10 @@ import { Row, Col, Card } from "react-bootstrap";
 import DokulyCard from "../../dokuly_components/dokulyCard";
 import DokulyCheckFormGroup from "../../dokuly_components/dokulyCheckFormGroup";
 import SubmitButton from "../../dokuly_components/submitButton";
-import { fetchOrganizationRules, updateOrganizationRules } from "../functions/queries";
+import {
+  fetchOrganizationRules,
+  updateOrganizationRules,
+} from "../functions/queries";
 import { toast } from "react-toastify";
 
 const AdminRules = ({ setRefresh }) => {
@@ -12,27 +15,67 @@ const AdminRules = ({ setRefresh }) => {
   const [rulesId, setRulesId] = useState(null);
 
   // State for release rules
-  const [requireReleasedBomItemsAssembly, setRequireReleasedBomItemsAssembly] = useState(false);
-  const [requireReleasedBomItemsPCBA, setRequireReleasedBomItemsPCBA] = useState(false);
-  const [requireMatchedBomItemsAssembly, setRequireMatchedBomItemsAssembly] = useState(false);
-  const [requireMatchedBomItemsPCBA, setRequireMatchedBomItemsPCBA] = useState(false);
+  const [requireReleasedBomItemsAssembly, setRequireReleasedBomItemsAssembly] =
+    useState(false);
+  const [requireReleasedBomItemsPCBA, setRequireReleasedBomItemsPCBA] =
+    useState(false);
+  const [requireMatchedBomItemsAssembly, setRequireMatchedBomItemsAssembly] =
+    useState(false);
+  const [requireMatchedBomItemsPCBA, setRequireMatchedBomItemsPCBA] =
+    useState(false);
   const [requireReviewOnPart, setRequireReviewOnPart] = useState(false);
   const [requireReviewOnPcba, setRequireReviewOnPcba] = useState(false);
   const [requireReviewOnAssembly, setRequireReviewOnAssembly] = useState(false);
   const [requireReviewOnDocument, setRequireReviewOnDocument] = useState(false);
+  const [requireImageOnPart, setRequireImageOnPart] = useState(false);
+  const [requireImageOnPcba, setRequireImageOnPcba] = useState(false);
+  const [requireImageOnAssembly, setRequireImageOnAssembly] = useState(false);
   const [requireReviewOnEco, setRequireReviewOnEco] = useState(false);
-  const [requireAllAffectedItemsReviewedForEco, setRequireAllAffectedItemsReviewedForEco] = useState(false);
-  const [requireBomItemsReleasedOrInEco, setRequireBomItemsReleasedOrInEco] = useState(false);
-  const [requireBomItemsMatchedForEcoAssembly, setRequireBomItemsMatchedForEcoAssembly] = useState(false);
-  const [requireBomItemsMatchedForEcoPcba, setRequireBomItemsMatchedForEcoPcba] = useState(false);
-  const [requireRevisionNotesOnAffectedItems, setRequireRevisionNotesOnAffectedItems] = useState(false);
+  const [
+    requireAllAffectedItemsReviewedForEco,
+    setRequireAllAffectedItemsReviewedForEco,
+  ] = useState(false);
+  const [requireBomItemsReleasedOrInEco, setRequireBomItemsReleasedOrInEco] =
+    useState(false);
+  const [
+    requireBomItemsMatchedForEcoAssembly,
+    setRequireBomItemsMatchedForEcoAssembly,
+  ] = useState(false);
+  const [
+    requireBomItemsMatchedForEcoPcba,
+    setRequireBomItemsMatchedForEcoPcba,
+  ] = useState(false);
+  const [
+    requireRevisionNotesOnAffectedItems,
+    setRequireRevisionNotesOnAffectedItems,
+  ] = useState(false);
   const [overridePermission, setOverridePermission] = useState("Admin");
 
   const sections = [
-    { id: "suppliers", title: "Suppliers & Manufacturers", icon: "factory", disabled: true },
-    { id: "countryOfOrigin", title: "Country of Origin", icon: "map", disabled: true },
-    { id: "partValidation", title: "Part Validation", icon: "puzzle", disabled: true },
-    { id: "releaseRules", title: "Release Rules", icon: "clipboard-check", disabled: false },
+    {
+      id: "suppliers",
+      title: "Suppliers & Manufacturers",
+      icon: "factory",
+      disabled: true,
+    },
+    {
+      id: "countryOfOrigin",
+      title: "Country of Origin",
+      icon: "map",
+      disabled: true,
+    },
+    {
+      id: "partValidation",
+      title: "Part Validation",
+      icon: "puzzle",
+      disabled: true,
+    },
+    {
+      id: "releaseRules",
+      title: "Release Rules",
+      icon: "clipboard-check",
+      disabled: false,
+    },
   ];
 
   // Load rules on component mount
@@ -46,20 +89,47 @@ const AdminRules = ({ setRefresh }) => {
       .then((res) => {
         if (res.status === 200 && res.data) {
           setRulesId(res.data.id);
-          setRequireReleasedBomItemsAssembly(res.data.require_released_bom_items_assembly || false);
-          setRequireReleasedBomItemsPCBA(res.data.require_released_bom_items_pcba || false);
-          setRequireMatchedBomItemsAssembly(res.data.require_matched_bom_items_assembly || false);
-          setRequireMatchedBomItemsPCBA(res.data.require_matched_bom_items_pcba || false);
+          setRequireReleasedBomItemsAssembly(
+            res.data.require_released_bom_items_assembly || false,
+          );
+          setRequireReleasedBomItemsPCBA(
+            res.data.require_released_bom_items_pcba || false,
+          );
+          setRequireMatchedBomItemsAssembly(
+            res.data.require_matched_bom_items_assembly || false,
+          );
+          setRequireMatchedBomItemsPCBA(
+            res.data.require_matched_bom_items_pcba || false,
+          );
           setRequireReviewOnPart(res.data.require_review_on_part || false);
           setRequireReviewOnPcba(res.data.require_review_on_pcba || false);
-          setRequireReviewOnAssembly(res.data.require_review_on_assembly || false);
-          setRequireReviewOnDocument(res.data.require_review_on_document || false);
+          setRequireReviewOnAssembly(
+            res.data.require_review_on_assembly || false,
+          );
+          setRequireReviewOnDocument(
+            res.data.require_review_on_document || false,
+          );
+          setRequireImageOnPart(res.data.require_image_on_part || false);
+          setRequireImageOnPcba(res.data.require_image_on_pcba || false);
+          setRequireImageOnAssembly(
+            res.data.require_image_on_assembly || false,
+          );
           setRequireReviewOnEco(res.data.require_review_on_eco || false);
-          setRequireAllAffectedItemsReviewedForEco(res.data.require_all_affected_items_reviewed_for_eco || false);
-          setRequireBomItemsReleasedOrInEco(res.data.require_bom_items_released_or_in_eco || false);
-          setRequireBomItemsMatchedForEcoAssembly(res.data.require_bom_items_matched_for_eco_assembly || false);
-          setRequireBomItemsMatchedForEcoPcba(res.data.require_bom_items_matched_for_eco_pcba || false);
-          setRequireRevisionNotesOnAffectedItems(res.data.require_revision_notes_on_affected_items || false);
+          setRequireAllAffectedItemsReviewedForEco(
+            res.data.require_all_affected_items_reviewed_for_eco || false,
+          );
+          setRequireBomItemsReleasedOrInEco(
+            res.data.require_bom_items_released_or_in_eco || false,
+          );
+          setRequireBomItemsMatchedForEcoAssembly(
+            res.data.require_bom_items_matched_for_eco_assembly || false,
+          );
+          setRequireBomItemsMatchedForEcoPcba(
+            res.data.require_bom_items_matched_for_eco_pcba || false,
+          );
+          setRequireRevisionNotesOnAffectedItems(
+            res.data.require_revision_notes_on_affected_items || false,
+          );
           setOverridePermission(res.data.override_permission || "Admin");
         }
         setLoading(false);
@@ -81,12 +151,18 @@ const AdminRules = ({ setRefresh }) => {
       require_review_on_pcba: requireReviewOnPcba,
       require_review_on_assembly: requireReviewOnAssembly,
       require_review_on_document: requireReviewOnDocument,
+      require_image_on_part: requireImageOnPart,
+      require_image_on_pcba: requireImageOnPcba,
+      require_image_on_assembly: requireImageOnAssembly,
       require_review_on_eco: requireReviewOnEco,
-      require_all_affected_items_reviewed_for_eco: requireAllAffectedItemsReviewedForEco,
+      require_all_affected_items_reviewed_for_eco:
+        requireAllAffectedItemsReviewedForEco,
       require_bom_items_released_or_in_eco: requireBomItemsReleasedOrInEco,
-      require_bom_items_matched_for_eco_assembly: requireBomItemsMatchedForEcoAssembly,
+      require_bom_items_matched_for_eco_assembly:
+        requireBomItemsMatchedForEcoAssembly,
       require_bom_items_matched_for_eco_pcba: requireBomItemsMatchedForEcoPcba,
-      require_revision_notes_on_affected_items: requireRevisionNotesOnAffectedItems,
+      require_revision_notes_on_affected_items:
+        requireRevisionNotesOnAffectedItems,
       override_permission: overridePermission,
     };
 
@@ -111,8 +187,8 @@ const AdminRules = ({ setRefresh }) => {
         <div className="p-3">
           <h5>Coming Soon</h5>
           <p className="text-muted">
-            Configure suppliers and manufacturers that require warnings or blocking.
-            This feature is under development.
+            Configure suppliers and manufacturers that require warnings or
+            blocking. This feature is under development.
           </p>
         </div>
       </DokulyCard>
@@ -139,8 +215,8 @@ const AdminRules = ({ setRefresh }) => {
         <div className="p-3">
           <h5>Coming Soon</h5>
           <p className="text-muted">
-            Configure validation rules for parts, PCBAs, and assemblies.
-            This feature is under development.
+            Configure validation rules for parts, PCBAs, and assemblies. This
+            feature is under development.
           </p>
         </div>
       </DokulyCard>
@@ -155,7 +231,7 @@ const AdminRules = ({ setRefresh }) => {
           <p className="text-muted">
             Configure requirements for releasing assemblies and PCBAs.
           </p>
-          
+
           {loading ? (
             <div className="text-center py-4">
               <div className="spinner-border" role="status">
@@ -221,6 +297,28 @@ const AdminRules = ({ setRefresh }) => {
               </div>
 
               <div className="mt-4">
+                <h6>Image Requirements</h6>
+                <DokulyCheckFormGroup
+                  label="Require an image uploaded before releasing Part"
+                  value={requireImageOnPart}
+                  onChange={setRequireImageOnPart}
+                  id="requireImageOnPart"
+                />
+                <DokulyCheckFormGroup
+                  label="Require an image uploaded before releasing PCBA"
+                  value={requireImageOnPcba}
+                  onChange={setRequireImageOnPcba}
+                  id="requireImageOnPcba"
+                />
+                <DokulyCheckFormGroup
+                  label="Require an image uploaded before releasing Assembly"
+                  value={requireImageOnAssembly}
+                  onChange={setRequireImageOnAssembly}
+                  id="requireImageOnAssembly"
+                />
+              </div>
+
+              <div className="mt-4">
                 <h6>ECO Requirements</h6>
                 <DokulyCheckFormGroup
                   label="Require review approval before releasing ECO"
@@ -264,8 +362,8 @@ const AdminRules = ({ setRefresh }) => {
                 <h6>Override Permissions</h6>
                 <div className="form-group">
                   <label>Who can override these rules:</label>
-                  <select 
-                    className="form-control" 
+                  <select
+                    className="form-control"
                     value={overridePermission}
                     onChange={(e) => setOverridePermission(e.target.value)}
                   >
@@ -275,13 +373,14 @@ const AdminRules = ({ setRefresh }) => {
                     <option value="User">User</option>
                   </select>
                   <small className="text-muted">
-                    Selected role and above can override release rules when needed.
+                    Selected role and above can override release rules when
+                    needed.
                   </small>
                 </div>
               </div>
 
               <div className="mt-4">
-                <SubmitButton 
+                <SubmitButton
                   onClick={handleSubmit}
                   disabled={loading}
                   disabledTooltip="Loading..."
@@ -323,15 +422,20 @@ const AdminRules = ({ setRefresh }) => {
               <div className="list-group list-group-flush">
                 {sections.map((section) => (
                   <button
+                    type="button"
                     key={section.id}
                     className={`list-group-item list-group-item-action ${
-                      activeSection === section.id ? "dokuly-bg-primary text-white" : ""
+                      activeSection === section.id
+                        ? "dokuly-bg-primary text-white"
+                        : ""
                     } ${section.disabled ? "disabled" : ""}`}
-                    onClick={() => !section.disabled && setActiveSection(section.id)}
+                    onClick={() =>
+                      !section.disabled && setActiveSection(section.id)
+                    }
                     disabled={section.disabled}
                     style={{
                       cursor: section.disabled ? "not-allowed" : "pointer",
-                      opacity: section.disabled ? 0.6 : 1
+                      opacity: section.disabled ? 0.6 : 1,
                     }}
                   >
                     <img
@@ -340,14 +444,19 @@ const AdminRules = ({ setRefresh }) => {
                       width="20"
                       height="20"
                       className="me-2"
-                      style={{ 
+                      style={{
                         marginRight: "8px",
-                        filter: activeSection === section.id ? "brightness(0) invert(1)" : "none"
+                        filter:
+                          activeSection === section.id
+                            ? "brightness(0) invert(1)"
+                            : "none",
                       }}
                     />
                     {section.title}
                     {section.disabled && (
-                      <span className="badge bg-warning text-dark ms-2">Coming Soon</span>
+                      <span className="badge bg-warning text-dark ms-2">
+                        Coming Soon
+                      </span>
                     )}
                   </button>
                 ))}
@@ -359,17 +468,15 @@ const AdminRules = ({ setRefresh }) => {
             <Card.Body>
               <h6>About Rules</h6>
               <p className="text-muted small">
-                Rules help ensure your parts, assemblies, and releases
-                meet your organization's requirements. Configure warnings and
-                blocking rules with optional overrides.
+                Rules help ensure your parts, assemblies, and releases meet your
+                organization's requirements. Configure warnings and blocking
+                rules with optional overrides.
               </p>
             </Card.Body>
           </DokulyCard>
         </Col>
 
-        <Col md={9}>
-          {renderSectionContent()}
-        </Col>
+        <Col md={9}>{renderSectionContent()}</Col>
       </Row>
     </div>
   );

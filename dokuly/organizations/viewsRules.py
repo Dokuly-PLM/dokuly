@@ -439,6 +439,9 @@ def fetch_organization_rules(request):
                 'require_review_on_pcba': False,
                 'require_review_on_assembly': False,
                 'require_review_on_document': False,
+                'require_image_on_part': False,
+                'require_image_on_pcba': False,
+                'require_image_on_assembly': False,
                 'require_review_on_eco': False,
                 'require_all_affected_items_reviewed_for_eco': False,
                 'require_bom_items_released_or_in_eco': False,
@@ -488,6 +491,9 @@ def update_organization_rules(request):
                 'require_review_on_pcba': False,
                 'require_review_on_assembly': False,
                 'require_review_on_document': False,
+                'require_image_on_part': False,
+                'require_image_on_pcba': False,
+                'require_image_on_assembly': False,
                 'require_review_on_eco': False,
                 'require_all_affected_items_reviewed_for_eco': False,
                 'require_bom_items_released_or_in_eco': False,
@@ -524,6 +530,15 @@ def update_organization_rules(request):
         
         if 'require_review_on_document' in data:
             rules.require_review_on_document = data['require_review_on_document']
+
+        if 'require_image_on_part' in data:
+            rules.require_image_on_part = data['require_image_on_part']
+
+        if 'require_image_on_pcba' in data:
+            rules.require_image_on_pcba = data['require_image_on_pcba']
+
+        if 'require_image_on_assembly' in data:
+            rules.require_image_on_assembly = data['require_image_on_assembly']
         
         if 'require_review_on_eco' in data:
             rules.require_review_on_eco = data['require_review_on_eco']
@@ -609,6 +624,17 @@ def check_assembly_rules(request, assembly_id):
                 'rule': 'require_review_on_assembly',
                 'description': 'Assembly must be reviewed before release',
                 'passed': is_reviewed,
+            })
+
+        # Check image requirement
+        if rules and rules.require_image_on_assembly:
+            has_image = assembly.thumbnail_id is not None
+            if not has_image:
+                all_passed = False
+            rules_checks.append({
+                'rule': 'require_image_on_assembly',
+                'description': 'Assembly must have an image uploaded before release',
+                'passed': has_image,
             })
         
         # Check BOM items if required
@@ -723,6 +749,17 @@ def check_pcba_rules(request, pcba_id):
                 'description': 'PCBA must be reviewed before release',
                 'passed': is_reviewed,
             })
+
+        # Check image requirement
+        if rules and rules.require_image_on_pcba:
+            has_image = pcba.thumbnail_id is not None
+            if not has_image:
+                all_passed = False
+            rules_checks.append({
+                'rule': 'require_image_on_pcba',
+                'description': 'PCBA must have an image uploaded before release',
+                'passed': has_image,
+            })
         
         # Check BOM items if required
         if rules and rules.require_released_bom_items_pcba:
@@ -833,6 +870,17 @@ def check_part_rules(request, part_id):
                 'rule': 'require_review_on_part',
                 'description': 'Part must be reviewed before release',
                 'passed': is_reviewed,
+            })
+
+        # Check image requirement
+        if rules and rules.require_image_on_part:
+            has_image = part.thumbnail_id is not None
+            if not has_image:
+                all_passed = False
+            rules_checks.append({
+                'rule': 'require_image_on_part',
+                'description': 'Part must have an image uploaded before release',
+                'passed': has_image,
             })
         
         has_active_rules = len(rules_checks) > 0
