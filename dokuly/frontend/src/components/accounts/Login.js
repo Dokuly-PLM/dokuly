@@ -258,7 +258,9 @@ function Login({ setUser }) {
                       display: "flex",
                       alignItems: "center",
                     }}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     <img
                       src="../../static/icons/eye.svg"
@@ -266,7 +268,7 @@ function Login({ setUser }) {
                       width="20px"
                       style={{
                         opacity: showPassword ? 1 : 0.5,
-                        filter: showPassword 
+                        filter: showPassword
                           ? "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)"
                           : "invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(90%)",
                       }}
@@ -359,7 +361,7 @@ function Login({ setUser }) {
                   width="20px"
                   style={{
                     opacity: showPassword ? 1 : 0.5,
-                    filter: showPassword 
+                    filter: showPassword
                       ? "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)"
                       : "invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(90%)",
                   }}

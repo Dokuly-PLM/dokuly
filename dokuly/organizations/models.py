@@ -72,8 +72,8 @@ class Organization(models.Model):
     )
     use_number_revisions = models.BooleanField(default=False, blank=True)
     revision_format = models.CharField(
-        max_length=20, 
-        default="major-minor", 
+        max_length=20,
+        default="major-minor",
         choices=[
             ("major-only", "Major Only"),
             ("major-minor", "Major-Minor")
@@ -82,11 +82,11 @@ class Organization(models.Model):
         help_text="Format for revisions. Applies to both letter (A, B vs A-0, A-1) and number systems. For number systems, the starting value (0 or 1) is controlled by start_major_revision_at_one setting."
     )
     start_major_revision_at_one = models.BooleanField(
-        default=False, 
+        default=False,
         blank=True,
         help_text="When enabled and using number-based revisions, display major revisions starting at 1 instead of 0 (e.g., 1, 2, 3... instead of 0, 1, 2...). Minor revisions always start at 0 regardless of this setting (e.g., 1-0, 1-1, 1-2, 2-0...). Does not affect how revisions are stored in the database."
     )
-    
+
     # Document numbering settings
     full_document_number_template = models.CharField(
         max_length=100,
@@ -95,13 +95,13 @@ class Organization(models.Model):
         help_text="Template for formatting full document numbers. Use <prefix>, <project_number>, <part_number>, <document_number>, <major_revision>, <minor_revision>, <revision>, <day>, <month>, <year>"
     )
     document_use_number_revisions = models.BooleanField(
-        default=False, 
+        default=False,
         blank=True,
         help_text="When enabled, documents will use number-based revisions instead of letters (0, 1, 2... instead of A, B, C...)"
     )
     document_revision_format = models.CharField(
-        max_length=20, 
-        default="major-minor", 
+        max_length=20,
+        default="major-minor",
         choices=[
             ("major-only", "Major Only"),
             ("major-minor", "Major-Minor")
@@ -110,18 +110,18 @@ class Organization(models.Model):
         help_text="Format for document revisions. Major-only uses single revisions (A, B, C or 0, 1, 2), while major-minor allows sub-revisions (A-0, A-1 or 0-0, 0-1)"
     )
     document_start_major_revision_at_one = models.BooleanField(
-        default=False, 
+        default=False,
         blank=True,
         help_text="When enabled and using number-based revisions for documents, display major revisions starting at 1 instead of 0 (e.g., 1, 2, 3... instead of 0, 1, 2...). Minor revisions always start at 0 regardless of this setting."
     )
-    
+
     delivery_address = models.CharField(max_length=1000, blank=True, null=True)
     postal_code = models.CharField(max_length=1000, blank=True, null=True)
     country = models.CharField(max_length=1000, blank=True, null=True)
     billing_address = models.CharField(max_length=1000, blank=True, null=True)
 
-    #-----------------------------------------------------------------------------------------------------------------------
-    #DEPRECATED
+    # -----------------------------------------------------------------------------------------------------------------------
+    # DEPRECATED
 
     # DEPRECATED: Storage tracking fields - kept for backwards compatibility
     # Storage limits are no longer enforced since its open source
@@ -133,8 +133,8 @@ class Organization(models.Model):
     )  # 5GB in bytes (DEPRECATED - not enforced)
 
     # Component Vault
-    component_vault_api_key = encrypt(  
-        models.CharField(null=True, blank=True, max_length=1024) # DEPRECATED #TODO delete field
+    component_vault_api_key = encrypt(
+        models.CharField(null=True, blank=True, max_length=1024)  # DEPRECATED #TODO delete field
     )
 
     stripe_subscription_ids = ArrayField(
@@ -152,7 +152,6 @@ class Organization(models.Model):
     )
     current_system_cost = models.IntegerField(null=True, blank=True)  # DEPRECATED
     max_allowed_active_users = models.IntegerField(default=1, blank=True)  # DEPRECATED
-
 
 
 class Subscription(models.Model):
@@ -209,7 +208,7 @@ class Rules(models.Model):
     Release rules configuration for an organization or project.
     Controls what requirements must be met before releasing assemblies and PCBAs.
     """
-    
+
     # Link to organization (required) or project (optional for project-specific overrides)
     organization = models.OneToOneField(
         Organization,
@@ -218,7 +217,7 @@ class Rules(models.Model):
         null=True,
         blank=True
     )
-    
+
     project = models.OneToOneField(
         Project,
         on_delete=models.CASCADE,
@@ -226,94 +225,112 @@ class Rules(models.Model):
         null=True,
         blank=True
     )
-    
+
     # Release requirements
     require_released_bom_items_assembly = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require all BOM items to be released before releasing an Assembly"
     )
-    
+
     require_released_bom_items_pcba = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require all BOM items to be released before releasing a PCBA"
     )
-    
+
     require_matched_bom_items_assembly = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require all BOM items to be matched to a Part, PCBA, or Assembly before releasing an Assembly"
     )
-    
+
     require_matched_bom_items_pcba = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require all BOM items to be matched to a Part, PCBA, or Assembly before releasing a PCBA"
     )
-    
+
     # Review requirements
     require_review_on_part = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require review approval before releasing a Part"
     )
-    
+
     require_review_on_pcba = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require review approval before releasing a PCBA"
     )
-    
+
     require_review_on_assembly = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require review approval before releasing an Assembly"
     )
-    
+
     require_review_on_document = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require review approval before releasing a Document"
     )
-    
+
+    require_image_on_part = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require an image to be uploaded before releasing a Part"
+    )
+
+    require_image_on_pcba = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require an image to be uploaded before releasing a PCBA"
+    )
+
+    require_image_on_assembly = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require an image to be uploaded before releasing an Assembly"
+    )
+
     # ECO-specific rules
     require_review_on_eco = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require review approval before releasing an ECO"
     )
-    
+
     require_all_affected_items_reviewed_for_eco = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require all affected items to be reviewed before releasing an ECO"
     )
-    
+
     require_bom_items_released_or_in_eco = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require BOM items of affected assemblies/PCBAs to be released or included in the ECO"
     )
-    
+
     require_bom_items_matched_for_eco_assembly = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require all BOM items of affected Assemblies to be matched to a Part, PCBA, or Assembly before releasing an ECO"
     )
-    
+
     require_bom_items_matched_for_eco_pcba = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require all BOM items of affected PCBAs to be matched to a Part, PCBA, or Assembly before releasing an ECO"
     )
-    
+
     require_revision_notes_on_affected_items = models.BooleanField(
         default=False,
         blank=True,
         help_text="Require all affected items in an ECO to have revision notes before releasing"
     )
-    
+
     # Override permissions - choices: Owner, Admin, User, Project Owner
     PERMISSION_CHOICES = [
         ('Owner', 'Owner'),
@@ -321,7 +338,7 @@ class Rules(models.Model):
         ('Project Owner', 'Project Owner'),
         ('User', 'User'),
     ]
-    
+
     override_permission = models.CharField(
         max_length=20,
         choices=PERMISSION_CHOICES,
@@ -329,23 +346,23 @@ class Rules(models.Model):
         blank=True,
         help_text="Minimum role required to override release rules"
     )
-    
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Release Rules"
         verbose_name_plural = "Release Rules"
         # Ensure either organization or project is set, but not both
         constraints = [
             models.CheckConstraint(
-                check=models.Q(organization__isnull=False, project__isnull=True) | 
-                      models.Q(organization__isnull=True, project__isnull=False),
+                check=models.Q(organization__isnull=False, project__isnull=True) |
+                models.Q(organization__isnull=True, project__isnull=False),
                 name='release_rules_org_or_project'
             )
         ]
-    
+
     def __str__(self):
         if self.organization:
             return f"Release Rules for {self.organization.name}"
@@ -359,7 +376,7 @@ class IntegrationSettings(models.Model):
     Integration settings for external APIs (DigiKey, Nexar, etc.)
     Stores API credentials and field mapping configurations per organization.
     """
-    
+
     organization = models.OneToOneField(
         Organization,
         on_delete=models.CASCADE,
@@ -367,11 +384,11 @@ class IntegrationSettings(models.Model):
         null=True,
         blank=True
     )
-    
+
     # DigiKey API credentials (plain text, no encryption)
     digikey_client_id = models.CharField(max_length=500, blank=True, null=True)
     digikey_client_secret = models.CharField(max_length=500, blank=True, null=True)
-    
+
     # DigiKey locale settings for API queries
     digikey_locale_site = models.CharField(
         max_length=10,
@@ -391,7 +408,7 @@ class IntegrationSettings(models.Model):
         blank=True,
         help_text="DigiKey locale language code (e.g., en, de, fr). Default: en"
     )
-    
+
     # Field mapping configuration - maps DigiKey API response fields to part model fields
     # Example: {"rohs": "is_rohs_compliant", "ul": "is_ul_compliant", "datasheet": "datasheet"}
     digikey_field_mapping = models.JSONField(
@@ -399,7 +416,7 @@ class IntegrationSettings(models.Model):
         blank=True,
         help_text="Maps DigiKey API response fields to part model fields"
     )
-    
+
     # DigiKey supplier selection - user selects which supplier to use for DigiKey prices
     digikey_supplier = models.ForeignKey(
         'purchasing.Supplier',
@@ -409,11 +426,11 @@ class IntegrationSettings(models.Model):
         related_name='digikey_integration_settings',
         help_text="Supplier to use when creating prices from DigiKey parts"
     )
-    
+
     # Nexar API credentials (plain text, no encryption)
     nexar_client_id = models.CharField(max_length=500, blank=True, null=True)
     nexar_client_secret = models.CharField(max_length=500, blank=True, null=True)
-    
+
     # Odoo API credentials and settings
     odoo_enabled = models.BooleanField(default=False, help_text="Enable Odoo integration")
     odoo_url = models.CharField(
@@ -465,7 +482,7 @@ class IntegrationSettings(models.Model):
         ],
         help_text="Default product type in Odoo"
     )
-    
+
     # Odoo product field defaults (for new products)
     odoo_default_sale_ok = models.BooleanField(
         default=False,
@@ -494,7 +511,7 @@ class IntegrationSettings(models.Model):
         ],
         help_text="Default inventory tracking method for new products"
     )
-    
+
     # Category mappings
     odoo_category_parts = models.CharField(
         max_length=200,
@@ -514,14 +531,14 @@ class IntegrationSettings(models.Model):
         blank=True,
         help_text="Product category name for Assemblies"
     )
-    
+
     # Fields to update for existing products (JSON array of field names)
     odoo_update_fields_existing = models.JSONField(
         default=list,
         blank=True,
         help_text="List of fields to update when product already exists in Odoo. Options: name, description, image"
     )
-    
+
     # Currency API settings
     currency_api_key = models.CharField(
         max_length=500,
@@ -529,15 +546,15 @@ class IntegrationSettings(models.Model):
         null=True,
         help_text="API key for ExchangeRate-API (v6.exchangerate-api.com)"
     )
-    
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Integration Settings"
         verbose_name_plural = "Integration Settings"
-    
+
     def __str__(self):
         if self.organization:
             return f"Integration Settings for {self.organization.name}"
