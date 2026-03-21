@@ -10,6 +10,7 @@ const DocumentPrefixForm = ({ show, onHide, setRefresh, prefixSelected }) => {
   const [description, setDescription] = useState("");
   const [part_doc, setPartDoc] = useState(true);
   const [project_doc, setProjectDoc] = useState(true);
+  const [namingConvention, setNamingConvention] = useState("");
 
   const resetStates = () => {
     setDisplayName("");
@@ -17,6 +18,7 @@ const DocumentPrefixForm = ({ show, onHide, setRefresh, prefixSelected }) => {
     setDescription("");
     setPartDoc(true);
     setProjectDoc(true);
+    setNamingConvention("");
   };
 
   const archivePrefix = () => {
@@ -48,6 +50,7 @@ const DocumentPrefixForm = ({ show, onHide, setRefresh, prefixSelected }) => {
       description,
       part_doc,
       project_doc,
+      naming_convention: namingConvention,
     };
 
     if (prefixSelected) {
@@ -83,6 +86,7 @@ const DocumentPrefixForm = ({ show, onHide, setRefresh, prefixSelected }) => {
       setDescription(prefixSelected.description);
       setPartDoc(prefixSelected.part_doc);
       setProjectDoc(prefixSelected.project_doc);
+      setNamingConvention(prefixSelected.naming_convention || "");
     }
   }, [prefixSelected]);
 
@@ -116,6 +120,19 @@ const DocumentPrefixForm = ({ show, onHide, setRefresh, prefixSelected }) => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
+          </Form.Group>
+          <Form.Group controlId="formNamingConvention" className="mt-2">
+            <Form.Label>Naming Convention (AI)</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={namingConvention}
+              onChange={(e) => setNamingConvention(e.target.value)}
+              placeholder="e.g. Format: [Type] [Subject] [Version]"
+            />
+            <Form.Text className="text-muted">
+              Rules sent to the AI as context for title suggestions.
+            </Form.Text>
           </Form.Group>
           <Row className="mt-2">
             <Col>
