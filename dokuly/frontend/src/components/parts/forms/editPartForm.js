@@ -12,6 +12,8 @@ import DropdownFormSection from "../../dokuly_components/dokulyForm/dropdownForm
 import ReactCountryFlag from "react-country-flag";
 import { generateCountryList } from "../../dokuly_components/dokulyForm/functions/generateCountryList";
 import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
+import NameSuggestion from "../../dokuly_components/nameSuggestion/nameSuggestion";
+import { fetchIntegrationSettings } from "../../admin/functions/queries";
 
 const EditPartForm = (props) => {
   const navigate = useNavigate();
@@ -47,6 +49,7 @@ const EditPartForm = (props) => {
   const [showModal, setShowModal] = useState(false);
   const [rulesStatus, setRulesStatus] = useState(null);
   const [rulesOverride, setRulesOverride] = useState(false);
+  const [hasAiCredentials, setHasAiCredentials] = useState(false);
 
   const partTypes = usePartTypes();
 
@@ -110,6 +113,14 @@ const EditPartForm = (props) => {
     );
     setPartType(currentPartType || null);
   }, [props.part?.part_type, partTypes]);
+
+  useEffect(() => {
+    fetchIntegrationSettings().then((res) => {
+      if (res.status === 200 && res.data) {
+        setHasAiCredentials(res.data.has_ai_credentials || false);
+      }
+    }).catch(() => {});
+  }, []);
 
   const launchForm = () => {
     setShowModal(true);
@@ -384,6 +395,13 @@ const EditPartForm = (props) => {
                 setDisplayName(e.target.value);
               }}
               value={display_name}
+            />
+            <NameSuggestion
+              draftName={display_name}
+              entityType="part"
+              typeId={partType?.id}
+              onApply={setDisplayName}
+              enabled={hasAiCredentials}
             />
           </div>
 
