@@ -1173,6 +1173,26 @@ const PartNewForm = (props) => {
         title="Create new part"
       >
         <div className="form-group">
+          <label>Display name *</label>
+          <input
+            className="form-control"
+            type="text"
+            name="display_name"
+            onChange={(e) => {
+              setDisplayName(e.target.value);
+            }}
+            value={display_name || ""}
+          />
+          <NameSuggestion
+            draftName={display_name}
+            entityType="part"
+            typeId={partType?.id}
+            onApply={setDisplayName}
+            enabled={hasAiCredentials}
+          />
+        </div>
+
+        <div className="form-group">
           <label>Part type *</label>
           {partTypes.length === 0 || partTypes === undefined ? (
             <div style={{ border: "1px solid red", padding: "10px" }}>
@@ -1211,26 +1231,6 @@ const PartNewForm = (props) => {
                 ))}
             </select>
           )}
-        </div>
-
-        <div className="form-group">
-          <label>Display name *</label>
-          <input
-            className="form-control"
-            type="text"
-            name="display_name"
-            onChange={(e) => {
-              setDisplayName(e.target.value);
-            }}
-            value={display_name || ""}
-          />
-          <NameSuggestion
-            draftName={display_name}
-            entityType="part"
-            typeId={partType?.id}
-            onApply={setDisplayName}
-            enabled={hasAiCredentials}
-          />
         </div>
 
         <div className="form-group">
