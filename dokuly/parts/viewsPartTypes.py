@@ -57,6 +57,8 @@ def add_part_type(request):
             part_type.default_unit = data["default_unit"]
         if "icon_url" in data:
             part_type.icon_url = data["icon_url"]
+        if "naming_convention" in data:
+            part_type.naming_convention = data["naming_convention"]
 
         part_type.save()
         return Response("Part type added successfully")
@@ -104,6 +106,8 @@ def edit_part_type(request, part_type_id):
             part_type.default_unit = data["default_unit"]
         if "icon_url" in data:
             part_type.icon_url = data["icon_url"]
+        if "naming_convention" in data:
+            part_type.naming_convention = data["naming_convention"]
 
         part_type.save()
         return Response("Part type updated successfully")

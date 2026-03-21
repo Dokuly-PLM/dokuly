@@ -102,6 +102,10 @@ def edit_prefix(request, prefixId):
         Document_Prefix.objects.filter(id=prefixId).update(
             project_doc=data["project_doc"]
         )
+    if "naming_convention" in data:
+        Document_Prefix.objects.filter(id=prefixId).update(
+            naming_convention=data["naming_convention"]
+        )
     if "archive" in data:
         value = ""
         if data["archive"] == True or data["archive"] == "true":
