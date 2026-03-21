@@ -22,6 +22,7 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
   const [selectedIcon, setSelectedIcon] = useState("");
   const [prefix, setPrefix] = useState(defaultPrefix);
   const [appliesTo, setAppliesTo] = useState("Part");
+  const [namingConvention, setNamingConvention] = useState("");
 
   const resetStates = () => {
     setName("");
@@ -29,6 +30,7 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
     setPrefix(defaultPrefix); // Reset prefix to default
     setDefaultUnit(defaultDefaultUnit); // Reset defaultUnit
     setAppliesTo("Part"); // Reset applies_to to default
+    setNamingConvention("");
   };
 
   const onDeletePartType = (item) => {
@@ -62,6 +64,7 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
       icon_url: `/static/icons/${selectedIcon}`,
       default_unit: defaultUnit, // Use default_unit for consistency with the model
       applies_to: appliesTo,
+      naming_convention: namingConvention,
     };
 
     if (partTypeSelected) {
@@ -99,6 +102,7 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
       setDefaultUnit(partTypeSelected.default_unit); // Set defaultUnit
       setPrefix(partTypeSelected.prefix || defaultPrefix); // Set prefix
       setAppliesTo(partTypeSelected.applies_to || "Part"); // Set applies_to
+      setNamingConvention(partTypeSelected.naming_convention || "");
       if (
         partTypeSelected?.icon_url == null ||
         partTypeSelected?.icon_url === undefined ||
@@ -116,7 +120,7 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
   }, [partTypeSelected]);
 
   return (
-    <DokulyModal show={show} onHide={onHide} title="Part Type Form" size="md">
+    <DokulyModal show={show} onHide={onHide} title="Part Type Form" size="lg">
       <Form>
         <Form.Group controlId="formName">
           <Form.Label>Name*</Form.Label>
@@ -161,6 +165,20 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
             value={defaultUnit}
             onChange={(e) => setDefaultUnit(e.target.value)}
           />
+        </Form.Group>
+        <Form.Group controlId="formNamingConvention" className="mt-2">
+          <Form.Label>Naming Convention (AI)</Form.Label>
+          <Form.Control
+            as="textarea"
+            rows={10}
+            value={namingConvention}
+            onChange={(e) => setNamingConvention(e.target.value)}
+            placeholder={"Pattern:\n[Field1]_[Field2]_[Field3]\n\nFields:\n- Field1: Value1 = Description, Value2 = Description\n- Field2: Value1 = Description\n\nExamples:\nValue1_Value2_Value3"}
+            style={{ fontFamily: "monospace", fontSize: "0.85em", whiteSpace: "pre", overflowWrap: "normal", overflowX: "auto" }}
+          />
+          <Form.Text className="text-muted">
+            Naming rules sent to the AI. Supports structured text with tables, field lists, and examples.
+          </Form.Text>
         </Form.Group>
         <Form.Group controlId="formIcon">
           <Form.Label>Icon</Form.Label>

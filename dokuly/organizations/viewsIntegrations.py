@@ -122,10 +122,16 @@ def get_integration_settings(request):
             # Currency API settings
             "currency_api_key": "***" if integration_settings.currency_api_key else "",
             "has_currency_credentials": bool(integration_settings.currency_api_key),
+
+            # AI settings
+            "ai_api_key": "***" if integration_settings.ai_api_key else "",
+            "ai_model": integration_settings.ai_model or "claude-sonnet-4-20250514",
+            "ai_provider": integration_settings.ai_provider or "anthropic",
+            "has_ai_credentials": bool(integration_settings.ai_api_key),
         }
-        
+
         return Response(response_data, status=status.HTTP_200_OK)
-    
+
     except Exception as e:
         logger.error(f"Error getting integration settings: {e}")
         return Response(
@@ -310,6 +316,20 @@ def update_integration_settings(request):
                 valid_fields = ['name', 'description', 'image']
                 integration_settings.odoo_update_fields_existing = [f for f in update_fields if f in valid_fields]
         
+        # Update AI settings
+        if "ai_api_key" in data:
+            api_key = data["ai_api_key"]
+            if api_key and api_key != "***" and api_key.strip():
+                integration_settings.ai_api_key = api_key.strip()
+            elif not api_key or api_key == "***":
+                pass
+
+        if "ai_model" in data:
+            integration_settings.ai_model = (data["ai_model"] or "claude-sonnet-4-20250514").strip()
+
+        if "ai_provider" in data:
+            integration_settings.ai_provider = (data["ai_provider"] or "anthropic").strip()
+
         # Update Currency API key
         if "currency_api_key" in data:
             api_key = data["currency_api_key"]
@@ -371,10 +391,16 @@ def update_integration_settings(request):
             # Currency API settings
             "currency_api_key": "***" if integration_settings.currency_api_key else "",
             "has_currency_credentials": bool(integration_settings.currency_api_key),
+
+            # AI settings
+            "ai_api_key": "***" if integration_settings.ai_api_key else "",
+            "ai_model": integration_settings.ai_model or "claude-sonnet-4-20250514",
+            "ai_provider": integration_settings.ai_provider or "anthropic",
+            "has_ai_credentials": bool(integration_settings.ai_api_key),
         }
-        
+
         return Response(response_data, status=status.HTTP_200_OK)
-    
+
     except Exception as e:
         logger.error(f"Error updating integration settings: {e}")
         return Response(

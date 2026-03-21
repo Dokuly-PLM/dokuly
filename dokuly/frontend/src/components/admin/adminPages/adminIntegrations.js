@@ -9,6 +9,8 @@ import DigikeySettings from "../adminComponents/integrations/digikeySettings";
 import NexarSettings from "../adminComponents/integrations/nexarSettings";
 import OdooSettings from "../adminComponents/integrations/odooSettings";
 import CurrencySettings from "../adminComponents/integrations/currencySettings";
+import AiSettings from "../adminComponents/integrations/aiSettings";
+import { suggestName } from "../functions/queries";
 
 const AdminIntegrations = ({ setRefresh }) => {
   const [activeSection, setActiveSection] = useState("digikey");
@@ -68,11 +70,19 @@ const AdminIntegrations = ({ setRefresh }) => {
   const [hasCurrencyCredentials, setHasCurrencyCredentials] = useState(false);
   const [testingCurrencyConnection, setTestingCurrencyConnection] = useState(false);
 
+  // State for AI settings
+  const [aiApiKey, setAiApiKey] = useState("");
+  const [aiModel, setAiModel] = useState("claude-sonnet-4-20250514");
+  const [aiProvider, setAiProvider] = useState("anthropic");
+  const [hasAiCredentials, setHasAiCredentials] = useState(false);
+  const [testingAiConnection, setTestingAiConnection] = useState(false);
+
   const sections = [
     { id: "digikey", title: "DigiKey", icon: "search", disabled: false },
     { id: "nexar", title: "Nexar", icon: "search", disabled: false },
     { id: "odoo", title: "Odoo", icon: "cloud-upload", disabled: false },
     { id: "currency", title: "Currency", icon: "cash", disabled: false },
+    { id: "ai", title: "AI", icon: "bolt", disabled: false },
   ];
 
   // Load settings and suppliers on component mount
@@ -215,6 +225,12 @@ const AdminIntegrations = ({ setRefresh }) => {
           // Currency API settings
           setCurrencyApiKey(res.data.currency_api_key || "");
           setHasCurrencyCredentials(res.data.has_currency_credentials || false);
+
+          // AI settings
+          setAiApiKey(res.data.ai_api_key || "");
+          setAiModel(res.data.ai_model || "claude-sonnet-4-20250514");
+          setAiProvider(res.data.ai_provider || "anthropic");
+          setHasAiCredentials(res.data.has_ai_credentials || false);
         }
         setLoading(false);
       })
@@ -455,6 +471,59 @@ const AdminIntegrations = ({ setRefresh }) => {
       });
   };
 
+  const handleAiSubmit = () => {
+    const data = {
+      ai_api_key: aiApiKey,
+      ai_model: aiModel,
+      ai_provider: aiProvider,
+    };
+
+    updateIntegrationSettings(data)
+      .then((res) => {
+        if (res.status === 200) {
+          toast.success("AI settings updated successfully");
+          loadSettings();
+        }
+      })
+      .catch((err) => {
+        console.error("Error updating AI settings:", err);
+        toast.error("Failed to update AI settings");
+      });
+  };
+
+  const handleTestAiConnection = () => {
+    if (!aiApiKey || !aiApiKey.trim()) {
+      toast.error("Please enter an API key before testing");
+      return;
+    }
+
+    setTestingAiConnection(true);
+
+    const saveFirst = aiApiKey !== "***"
+      ? updateIntegrationSettings({ ai_api_key: aiApiKey.trim(), ai_model: aiModel })
+      : Promise.resolve();
+
+    saveFirst
+      .then(() => suggestName({ draft_name: "Test Resistor 10k", entity_type: "part", type_id: -1 }))
+      .then((res) => {
+        // Even a 400 (no naming convention) means connection works
+        toast.success("AI connection successful!");
+      })
+      .catch((err) => {
+        const status = err.response?.status;
+        if (status === 400) {
+          // 400 means the API key works but no naming convention - that's fine
+          toast.success("AI connection successful! (Configure naming conventions on part types to use suggestions)");
+        } else {
+          const errorMsg = err.response?.data?.error || "Connection test failed";
+          toast.error(errorMsg);
+        }
+      })
+      .finally(() => {
+        setTestingAiConnection(false);
+      });
+  };
+
   const handleTestConnection = () => {
     if (!digikeyClientId || !digikeyClientId.trim()) {
       toast.error("Please enter Client ID before testing");
@@ -625,6 +694,22 @@ const AdminIntegrations = ({ setRefresh }) => {
     );
   };
 
+  const renderAi = () => {
+    return (
+      <AiSettings
+        loading={loading}
+        aiApiKey={aiApiKey}
+        setAiApiKey={setAiApiKey}
+        aiModel={aiModel}
+        setAiModel={setAiModel}
+        hasAiCredentials={hasAiCredentials}
+        handleTestConnection={handleTestAiConnection}
+        testingConnection={testingAiConnection}
+        handleSubmit={handleAiSubmit}
+      />
+    );
+  };
+
   const renderSectionContent = () => {
     switch (activeSection) {
       case "digikey":
@@ -635,6 +720,8 @@ const AdminIntegrations = ({ setRefresh }) => {
         return renderOdoo();
       case "currency":
         return renderCurrency();
+      case "ai":
+        return renderAi();
       default:
         return renderDigikey();
     }

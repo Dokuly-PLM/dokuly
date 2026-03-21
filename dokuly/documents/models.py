@@ -184,6 +184,11 @@ class Document_Prefix(models.Model):
     # Part documents are assigned a number based on a target part, e.g. SCH483-E.
     part_doc = models.BooleanField(blank=True, null=True)
 
+    naming_convention = models.TextField(
+        blank=True, null=True,
+        help_text="Naming convention rules sent to AI for name suggestions"
+    )
+
     # Archived document type shall not be shown in menus other than in the admin page.
     archived = models.CharField(
         default="False", blank=True, max_length=10
