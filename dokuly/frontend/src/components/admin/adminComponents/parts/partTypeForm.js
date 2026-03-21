@@ -120,7 +120,7 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
   }, [partTypeSelected]);
 
   return (
-    <DokulyModal show={show} onHide={onHide} title="Part Type Form" size="md">
+    <DokulyModal show={show} onHide={onHide} title="Part Type Form" size="lg">
       <Form>
         <Form.Group controlId="formName">
           <Form.Label>Name*</Form.Label>
@@ -170,13 +170,14 @@ const PartTypeForm = ({ show, onHide, setRefresh, partTypeSelected }) => {
           <Form.Label>Naming Convention (AI)</Form.Label>
           <Form.Control
             as="textarea"
-            rows={3}
+            rows={10}
             value={namingConvention}
             onChange={(e) => setNamingConvention(e.target.value)}
-            placeholder="e.g. Format: [Type] [Value] [Package] [Tolerance] [Voltage Rating]"
+            placeholder={"Pattern:\n[Field1]_[Field2]_[Field3]\n\nFields:\n- Field1: Value1 = Description, Value2 = Description\n- Field2: Value1 = Description\n\nExamples:\nValue1_Value2_Value3"}
+            style={{ fontFamily: "monospace", fontSize: "0.85em", whiteSpace: "pre", overflowWrap: "normal", overflowX: "auto" }}
           />
           <Form.Text className="text-muted">
-            Rules sent to the AI as context for name suggestions.
+            Naming rules sent to the AI. Supports structured text with tables, field lists, and examples.
           </Form.Text>
         </Form.Group>
         <Form.Group controlId="formIcon">
