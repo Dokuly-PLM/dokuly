@@ -1173,6 +1173,47 @@ const PartNewForm = (props) => {
         title="Create new part"
       >
         <div className="form-group">
+          <label>Part type *</label>
+          {partTypes.length === 0 || partTypes === undefined ? (
+            <div style={{ border: "1px solid red", padding: "10px" }}>
+              <p>No part types exist. Create a new part type.</p>
+              <Button
+                href="#/adminPage/parts"
+                className="btn dokuly-bg-primary"
+                style={{ color: "white" }}
+                onClick={() => {
+                  setShowModal(false);
+                }}
+              >
+                Create new part type
+              </Button>
+            </div>
+          ) : (
+            <select
+              className="form-control"
+              name="part_type"
+              value={partType ? partType?.name : ""}
+              onChange={(e) => {
+                const selectedPartType = partTypes.find(
+                  (pt) => pt.name === e.target.value
+                );
+                setPartType(selectedPartType || null);
+                setUnit(selectedPartType?.default_unit || "pcs");
+              }}
+            >
+              <option value="">Select part type</option>
+              {partTypes
+                .filter((pt) => pt.applies_to === "Part")
+                .map((pt) => (
+                  <option key={pt.name} value={pt.name}>
+                    {pt.name}
+                  </option>
+                ))}
+            </select>
+          )}
+        </div>
+
+        <div className="form-group">
           <label>Display name *</label>
           <input
             className="form-control"
@@ -1216,46 +1257,6 @@ const PartNewForm = (props) => {
           : is_internal === true
           ? internalOptions
           : externalOptions}
-        <div className="form-group">
-          <label>Part type *</label>
-          {partTypes.length === 0 || partTypes === undefined ? (
-            <div style={{ border: "1px solid red", padding: "10px" }}>
-              <p>No part types exist. Create a new part type.</p>
-              <Button
-                href="#/adminPage/parts"
-                className="btn dokuly-bg-primary"
-                style={{ color: "white" }}
-                onClick={() => {
-                  setShowModal(false);
-                }}
-              >
-                Create new part type
-              </Button>
-            </div>
-          ) : (
-            <select
-              className="form-control"
-              name="part_type"
-              value={partType ? partType?.name : ""}
-              onChange={(e) => {
-                const selectedPartType = partTypes.find(
-                  (pt) => pt.name === e.target.value
-                );
-                setPartType(selectedPartType || null);
-                setUnit(selectedPartType?.default_unit || "pcs");
-              }}
-            >
-              <option value="">Select part type</option>
-              {partTypes
-                .filter((pt) => pt.applies_to === "Part")
-                .map((pt) => (
-                  <option key={pt.name} value={pt.name}>
-                    {pt.name}
-                  </option>
-                ))}
-            </select>
-          )}
-        </div>
 
         <div className="form-group">
           <label>Part unit</label>

@@ -74,24 +74,21 @@ const NameSuggestion = ({ draftName, entityType, typeId, onApply, enabled }) => 
   if (!suggestion || suggestion === draftName) return null;
 
   return (
-    <div className="mt-1 mb-2 p-2 border rounded" style={{ backgroundColor: "#f8f9fa" }}>
-      <div className="d-flex align-items-center justify-content-between">
-        <div style={{ flex: 1 }}>
-          <small className="text-muted d-block">AI suggestion:</small>
-          <strong style={{ fontSize: "0.95em" }}>{suggestion}</strong>
-          {explanation && (
-            <small className="text-muted d-block mt-1">{explanation}</small>
-          )}
-        </div>
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-primary ms-2"
-          onClick={() => onApply(suggestion)}
-          style={{ whiteSpace: "nowrap" }}
-        >
-          Apply
-        </button>
+    <div className="mt-1 mb-2 p-2 border rounded" style={{ backgroundColor: "#f8f9fa", overflow: "hidden" }}>
+      <small className="text-muted d-block">AI suggestion:</small>
+      <div style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
+        <strong style={{ fontSize: "0.95em" }}>{suggestion}</strong>
       </div>
+      {explanation && (
+        <small className="text-muted d-block mt-1" style={{ wordBreak: "break-word" }}>{explanation}</small>
+      )}
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-primary mt-2"
+        onClick={() => onApply(suggestion)}
+      >
+        Apply
+      </button>
     </div>
   );
 };

@@ -89,7 +89,8 @@ def suggest_name(request):
         # Build prompt and call Anthropic API
         system_prompt = (
             "You are a part naming assistant for a PLM system. Given a draft name and naming "
-            "convention rules, suggest a corrected/completed name. Return ONLY valid JSON: "
+            "convention rules, suggest a corrected/completed name. Return ONLY a raw JSON object "
+            "with no markdown formatting, no code fences, no extra text: "
             '{"suggestion": "...", "explanation": "..."}. The explanation should be one sentence '
             "describing what was changed and why."
         )
@@ -126,7 +127,14 @@ def suggest_name(request):
             )
 
         result = response.json()
-        text = result.get("content", [{}])[0].get("text", "")
+        text = result.get("content", [{}])[0].get("text", "").strip()
+
+        # Strip markdown code fences if present
+        if text.startswith("```"):
+            lines = text.split("\n")
+            # Remove first line (```json or ```) and last line (```)
+            lines = [l for l in lines if not l.strip().startswith("```")]
+            text = "\n".join(lines).strip()
 
         try:
             parsed = json.loads(text)
