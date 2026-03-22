@@ -66,6 +66,7 @@ urlpatterns = [
          views.admin_get_documents_enhanced),
     # Document files
     path("api/documents/fetchFileList/<int:id>/", views.fetch_file_list),
+    path("api/documents/add_file/<int:document_id>/<int:file_id>/", views.add_file_to_document),
     path("api/documents/download/<str:file_identifier>/<int:id>/", views.download_file),
     path("api/documents/uploadFile/", views.upload_file),
     path(

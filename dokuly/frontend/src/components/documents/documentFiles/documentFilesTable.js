@@ -1,123 +1,87 @@
 import React, { useState, useEffect } from "react";
-import { uploadFile, fetchFileList } from "../functions/queries";
+import { fetchFileList } from "../functions/queries";
+import GenericFileForm from "../../common/filesTable/newFileForm";
+import { deleteFile } from "../../files/functions/queries";
+import { loadingSpinner } from "../../admin/functions/helperFunctions";
+import FileViewerModal from "../../common/FileViewerModal";
 import DokulyTable from "../../dokuly_components/dokulyTable/dokulyTable";
 import { getFile } from "../../common/filesTable/functions/queries";
-import { loadingSpinner } from "../../admin/functions/helperFunctions";
-/**
- * Files table.
- * Displays the files attached to an object, abstracting away the particular db fields.
- *
- * @param {*} props must contain db_item
- * @returns Button with modal for uploading Extra files.
- */
-export const FilesTable = (props) => {
-  // Creates empty array for the reference document table.
-  const [file_list, setFileList] = useState([]);
+import { toast } from "react-toastify";
+import { Row, Col } from "react-bootstrap";
+import DokulyCard from "../../dokuly_components/dokulyCard";
+import CardTitle from "../../dokuly_components/cardTitle";
+
+export const DocumentFilesTable = (props) => {
+  const [fileList, setFileList] = useState([]);
   const [refresh, setRefresh] = useState(false);
 
-  const [file_type, setFileType] = useState(
-    props.file_type !== null && props.file_type !== undefined ? props.file_type : null
-  );
-
-  const [modal_file_type, setModalFileType] = useState(null);
-
-  useEffect(() => {
-    if (props.file_type !== null && props.file_type !== undefined) {
-      setFileType(props.file_type);
-    }
-  }, [props.file_type]);
-
-  const [db_item, setDbItem] = useState(
-    props.db_item !== null && props.db_item !== undefined ? props.db_item : null
-  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedFileUri, setSelectedFileUri] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState(null);
+  const [selectedFileId, setSelectedFileId] = useState(null);
+  const [revisionLocked, setRevisionLocked] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [document, setDocument] = useState(null);
 
   useEffect(() => {
     if (props.db_item !== null && props.db_item !== undefined) {
-      setDbItem(props.db_item);
+      setDocument(props.db_item);
+      setRevisionLocked(props.db_item.release_state === "Released");
     }
   }, [props.db_item]);
 
-  // Const telling whether the db_item is in a locked state (Released) or not.
-  const [revision_locked, setRevisionLocked] = useState(true);
-
-  useEffect(() => {
-    if (db_item != null && db_item !== undefined) {
-      db_item.release_state === "Released"
-        ? setRevisionLocked(true)
-        : setRevisionLocked(false);
+  const handleRowDoubleClick = (rowIndex, row) => {
+    // For special document files, use the uri directly
+    if (row.type === "SHARED_DOC_LINK") {
+      window.open(row.uri, "_blank");
+      return;
     }
-  }, [db_item]);
-
-  const [file, setFile] = useState(null);
-
-  const handleFileUpload = ({ target }) => {
-    setFile(target.files[0]);
+    
+    // For other files, open the viewer modal
+    const viewUri = row.uri.includes("/download/")
+      ? row.uri.replace("/download/", "/view/")
+      : row.uri;
+    setSelectedFileUri(viewUri);
+    setSelectedFileName(row.file_name);
+    setSelectedFileId(row.file_id || row.id);
+    setIsModalOpen(true);
   };
 
-  const showModal = (file_type_arg) => {
-    setFile(null);
-    setModalFileType(file_type_arg);
-    $("#uploadFileModal").modal("show");
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
   };
 
-  const onSubmit = () => {
-    $("#uploadFileModal").modal("hide");
-
-    const data = new FormData();
-    // Fields used by the view.
-    data.append("id", props.db_item?.id);
-    data.append("file", file);
-    data.append("file_type", modal_file_type);
-
-    // Push file to DB
-    uploadFile(data);
+  const handleRefresh = () => {
+    if (props.setRefresh) {
+      props.setRefresh(true);
+    }
     setRefresh(true);
   };
 
   useEffect(() => {
-    if (props?.refresh === true) {
-      setRefresh(true);
+    if ((props.db_item?.id !== null && props.db_item?.id !== undefined) || refresh) {
+      setLoading(true);
+      fetchFileList(props.db_item?.id)
+        .then((res) => {
+          if (res.status === 200) {
+            setFileList(res.data);
+          }
+        })
+        .catch((error) => {
+          toast.error("Error fetching files");
+          console.error("Error fetching files:", error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
-    if (refresh === true) {
+    if (refresh) {
+      if (props.setRefresh) {
+        props.setRefresh(true);
+      }
       setRefresh(false);
     }
-    if (props.db_item?.id !== null && props.db_item?.id !== undefined) {
-      fetchFileList(props.db_item?.id).then((res) => {
-        setFileList(res.data);
-      });
-    }
-  }, [props.db_item.id, props.refresh, refresh]);
-
-  // Formatter implemneting custom icons for each file type.
-  const iconFormatter = (cell, row) => {
-    let iconPath = "";
-    switch (row.type) {
-      case "SOURCE":
-        iconPath = "../../static/icons/file-text.svg";
-        break;
-      case "PDF_RAW":
-        iconPath = "../../static/icons/file-text.svg";
-        break;
-      case "PDF":
-        iconPath = "../../static/icons/file-text.svg";
-        break;
-      case "SHARED_DOC_LINK":
-        iconPath = "../../static/icons/file-text.svg";
-        break;
-      default:
-        iconPath = "../../static/icons/zip_folder.svg";
-    }
-    return (
-      <span>
-        <img
-          style={{ marginLeft: "0.5rem" }}
-          width="25px"
-          src={iconPath}
-          alt="icon"
-        />
-      </span>
-    );
-  };
+  }, [props.db_item?.id, refresh, props.refresh]);
 
   const handleDownload = (row) => {
     getFile(row.uri)
@@ -128,70 +92,84 @@ export const FilesTable = (props) => {
         link.setAttribute("download", row.file_name);
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link); // Clean up by removing the link after triggering the download
+        document.body.removeChild(link);
       })
       .catch((error) => {
         console.error("Failed to download file:", error);
+        toast.error("Failed to download file");
       });
   };
 
-  const rowDownloadFormatter = (row) => {
+  const handleDelete = (row) => {
+    if (!window.confirm("Are you sure you want to delete this file?")) {
+      return;
+    }
+
+    setLoading(true);
+
+    // For generic files, use the File model deletion
+    if (row.type === "GENERIC") {
+      deleteFile(row.file_id)
+        .then((res) => {
+          if (res.status === 200) {
+            toast.success("File deleted successfully");
+            handleRefresh();
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to delete file:", error);
+          toast.error("Failed to delete file");
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      // For special document files (SOURCE, PDF_RAW, PDF), handle differently
+      // These require updating the document model directly
+      toast.info("Special file deletion not yet implemented");
+      setLoading(false);
+    }
+  };
+
+  const rowActionsFormatter = (row) => {
     return (
-      <span>
-        {row.type === "SHARED_DOC_LINK" ? (
-          <a href={row.uri} download>
-            <img width="25px" src="../../static/icons/link.svg" alt="icon" />
-          </a>
-        ) : // Download button
-        row.file_name !== "" ? (
+      <Row style={{ marginTop: "-0.5rem" }}>
+        {row.file_name && row.type !== "SHARED_DOC_LINK" && (
           // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
           <img
             onClick={() => handleDownload(row)}
             width="25px"
             src="../../static/icons/file-download.svg"
-            alt="icon"
+            alt="Download"
+            title="Download file"
+            style={{ cursor: "pointer" }}
           />
-        ) : (
-          ""
         )}
-        {
-          // TODO add file upload within the table.
-          // It is deactivated due to a srange bug where the uploaded file is
-          /*row.type == "SOURCE" || row.type == "PDF_RAW"*/ false ? (
-            revision_locked ? (
-              ""
-            ) : (
-              <button
-                type="button"
-                className="btn btn-default"
-                onClick={() => showModal(row.type)}
-                //data-toggle="modal"
-                //data-target="#uploadFileModal"
-              >
-                <img
-                  width="25px"
-                  src="../../static/icons/file-upload.svg"
-                  alt="icon"
-                  //className="icon-tabler"
-                />
-              </button>
-            )
-          ) : (
-            ""
-          )
-        }
-      </span>
+        {row.type === "SHARED_DOC_LINK" && (
+          // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+          <img
+            onClick={() => window.open(row.uri, "_blank")}
+            width="25px"
+            src="../../static/icons/link.svg"
+            alt="Open link"
+            title="Open shared link"
+            style={{ cursor: "pointer" }}
+          />
+        )}
+        {!revisionLocked && row.type === "GENERIC" && (
+          <button
+            type="button"
+            className="btn btn-default"
+            onClick={() => handleDelete(row)}
+          >
+            <img width="25px" src="../../static/icons/trash.svg" alt="Delete" />
+          </button>
+        )}
+      </Row>
     );
   };
 
-  // Table columns.
   const columns = [
-    /* 
-    {
-      dataField: "type",
-      text: " ",
-      formatter: iconFormatter,
-    },*/
     {
       key: "title",
       header: "Title",
@@ -202,105 +180,76 @@ export const FilesTable = (props) => {
       header: "File name",
       sort: true,
     },
-    // Upload/Download column
     {
       key: "uri",
       header: "",
       sort: false,
-      formatter: rowDownloadFormatter,
+      formatter: rowActionsFormatter,
     },
   ];
 
   return (
     <React.Fragment>
-      <div className="card-body m-3 card rounded">
+      <DokulyCard
+        isCollapsed={!fileList || fileList.length === 0}
+        expandText={"Add files"}
+        isHidden={
+          (!fileList || fileList.length === 0) &&
+          props.db_item?.release_state === "Released"
+        }
+        hiddenText={"No files have been uploaded for this item."}
+      >
+        <Row>
+          <Col>
+            <CardTitle titleText={"Files"} />
+          </Col>
+          <Col>
+            {props.db_item?.release_state !== "Released" && (
+              <GenericFileForm
+                app={"documents"}
+                objectId={props.db_item?.id}
+                setRefresh={setRefresh}
+                handleRefresh={handleRefresh}
+                setLoading={setLoading}
+              />
+            )}
+          </Col>
+        </Row>
         <div className="row">
           <div className="col">
-            <h5>
-              <b>Files</b>
-            </h5>
-          </div>
-        </div>
-        <div className="row">
-          <div className="col">
-            {props?.loading ? (
+            {loading ? (
               loadingSpinner()
             ) : (
               <DokulyTable
-                data={file_list}
+                data={fileList}
                 columns={columns}
+                onRowDoubleClick={handleRowDoubleClick}
                 showCsvDownload={false}
-                showPagination={false}
-                showSearch={false}
+                showSearch={true}
               />
             )}
           </div>
         </div>
-      </div>
-
-      {/* <!-- Modal --> */}
-      <div
-        className="modal fade"
-        role="dialog"
-        id="uploadFileModal"
-        tabIndex="-1"
-        aria-labelledby="uploadFileModalLabel"
-        aria-hidden="true"
-      >
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="uploadFileModalLabel">
-                Upload {modal_file_type} file
-              </h5>
-              <button
-                type="button"
-                className="close"
-                data-dismiss="modal"
-                aria-label="Close"
-              >
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div>
-                <label>Upload file</label>
-                <div className="custom-file mb-3">
-                  <input
-                    value={""}
-                    type="file"
-                    className="custom-file-input"
-                    id="customFile"
-                    name="db_item_file"
-                    onChange={handleFileUpload}
-                    style={{ display: "none" }}
-                  />
-                  <label className="custom-file-label" htmlFor="customFile">
-                    {file ? file.name : "Select file"}
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-danger"
-                data-dismiss="modal"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-info"
-                onClick={() => onSubmit()}
-              >
-                Upload file
-              </button>
-            </div>
+        <div className="row">
+          <div className="col">
+            <p className="text-muted">
+              <small>
+                <b>Double-click</b> a row to view the file.
+              </small>
+            </p>
           </div>
         </div>
-      </div>
+      </DokulyCard>
+
+      <FileViewerModal
+        isOpen={isModalOpen}
+        fileUri={selectedFileUri}
+        fileName={selectedFileName}
+        handleClose={handleCloseModal}
+        parentEntityType="documents"
+        parentEntityId={props.db_item?.id}
+        currentFileId={selectedFileId}
+      />
     </React.Fragment>
   );
 };

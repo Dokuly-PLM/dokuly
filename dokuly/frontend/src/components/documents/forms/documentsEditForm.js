@@ -224,25 +224,6 @@ const DocumentEditForm = (props) => {
             />
           </div>
 
-          <div className="form-group">
-            <label>Upload file</label>
-            <FileUpload onFileSelect={setFile} file={file} setFile={setFile} />
-          </div>
-
-          <div className="form-group">
-            <label>Shared document link</label>
-            <input
-              className="form-control"
-              type="text"
-              name="shared_document_link"
-              onChange={(e) => {
-                setSharedDocumentLink(e.target.value);
-              }}
-              value={shared_document_link}
-              id="shared_document_link"
-            />
-          </div>
-
           <ReleaseStateTimeline
             releaseState={release_state}
             setReleaseState={setReleaseState}

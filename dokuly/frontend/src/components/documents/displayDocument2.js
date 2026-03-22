@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 
 import { AuthContext } from "../App";
 import { formatPDFViewerURL } from "../common/functions";
-import { FilesTable } from "./documentFiles/documentFilesTable";
+import { DocumentFilesTable } from "./documentFiles/documentFilesTable";
 import NewRevision from "./forms/documentNewRevisionForm";
 import DocumentEditForm from "./forms/documentsEditForm";
 import RevisionNotes from "../dokuly_components/revisionNotes/revisionNotes";
@@ -282,10 +282,11 @@ const DisplayDocument = (props) => {
             </Row>
             <Row />
             <Row>
-              <FilesTable
+              <DocumentFilesTable
                 db_item={selectedDocument}
                 refresh={refresh}
                 loading={loadingDocument}
+                setRefresh={setRefresh}
               />
             </Row>
             <Row>
