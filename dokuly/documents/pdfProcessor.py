@@ -113,7 +113,11 @@ def process_pdf(
     else:
         doc_checker = None
 
-    customer_name = data.project.customer.name
+    # Customer model is deprecated, handle gracefully if not present
+    customer_name = None
+    if data.project and hasattr(data.project, 'customer') and data.project.customer:
+        customer_name = data.project.customer.name
+    
     project_title = str(project_data.title)
     released_date = data.released_date
     timestamp_obj = released_date
@@ -256,11 +260,13 @@ def process_pdf(
 
     try:
         if doc_obj.pdf:
-            doc_obj.pdf.delete()
+            doc_obj.pdf.delete(save=False)
         with open(processed_pdf_path, "rb") as file:
-            doc_obj.pdf.save(f"{uuid.uuid4().hex}/{processed_pdf_file_name}", file)
+            doc_obj.pdf.save(f"{uuid.uuid4().hex}/{processed_pdf_file_name}", file, save=True)
     except IsADirectoryError:
         print("Not a file.")
+    except Exception as e:
+        print(f"Failed to save processed PDF: {e}")
 
     # Delete temporary stored files.
     shutil.rmtree(unique_path)
