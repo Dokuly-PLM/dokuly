@@ -8,7 +8,7 @@ from profiles.models import Profile
 from parts.models import Part
 from assemblies.models import Assembly
 from projects.models import Project, Tag
-from files.models import Image
+from files.models import File, Image
 from tenants.azure_storage import CustomAzureStorage
 
 
@@ -95,8 +95,9 @@ class Document(models.Model):
     document_file = models.FileField(upload_to="documents", blank=True, null=True)
     zip_file = models.FileField(upload_to="zipFiles", blank=True, null=True)
 
-    document_file = models.FileField(upload_to="documents", blank=True, null=True)
-    zip_file = models.FileField(upload_to="zipFiles", blank=True, null=True)
+    # Main files collection (for document_file, zip_file, and future generic files)
+    files = models.ManyToManyField(File, blank=True, related_name='document_files')
+
 
     # Uploaded PDFs are saved under the `pdf_raw` field.
     pdf_raw = models.FileField(
