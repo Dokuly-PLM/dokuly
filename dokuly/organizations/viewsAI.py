@@ -1,7 +1,8 @@
 import json
 import logging
 import requests
-from rest_framework.decorators import api_view, renderer_classes
+from rest_framework.decorators import api_view, renderer_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework import status
@@ -16,10 +17,9 @@ logger = logging.getLogger(__name__)
 
 @api_view(["POST"])
 @renderer_classes([JSONRenderer])
+@permission_classes([IsAuthenticated])
 def suggest_name(request):
     try:
-        if not request.user or not request.user.is_authenticated:
-            return Response("Not Authorized", status=status.HTTP_401_UNAUTHORIZED)
 
         organization = get_user_organization(request.user)
         if not organization:

@@ -17,7 +17,9 @@ const NameSuggestion = ({ draftName, entityType, typeId, onApply, enabled }) => 
     }
 
     // Don't re-request if name hasn't changed
-    if (draftName === lastRequestRef.current) return;
+    if (draftName === lastRequestRef.current) {
+      return;
+    }
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
