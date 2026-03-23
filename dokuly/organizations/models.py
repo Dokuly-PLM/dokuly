@@ -539,6 +539,20 @@ class IntegrationSettings(models.Model):
         help_text="List of fields to update when product already exists in Odoo. Options: name, description, image"
     )
 
+    # AI integration settings
+    ai_api_key = models.CharField(
+        max_length=500, blank=True, null=True,
+        help_text="Anthropic API key for AI-powered features"
+    )
+    ai_model = models.CharField(
+        max_length=100, default="claude-sonnet-4-20250514", blank=True,
+        help_text="AI model identifier"
+    )
+    ai_provider = models.CharField(
+        max_length=50, default="anthropic", blank=True,
+        help_text="AI provider name"
+    )
+
     # Currency API settings
     currency_api_key = models.CharField(
         max_length=500,

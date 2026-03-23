@@ -11,6 +11,7 @@ import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFo
 import { newPart, searchPartsByMpn, searchNexarParts, checkNexarConfig, createPricesFromNexar, searchDigikeyParts, getDigikeyProductDetails, checkDigikeyConfig } from "../functions/queries";
 import { addNewPrice } from "../../common/priceCard/queries";
 import { fetchIntegrationSettings } from "../../admin/functions/queries";
+import NameSuggestion from "../../dokuly_components/nameSuggestion/nameSuggestion";
 import PartPeek from "../../common/partPeek";
 
 /**
@@ -61,6 +62,7 @@ const PartNewForm = (props) => {
   const [isSearchingDigikey, setIsSearchingDigikey] = useState(false);
   const [showDigikeyResults, setShowDigikeyResults] = useState(false);
   const [isDigikeyConfigured, setIsDigikeyConfigured] = useState(false);
+  const [hasAiCredentials, setHasAiCredentials] = useState(false);
   const [selectedDigikeyProduct, setSelectedDigikeyProduct] = useState(null);
   const [digikeyProductDetails, setDigikeyProductDetails] = useState(null);
   const [isLoadingDigikeyDetails, setIsLoadingDigikeyDetails] = useState(false);
@@ -94,6 +96,13 @@ const PartNewForm = (props) => {
       console.error("Error checking DigiKey config:", err);
       setIsDigikeyConfigured(false);
     });
+
+    // Check if AI is configured
+    fetchIntegrationSettings().then((res) => {
+      if (res.status === 200 && res.data) {
+        setHasAiCredentials(res.data.has_ai_credentials || false);
+      }
+    }).catch(() => {});
   }, []);
 
   const enter_part_information = (suggestion) => {
@@ -1174,32 +1183,15 @@ const PartNewForm = (props) => {
             }}
             value={display_name || ""}
           />
+          <NameSuggestion
+            draftName={display_name}
+            entityType="part"
+            typeId={partType?.id}
+            onApply={setDisplayName}
+            enabled={hasAiCredentials}
+          />
         </div>
 
-        <div className="form-group">
-          <div className="form-check form-switch">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              id="isInternalCheckbox"
-              checked={is_internal}
-              onChange={(e) => setIsInternal(e.target.checked)}
-            />
-            <label className="form-check-label" htmlFor="isInternalCheckbox">
-              Internal part
-            </label>
-            <small className="form-text text-muted">
-              Check this box if the part comes from your own organization. Leave
-              it unchecked if the part is bought from external suppliers.
-            </small>
-          </div>
-        </div>
-
-        {is_internal === ""
-          ? ""
-          : is_internal === true
-          ? internalOptions
-          : externalOptions}
         <div className="form-group">
           <label>Part type *</label>
           {partTypes.length === 0 || partTypes === undefined ? (
@@ -1240,6 +1232,31 @@ const PartNewForm = (props) => {
             </select>
           )}
         </div>
+
+        <div className="form-group">
+          <div className="form-check form-switch">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id="isInternalCheckbox"
+              checked={is_internal}
+              onChange={(e) => setIsInternal(e.target.checked)}
+            />
+            <label className="form-check-label" htmlFor="isInternalCheckbox">
+              Internal part
+            </label>
+            <small className="form-text text-muted">
+              Check this box if the part comes from your own organization. Leave
+              it unchecked if the part is bought from external suppliers.
+            </small>
+          </div>
+        </div>
+
+        {is_internal === ""
+          ? ""
+          : is_internal === true
+          ? internalOptions
+          : externalOptions}
 
         <div className="form-group">
           <label>Part unit</label>

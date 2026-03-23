@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 
 import { get_active_customers } from "../customers/funcitons/queries";
 import { getActiveProjectByCustomer, fetchProjects } from "../projects/functions/queries";
-import { fetchPrefixes, fetchProtectionLevels, fetchOrg } from "../admin/functions/queries";
+import { fetchPrefixes, fetchProtectionLevels, fetchOrg, fetchIntegrationSettings } from "../admin/functions/queries";
 import { createNewDocument } from "./functions/queries";
 import DokulyModal from "../dokuly_components/dokulyModal";
+import NameSuggestion from "../dokuly_components/nameSuggestion/nameSuggestion";
 
 const NewDocumentForm = (props) => {
   const [title, setTitle] = useState("");
@@ -27,6 +28,7 @@ const NewDocumentForm = (props) => {
 
   const [showModal, setShowModal] = useState(false);
   const [organization, setOrganization] = useState(null);
+  const [hasAiCredentials, setHasAiCredentials] = useState(false);
 
   useEffect(() => {
     fetchPrefixes().then((res) => {
@@ -49,6 +51,12 @@ const NewDocumentForm = (props) => {
         setOrganization(res.data);
       }
     });
+    // Check if AI is configured
+    fetchIntegrationSettings().then((res) => {
+      if (res.status === 200 && res.data) {
+        setHasAiCredentials(res.data.has_ai_credentials || false);
+      }
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -143,6 +151,13 @@ const NewDocumentForm = (props) => {
               setTitle(e.target.value);
             }}
             value={title}
+          />
+          <NameSuggestion
+            draftName={title}
+            entityType="document"
+            typeId={selected_prefix_id !== -1 ? selected_prefix_id : null}
+            onApply={setTitle}
+            enabled={hasAiCredentials}
           />
         </div>
 

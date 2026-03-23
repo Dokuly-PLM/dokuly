@@ -277,6 +277,11 @@ class PartType(models.Model):
         help_text="Indicates whether this part type applies to Parts, PCBAs, or Assemblies"
     )
 
+    naming_convention = models.TextField(
+        blank=True, null=True,
+        help_text="Naming convention rules sent to AI for name suggestions"
+    )
+
     # Nice to have metadata. Not shown.
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
