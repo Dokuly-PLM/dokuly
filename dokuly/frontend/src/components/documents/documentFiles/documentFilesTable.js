@@ -105,30 +105,29 @@ export const DocumentFilesTable = (props) => {
       return;
     }
 
+    // Check if file has a file_id (all deletable files should have this)
+    if (!row.file_id) {
+      toast.info("This file type cannot be deleted from here");
+      return;
+    }
+
     setLoading(true);
 
-    // For generic files, use the File model deletion
-    if (row.type === "GENERIC") {
-      deleteFile(row.file_id)
-        .then((res) => {
-          if (res.status === 200) {
-            toast.success("File deleted successfully");
-            handleRefresh();
-          }
-        })
-        .catch((error) => {
-          console.error("Failed to delete file:", error);
-          toast.error("Failed to delete file");
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      // For special document files (SOURCE, PDF_RAW, PDF), handle differently
-      // These require updating the document model directly
-      toast.info("Special file deletion not yet implemented");
-      setLoading(false);
-    }
+    // All files (GENERIC, PDF_RAW, PDF) use the same deletion path through File table
+    deleteFile(row.file_id)
+      .then((res) => {
+        if (res.status === 200) {
+          toast.success("File deleted successfully");
+          handleRefresh();
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to delete file:", error);
+        toast.error("Failed to delete file");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const rowActionsFormatter = (row) => {
@@ -156,7 +155,7 @@ export const DocumentFilesTable = (props) => {
             style={{ cursor: "pointer" }}
           />
         )}
-        {!revisionLocked && row.type === "GENERIC" && (
+        {!revisionLocked && (row.type === "GENERIC" || row.type === "PDF_SOURCE" || row.type === "PDF_PRINT") && (
           <button
             type="button"
             className="btn btn-default"

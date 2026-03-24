@@ -8,6 +8,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('files', '0013_alter_file_display_name'),
         ('documents', '0060_document_thumbnail'),
+        ('documents', '0061_document_prefix_naming_convention'),
     ]
 
     operations = [

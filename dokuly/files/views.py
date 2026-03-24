@@ -28,6 +28,7 @@ import math
 import io
 from PIL import Image as PILImage
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from files.fileUtilities import delete_file_with_cleanup, delete_image_with_cleanup
 from io import BytesIO
 
 import pcbas.viewUtilities as util
@@ -313,9 +314,8 @@ def connect_multiple_files_to_object(request, app_str, object_id):
                         regenerate_thumbnail=True
                     )
                     
-                    # Delete the temporary File object since we've moved it to pdf_raw
-                    file_obj.file.delete()
-                    file_obj.delete()
+                    # Delete the temporary File object since we've moved it to pdf_source
+                    delete_file_with_cleanup(file_obj)
                 else:
                     # Non-PDF files go to the ManyToMany field
                     obj.files.add(file_obj)
@@ -411,8 +411,7 @@ def delete_file(request, file_id):
         # Fetch file from DB
         file_obj = File.objects.get(id=file_id)
         # Delete file from storage
-        file_obj.file.delete()
-        file_obj.delete()
+        delete_file_with_cleanup(file_obj)
         return Response("File Deleted.", status=status.HTTP_200_OK)
     except Exception as e:
         return Response(str(e), status=status.HTTP_400_BAD_REQUEST)

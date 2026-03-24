@@ -58,8 +58,8 @@ from profiles.views import (
 )
 
 import files.views as fileViews
-from files.models import Image
-from files.fileUtilities import delete_image_with_cleanup
+from files.models import Image, File
+from files.fileUtilities import delete_image_with_cleanup, delete_file_with_cleanup
 from .viewUtilities import (
     assemble_full_document_number,
     assemble_full_document_number_no_prefix_db_call,
@@ -690,7 +690,12 @@ def fetch_document_pdf(request, documentId):
     if not permission:
         return response
     data = Document.objects.get(id=documentId)
-    file = data.pdf.file.open("rb")
+    
+    if data.pdf_print:
+        file = data.pdf_print.file.open("rb")
+    else:
+        return Response({"error": "No PDF print file found"}, status=status.HTTP_404_NOT_FOUND)
+    
     return FileResponse(file, as_attachment=True, filename="Document PDF")
 
 
@@ -704,7 +709,12 @@ def fetch_document_pdf_raw(request, documentId):
     if not permission:
         return response
     data = Document.objects.get(id=documentId)
-    file = data.pdf_raw.file.open("rb")
+    
+    if data.pdf_source:
+        file = data.pdf_source.file.open("rb")
+    else:
+        return Response({"error": "No PDF source file found"}, status=status.HTTP_404_NOT_FOUND)
+    
     return FileResponse(file, as_attachment=True, filename="Document PDF RAW")
 
 
@@ -1318,44 +1328,57 @@ def update_doc(request, pk, **kwargs):
 
             pdf_updated = False  # Track if we need to regenerate thumbnail
             
-            if "pdf_raw" in data:
-                file = request.FILES["pdf_raw"]
-                try:
-                    # Delete the old pdf_raw file before saving the new one
-                    if document.pdf_raw:
-                        document.pdf_raw.delete()
-                except Exception as e:
-                    pass
-
-                cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
-                formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
-                document.pdf_raw.save(formatted_file_name, file)
-                pdf_updated = True
-                    
-                # Log file upload
-                changes.append({"field": "pdf_raw", "old": None, "new": cleaned_file_name})
-
-            if "document_file" in data:
-                file = request.FILES["document_file"]
-                if not fileViews.check_file_sizes_vs_limit(
-                    fileViews.get_organization_by_user_id(request), file.size, request
-                ):
-                    return Response("Storage full!", status=status.HTTP_409_CONFLICT)
-
-                try:
-                    # Delete the old document_file before saving the new one
-                    if document.document_file:
-                        document.document_file.delete()
-                except Exception as e:
-                    pass
-
-                cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
-                formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
-                document.document_file.save(f"{uuid.uuid4().hex}/{formatted_file_name[:220]}", file)
-                pdf_updated = True
+            # No upload in this form anymore.
+            # if "pdf_raw" in data:
+            #     file = request.FILES["pdf_raw"]
                 
-                # Log file upload
-                changes.append({"field": "document_file", "old": None, "new": cleaned_file_name})
+            #     # Delete old pdf_source file if it exists
+            #     if document.pdf_source:
+            #         try:
+            #             document.pdf_source.file.delete()
+            #             document.pdf_source.delete()
+            #         except Exception as e:
+            #             pass
+
+            #     # Create new File object
+            #     cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
+            #     formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
+                
+            #     new_file = File()
+            #     new_file.display_name = f"{document.title or 'Document'} PDF Source"
+            #     new_file.project = document.project
+            #     new_file.file.save(formatted_file_name, file)
+            #     new_file.save()
+                
+            #     document.pdf_source = new_file
+            #     document.save()
+            #     pdf_updated = True
+                    
+            #     # Log file upload
+            #     changes.append({"field": "pdf_raw", "old": None, "new": cleaned_file_name})
+
+            # DEPRECATED Field
+            # if "document_file" in data:
+            #     file = request.FILES["document_file"]
+            #     if not fileViews.check_file_sizes_vs_limit(
+            #         fileViews.get_organization_by_user_id(request), file.size, request
+            #     ):
+            #         return Response("Storage full!", status=status.HTTP_409_CONFLICT)
+
+            #     try:
+            #         # Delete the old document_file before saving the new one
+            #         if document.document_file:
+            #             document.document_file.delete()
+            #     except Exception as e:
+            #         pass
+
+            #     cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
+            #     formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
+            #     document.document_file.save(f"{uuid.uuid4().hex}/{formatted_file_name[:220]}", file)
+            #     pdf_updated = True
+                
+            #     # Log file upload
+            #     changes.append({"field": "document_file", "old": None, "new": cleaned_file_name})
 
             # Process PDF (adds front page, revision table, etc.)
             # and regenerate thumbnail if needed
@@ -1664,27 +1687,39 @@ def fetch_file_list(request, id):
                 get_download_query_string_or_none(id, doc, "document_file"),
             )
         )
-    if doc.pdf_raw != None and doc.pdf_raw != "":
-        file_list.append(
-            util.assemble_file_dict(
-                "2",
-                "PDF",
-                util.get_file_name(doc.pdf_raw),
-                "PDF_RAW",
-                get_download_query_string_or_none(id, doc, "pdf_raw"),
-            )
+    
+    # Check new ForeignKey field for pdf_source
+    pdf_raw_exists = doc.pdf_source and doc.pdf_source.file
+    if pdf_raw_exists:
+        pdf_raw_file = doc.pdf_source.file
+        file_dict = util.assemble_file_dict(
+            "2",
+            "PDF Source",
+            util.get_file_name(pdf_raw_file),
+            "PDF_RAW",
+            f"api/documents/download/pdf_raw/{id}/",
         )
+        # Add file_id for deletion via File table
+        file_dict["file_id"] = doc.pdf_source.id
+        file_dict["is_archived"] = False
+        file_list.append(file_dict)
+    
     # Only show the print file in the file list if it has a value.
-    if doc.pdf != None and doc.pdf != "":
-        file_list.append(
-            util.assemble_file_dict(
-                "3",
-                "PDF Print",
-                util.get_file_name(doc.pdf),
-                "PDF",
-                get_download_query_string_or_none(id, doc, "pdf"),
-            )
+    # Check new ForeignKey field for pdf_print
+    pdf_exists = doc.pdf_print and doc.pdf_print.file
+    if pdf_exists:
+        pdf_file = doc.pdf_print.file
+        file_dict = util.assemble_file_dict(
+            "3",
+            "PDF Print",
+            util.get_file_name(pdf_file),
+            "PDF",
+            f"api/documents/download/pdf/{id}/",
         )
+        # Add file_id for deletion via File table
+        file_dict["file_id"] = doc.pdf_print.id
+        file_dict["is_archived"] = False
+        file_list.append(file_dict)
 
     # Add generic files from the files ManyToMany field
     if doc.files.exists():
@@ -1723,14 +1758,21 @@ def download_file(request, file_identifier, id):
     except Document.DoesNotExist:
         return Response({"error": "Document not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    file_map = {
-        "document_file": document.document_file,
-        "pdf_raw": document.pdf_raw,
-        "pdf": document.pdf,
-        "pdf_preview": document.pdf
-    }
-
-    file_to_serve = file_map.get(file_identifier)
+    # Map file identifiers to file objects
+    file_to_serve = None
+    
+    if file_identifier == "document_file":
+        file_to_serve = document.document_file
+    elif file_identifier == "pdf_raw":
+        if document.pdf_source:
+            file_to_serve = document.pdf_source.file
+    elif file_identifier in ["pdf", "pdf_preview"]:
+        # Try pdf_print first (processed with front page), fall back to pdf_source (raw)
+        if document.pdf_print:
+            file_to_serve = document.pdf_print.file
+        elif document.pdf_source:
+            file_to_serve = document.pdf_source.file
+    
     if file_to_serve:
         # Check if the file actually exists
         try:
@@ -1792,9 +1834,21 @@ def upload_file(request):
             file.seek(0)
             pdf_content = file.read()
             
-            # Save the PDF
+            # Delete old pdf_source file if it exists
+            if doc_obj.pdf_source:
+                delete_file_with_cleanup(doc_obj.pdf_source)
+            
+            # Create new File object for PDF source
             file.seek(0)
-            doc_obj.pdf_raw.save(f"{uuid.uuid4().hex}/{file.name}", file)
+            new_file = File()
+            new_file.display_name = f"{doc_obj.title or 'Document'} PDF Source"
+            new_file.project = doc_obj.project
+            new_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
+            new_file.save()
+            
+            doc_obj.pdf_source = new_file
+            doc_obj.save()
+            
             process_pdf(data["id"], org_id)
             
             # Generate thumbnail from the first page of the PDF
@@ -1803,16 +1857,28 @@ def upload_file(request):
                 doc_obj.thumbnail = thumbnail
                 doc_obj.save()
         elif file_type == "GENERIC":
-            # Check if the file is a PDF - if so, route to pdf_raw instead
+            # Check if the file is a PDF - if so, route to pdf_source instead
             file_extension = file.name.lower().split('.')[-1]
             if file_extension == 'pdf':
                 # Read file content before saving (since save() consumes the file)
                 file.seek(0)
                 pdf_content = file.read()
                 
-                # Save the PDF
+                # Delete old pdf_source file if it exists
+                if doc_obj.pdf_source:
+                    delete_file_with_cleanup(doc_obj.pdf_source)
+                
+                # Create new File object for PDF source
                 file.seek(0)
-                doc_obj.pdf_raw.save(f"{uuid.uuid4().hex}/{file.name}", file)
+                new_file = File()
+                new_file.display_name = f"{doc_obj.title or 'Document'} PDF Source"
+                new_file.project = doc_obj.project
+                new_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
+                new_file.save()
+                
+                doc_obj.pdf_source = new_file
+                doc_obj.save()
+                
                 process_pdf(data["id"], org_id)
                 
                 # Generate thumbnail from the first page of the PDF
@@ -1845,6 +1911,9 @@ def upload_file(request):
         fileViews.update_org_current_storage_size(request)
 
 
+
+
+
 @api_view(("PUT",))
 @renderer_classes((JSONRenderer,))
 @permission_classes([IsAuthenticated])
@@ -1868,18 +1937,30 @@ def add_file_to_document(request, document_id, file_id):
         is_pdf = file_name.lower().endswith('.pdf')
 
         if is_pdf:
-            # Copy the file content to pdf_raw and trigger processing
+            # Delete old pdf_source file if it exists
+            if doc.pdf_source:
+                delete_file_with_cleanup(doc.pdf_source)
+            
+            # Copy the file content to pdf_source
             file_obj.file.open('rb')
             pdf_content = file_obj.file.read()
             file_obj.file.close()
 
-            # Save to pdf_raw
+            # Create new File object for PDF source
             from django.core.files.base import ContentFile
             original_name = file_name.split('/')[-1]  # Get just the filename
-            doc.pdf_raw.save(
+            
+            new_file = File()
+            new_file.display_name = f"{doc.title or 'Document'} PDF Source"
+            new_file.project = doc.project
+            new_file.file.save(
                 f"{uuid.uuid4().hex}/{original_name}",
                 ContentFile(pdf_content)
             )
+            new_file.save()
+            
+            doc.pdf_source = new_file
+            doc.save()
 
             # Process the PDF and generate thumbnail using centralized method
             user_profile = Profile.objects.get(user__pk=request.user.id)
@@ -1891,9 +1972,8 @@ def add_file_to_document(request, document_id, file_id):
                 regenerate_thumbnail=True
             )
 
-            # Delete the temporary File object since we've moved it to pdf_raw
-            file_obj.file.delete()
-            file_obj.delete()
+            # Delete the temporary File object since we've moved it to pdf_source
+            delete_file_with_cleanup(file_obj)
         else:
             # Check if the file is already in the files field
             if file_obj in doc.files.all():

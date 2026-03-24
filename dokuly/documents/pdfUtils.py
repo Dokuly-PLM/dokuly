@@ -138,18 +138,18 @@ def process_pdf_and_generate_thumbnail(document_id, org_id, user=None, regenerat
         document = Document.objects.get(id=document_id)
         
         # Determine if we can process the PDF
-        has_pdf_raw = document.pdf_raw and document.pdf_raw.name
-        has_pdf = document.pdf and document.pdf.name
+        has_pdf_source = document.pdf_source and document.pdf_source.file and document.pdf_source.file.name
+        has_pdf_print = document.pdf_print and document.pdf_print.file and document.pdf_print.file.name
         
-        if not has_pdf_raw and not has_pdf:
+        if not has_pdf_source and not has_pdf_print:
             print(f"Document {document_id} has no PDF files to process")
             return
         
-        # Process PDF if we have pdf_raw (adds front page, revision table, etc.)
-        if has_pdf_raw:
+        # Process PDF if we have pdf_source (adds front page, revision table, etc.)
+        if has_pdf_source:
             process_pdf(document_id, org_id)
             
-            # Refresh document to get the updated pdf field from process_pdf
+            # Refresh document to get the updated pdf_print field from process_pdf
             document.refresh_from_db()
         
         if regenerate_thumbnail:
@@ -162,10 +162,14 @@ def process_pdf_and_generate_thumbnail(document_id, org_id, user=None, regenerat
             
             # Generate new thumbnail from the final processed PDF (not raw PDF)
             # This ensures the thumbnail shows the front page if enabled
-            # Use pdf if available (processed), otherwise fall back to pdf_raw
-            pdf_to_thumbnail = document.pdf if (document.pdf and document.pdf.name) else document.pdf_raw
+            # Use pdf_print if available (processed), otherwise use pdf_source
+            pdf_to_thumbnail = None
+            if document.pdf_print and document.pdf_print.file and document.pdf_print.file.name:
+                pdf_to_thumbnail = document.pdf_print.file
+            elif document.pdf_source and document.pdf_source.file and document.pdf_source.file.name:
+                pdf_to_thumbnail = document.pdf_source.file
             
-            if pdf_to_thumbnail and pdf_to_thumbnail.name:
+            if pdf_to_thumbnail:
                 try:
                     with pdf_to_thumbnail.open('rb') as pdf_file:
                         thumbnail = generate_pdf_thumbnail(pdf_file, document.title)
@@ -177,8 +181,8 @@ def process_pdf_and_generate_thumbnail(document_id, org_id, user=None, regenerat
                     traceback.print_exc()
         
         # This is deprecated now that document numbers can be arbitrary. Manual referencing must be added.
-        # # Find and link referenced items in the PDF (only if we have a pdf_raw to scan)
-        # if has_pdf_raw:
+        # # Find and link referenced items in the PDF (only if we have a pdf_source to scan)
+        # if has_pdf_source:
         #     try:
         #         find_referenced_items(document_id)
         #     except Exception as e:

@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Row, Col, Tab, Tabs, Modal, Button } from "react-bootstrap";
-import { toast } from "react-toastify";
 
 import { AuthContext } from "../App";
 import { formatPDFViewerURL } from "../common/functions";
@@ -225,11 +224,17 @@ const DisplayDocument = (props) => {
 
   useEffect(() => {
     if (selectedDocument) {
-      const url = formatPDFViewerURL(selectedDocument.id, "pdf");
-      getFile(url).then((blob) => {
-        const url = URL.createObjectURL(blob);
-        setFileContent(url);
-      });
+      const pdfUrl = formatPDFViewerURL(selectedDocument.id, "pdf");
+      getFile(pdfUrl)
+        .then((blob) => {
+          const blobUrl = URL.createObjectURL(blob);
+          setFileContent(blobUrl);
+        })
+        .catch((error) => {
+          console.error("Failed to load PDF:", error);
+          toast.error("Failed to load PDF preview");
+          setFileContent(null);
+        });
     }
   }, [selectedDocument]);
 
@@ -289,13 +294,6 @@ const DisplayDocument = (props) => {
                 setRefresh={setRefresh}
               />
             </Row>
-            <Row>
-              {/* <Errata
-                  item={selectedDocument}
-                  app={"documents"}
-                  setRefresh={setRefresh}
-                /> */}
-            </Row>
 
             <Row>
               <RevisionNotes
@@ -306,7 +304,7 @@ const DisplayDocument = (props) => {
             </Row>
           </Col>
           <Col>
-            {selectedDocument.pdf != null && !refetchingDoc ? (
+            {(selectedDocument.pdf_print != null || selectedDocument.pdf_source != null) && !refetchingDoc ? (
               <div>
                 <button
                   type="button"
