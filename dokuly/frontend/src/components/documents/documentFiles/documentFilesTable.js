@@ -155,7 +155,7 @@ export const DocumentFilesTable = (props) => {
             style={{ cursor: "pointer" }}
           />
         )}
-        {!revisionLocked && (row.type === "GENERIC" || row.type === "PDF_SOURCE" || row.type === "PDF_PRINT") && (
+        {!revisionLocked && (row.type === "GENERIC" || row.type === "PDF_RAW" || row.type === "PDF") && (
           <button
             type="button"
             className="btn btn-default"

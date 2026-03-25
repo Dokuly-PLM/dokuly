@@ -1639,103 +1639,54 @@ def remove_reference_documents(request):
 @login_required(login_url="/login")
 def fetch_file_list(request, id):
     """View for fetching file list to use in the files table."""
-
-    def extract_file_name_from_shared_link(link):
-        if "sharepoint.com" in link:
-            return "Sharepoint file"
-        else:
-            return "Shared file"
-
     user = request.user
     permission, response = check_user_auth_and_app_permission(
         request, "documents")
     if not permission:
         return response
 
-    doc = Document.objects.get(id=id)
-
+    # Optimize queries: select_related for ForeignKeys, prefetch_related for ManyToMany
+    doc = Document.objects.select_related('pdf_source', 'pdf_print').prefetch_related('files').get(id=id)
+    
     file_list = []
-
-    def get_download_query_string_or_none(id, obj, identifier_str):
-        if eval(f"obj.{identifier_str}") == None:
-            return None
-        else:
-            return f"api/documents/download/{identifier_str}/{id}/"
-
-    # These files should always be present. They will therefore appear in the list when no actual file is present.
-    if (
-        doc.release_state != "Released"
-        and doc.shared_document_link != None
-        and doc.shared_document_link != ""
-    ):
-        file_list.append(
-            util.assemble_file_dict(
-                "0",
-                "Shared Link",
-                extract_file_name_from_shared_link(doc.shared_document_link),
-                "SHARED_DOC_LINK",
-                doc.shared_document_link,
-            )
-        )
-    if doc.document_file != None and doc.document_file != "":
-        file_list.append(
-            util.assemble_file_dict(
-                "1",
-                "Source File",
-                util.get_file_name(doc.document_file),
-                "SOURCE",
-                get_download_query_string_or_none(id, doc, "document_file"),
-            )
-        )
     
-    # Check new ForeignKey field for pdf_source
-    pdf_raw_exists = doc.pdf_source and doc.pdf_source.file
-    if pdf_raw_exists:
-        pdf_raw_file = doc.pdf_source.file
-        file_dict = util.assemble_file_dict(
-            "2",
-            "PDF Source",
-            util.get_file_name(pdf_raw_file),
-            "PDF_RAW",
-            f"api/documents/download/pdf_raw/{id}/",
-        )
-        # Add file_id for deletion via File table
-        file_dict["file_id"] = doc.pdf_source.id
-        file_dict["is_archived"] = False
-        file_list.append(file_dict)
+    # PDF Source (ForeignKey to File table)
+    if doc.pdf_source:
+        file_list.append({
+            "row_number": "0",
+            "title": "PDF Source",
+            "file_name": util.get_file_name(doc.pdf_source.file),
+            "type": "PDF_RAW",
+            "uri": f"api/documents/download/pdf_raw/{id}/",
+            "file_id": doc.pdf_source.id,
+            "is_archived": False,
+        })
     
-    # Only show the print file in the file list if it has a value.
-    # Check new ForeignKey field for pdf_print
-    pdf_exists = doc.pdf_print and doc.pdf_print.file
-    if pdf_exists:
-        pdf_file = doc.pdf_print.file
-        file_dict = util.assemble_file_dict(
-            "3",
-            "PDF Print",
-            util.get_file_name(pdf_file),
-            "PDF",
-            f"api/documents/download/pdf/{id}/",
-        )
-        # Add file_id for deletion via File table
-        file_dict["file_id"] = doc.pdf_print.id
-        file_dict["is_archived"] = False
-        file_list.append(file_dict)
+    # PDF Print (ForeignKey to File table)
+    if doc.pdf_print:
+        file_list.append({
+            "row_number": str(len(file_list)),
+            "title": "PDF Print",
+            "file_name": util.get_file_name(doc.pdf_print.file),
+            "type": "PDF",
+            "uri": f"api/documents/download/pdf/{id}/",
+            "file_id": doc.pdf_print.id,
+            "is_archived": False,
+        })
 
-    # Add generic files from the files ManyToMany field
-    if doc.files.exists():
-        for file_obj in doc.files.filter(archived=0):
-            file_dict = util.assemble_file_dict(
-                str(len(file_list)),
-                file_obj.display_name if file_obj.display_name else "File",
-                util.get_file_name(file_obj.file),
-                "GENERIC",
-                f"api/files/download/{file_obj.id}/",
-            )
-            # Add file_id and is_archived for frontend compatibility
-            file_dict["file_id"] = file_obj.id
-            file_dict["is_archived"] = file_obj.archived == 1
-            file_list.append(file_dict)
-    
+    # Generic files from ManyToMany field (includes document_file, zip_file, and any other files)
+    file_list.extend([
+        {
+            "row_number": str(len(file_list) + idx),
+            "title": file_obj.display_name or "File",
+            "file_name": util.get_file_name(file_obj.file),
+            "type": "GENERIC",
+            "uri": f"api/files/download/{file_obj.id}/",
+            "file_id": file_obj.id,
+            "is_archived": file_obj.archived == 1,
+        }
+        for idx, file_obj in enumerate(doc.files.filter(archived=0))
+    ])
     return Response(file_list)
 
 
