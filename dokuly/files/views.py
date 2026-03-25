@@ -28,6 +28,8 @@ import math
 import io
 from PIL import Image as PILImage
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from files.fileUtilities import delete_file_with_cleanup, delete_image_with_cleanup
+from io import BytesIO
 
 import pcbas.viewUtilities as util
 import files.fileUtilities as file_util
@@ -40,50 +42,13 @@ from .models import File, Image
 from parts.models import Part
 from assemblies.models import Assembly
 from pcbas.models import Pcba
+from documents.models import Document
+from documents.pdfUtils import process_pdf_and_generate_thumbnail
 from purchasing.models import Supplier, PurchaseOrder
 
 from django.contrib.auth.models import User
 from profiles.models import Profile
-
-def delete_image_with_cleanup(image):
-    """
-    Delete an Image object and all its associated files.
-    
-    This helper ensures proper cleanup of:
-    - Main file (image.file)
-    - Compressed version (image.image_compressed)
-    - The Image database record
-    
-    Args:
-        image: Image model instance to delete
-        
-    Returns:
-        None
-    """
-    if not image:
-        return
-    
-    try:
-        # Delete main file
-        if image.file:
-            try:
-                image.file.delete(save=False)
-            except Exception as e:
-                print(f"Failed to delete image file: {e}")
-        
-        # Delete compressed version
-        if image.image_compressed:
-            try:
-                image.image_compressed.delete(save=False)
-            except Exception as e:
-                print(f"Failed to delete compressed image: {e}")
-        
-        # Delete the database record
-        image.delete()
-        
-    except Exception as e:
-        print(f"Failed to delete image with cleanup: {e}")
-        raise
+from files.fileUtilities import delete_image_with_cleanup
 
 
 MODEL_MAPPING = {
@@ -92,6 +57,8 @@ MODEL_MAPPING = {
     "Assembly": Assembly,
     "assemblies": Assembly,
     "pcbas": Pcba,
+    "Document": Document,
+    "documents": Document,
     "procurement": Supplier,
     "PurchaseOrder": PurchaseOrder
 }
@@ -315,22 +282,63 @@ def connect_multiple_files_to_object(request, app_str, object_id):
         if not files:
             return Response("No valid files found", status=status.HTTP_404_NOT_FOUND)
 
-        # Connect files based on model structure
-        if hasattr(obj, 'files'):
-            obj.files.add(*files)
-        elif hasattr(obj, 'generic_files'):
-            obj.generic_files.add(*files)
+        # Special handling for Documents - check if files are PDFs
+        if app_str in ["Document", "documents"]:
+            for file_obj in files:
+                # Check if this is a PDF file
+                file_name = file_obj.file.name if file_obj.file else ""
+                is_pdf = file_name.lower().endswith('.pdf')
+                
+                if is_pdf:
+                    # Copy the file content to pdf_raw and trigger processing
+                    file_obj.file.open('rb')
+                    pdf_content = file_obj.file.read()
+                    file_obj.file.close()
+                    
+                    # Save to pdf_raw
+                    import uuid
+                    from django.core.files.base import ContentFile
+                    original_name = file_name.split('/')[-1]  # Get just the filename
+                    obj.pdf_raw.save(
+                        f"{uuid.uuid4().hex}/{original_name}",
+                        ContentFile(pdf_content)
+                    )
+                    
+                    # Process the PDF and generate thumbnail using centralized method
+                    user_profile = Profile.objects.get(user__pk=request.user.id)
+                    org_id = user_profile.organization_id
+                    process_pdf_and_generate_thumbnail(
+                        document_id=obj.id,
+                        org_id=org_id,
+                        user=request.user,
+                        regenerate_thumbnail=True
+                    )
+                    
+                    # Delete the temporary File object since we've moved it to pdf_source
+                    delete_file_with_cleanup(file_obj)
+                else:
+                    # Non-PDF files go to the ManyToMany field
+                    obj.files.add(file_obj)
+                    if hasattr(obj, 'project'):
+                        file_obj.project = obj.project
+                        file_obj.save()
         else:
-            return Response(f"Model {app_str} does not support generic file connections",
-                            status=status.HTTP_400_BAD_REQUEST)
+            # Connect files based on model structure for non-Document models
+            if hasattr(obj, 'files'):
+                obj.files.add(*files)
+            elif hasattr(obj, 'generic_files'):
+                obj.generic_files.add(*files)
+            else:
+                return Response(f"Model {app_str} does not support generic file connections",
+                                status=status.HTTP_400_BAD_REQUEST)
 
-        obj.save()
+            obj.save()
 
-        # Update project for files
-        if hasattr(obj, 'project'):
-            for file in files:
-                file.project = obj.project
-                file.save()
+            # Update project for files
+            if hasattr(obj, 'project'):
+                for file in files:
+                    file.project = obj.project
+                    file.save()
 
         return Response("Files connected successfully", status=status.HTTP_200_OK)
     except ModelClass.DoesNotExist:
@@ -403,8 +411,7 @@ def delete_file(request, file_id):
         # Fetch file from DB
         file_obj = File.objects.get(id=file_id)
         # Delete file from storage
-        file_obj.file.delete()
-        file_obj.delete()
+        delete_file_with_cleanup(file_obj)
         return Response("File Deleted.", status=status.HTTP_200_OK)
     except Exception as e:
         return Response(str(e), status=status.HTTP_400_BAD_REQUEST)

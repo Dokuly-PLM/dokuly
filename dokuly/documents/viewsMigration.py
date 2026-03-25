@@ -23,6 +23,7 @@ from documents.pdfProcessor import process_pdf, find_referenced_items
 from projects.models import Project
 from customers.models import Customer
 from django.contrib.auth.models import User
+from files.models import File
 
 from profiles.models import Profile
 from profiles.serializers import ProfileSerializer
@@ -189,7 +190,13 @@ def bulk_upload_documents(request, **kwargs):
                         if file_extension == '.zip':
                             document.zip_file.save(file_path, file_obj, save=False)
                         elif file_extension == '.pdf':
-                            document.pdf_raw.save(file_path, file_obj, save=False)
+                            # Create File object for pdf_source
+                            new_file = File()
+                            new_file.display_name = f"{document.title or 'Document'} PDF Source"
+                            new_file.project = document.project
+                            new_file.file.save(file_path, file_obj)
+                            new_file.save()
+                            document.pdf_source = new_file
                         else:
                             document.document_file.save(file_path, file_obj, save=False)
 

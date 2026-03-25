@@ -5,7 +5,6 @@ import { toast } from "react-toastify";
 import { updateDoc, archiveDocument } from "../functions/queries";
 import { fetchProtectionLevels } from "../../admin/functions/queries";
 import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
-import FileUpload from "../../dokuly_components/fileUpload/fileUpload";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 
@@ -19,7 +18,6 @@ const DocumentEditForm = (props) => {
   const [shared_document_link, setSharedDocumentLink] = useState(null);
   const [release_state, setReleaseState] = useState("");
   const [is_approved_for_release, setIsApprovedForRelease] = useState(false);
-  const [file, setFile] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [protectionLevels, setProtectionLevels] = useState([]);
   const [selected_protection_level_id, setSelectedProtectionLevelId] = useState("");
@@ -59,7 +57,6 @@ const DocumentEditForm = (props) => {
   );
 
   const launchForm = () => {
-    setFile(null);
     setShowModal(true);
   };
 
@@ -78,30 +75,8 @@ const DocumentEditForm = (props) => {
       data.append("protection_level", selected_protection_level_id);
     }
 
-    // Sort file by file extension.
-    if (file != null) {
-      if (
-        file.name.toLowerCase().includes(".docx") ||
-        file.name.toLowerCase().includes(".pptx") ||
-        file.name.toLowerCase().includes(".pptm") ||
-        file.name.toLowerCase().includes(".xlsx") ||
-        file.name.toLowerCase().includes(".csv") ||
-        file.name.toLowerCase().includes(".txt") ||
-        file.name.toLowerCase().includes(".key") ||
-        file.name.toLowerCase().includes(".pages") ||
-        file.name.toLowerCase().includes(".numbers") ||
-        file.name.toLowerCase().includes(".odt") ||
-        file.name.toLowerCase().includes(".xml") ||
-        file.name.toLowerCase().includes(".md") ||
-        file.name.toLowerCase().includes(".svg")
-      ) {
-        data.append("document_file", file, file.name);
-      } else if (file.name.toLowerCase().includes(".pdf")) {
-        data.append("pdf_raw", file, file.name);
-      } else if (file.name.toLowerCase().includes(".zip")) {
-        data.append("zip_file", file, file.name);
-      }
-    }
+    // File uploads are now handled through the DocumentFilesTable component
+    // using the generic file upload system
 
     // Push data to the database
     toast.info("Processing document information...");
@@ -221,25 +196,6 @@ const DocumentEditForm = (props) => {
                 setSummary(e.target.value);
               }}
               value={summary}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Upload file</label>
-            <FileUpload onFileSelect={setFile} file={file} setFile={setFile} />
-          </div>
-
-          <div className="form-group">
-            <label>Shared document link</label>
-            <input
-              className="form-control"
-              type="text"
-              name="shared_document_link"
-              onChange={(e) => {
-                setSharedDocumentLink(e.target.value);
-              }}
-              value={shared_document_link}
-              id="shared_document_link"
             />
           </div>
 

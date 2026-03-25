@@ -1,5 +1,79 @@
-from .models import File
+from .models import File, Image
 import os
+
+
+def delete_file_with_cleanup(file_obj):
+    """
+    Delete a File object and its associated file.
+    
+    This helper ensures proper cleanup of:
+    - Main file (file_obj.file)
+    - The File database record
+    
+    Args:
+        file_obj: File model instance to delete
+        
+    Returns:
+        None
+    """
+    if not file_obj:
+        return
+    
+    try:
+        # Delete main file
+        if file_obj.file:
+            try:
+                file_obj.file.delete(save=False)
+            except Exception as e:
+                print(f"Failed to delete file: {e}")
+        
+        # Delete the database record
+        file_obj.delete()
+        
+    except Exception as e:
+        print(f"Failed to delete file with cleanup: {e}")
+        raise
+
+
+def delete_image_with_cleanup(image):
+    """
+    Delete an Image object and all its associated files.
+    
+    This helper ensures proper cleanup of:
+    - Main file (image.file)
+    - Compressed version (image.image_compressed)
+    - The Image database record
+    
+    Args:
+        image: Image model instance to delete
+        
+    Returns:
+        None
+    """
+    if not image:
+        return
+    
+    try:
+        # Delete main file
+        if image.file:
+            try:
+                image.file.delete(save=False)
+            except Exception as e:
+                print(f"Failed to delete image file: {e}")
+        
+        # Delete compressed version
+        if image.image_compressed:
+            try:
+                image.image_compressed.delete(save=False)
+            except Exception as e:
+                print(f"Failed to delete compressed image: {e}")
+        
+        # Delete the database record
+        image.delete()
+        
+    except Exception as e:
+        print(f"Failed to delete image with cleanup: {e}")
+        raise
 
 
 def get_file_name(path):

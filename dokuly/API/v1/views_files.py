@@ -9,7 +9,8 @@ from pcbas.models import Pcba
 from assemblies.models import Assembly
 from parts.models import Part
 from files.serializers import ImageSerializer
-from files.views import check_file_sizes_vs_limit, get_organization_by_user_id, get_organization_by_id, update_org_current_storage_size, compress_image, delete_image_with_cleanup
+from files.views import check_file_sizes_vs_limit, get_organization_by_user_id, get_organization_by_id, update_org_current_storage_size, compress_image
+from files.fileUtilities import delete_image_with_cleanup
 from files.models import File, Image
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from rest_framework.decorators import api_view, renderer_classes, permission_classes

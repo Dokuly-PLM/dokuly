@@ -2,7 +2,8 @@ from documents.models import Document, Document_Prefix, Protection_Level
 
 from organizations.models import Organization
 from projects.models import Project
-from files.models import Image
+from files.models import Image, File
+from files.fileUtilities import delete_file_with_cleanup
 
 from datetime import datetime
 
@@ -66,10 +67,12 @@ def process_pdf(
 ):
 
     doc_obj = Document.objects.get(id=documentId)
-    if doc_obj.pdf_raw == None or doc_obj.pdf_raw == "":
+    
+    has_pdf_source = (doc_obj.pdf_source and doc_obj.pdf_source.file and doc_obj.pdf_source.file.name)
+    if not has_pdf_source:
         return
 
-    # load pdf_raw
+    # load pdf_source
     data = Document.objects.get(id=documentId)
     project_data = Project.objects.get(id=data.project.id)
 
@@ -113,7 +116,11 @@ def process_pdf(
     else:
         doc_checker = None
 
-    customer_name = data.project.customer.name
+    # Customer model is deprecated, handle gracefully if not present
+    customer_name = None
+    if data.project and hasattr(data.project, 'customer') and data.project.customer:
+        customer_name = data.project.customer.name
+    
     project_title = str(project_data.title)
     released_date = data.released_date
     timestamp_obj = released_date
@@ -168,7 +175,8 @@ def process_pdf(
 
     # Fetch document from DB, and store to temp folder.
     target_file_path = f"{unique_path}_target_file.pdf"
-    with data.pdf_raw.open() as file:
+    
+    with data.pdf_source.file.open() as file:
         with open(target_file_path, "wb+") as destination:
             destination.write(file.read())
 
@@ -255,12 +263,24 @@ def process_pdf(
         )
 
     try:
-        if doc_obj.pdf:
-            doc_obj.pdf.delete()
+        # Delete old pdf_print file if it exists
+        if doc_obj.pdf_print:
+            delete_file_with_cleanup(doc_obj.pdf_print)
+        
+        # Create new File object for processed PDF
         with open(processed_pdf_path, "rb") as file:
-            doc_obj.pdf.save(f"{uuid.uuid4().hex}/{processed_pdf_file_name}", file)
+            new_file = File()
+            new_file.display_name = f"{doc_obj.title or 'Document'} PDF Print"
+            new_file.project = doc_obj.project
+            new_file.file.save(f"{uuid.uuid4().hex}/{processed_pdf_file_name}", file)
+            new_file.save()
+            
+            doc_obj.pdf_print = new_file
+            doc_obj.save()
     except IsADirectoryError:
         print("Not a file.")
+    except Exception as e:
+        print(f"Failed to save processed PDF: {e}")
 
     # Delete temporary stored files.
     shutil.rmtree(unique_path)
@@ -299,7 +319,8 @@ def find_referenced_items(document_id):
 
         # Fetch document from DB, and store to temp folder.
         target_file_path = f"{unique_path}_target_file.pdf"
-        with doc_obj.pdf_raw.open() as file:
+        
+        with doc_obj.pdf_source.file.open() as file:
             with open(target_file_path, "wb+") as destination:
                 destination.write(file.read())
 

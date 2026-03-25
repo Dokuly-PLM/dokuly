@@ -1,11 +1,10 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Row, Col, Tab, Tabs, Modal, Button } from "react-bootstrap";
-import { toast } from "react-toastify";
 
 import { AuthContext } from "../App";
 import { formatPDFViewerURL } from "../common/functions";
-import { FilesTable } from "./documentFiles/documentFilesTable";
+import { DocumentFilesTable } from "./documentFiles/documentFilesTable";
 import NewRevision from "./forms/documentNewRevisionForm";
 import DocumentEditForm from "./forms/documentsEditForm";
 import RevisionNotes from "../dokuly_components/revisionNotes/revisionNotes";
@@ -225,11 +224,17 @@ const DisplayDocument = (props) => {
 
   useEffect(() => {
     if (selectedDocument) {
-      const url = formatPDFViewerURL(selectedDocument.id, "pdf");
-      getFile(url).then((blob) => {
-        const url = URL.createObjectURL(blob);
-        setFileContent(url);
-      });
+      const pdfUrl = formatPDFViewerURL(selectedDocument.id, "pdf");
+      getFile(pdfUrl)
+        .then((blob) => {
+          const blobUrl = URL.createObjectURL(blob);
+          setFileContent(blobUrl);
+        })
+        .catch((error) => {
+          console.error("Failed to load PDF:", error);
+          toast.error("Failed to load PDF preview");
+          setFileContent(null);
+        });
     }
   }, [selectedDocument]);
 
@@ -282,18 +287,12 @@ const DisplayDocument = (props) => {
             </Row>
             <Row />
             <Row>
-              <FilesTable
+              <DocumentFilesTable
                 db_item={selectedDocument}
                 refresh={refresh}
                 loading={loadingDocument}
+                setRefresh={setRefresh}
               />
-            </Row>
-            <Row>
-              {/* <Errata
-                  item={selectedDocument}
-                  app={"documents"}
-                  setRefresh={setRefresh}
-                /> */}
             </Row>
 
             <Row>
@@ -305,7 +304,7 @@ const DisplayDocument = (props) => {
             </Row>
           </Col>
           <Col>
-            {selectedDocument.pdf != null && !refetchingDoc ? (
+            {(selectedDocument.pdf_print != null || selectedDocument.pdf_source != null) && !refetchingDoc ? (
               <div>
                 <button
                   type="button"

@@ -17,7 +17,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from parts.models import PartType
-from files.views import delete_image_with_cleanup
+from files.fileUtilities import delete_image_with_cleanup
 
 if __name__ == "__main__":
     import doctest

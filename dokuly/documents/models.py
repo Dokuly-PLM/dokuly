@@ -8,7 +8,7 @@ from profiles.models import Profile
 from parts.models import Part
 from assemblies.models import Assembly
 from projects.models import Project, Tag
-from files.models import Image
+from files.models import File, Image
 from tenants.azure_storage import CustomAzureStorage
 
 
@@ -91,22 +91,14 @@ class Document(models.Model):
     revision_notes = models.TextField(max_length=20000, blank=True, null=True)
     errata = models.TextField(max_length=20000, blank=True, null=True)
 
-    # TODO change with file fields.
-    document_file = models.FileField(upload_to="documents", blank=True, null=True)
-    zip_file = models.FileField(upload_to="zipFiles", blank=True, null=True)
+    # Main files collection (for document_file, zip_file, and future generic files)
+    files = models.ManyToManyField(File, blank=True, related_name='document_files')
 
-    document_file = models.FileField(upload_to="documents", blank=True, null=True)
-    zip_file = models.FileField(upload_to="zipFiles", blank=True, null=True)
+    # Foreign keys to File table for PDFs (new approach)
+    pdf_source = models.ForeignKey(File, on_delete=models.SET_NULL, null=True, blank=True, related_name='document_pdf_source')  # Replaces pdf_raw
+    pdf_print = models.ForeignKey(File, on_delete=models.SET_NULL, null=True, blank=True, related_name='document_pdf_print')  # Replaces pdf
 
-    # Uploaded PDFs are saved under the `pdf_raw` field.
-    pdf_raw = models.FileField(
-        storage=CustomAzureStorage, upload_to="documents", blank=True, null=True
-    )
-    # Processed PDFs are stored under the  `pdf` field.
-    pdf = models.FileField(
-        storage=CustomAzureStorage, upload_to="documents", blank=True, null=True
-    )
-    # The below fields specicy what will be generated in the pdf.
+    # The below fields specify what will be generated in the pdf.
     # When true, the specific item is generated for the pcba.
     front_page = models.BooleanField(blank=True, null=True)
     apply_ipr = models.BooleanField(blank=True, null=True)
@@ -141,6 +133,19 @@ class Document(models.Model):
     assembly = models.ForeignKey(Assembly, on_delete=models.SET_NULL, null=True)
     # DEPRECATED
     pcba_id = models.IntegerField(default=-1, blank=True)
+
+        # DEPRECATED: Uploaded PDFs - use pdf_source instead (FileField kept for backward compatibility)
+    pdf_raw = models.FileField(
+        storage=CustomAzureStorage, upload_to="documents", blank=True, null=True
+    )
+    # DEPRECATED: Processed PDFs - use pdf_print instead (FileField kept for backward compatibility)
+    pdf = models.FileField(
+        storage=CustomAzureStorage, upload_to="documents", blank=True, null=True
+    )
+
+    # DEPRECATED
+    document_file = models.FileField(upload_to="documents", blank=True, null=True)
+    zip_file = models.FileField(upload_to="zipFiles", blank=True, null=True)
 
 
 class MarkdownText(models.Model):
