@@ -8,12 +8,10 @@ import { loadingSpinner } from "../../admin/functions/helperFunctions";
 import {
   closeIssue,
   createIssue,
-  deleteIssue,
   editIssue,
 } from "./functions/queries";
 import DokulyDateFormat from "../formatters/dateFormatter";
 import TextFieldEditor from "../dokulyTable/components/textFieldEditor";
-import DeleteRowButton from "../deleteRowButton";
 import { toast } from "react-toastify";
 import { criticalityValues } from "./functions/criticalityValues";
 import GenericDropdownSelector from "../dokulyTable/components/genericDropdownSelector";
@@ -77,27 +75,6 @@ const IssuesTable = ({
         toast.error(error);
       }
     );
-  };
-
-  const deleteIssueRow = (id) => {
-    if (!confirm("Are you sure you want to delete this issue?")) {
-      return;
-    }
-    deleteIssue(id)
-      .then((res) => {
-        if (res.status === 200) {
-          toast.success("Issue deleted successfully.");
-          setRefresh(true);
-          if (useBomIssues) {
-            setRefreshBomIssues(true);
-          }
-        } else {
-          toast.error("Failed to delete issue.");
-        }
-      })
-      .catch((err) => {
-        toast.error("Failed to delete issue.");
-      });
   };
 
   const handleSelectDropdown = (row, value) => {
@@ -484,18 +461,11 @@ const IssuesTable = ({
               row[closedInFieldName] && "justify-content-start d-flex"
             }`}
           >
-            {!row[closedInFieldName] && (
+            {!row[closedInFieldName] ? (
               <AddButton
                 onClick={() => handleCloseIssue(row?.id)}
                 buttonText={"Close Issue"}
                 imgSrc={"../../static/icons/circle-check.svg"}
-              />
-            )}
-            {!row[closedInFieldName] ? (
-              <DeleteRowButton
-                row={row}
-                setRefresh={setRefresh}
-                handleDelete={() => deleteIssueRow(row?.id)}
               />
             ) : (
               <span className="align-items-center">
