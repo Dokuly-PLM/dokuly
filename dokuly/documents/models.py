@@ -91,10 +91,6 @@ class Document(models.Model):
     revision_notes = models.TextField(max_length=20000, blank=True, null=True)
     errata = models.TextField(max_length=20000, blank=True, null=True)
 
-    # TODO change with file fields.
-    document_file = models.FileField(upload_to="documents", blank=True, null=True)
-    zip_file = models.FileField(upload_to="zipFiles", blank=True, null=True)
-
     # Main files collection (for document_file, zip_file, and future generic files)
     files = models.ManyToManyField(File, blank=True, related_name='document_files')
 
@@ -146,6 +142,10 @@ class Document(models.Model):
     pdf = models.FileField(
         storage=CustomAzureStorage, upload_to="documents", blank=True, null=True
     )
+
+    # DEPRECATED
+    document_file = models.FileField(upload_to="documents", blank=True, null=True)
+    zip_file = models.FileField(upload_to="zipFiles", blank=True, null=True)
 
 
 class MarkdownText(models.Model):
