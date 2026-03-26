@@ -53,7 +53,7 @@ const DisplayEco = () => {
       .then((res) => {
         if (res.status === 200) {
           setEco(res.data);
-          document.title = `ECO-${res.data.id} | Dokuly`;
+          document.title = `ECO${res.data.id} | Dokuly`;
         }
       })
       .catch((err) => {
@@ -145,7 +145,7 @@ const DisplayEco = () => {
 
       {/* Header */}
       <Heading
-        item_number={`ECO-${eco?.id || ""}`}
+        item_number={`ECO${eco?.id || ""}`}
         display_name={eco?.display_name || ""}
         app="eco"
       />
