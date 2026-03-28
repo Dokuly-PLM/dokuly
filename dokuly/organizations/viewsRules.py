@@ -439,6 +439,7 @@ def fetch_organization_rules(request):
                 'require_review_on_pcba': False,
                 'require_review_on_assembly': False,
                 'require_review_on_document': False,
+                'require_pdf_on_document': False,
                 'require_image_on_part': False,
                 'require_image_on_pcba': False,
                 'require_image_on_assembly': False,
@@ -491,6 +492,7 @@ def update_organization_rules(request):
                 'require_review_on_pcba': False,
                 'require_review_on_assembly': False,
                 'require_review_on_document': False,
+                'require_pdf_on_document': False,
                 'require_image_on_part': False,
                 'require_image_on_pcba': False,
                 'require_image_on_assembly': False,
@@ -530,6 +532,9 @@ def update_organization_rules(request):
         
         if 'require_review_on_document' in data:
             rules.require_review_on_document = data['require_review_on_document']
+        
+        if 'require_pdf_on_document' in data:
+            rules.require_pdf_on_document = data['require_pdf_on_document']
 
         if 'require_image_on_part' in data:
             rules.require_image_on_part = data['require_image_on_part']
@@ -946,6 +951,17 @@ def check_document_rules(request, document_id):
                 'rule': 'require_review_on_document',
                 'description': 'Document must be reviewed before release',
                 'passed': is_reviewed,
+            })
+        
+        # Check PDF requirement if rules exist
+        if rules and rules.require_pdf_on_document:
+            has_pdf = document.pdf_source is not None or document.pdf_print is not None
+            if not has_pdf:
+                all_passed = False
+            rules_checks.append({
+                'rule': 'require_pdf_on_document',
+                'description': 'Document must have a PDF uploaded before release',
+                'passed': has_pdf,
             })
         
         has_active_rules = len(rules_checks) > 0

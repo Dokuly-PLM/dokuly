@@ -30,6 +30,7 @@ const AdminRules = ({ setRefresh }) => {
   const [requireImageOnPart, setRequireImageOnPart] = useState(false);
   const [requireImageOnPcba, setRequireImageOnPcba] = useState(false);
   const [requireImageOnAssembly, setRequireImageOnAssembly] = useState(false);
+  const [requirePdfOnDocument, setRequirePdfOnDocument] = useState(false);
   const [requireReviewOnEco, setRequireReviewOnEco] = useState(false);
   const [
     requireAllAffectedItemsReviewedForEco,
@@ -114,6 +115,9 @@ const AdminRules = ({ setRefresh }) => {
           setRequireImageOnAssembly(
             res.data.require_image_on_assembly || false,
           );
+          setRequirePdfOnDocument(
+            res.data.require_pdf_on_document || false,
+          );
           setRequireReviewOnEco(res.data.require_review_on_eco || false);
           setRequireAllAffectedItemsReviewedForEco(
             res.data.require_all_affected_items_reviewed_for_eco || false,
@@ -154,6 +158,7 @@ const AdminRules = ({ setRefresh }) => {
       require_image_on_part: requireImageOnPart,
       require_image_on_pcba: requireImageOnPcba,
       require_image_on_assembly: requireImageOnAssembly,
+      require_pdf_on_document: requirePdfOnDocument,
       require_review_on_eco: requireReviewOnEco,
       require_all_affected_items_reviewed_for_eco:
         requireAllAffectedItemsReviewedForEco,
@@ -315,6 +320,16 @@ const AdminRules = ({ setRefresh }) => {
                   value={requireImageOnAssembly}
                   onChange={setRequireImageOnAssembly}
                   id="requireImageOnAssembly"
+                />
+              </div>
+
+              <div className="mt-4">
+                <h6>Document Requirements</h6>
+                <DokulyCheckFormGroup
+                  label="Require a PDF uploaded before releasing Document"
+                  value={requirePdfOnDocument}
+                  onChange={setRequirePdfOnDocument}
+                  id="requirePdfOnDocument"
                 />
               </div>
 
