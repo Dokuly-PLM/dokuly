@@ -462,15 +462,23 @@ kbd>kbd {
   border: none !important;
   color: black !important;
   box-shadow: none !important;
+  transition: all 0.05s ease-in-out !important;
 }
 
 .btn-bg-transparent:focus,
-.btn-bg-transparent:active,
 .btn-bg-transparent:hover {
   background-color: #00000011 !important;
   border: none !important;
   color: black !important;
   box-shadow: none !important;
+}
+
+.btn-bg-transparent:active {
+  background-color: #00000011 !important;
+  border: none !important;
+  color: black !important;
+  box-shadow: none !important;
+  transform: scale(0.98) !important;
 }
 
 .btn {
