@@ -294,6 +294,12 @@ class Rules(models.Model):
         help_text="Require an image to be uploaded before releasing an Assembly"
     )
 
+    require_pdf_on_document = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Require a PDF to be uploaded before releasing a Document"
+    )
+
     # ECO-specific rules
     require_review_on_eco = models.BooleanField(
         default=False,
