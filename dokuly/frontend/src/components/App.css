@@ -494,6 +494,36 @@ kbd>kbd {
   color: black !important;
 }
 
+.thumbnail-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  margin: 0 auto;
+  color: #999;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  background-color: transparent;
+  transition: all 0.05s ease-in-out;
+}
+
+.thumbnail-placeholder:hover {
+  background-color: #f5f5f5;
+  border-color: #999;
+  color: #999;
+}
+
+.thumbnail-placeholder:active {
+  background-color: #e8e8e8;
+  border-color: #999;
+  color: #999;
+  transform: scale(0.97);
+}
+
 .modal {
   overflow-y: scroll;
 }

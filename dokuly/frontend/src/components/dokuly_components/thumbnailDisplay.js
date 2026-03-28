@@ -106,20 +106,6 @@ const ThumbnailDisplay = ({
         <div
           className="thumbnail-placeholder"
           onClick={handleModalShow}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100px",
-            height: "100px",
-            border: "1px dashed #ccc",
-            borderRadius: "4px",
-            margin: "0 auto",
-            color: "#ccc",
-            fontSize: "14px",
-            textAlign: "center",
-            cursor: "pointer",
-          }}
         >
           <div>Upload thumbnail</div>
         </div>
