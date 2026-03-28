@@ -34,7 +34,7 @@ const AddItemButton = ({
     !is_locked_bom && (
       <button
         type="button"
-        className="btn dokuly-bg-transparent ml-4 mb-2"
+        className="btn btn-bg-transparent ml-4 mb-2"
         data-toggle="tooltip"
         data-placement="top"
         title="Add an item to the BOM. Either a parrt, sub-assembly or pcba."
