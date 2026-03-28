@@ -259,6 +259,7 @@ kbd>kbd {
   color: #ffffff;
   border-color: #165216ff;
   box-shadow: none !important;
+  transition: all 0.05s ease-in-out !important;
 }
 
 .btn-less-side-padding {
@@ -271,17 +272,18 @@ kbd>kbd {
 .btn.dokuly-bg-primary:focus {
   background-color: #104610ff !important;
   color: #ffffff !important;
-  border-color: #165216ff !important;
+  border-color: #104610ff !important;
   box-shadow: none !important;
+  transform: scale(1.03) !important;
 }
 
 .dokuly-bg-primary:active,
 .btn.dokuly-bg-primary:active {
   background-color: #0e3a0eff !important;
-  /* An even darker shade for active state */
   color: #ffffff !important;
-  border-color: #165216ff !important;
-  box-shadow: 0 0 5px #165216ff !important;
+  border-color: #0e3a0eff !important;
+  box-shadow: none !important;
+  transform: scale(0.97) !important;
 }
 
 /* DokulyDropdown menu styling */
