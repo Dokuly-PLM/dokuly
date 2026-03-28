@@ -297,14 +297,23 @@ kbd>kbd {
 .dokuly-dropdown-menu .dropdown-item:hover,
 .dokuly-dropdown-menu .dropdown-item:focus {
   color: #ffffff !important;
-  background-color: #165216ff !important;
+  background-color: rgba(22, 82, 22, 0.7) !important;
   border: none !important;
+}
+
+.dokuly-dropdown-menu .dropdown-item:hover .icon-dark,
+.dokuly-dropdown-menu .dropdown-item:focus .icon-dark {
+  filter: brightness(0) saturate(100%) invert(1) !important;
 }
 
 .dokuly-dropdown-menu .dropdown-item.active {
   color: #ffffff !important;
   background-color: #165216ff !important;
   border: none !important;
+}
+
+.dokuly-dropdown-menu .dropdown-item.active .icon-dark {
+  filter: brightness(0) saturate(100%) invert(1) !important;
 }
 
 .dokuly-bg-secondary {
