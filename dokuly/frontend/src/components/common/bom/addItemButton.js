@@ -2,8 +2,9 @@ import React from "react";
 import { toast } from "react-toastify";
 
 import { addBomItem } from "./functions/queries";
+import AddButton from "../../dokuly_components/AddButton";
 
-const AddItemButton = ({
+const BomAddItemButton = ({
   bom_id,
   is_locked_bom,
   setRefreshBom,
@@ -31,27 +32,16 @@ const AddItemButton = ({
   }
 
   return (
-    !is_locked_bom && (
-      <button
-        type="button"
-        className="btn btn-bg-transparent ml-4 mb-2"
-        data-toggle="tooltip"
-        data-placement="top"
-        title="Add an item to the BOM. Either a parrt, sub-assembly or pcba."
-        //disabled={} // TODO: Implement logic for disabling the button
-        onClick={() => addItem()}
-      >
-        <div className="row">
-          <img
-            className="icon-dark"
-            src="../../static/icons/circle-plus.svg"
-            alt="icon"
-          />
-          <span className="btn-text">Add item</span>
-        </div>
-      </button>
-    )
+    <AddButton
+      show={!is_locked_bom}
+      onClick={addItem}
+      className="ml-4 mb-2"
+      buttonText="Add item"
+      title="Add an item to the BOM. Either a part, sub-assembly or pcba."
+      dataToggle="tooltip"
+      dataPlacement="top"
+    />
   );
 };
 
-export default AddItemButton;
+export default BomAddItemButton;

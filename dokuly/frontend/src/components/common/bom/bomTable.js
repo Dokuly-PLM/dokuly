@@ -6,7 +6,7 @@ import DokulyTable from "../../dokuly_components/dokulyTable/dokulyTable";
 import { getBomWithLinkedParts } from "./functions/queries";
 import { buildBomObject } from "./functions/buildBomObject";
 import { thumbnailFormatter } from "../../dokuly_components/formatters/thumbnailFormatter";
-import AddItemButton from "./addItemButton";
+import BomAddItemButton from "./addItemButton";
 import { releaseStateFormatter } from "../../dokuly_components/formatters/releaseStateFormatter";
 import BomImportButton from "./bomImport/bomImportButton";
 import { ClearBomButton } from "./clearBomButton";
@@ -299,7 +299,7 @@ const BomTable = ({
         {bom != null && (
           <React.Fragment>
             <Row>
-              <AddItemButton
+              <BomAddItemButton
                 bom_id={database_bom?.id}
                 is_locked_bom={is_locked_bom}
                 setRefreshBom={setRefreshBom}

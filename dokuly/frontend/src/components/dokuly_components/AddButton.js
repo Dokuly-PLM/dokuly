@@ -10,11 +10,17 @@ const AddButton = ({
   style, // Accepting style as a prop
   hideIcon = false,
   imgStyle = {},
+  title, // Tooltip title
+  show = true, // Conditional rendering
+  dataToggle, // Bootstrap tooltip data-toggle
+  dataPlacement, // Bootstrap tooltip data-placement
 }) => {
   const combinedClassName = `btn btn-bg-transparent ${className || ""}`; // Safely append className if provided
 
   // Combine default styles with styles provided via props
   const combinedStyle = { ...style };
+
+  if (!show) return null;
 
   return (
     <button
@@ -23,6 +29,9 @@ const AddButton = ({
       disabled={disabled}
       style={combinedStyle} // Use the combined style object
       onClick={onClick}
+      title={title}
+      data-toggle={dataToggle}
+      data-placement={dataPlacement}
     >
       <div className="row">
         {!hideIcon && (

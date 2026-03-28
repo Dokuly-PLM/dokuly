@@ -17,6 +17,7 @@ import {
 import InlineItemSelector from "../../dokuly_components/dokulyTable/components/inlineItemSelector";
 import DokulyMarkdown from "../../dokuly_components/dokulyMarkdown/dokulyMarkdown";
 import IssuePills from "./issuePills";
+import AddButton from "../../dokuly_components/AddButton";
 
 const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAffectedItemsChange = null, externalRefresh = 0 }) => {
   const navigate = useNavigate();
@@ -372,23 +373,15 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
       />
 
       {/* Add Item Button */}
-      {!isLocked && (
-        <button
-          type="button"
-          className="btn btn-bg-transparent ml-2 mb-2"
-          onClick={handleAddItem}
-          title="Add an affected item row"
-        >
-          <div className="row">
-            <img
-              className="icon-dark"
-              src="../../static/icons/circle-plus.svg"
-              alt="add"
-            />
-            <span className="btn-text">Add item</span>
-          </div>
-        </button>
-      )}
+      <AddButton
+        show={!isLocked}
+        onClick={handleAddItem}
+        className="ml-2 mb-2"
+        buttonText="Add item"
+        title="Add an affected item row"
+        dataToggle="tooltip"
+        dataPlacement="top"
+      />
 
       {affectedItems.length > 0 ? (
         <DokulyTable
