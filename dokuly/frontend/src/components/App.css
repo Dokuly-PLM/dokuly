@@ -333,6 +333,7 @@ kbd>kbd {
   color: #ffffff;
   border-color: #B00020;
   box-shadow: none !important;
+  transition: all 0.05s ease-in-out !important;
 }
 
 .dokuly-bg-danger:hover,
@@ -344,6 +345,7 @@ kbd>kbd {
   color: #ffffff;
   border-color: #B00020;
   box-shadow: none !important;
+  transform: scale(1.03) !important;
 }
 
 .dokuly-bg-danger:active,
@@ -352,7 +354,8 @@ kbd>kbd {
   /* Even darker shade for active state */
   color: #ffffff !important;
   border-color: #7a0016 !important;
-  box-shadow: 0 0 5px #7a0016 !important;
+  box-shadow: none !important;
+  transform: scale(0.99) !important;
 }
 
 .dokuly-bg-lightwhite {
