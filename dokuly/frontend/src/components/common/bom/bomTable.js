@@ -364,28 +364,6 @@ const BomTable = ({
                 />
               )}
             </Row>
-            {!is_locked_bom && (
-              <React.Fragment>
-                <Row className="mt-2">
-                  <Col>
-                    <p className="text-muted">
-                      <small>
-                        <b>Click</b> a cell to edit the data.
-                      </small>
-                    </p>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col>
-                    <p className="text-muted">
-                      <small>
-                        <b>Ctrl+click</b> to open item in new tab.
-                      </small>
-                    </p>
-                  </Col>
-                </Row>
-              </React.Fragment>
-            )}
           </React.Fragment>
         )}
       </DokulyCard>

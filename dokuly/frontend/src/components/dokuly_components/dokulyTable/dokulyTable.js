@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useDrop } from "react-dnd";
 import { useLocation } from "react-router-dom";
-import { Container, Table, Row, Col, Form } from "react-bootstrap";
+import { Container, Table, Row, Col, Form, Dropdown } from "react-bootstrap";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
 import NavigateButton from "./components/navigateButton";
 import ColumnSelector from "./components/columnSelector";
-import CsvDownloader from "./components/csvDownloader";
 import DraggableHeader from "./components/draggableHeader";
 import sortData from "./functions/sortUtils";
-import MarkdownDownloader from "./components/markdownDownloader";
 import { toast } from "react-toastify";
 import NumericFieldEditor from "./components/numericFieldEditor";
 import TextFieldEditor from "./components/textFieldEditor";
@@ -25,7 +23,7 @@ import SavedViews from "./components/savedViews";
 
 /**
  * DokulyTable is a table component that can be used to display data in a table format.
- * It supports features like sorting, pagination, search, column selection, and CSV download.
+ * It supports features like sorting, pagination, search, column selection, and export to CSV/PDF/Markdown.
  * It also supports custom cell formatters for different data types.
  * @param {Object} props
  * @param {Array} props.data - The data to be displayed in the table
@@ -36,7 +34,7 @@ import SavedViews from "./components/savedViews";
  * @param {Number} props.selectedRowIndex - The index of the selected row
  * @param {Function} props.onRowClick - The function to be called when a row is clicked
  * @param {Function} props.onRowDoubleClick - The function to be called when a row is double clicked
- * @param {Boolean} props.showCsvDownload - Whether to show the CSV download button
+ * @param {Boolean} props.showCsvDownload - Whether to show the export dropdown (CSV, PDF, Markdown)
  * @param {Boolean} props.showPagination - Whether to show the pagination
  * @param {Boolean} props.showSearch - Whether to show the search bar
  * @param {Boolean} props.navigateColumn - Whether to show the navigate column
@@ -742,6 +740,102 @@ function DokulyTableContents({
     pdf.save(`${fileName}.pdf`);
   };
 
+  const handleCsvDownload = () => {
+    const sortedCsvData = sortData(tableData, sortedColumn, sortOrder);
+
+    const headerRow = columns
+      .filter((column) => column.includeInCsv !== false)
+      .map((column) => column.header)
+      .join(",");
+
+    const csvRows = [headerRow];
+
+    sortedCsvData.forEach((row) => {
+      const rowData = columns
+        .filter((column) => column.includeInCsv !== false)
+        .map((column) => {
+          let cellData;
+          if (column.csvFormatter) {
+            cellData = column.csvFormatter(row, column);
+          } else {
+            cellData = row[column.key];
+          }
+          
+          if (cellData === null || cellData === undefined) {
+            cellData = "";
+          }
+          
+          // Escape quotes and wrap in quotes if necessary
+          if (typeof cellData === 'string' && (cellData.includes(',') || cellData.includes('"') || cellData.includes('\n'))) {
+            cellData = `"${cellData.replace(/"/g, '""')}"`;
+          }
+          
+          return cellData;
+        })
+        .join(",");
+      csvRows.push(rowData);
+    });
+
+    const csvContent = csvRows.join("\n");
+    const csvName = tableName ? `${tableName}.csv` : "table_data.csv";
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    a.download = csvName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const handleMarkdownCopy = () => {
+    const sortedMarkdownData = sortData(tableData, sortedColumn, sortOrder);
+
+    const includedColumns = columns.filter(
+      (column) => column.includeInCsv !== false,
+    );
+
+    const headerRow = includedColumns
+      .map((column) => column.header)
+      .join(" | ");
+    const separatorRow = includedColumns.map(() => "---").join(" | ");
+    const markdownRows = [`| ${headerRow} |`, `| ${separatorRow} |`];
+
+    sortedMarkdownData.forEach((row) => {
+      const rowData = includedColumns
+        .map((column) => {
+          let cellData;
+          if (column.csvFormatter) {
+            cellData = column.csvFormatter(row, column);
+          } else {
+            cellData = row[column.key];
+          }
+          
+          if (cellData === null || cellData === undefined) {
+            cellData = "";
+          }
+          
+          return String(cellData).replace(/\|/g, "\\|");
+        })
+        .join(" | ");
+      markdownRows.push(`| ${rowData} |`);
+    });
+
+    const markdownContent = markdownRows.join("\n");
+    
+    navigator.clipboard.writeText(markdownContent).then(
+      () => {
+        toast.success("Markdown copied to clipboard!");
+      },
+      (err) => {
+        toast.error(`Failed to copy markdown: ${err.message}`);
+      },
+    );
+  };
+
   const getRowClassName = (row, selectedRowIndex) => {
     if (selectedRowIndex === row.row_id) {
       return "selected-row";
@@ -1000,38 +1094,53 @@ function DokulyTableContents({
       {showCsvDownload && (
         <Row className="pagination-row">
           <Col className="d-flex justify-content-start align-items-center">
-            <CsvDownloader
-              data={tableData}
-              columns={columns}
-              tableName={tableName}
-              sortedColumn={sortedColumn}
-              sortOrder={sortOrder}
-              textSize={textSize}
-            />{" "}
-            <div className="mr-2" />
-            <button
-              type="button"
-              className="btn dokuly-btn-transparent p-0"
-              title="Download as PDF"
-              onClick={handleDownloadPdf}
-            >
-              <img
-                className="icon-dark"
-                src="../../static/icons/file-download.svg"
-                alt="icon"
-              />
-              <span className="btn-text ml-1" style={{ fontSize: textSize }}>
-                PDF
-              </span>
-            </button>
-            <div className="mr-2" />
-            <MarkdownDownloader
-              data={tableData}
-              columns={columns}
-              sortedColumn={sortedColumn}
-              sortOrder={sortOrder}
-              textSize={textSize}
-            />
+            <Dropdown>
+              <Dropdown.Toggle 
+                as="button"
+                className="btn btn-bg-transparent d-flex align-items-center"
+                style={{ cursor: "pointer" }}
+              >
+                <img
+                  className="icon-dark mr-1"
+                  src="../../static/icons/file-download.svg"
+                  alt="export"
+                  style={{ width: "20px", height: "20px" }}
+                />
+                <span className="btn-text" style={{ fontSize: textSize }}>
+                  Export
+                </span>
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu className="dokuly-dropdown-menu">
+                <Dropdown.Item onClick={handleCsvDownload}>
+                  <img
+                    className="icon-dark"
+                    src="../../static/icons/file-download.svg"
+                    alt="csv"
+                    style={{ width: "16px", height: "16px", marginRight: "8px" }}
+                  />
+                  CSV File
+                </Dropdown.Item>
+                <Dropdown.Item onClick={handleDownloadPdf}>
+                  <img
+                    className="icon-dark"
+                    src="../../static/icons/file-download.svg"
+                    alt="pdf"
+                    style={{ width: "16px", height: "16px", marginRight: "8px" }}
+                  />
+                  PDF File
+                </Dropdown.Item>
+                <Dropdown.Item onClick={handleMarkdownCopy}>
+                  <img
+                    className="icon-dark"
+                    src="../../static/icons/clipboard.svg"
+                    alt="markdown"
+                    style={{ width: "16px", height: "16px", marginRight: "8px" }}
+                  />
+                  Copy as Markdown
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
           </Col>
         </Row>
       )}
