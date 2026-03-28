@@ -15,7 +15,6 @@ import BomCost from "../bom/bomCost/bomCost";
 import DokulyCard from "../../dokuly_components/dokulyCard";
 import CardTitle from "../../dokuly_components/cardTitle";
 import { loadingSpinner } from "../../admin/functions/helperFunctions";
-import BulkUploadPricesModal from "./bulkUploadPricesModal";
 
 const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
   const [refreshPrices, setRefreshPrices] = useState(false);
@@ -23,7 +22,6 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
   const [organizationCurrency, setOrganizationCurrency] = useState("");
   const [supplierOptions, setSupplierOptions] = useState([]);
   const [showBomCost, setShowBomCost] = useState(false);
-  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [currencyKeysOptions, setCurrencyKeysOptions] = useState([]);
   const [doneFormatting, setDoneFormatting] = useState(false);
 
@@ -266,39 +264,7 @@ const PriceCard = ({ app, itemId, unit = "", setRefresh, refresh }) => {
             numberOfPrices={prices.length}
           />
         </Col>
-        <Col className="text-right">
-          <button
-            type="button"
-            className="btn dokuly-bg-transparent ml-4 mb-2"
-            data-toggle="tooltip"
-            data-placement="top"
-            title="Bulk Upload prices"
-            onClick={() => setShowBulkUploadModal(true)}
-            //disabled={} // TODO Implement logic for disabling the button
-          >
-            <div className="row align-items-center">
-              <img
-                className="icon-dark mr-2"
-                src="/static/icons/circle-plus.svg"
-                alt="Add Icon"
-                style={{ width: "24px", height: "24px" }}
-              />
-              <span style={{ fontSize: "12px" }}>Bulk Upload prices</span>
-            </div>
-          </button>
-        </Col>
       </Row>
-
-      <BulkUploadPricesModal
-        show={showBulkUploadModal}
-        onHide={() => setShowBulkUploadModal(false)}
-        supplierOptions={supplierOptions}
-        currencyOptions={currencyKeysOptions}
-        app={app}
-        itemId={itemId}
-        onRefresh={() => setRefreshPrices(true)}
-        textSize={textSize}
-      />
 
       {prices.length > 0 && (
         <>
