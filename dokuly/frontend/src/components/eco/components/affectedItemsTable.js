@@ -375,7 +375,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
       {!isLocked && (
         <button
           type="button"
-          className="btn dokuly-bg-transparent ml-2 mb-2"
+          className="btn btn-bg-transparent ml-2 mb-2"
           onClick={handleAddItem}
           title="Add an affected item row"
         >
