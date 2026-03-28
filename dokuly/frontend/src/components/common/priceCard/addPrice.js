@@ -30,7 +30,7 @@ const AddPrice = ({
   return (
     <button
       type="button"
-      className="btn dokuly-bg-transparent ml-4 mb-2"
+      className="btn btn-bg-transparent ml-4 mb-2"
       data-toggle="tooltip"
       data-placement="top"
       title="Add a price to the list"
