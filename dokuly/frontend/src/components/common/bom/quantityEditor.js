@@ -15,6 +15,7 @@ const QuantityEditor = ({
   const [isEditing, setIsEditing] = useState(false);
   const [quantity, setQuantity] = useState(row.quantity || "");
   const [originalQuantity, setOriginalQuantity] = useState(row.quantity || "");
+  const [isEnterPressed, setIsEnterPressed] = useState(false);
 
   const editorRef = useRef(null);
   const inputRef = useRef(null);
@@ -106,13 +107,21 @@ const QuantityEditor = ({
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleSave();
+      setIsEnterPressed(true);
+      // Don't save yet - wait for keyup
     } else if (e.key === "Escape") {
       setQuantity(originalQuantity);
       setIsEditing(false);
       if (inputRef.current) {
         inputRef.current.blur();
       }
+    }
+  };
+
+  const handleKeyUp = (e) => {
+    if (e.key === "Enter" && isEnterPressed) {
+      setIsEnterPressed(false);
+      handleSave();
     }
   };
 
@@ -139,18 +148,28 @@ const QuantityEditor = ({
           )}
         </>
       ) : isEditing ? (
-        <>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           <input
             ref={inputRef}
             type="number"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleKeyDown}            onKeyUp={handleKeyUp}            title="Press Enter to submit, Escape to cancel"
             style={{ width: "3rem" }} // CSS style for input width
           />
-          <span> {unit}</span>
-        </>
+          <span style={{ 
+            marginLeft: '2px', 
+            fontSize: '12px', 
+            color: '#666', 
+            userSelect: 'none',
+            padding: '2px 4px',
+            borderRadius: '3px',
+            backgroundColor: isEnterPressed ? '#e0e0e0' : 'transparent',
+            transition: 'background-color 0.15s ease'
+          }}>↵</span>
+          <span style={{ marginLeft: '2px' }}> {unit}</span>
+        </div>
       ) : (
         // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
         <span className="w-100" onClick={() => setIsEditing(true)}>
