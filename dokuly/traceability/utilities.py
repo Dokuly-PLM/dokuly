@@ -9,17 +9,23 @@ from profiles.models import Profile
 
 
 def _get_user_display_name(user):
-    """Return display name for traceability details (e.g. 'Erik' or 'Erik Smith')."""
+    """Return display name for traceability details (e.g. 'Erik' or 'Erik Smith').
+    Prefers Django User fields over Profile fields for consistency."""
     if not user:
         return "Unknown"
+    
+    # Primary: Use Django User's name fields
+    if user.get_full_name():
+        return user.get_full_name()
+        
+    # Secondary: Try Profile name fields as fallback 
     try:
         profile = Profile.objects.get(user=user)
         if profile.first_name or profile.last_name:
             return f"{profile.first_name or ''} {profile.last_name or ''}".strip()
     except Profile.DoesNotExist:
         pass
-    if user.get_full_name():
-        return user.get_full_name()
+        
     return user.username or "Unknown"
 
 

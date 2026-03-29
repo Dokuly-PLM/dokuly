@@ -5,8 +5,8 @@ import SubmitButton from "../../../dokuly_components/submitButton";
 
 const EditUserProfile = (props) => {
   const [user, setUser] = useState(props?.user ?? "");
-  const [first_name, setFirstName] = useState(props?.user?.first_name ?? "");
-  const [last_name, setLastName] = useState(props?.user?.last_name ?? "");
+  const [first_name, setFirstName] = useState(props?.user?.user_first_name ?? "");
+  const [last_name, setLastName] = useState(props?.user?.user_last_name ?? "");
   const [address, setAddress] = useState(props?.user?.address ?? "");
   const [position, setPosition] = useState(props?.user?.position ?? "");
   const [work_email, setWorkEmail] = useState(props?.user?.work_email ?? "");
@@ -39,10 +39,8 @@ const EditUserProfile = (props) => {
 
   const loadStates = (user) => {
     setUser(user);
-    setFirstName(
-      user.first_name !== (null || undefined) ? user.first_name : ""
-    );
-    setLastName(user.last_name !== (null || undefined) ? user.last_name : "");
+    setFirstName(user.user_first_name ?? "");
+    setLastName(user.user_last_name ?? "");
     setAddress(user.address !== (null || undefined) ? user.address : "");
     setPosition(user.position !== (null || undefined) ? user.position : "");
     setWorkEmail(
