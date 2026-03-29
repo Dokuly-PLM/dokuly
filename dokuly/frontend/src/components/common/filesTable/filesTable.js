@@ -22,7 +22,7 @@ export const downloadFileAsBlobForATags = (fileUri, fileName) => {
       const url = window.URL.createObjectURL(res);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", fileName); // Use row.file_name as the filename
+      link.setAttribute("download", fileName); // Use actual filename from backend
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link); // Clean up after triggering the download

@@ -6,7 +6,9 @@ import { loadingSpinner } from "../../admin/functions/helperFunctions";
 import FileViewerModal from "../../common/FileViewerModal";
 import DokulyTable from "../../dokuly_components/dokulyTable/dokulyTable";
 import { getFile } from "../../common/filesTable/functions/queries";
+import { downloadFileAsBlobForATags } from "../../common/filesTable/filesTable";
 import EditableTableCell from "../../dokuly_components/editableTableCell/editableTableCell";
+import DeleteButton from "../../dokuly_components/deleteButton";
 import { toast } from "react-toastify";
 import { Row, Col } from "react-bootstrap";
 import DokulyCard from "../../dokuly_components/dokulyCard";
@@ -113,20 +115,7 @@ export const DocumentFilesTable = (props) => {
   }, [props.db_item?.id, refresh, props.refresh]);
 
   const handleDownload = (row) => {
-    getFile(row.uri)
-      .then((blob) => {
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.setAttribute("download", row.file_name);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      })
-      .catch((error) => {
-        console.error("Failed to download file:", error);
-        toast.error("Failed to download file");
-      });
+    downloadFileAsBlobForATags(row.uri, row.file_name);
   };
 
   const handleDelete = (row) => {
@@ -185,13 +174,15 @@ export const DocumentFilesTable = (props) => {
           />
         )}
         {!revisionLocked && (row.type === "GENERIC" || row.type === "PDF_RAW" || row.type === "PDF") && (
-          <button
-            type="button"
-            className="btn btn-default"
-            onClick={() => handleDelete(row)}
-          >
-            <img width="25px" src="../../static/icons/trash.svg" alt="Delete" />
-          </button>
+          <DeleteButton
+            onDelete={() => handleDelete(row)}
+            buttonText=""
+            fontSize="14px"
+            iconWidth="25px"
+            className="btn-transparent"
+            noFlexClass={true}
+            style={{ marginTop: "0", padding: "0", border: "none" }}
+          />
         )}
       </Row>
     );

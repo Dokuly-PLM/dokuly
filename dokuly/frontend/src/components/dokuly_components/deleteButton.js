@@ -1,5 +1,4 @@
 import React from "react";
-import { Button } from "react-bootstrap";
 
 const DeleteButton = ({
   onDelete,
@@ -11,36 +10,41 @@ const DeleteButton = ({
   invertColors = false,
   noFlexClass = false,
 }) => {
-  // Determine styles based on the invertColors prop
-  const textColor = invertColors ? "text-white" : "text-black";
-  const iconFilter = invertColors ? "invert(1)" : "invert(0)";
+  const combinedClassName = `btn btn-bg-transparent ${className}`;
+  const buttonStyle = {
+    cursor: "pointer",
+    ...style,
+  };
 
-  const combinedClass = noFlexClass ? "" : "d-flex align-items-center";
+  const textStyle = {
+    fontSize: fontSize,
+  };
+
+  const iconStyle = {
+    width: iconWidth,
+    height: iconWidth,
+    filter: invertColors ? "invert(1)" : "invert(0)",
+  };
 
   return (
-    <Button
-      variant="bg-transparent ml-2"
+    <button
+      type="button"
+      className={combinedClassName}
+      style={buttonStyle}
       onClick={onDelete}
-      className={`${combinedClass} ${className}`}
-      style={style}
     >
-      <img
-        className="icon-dark"
-        src={"../../../static/icons/trash.svg"}
-        alt="Delete Icon"
-        style={{
-          width: iconWidth,
-          height: iconWidth,
-          filter: iconFilter,
-        }}
-      />
-      <span
-        className={`btn-text ml-2 ${textColor}`}
-        style={{ fontSize: fontSize }}
-      >
-        {buttonText}
-      </span>
-    </Button>
+      <div className={noFlexClass ? "" : "row align-items-center"}>
+        <img
+          className="icon-dark"
+          src={"../../static/icons/trash.svg"}
+          alt="Delete Icon"
+          style={iconStyle}
+        />
+        <span className="btn-text" style={textStyle}>
+          {buttonText}
+        </span>
+      </div>
+    </button>
   );
 };
 
