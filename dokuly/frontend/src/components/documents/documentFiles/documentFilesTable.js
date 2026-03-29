@@ -6,10 +6,13 @@ import { loadingSpinner } from "../../admin/functions/helperFunctions";
 import FileViewerModal from "../../common/FileViewerModal";
 import DokulyTable from "../../dokuly_components/dokulyTable/dokulyTable";
 import { getFile } from "../../common/filesTable/functions/queries";
+import EditableTableCell from "../../dokuly_components/editableTableCell/editableTableCell";
 import { toast } from "react-toastify";
 import { Row, Col } from "react-bootstrap";
 import DokulyCard from "../../dokuly_components/dokulyCard";
 import CardTitle from "../../dokuly_components/cardTitle";
+import axios from "axios";
+import { tokenConfig } from "../../../configs/auth";
 
 export const DocumentFilesTable = (props) => {
   const [fileList, setFileList] = useState([]);
@@ -49,6 +52,32 @@ export const DocumentFilesTable = (props) => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+  };
+
+  const handleSaveDisplayName = async (fileId, newDisplayName) => {
+    try {
+      const response = await axios.patch(`/api/files/${fileId}/`, {
+        display_name: newDisplayName
+      }, tokenConfig());
+      
+      if (response.status === 200) {
+        // Update local state
+        setFileList(prevFiles => 
+          prevFiles.map(file => {
+            const currentFileId = file.file_id || file.id;
+            return currentFileId === fileId 
+              ? { ...file, title: newDisplayName, display_name: newDisplayName }
+              : file
+          })
+        );
+        
+        // Trigger parent refresh
+        handleRefresh();
+      }
+    } catch (error) {
+      console.error("Error updating display name:", error);
+      throw new Error("Failed to update display name");
+    }
   };
 
   const handleRefresh = () => {
@@ -173,6 +202,21 @@ export const DocumentFilesTable = (props) => {
       key: "title",
       header: "Title",
       sort: true,
+      formatter: (row) => {
+        const isEditable = !revisionLocked && (row.type === "GENERIC" || row.type === "PDF_RAW" || row.type === "PDF");
+        const fileId = row.file_id || row.id;
+        
+        return (
+          <EditableTableCell
+            value={row.title || row.display_name || ""}
+            isEditable={isEditable}
+            onSave={(newValue) => handleSaveDisplayName(fileId, newValue)}
+            placeholder="Display name"
+            allowEmpty={false}
+            successMessage="Display name updated successfully"
+          />
+        );
+      },
     },
     {
       key: "file_name",

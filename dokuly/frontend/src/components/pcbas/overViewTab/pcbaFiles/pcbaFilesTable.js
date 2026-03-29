@@ -9,11 +9,14 @@ import { loadingSpinner } from "../../../admin/functions/helperFunctions";
 import FileViewerModal from "../../../common/FileViewerModal";
 import DokulyTable from "../../../dokuly_components/dokulyTable/dokulyTable";
 import { getFile } from "../../../common/filesTable/functions/queries";
+import EditableTableCell from "../../../dokuly_components/editableTableCell/editableTableCell";
 import { toast } from "react-toastify";
 import { Form, Row, Col } from "react-bootstrap";
 import DokulyFormSection from "../../../dokuly_components/dokulyForm/dokulyFormSection";
 import DokulyCard from "../../../dokuly_components/dokulyCard";
 import CardTitle from "../../../dokuly_components/cardTitle";
+import axios from "axios";
+import { tokenConfig } from "../../../../configs/auth";
 
 export const PcbaFilesTable = (props) => {
   const [fileList, setFileList] = useState([]);
@@ -47,6 +50,31 @@ export const PcbaFilesTable = (props) => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+  };
+
+  const handleSaveDisplayName = async (fileId, newDisplayName) => {
+    try {
+      const response = await axios.patch(`/api/files/${fileId}/`, {
+        display_name: newDisplayName
+      }, tokenConfig());
+      
+      if (response.status === 200) {
+        // Update local state
+        setFileList(prevFiles => 
+          prevFiles.map(file => 
+            file.id === fileId || file.file_id === fileId
+              ? { ...file, display_name: newDisplayName, title: newDisplayName } 
+              : file
+          )
+        );
+        
+        // Trigger parent refresh
+        handleRefresh();
+      }
+    } catch (error) {
+      console.error("Error updating display name:", error);
+      throw new Error("Failed to update display name");
+    }
   };
 
   const showModal = (fileTypeArg) => {
@@ -172,6 +200,21 @@ export const PcbaFilesTable = (props) => {
       key: "title",
       header: "Title",
       sort: true,
+      formatter: (row) => {
+        const isEditable = !revisionLocked;
+        const fileId = row.file_id || row.id;
+        
+        return (
+          <EditableTableCell
+            value={row.title || row.display_name || ""}
+            isEditable={isEditable}
+            onSave={(newValue) => handleSaveDisplayName(fileId, newValue)}
+            placeholder="Display name"
+            allowEmpty={false}
+            successMessage="Display name updated successfully"
+          />
+        );
+      },
     },
     ...(showFileName
       ? [
