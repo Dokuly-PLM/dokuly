@@ -35,9 +35,9 @@ const PartNumberEditor = ({
   setRefreshBom,
   setExpandCol,
   organization,
-  className = "d-flex w-100",
+  className = "w-100",
   innerClassName = "w-100",
-  style = { minWidth: "200px" },
+  style = {},
   autoFocus = false,
   onFocusApplied = () => {},
   allBomItems = [],
@@ -276,13 +276,18 @@ const PartNumberEditor = ({
         ) : (
           // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
           <div
-            className={innerClassName}
+            className={`${innerClassName} bom-editable-field`}
             onClick={() => {
               setIsEditing(true);
               setExpandCol(true);
             }}
           >
-            {displayPartNumber}
+            <span>{displayPartNumber}</span>
+            <img 
+              src="../../static/icons/edit.svg" 
+              alt="edit"
+              className="icon-dark bom-edit-icon"
+            />
           </div>
         )}
       </div>
