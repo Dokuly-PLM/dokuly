@@ -19,13 +19,6 @@ export default function Profile(props) {
 
         <ul className="list-group list-group-horizontal">
           <li className="list-group-item w-25">
-            <b>Position:</b>
-          </li>
-          <li className="list-group-item w-75">{props.profile?.position}</li>
-        </ul>
-
-        <ul className="list-group list-group-horizontal">
-          <li className="list-group-item w-25">
             <b>Phone number:</b>
           </li>
           <li className="list-group-item w-75">
