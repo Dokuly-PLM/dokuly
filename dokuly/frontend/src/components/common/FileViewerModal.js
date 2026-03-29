@@ -7,6 +7,7 @@ import { getFile } from "./filesTable/functions/queries";
 import DokulyModal from "../dokuly_components/dokulyModal";
 import { Modal } from "react-bootstrap";
 import SubmitButton from "../dokuly_components/submitButton";
+import EditButton from "../dokuly_components/editButton";
 import RevisionSelector from "./FileViewerModal/RevisionSelector";
 import FileSelector from "./FileViewerModal/FileSelector";
 import TextDiffViewer from "./FileViewerModal/TextDiffViewer";
@@ -214,12 +215,15 @@ export default function FileViewerModal({
     return (
       <div className="comparison-controls p-3 border-bottom">
         <div className="d-flex align-items-center gap-2 mb-3">
-          <SubmitButton
+          <EditButton
             onClick={handleCompareToggle}
-            type="button"
-          >
-            {isComparing ? "Exit Comparison" : "Compare with Revision"}
-          </SubmitButton>
+            buttonText={isComparing ? "Exit Comparison" : "Compare with Revision"}
+            imgSrc={isComparing ? "../../static/icons/x.svg" : "../../static/icons/git-compare.svg"}
+            imgAlt={isComparing ? "exit" : "compare"}
+            textSize="14px"
+            iconSize="16px"
+            classNameExtension="py-1"
+          />
         </div>
         {isComparing && (
           <div className="comparison-selection">
