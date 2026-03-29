@@ -4,12 +4,9 @@ import { Row } from "react-bootstrap";
 import { editPartInformation } from "../functions/queries";
 import DokulyCard from "../../dokuly_components/dokulyCard";
 import CardTitle from "../../dokuly_components/cardTitle";
+import EditableTableCell from "../../dokuly_components/editableTableCell/editableTableCell";
 
 const SpecificationsTable = (props) => {
-  const [editingValue, setEditingValue] = useState("");
-  const [inputVisible, setInputVisible] = useState(false);
-  const [inputPosition, setInputPosition] = useState({ row: -1, col: -1 });
-
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
   const newKeyInputRef = useRef(null);
@@ -18,15 +15,24 @@ const SpecificationsTable = (props) => {
     props.part.release_state !== "Released" &&
     props.part.release_state !== "released";
 
-  const handleEdit = (rowIndex, colIndex, value) => {
-    if (isEditable) {
-      setInputVisible(true);
-      setInputPosition({
-        row: rowIndex,
-        col: colIndex,
-      });
-      setEditingValue(value);
-    }
+  const handleSaveKey = async (rowIndex, oldKey, newKey) => {
+    const data = {
+      action: "edit_key",
+      old_key: oldKey,
+      new_key: newKey,
+    };
+    await editPartInformation(props.part.id, data);
+    props.setRefresh(true);
+  };
+
+  const handleSaveValue = async (key, newValue) => {
+    const data = {
+      action: "edit",
+      key: key,
+      value: newValue,
+    };
+    await editPartInformation(props.part.id, data);
+    props.setRefresh(true);
   };
 
   const handleDelete = (keyToDelete) => {
@@ -59,8 +65,6 @@ const SpecificationsTable = (props) => {
 
       editPartInformation(props.part.id, data)
         .then((response) => {
-          setInputVisible(false);
-          setEditingValue("");
           setNewKey("");
           setNewValue("");
           props.setRefresh(true);
@@ -74,41 +78,7 @@ const SpecificationsTable = (props) => {
     }
   };
 
-  const handleSave = () => {
-    if (editingValue) {
-      let data;
-      if (inputPosition.col === 0) {
-        // If the column being edited is the key (Attribute)
-        const originalKey = Object.keys(filteredPartInformation)[
-          inputPosition.row
-        ];
-        data = {
-          action: "edit_key",
-          old_key: originalKey,
-          new_key: editingValue,
-        };
-      } else if (inputPosition.col === 1) {
-        // If the column being edited is the value
-        const key = Object.keys(filteredPartInformation)[inputPosition.row];
-        data = {
-          action: "edit",
-          key: key,
-          value: editingValue,
-        };
-      }
 
-      // Call the editPartInformation function with the partId and data
-      editPartInformation(props.part.id, data)
-        .then((response) => {
-          setInputVisible(false);
-          setEditingValue("");
-          props.setRefresh(true);
-        })
-        .catch((error) => {
-          //console.error("Error updating part information:", error);
-        });
-    }
-  };
 
   const handlePaste = async (e, field) => {
     e.preventDefault();
@@ -176,24 +146,7 @@ const SpecificationsTable = (props) => {
   };
   
 
-  const renderEditableCell = (value) => (
-    <input
-      type="text"
-      value={editingValue}
-      onChange={(e) => setEditingValue(e.target.value)}
-      onBlur={handleSave}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.target.blur();
-        }
-      }}
-      style={{
-        maxWidth: "200px",
-        boxSizing: "border-box",
-        width: "100%",
-      }}
-    />
-  );
+
 
   const getFilteredPartInfo = (partInformation) => {
     if (!partInformation) return {};
@@ -268,35 +221,47 @@ const SpecificationsTable = (props) => {
             {Object.entries(filteredPartInformation).map(
               ([key, value], rowIndex) => (
                 <tr key={key}>
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                  <td onClick={() => handleEdit(rowIndex, 0, key)}>
-                    {inputVisible &&
-                    inputPosition.row === rowIndex &&
-                    inputPosition.col === 0
-                      ? renderEditableCell(key)
-                      : key}
+                  <td>
+                    <EditableTableCell
+                      value={key}
+                      isEditable={isEditable}
+                      onSave={(newKey) => handleSaveKey(rowIndex, key, newKey)}
+                      placeholder="Attribute"
+                      allowEmpty={false}
+                      successMessage="Attribute updated"
+                      minWidth="8rem"
+                    />
                   </td>
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                  <td onClick={() => handleEdit(rowIndex, 1, value)}>
-                    {inputVisible &&
-                    inputPosition.row === rowIndex &&
-                    inputPosition.col === 1
-                      ? renderEditableCell(value)
-                      : value}
+                  <td>
+                    <EditableTableCell
+                      value={value}
+                      isEditable={isEditable}
+                      onSave={(newValue) => handleSaveValue(key, newValue)}
+                      placeholder="Value"
+                      allowEmpty={true}
+                      successMessage="Value updated"
+                      minWidth="8rem"
+                    />
                   </td>
                   {isEditable && ( // Conditional delete icon rendering
                     <td>
-                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                      <img
-                        src={".../../static/icons/trash.svg"}
-                        alt="Delete"
-                        style={{
-                          cursor: "pointer",
-                          width: "20px",
-                          height: "20px",
-                        }}
+                      <button
+                        type="button"
+                        className="btn btn-bg-transparent p-2"
                         onClick={() => handleDelete(key)}
-                      />
+                        title="Delete attribute"
+                        style={{ padding: "0.25rem" }}
+                      >
+                        <img
+                          src={".../../static/icons/trash.svg"}
+                          alt="Delete"
+                          className="icon-dark"
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                          }}
+                        />
+                      </button>
                     </td>
                   )}
                 </tr>
@@ -319,6 +284,12 @@ const SpecificationsTable = (props) => {
                         handleAddNew();
                       }
                     }}
+                    style={{
+                      width: "100%",
+                      padding: "4px 8px",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px"
+                    }}
                   />
                 </td>
                 <td>
@@ -333,6 +304,12 @@ const SpecificationsTable = (props) => {
                       if (e.key === "Enter" && newKey.trim() !== "") {
                         handleAddNew();
                       }
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "4px 8px",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px"
                     }}
                   />
                 </td>
