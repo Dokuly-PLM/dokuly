@@ -13,7 +13,7 @@ const DeleteItemButton = ({ row, setRefreshBom }) => {
     removeBomItem(row.id)
       .then(() => {
         toast.success("Item successfully deleted.");
-        setRefreshBom(true);
+        setRefreshBom();
       })
       .catch((error) => {
         toast.error("Error deleting item: " + error.message);

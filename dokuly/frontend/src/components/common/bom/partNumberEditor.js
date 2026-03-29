@@ -114,7 +114,7 @@ const PartNumberEditor = ({
           toast.success("Designator updated");
           setIsEditing(false);
           setExpandCol(false);
-          setRefreshBom(true);
+          setRefreshBom();
         })
         .catch((error) => {
           toast.error(`Error updating designator: ${error.message}`);
@@ -222,7 +222,7 @@ const PartNumberEditor = ({
           toast.success("Item added to BOM");
           setIsEditing(false);
           setExpandCol(false);
-          setRefreshBom(true);
+          setRefreshBom();
           // Reset flag after successful addition
           setIsProcessingDuplicate(false);
         })
@@ -252,11 +252,11 @@ const PartNumberEditor = ({
     removeBomItem(row.id)
       .then(() => {
         toast.info("Duplicate entry cancelled");
-        setRefreshBom(true);
+        setRefreshBom();
       })
       .catch((error) => {
         toast.error(`Error removing item: ${error.message}`);
-        setRefreshBom(true);
+        setRefreshBom();
       });
   };
 

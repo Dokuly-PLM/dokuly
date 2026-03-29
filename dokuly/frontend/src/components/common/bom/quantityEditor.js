@@ -32,6 +32,8 @@ const QuantityEditor = ({
   useEffect(() => {
     function handleClickOutside(event) {
       if (editorRef.current && !editorRef.current.contains(event.target)) {
+        // Reset to original value and exit edit mode
+        setQuantity(originalQuantity);
         setIsEditing(false);
       }
     }
@@ -42,7 +44,7 @@ const QuantityEditor = ({
       // Unbind the event listener on clean up
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [editorRef]);
+  }, [editorRef, originalQuantity]);
 
   useEffect(() => {
     if (autoFocus && !is_locked_bom && !isEditing) {
@@ -67,14 +69,22 @@ const QuantityEditor = ({
   }, [isEditing]);
 
   const handleBlur = () => {
+    // Reset to original value instead of saving
+    setQuantity(originalQuantity);
     setIsEditing(false);
+  };
+
+  const handleSave = () => {
     // Only send request if there's a change in quantity
     if (quantity === originalQuantity) {
+      setIsEditing(false);
       return;
     }
 
     if (quantity <= 0) {
       toast.error("Quantity must be greater than 0");
+      setQuantity(originalQuantity);
+      setIsEditing(false);
       return;
     }
 
@@ -83,11 +93,27 @@ const QuantityEditor = ({
       .then((response) => {
         toast.success("Quantity updated");
         setOriginalQuantity(quantity); // Update originalQuantity after successful update
-        setRefreshBom(true);
+        setRefreshBom();
+        setIsEditing(false);
       })
       .catch((error) => {
         toast.error("Error updating quantity:", error);
+        setQuantity(originalQuantity);
+        setIsEditing(false);
       });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === "Escape") {
+      setQuantity(originalQuantity);
+      setIsEditing(false);
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
+    }
   };
 
   // Determine the unit to display
@@ -120,11 +146,7 @@ const QuantityEditor = ({
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             onBlur={handleBlur}
-            onKeyPress={(e) => {
-              if (e.key === "Enter") {
-                handleBlur();
-              }
-            }}
+            onKeyDown={handleKeyDown}
             style={{ width: "3rem" }} // CSS style for input width
           />
           <span> {unit}</span>

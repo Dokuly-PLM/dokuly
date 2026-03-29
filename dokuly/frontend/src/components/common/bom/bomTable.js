@@ -305,7 +305,7 @@ const BomTable = ({
                 setRefreshBom={setRefreshBom}
                 onItemAdded={(newId) => {
                   setAutoFocusItemId(newId);
-                  setRefreshBom(true);
+                  setRefreshBom();
                 }}
               />
               <ClearBomButton
