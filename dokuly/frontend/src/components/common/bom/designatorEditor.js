@@ -10,6 +10,7 @@ const DesignatorEditor = ({ row, is_locked_bom, setRefreshBom }) => {
     row.designator || "",
   );
   const [isEnterPressed, setIsEnterPressed] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const editorRef = useRef(null);
   const inputRef = useRef(null);
@@ -131,9 +132,39 @@ const DesignatorEditor = ({ row, is_locked_bom, setRefreshBom }) => {
           }}>↵</span>
         </div>
       ) : (
-        <span className="w-100" onClick={() => setIsEditing(true)}>
-          {referenceDesignatorFormatter(displayDesignator)}
-        </span>
+        <div 
+          className="w-100" 
+          style={{ 
+            position: 'relative', 
+            display: 'inline-block', 
+            cursor: 'pointer',
+            padding: '2px 4px',
+            borderRadius: '4px',
+            border: isHovered ? '2px solid #adb5bd' : '2px solid transparent',
+            transition: 'border-color 0.05s ease'
+          }}
+          onClick={() => setIsEditing(true)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <span>{referenceDesignatorFormatter(displayDesignator)}</span>
+          <img 
+            src="../../static/icons/edit.svg" 
+            alt="edit"
+            className="icon-dark"
+            style={{ 
+              position: 'absolute', 
+              right: '-18px', 
+              top: '50%', 
+              transform: 'translateY(-50%)',
+              width: '12px',
+              height: '12px',
+              opacity: isHovered ? 1 : 0,
+              transition: 'opacity 0.2s ease',
+              pointerEvents: 'none'
+            }}
+          />
+        </div>
       )}
     </div>
   );
