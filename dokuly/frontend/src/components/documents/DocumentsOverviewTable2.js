@@ -37,10 +37,10 @@ export default function DocumentsOverviewTable2() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (documents === [] || documents == null || refresh === true) {
+    if (documents.length === 0 || documents == null || refresh === true) {
       refetch_documents();
     }
-    if (customers === [] || customers == null || refresh === true) {
+    if (customers.length === 0 || customers == null || refresh === true) {
       fetchCustomers()
         .then((res) => {
           setCustomers(res.data);
@@ -53,7 +53,7 @@ export default function DocumentsOverviewTable2() {
           }
         });
     }
-    if (projects === [] || projects == null || refresh === true) {
+    if (projects.length === 0 || projects == null || refresh === true) {
       fetchProjects()
         .then((res) => {
           setProjecs(res.data);

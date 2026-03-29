@@ -41,7 +41,7 @@ export default function CustomersTable(props) {
       }
     }
 
-    if (customers === [] || customers == null || props?.refresh === true) {
+    if (customers.length === 0 || customers == null || props?.refresh === true) {
       fetchUnarchivedCustomers()
         .then((res) => {
           setCustomers(res.data);
