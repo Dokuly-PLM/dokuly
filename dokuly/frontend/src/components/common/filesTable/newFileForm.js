@@ -188,16 +188,18 @@ const GenericFileForm = (props) => {
   return (
     <div>
       <button
-        className="btn btn-sm dokuly-btn-transparent mt-1 ml-1"
+        className="btn btn-bg-transparent mt-1 ml-1"
         type="button"
         onClick={() => openModal()}
       >
-        <img
-          className="icon-dark"
-          src="../../static/icons/file-upload.svg"
-          alt="icon"
-        />
-        <span className="btn-text">Upload</span>
+        <div className="row align-items-center">
+          <img
+            className="icon-dark"
+            src="../../static/icons/file-upload.svg"
+            alt="icon"
+          />
+          <span className="btn-text">Upload</span>
+        </div>
       </button>
 
       {/* <!-- Modal --> */}
