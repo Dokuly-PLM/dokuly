@@ -35,9 +35,9 @@ const PartNumberEditor = ({
   setRefreshBom,
   setExpandCol,
   organization,
-  className = "d-flex w-100",
+  className = "w-100",
   innerClassName = "w-100",
-  style = { minWidth: "200px" },
+  style = {},
   autoFocus = false,
   onFocusApplied = () => {},
   allBomItems = [],
@@ -114,7 +114,7 @@ const PartNumberEditor = ({
           toast.success("Designator updated");
           setIsEditing(false);
           setExpandCol(false);
-          setRefreshBom(true);
+          setRefreshBom();
         })
         .catch((error) => {
           toast.error(`Error updating designator: ${error.message}`);
@@ -222,7 +222,7 @@ const PartNumberEditor = ({
           toast.success("Item added to BOM");
           setIsEditing(false);
           setExpandCol(false);
-          setRefreshBom(true);
+          setRefreshBom();
           // Reset flag after successful addition
           setIsProcessingDuplicate(false);
         })
@@ -252,11 +252,11 @@ const PartNumberEditor = ({
     removeBomItem(row.id)
       .then(() => {
         toast.info("Duplicate entry cancelled");
-        setRefreshBom(true);
+        setRefreshBom();
       })
       .catch((error) => {
         toast.error(`Error removing item: ${error.message}`);
-        setRefreshBom(true);
+        setRefreshBom();
       });
   };
 
@@ -276,13 +276,18 @@ const PartNumberEditor = ({
         ) : (
           // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
           <div
-            className={innerClassName}
+            className={`${innerClassName} bom-editable-field`}
             onClick={() => {
               setIsEditing(true);
               setExpandCol(true);
             }}
           >
-            {displayPartNumber}
+            <span>{displayPartNumber}</span>
+            <img 
+              src="../../static/icons/edit.svg" 
+              alt="edit"
+              className="icon-dark bom-edit-icon"
+            />
           </div>
         )}
       </div>

@@ -21,7 +21,7 @@ const DnmEditor = ({ row, is_locked_bom, setRefreshBom }) => {
     editBomItem(row.id, data)
       .then(() => {
         toast.success("Item updated");
-        setRefreshBom(true);
+        setRefreshBom();
       })
       .catch((error) => {
         // Revert UI change if the backend update fails

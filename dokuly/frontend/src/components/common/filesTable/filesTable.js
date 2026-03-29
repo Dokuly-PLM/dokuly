@@ -8,7 +8,10 @@ import DokulyTable from "../../dokuly_components/dokulyTable/dokulyTable";
 import { getFile } from "./functions/queries";
 import DokulyCard from "../../dokuly_components/dokulyCard";
 import CardTitle from "../../dokuly_components/cardTitle";
+import EditableTableCell from "../../dokuly_components/editableTableCell/editableTableCell";
 import { toast } from "react-toastify";
+import axios from "axios";
+import { tokenConfig } from "../../../configs/auth";
 
 export const downloadFileAsBlobForATags = (fileUri, fileName) => {
   if (!fileUri) {
@@ -19,7 +22,7 @@ export const downloadFileAsBlobForATags = (fileUri, fileName) => {
       const url = window.URL.createObjectURL(res);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", fileName); // Use row.file_name as the filename
+      link.setAttribute("download", fileName); // Use actual filename from backend
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link); // Clean up after triggering the download
@@ -74,6 +77,35 @@ export const FilesTable = (props, { release_state }) => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+  };
+
+  //___________________________________________________________________________________________________
+  // Function to handle saving display_name
+  const handleSaveDisplayName = async (fileId, newDisplayName) => {
+    try {
+      const response = await axios.patch(`/api/files/${fileId}/`, {
+        display_name: newDisplayName
+      }, tokenConfig());
+      
+      if (response.status === 200) {
+        // Update local state
+        setFileList(prevFiles => 
+          prevFiles.map(file => 
+            file.id === fileId 
+              ? { ...file, display_name: newDisplayName }
+              : file
+          )
+        );
+        
+        // Trigger parent refresh if available 
+        if (setRefresh) {
+          setRefresh(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating display name:", error);
+      throw new Error("Failed to update display name");
+    }
   };
 
   //___________________________________________________________________________________________________
@@ -149,6 +181,20 @@ export const FilesTable = (props, { release_state }) => {
     {
       key: "display_name",
       header: "Title",
+      formatter: (row) => {
+        const isEditable = props?.release_state !== "Released";
+        
+        return (
+          <EditableTableCell
+            value={row.display_name || ""}
+            isEditable={isEditable}
+            onSave={(newValue) => handleSaveDisplayName(row.id, newValue)}
+            placeholder="Display name"
+            allowEmpty={false}
+            successMessage="Display name updated successfully"
+          />
+        );
+      },
     },
 
     {

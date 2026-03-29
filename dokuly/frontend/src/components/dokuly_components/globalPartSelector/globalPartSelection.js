@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Container, Form, Row, Col } from "react-bootstrap";
-import SearchButton from "../SearchButton";
 import { searchPartsGlobal } from "../funcitons/queries";
 import { toast } from "react-toastify";
 import highlightSearchTerm from "../funcitons/highlightSearchTerm"; // TODO
@@ -114,13 +113,27 @@ const GlobalPartSelection = ({
           </Form.Group>
         </Col>
         <Col md={2}>
-          <SearchButton
+          <button
             type="button"
-            className="dokuly-bg-primary"
+            className="btn btn-bg-transparent"
             onClick={() => handleSearch(query)}
             disabled={!query}
-            disabledTooltip="Search all items."
-          />
+            title={!query ? "Search all items." : "Search"}
+            style={{
+              cursor: !query ? "not-allowed" : "pointer",
+              opacity: !query ? 0.65 : 1
+            }}
+          >
+            <img
+              className="icon-dark"
+              src="../../../static/icons/search.svg"
+              alt="search"
+              style={{
+                width: "20px",
+                height: "20px"
+              }}
+            />
+          </button>
         </Col>
       </Row>
       <Row>

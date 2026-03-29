@@ -15,7 +15,7 @@ export const ClearBomButton = ({ bom_id, is_locked_bom, setRefreshBom }) => {
     clearBom(bom_id).then((res) => {
       if (res.status === 200) {
         if (setRefreshBom !== undefined) {
-          setRefreshBom(true);
+          setRefreshBom();
         }
       }
     });

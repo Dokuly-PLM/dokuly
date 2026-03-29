@@ -207,7 +207,7 @@ const BomImportButton = ({
         toast.dismiss(toastId);
         toast.success("BOM uploaded successfully!");
 
-        setRefreshBom(true); // Refresh the BOM
+        setRefreshBom(); // Refresh the BOM
         handleClose(); // Close the modal
       })
       .catch((error) => {

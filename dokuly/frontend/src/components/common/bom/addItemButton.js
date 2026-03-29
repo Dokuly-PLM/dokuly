@@ -18,7 +18,7 @@ const BomAddItemButton = ({
         if (onItemAdded) {
           onItemAdded(res.id);
         } else {
-          setRefreshBom(true);
+          setRefreshBom();
         }
       },
       (err) => {

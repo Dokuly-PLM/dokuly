@@ -61,7 +61,7 @@ export default function PcbaTable(props) {
       }
     }
 
-    if (pcbas === [] || pcbas == null || refresh === true) {
+    if (pcbas.length === 0 || pcbas == null || refresh === true) {
       fetchNewestPcbaRevisions()
         .then((res) => {
           if (res.status === 200) {
@@ -77,7 +77,7 @@ export default function PcbaTable(props) {
           }
         });
     }
-    if (customers === [] || customers == null || refresh === true) {
+    if (customers.length === 0 || customers == null || refresh === true) {
       fetchCustomers()
         .then((res) => {
           setCustomers(res.data);
@@ -91,7 +91,7 @@ export default function PcbaTable(props) {
           }
         });
     }
-    if (projects === [] || projects == null || refresh === true) {
+    if (projects.length === 0 || projects == null || refresh === true) {
       fetchProjects()
         .then((res) => {
           setProjecs(res.data);

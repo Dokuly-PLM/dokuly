@@ -28,7 +28,7 @@ import math
 import io
 from PIL import Image as PILImage
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from files.fileUtilities import delete_file_with_cleanup, delete_image_with_cleanup
+from files.fileUtilities import delete_file_with_cleanup, delete_image_with_cleanup, get_file_name
 from io import BytesIO
 
 import pcbas.viewUtilities as util
@@ -94,7 +94,7 @@ def get_files(request):
                 "uri": file_util.get_file_uri_formatted("file", "documents", id),
                 "id": file.id,
                 "display_name": file.display_name,
-                "file_name": file.file.name,
+                "file_name": get_file_name(file.file.name) if file.file else "",
                 "active": file.active,
                 "archived": file.archived,
                 "download_count": file.download_count,

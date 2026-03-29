@@ -1107,7 +1107,7 @@ function DokulyTableContents({
                   style={{ width: "20px", height: "20px" }}
                 />
                 <span className="btn-text" style={{ fontSize: textSize }}>
-                  Export
+                  Export Table
                 </span>
               </Dropdown.Toggle>
 
