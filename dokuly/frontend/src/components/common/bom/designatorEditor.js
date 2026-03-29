@@ -119,16 +119,7 @@ const DesignatorEditor = ({ row, is_locked_bom, setRefreshBom }) => {
             onKeyDown={handleKeyDown}            onKeyUp={handleKeyUp}            title="Press Enter to submit, Escape to cancel"
             style={{ width: "6rem" }} // CSS style for input width
           />
-          <span style={{ 
-            marginLeft: '4px', 
-            fontSize: '12px', 
-            color: '#666', 
-            userSelect: 'none',
-            padding: '2px 4px',
-            borderRadius: '3px',
-            backgroundColor: isEnterPressed ? '#e0e0e0' : 'transparent',
-            transition: 'background-color 0.15s ease'
-          }}>↵</span>
+          <span className={`enter-key-indicator ${isEnterPressed ? 'pressed' : ''}`}>↵</span>
         </div>
       ) : (
         <div 

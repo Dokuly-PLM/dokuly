@@ -158,16 +158,7 @@ const QuantityEditor = ({
             onKeyDown={handleKeyDown}            onKeyUp={handleKeyUp}            title="Press Enter to submit, Escape to cancel"
             style={{ width: "3rem" }} // CSS style for input width
           />
-          <span style={{ 
-            marginLeft: '2px', 
-            fontSize: '12px', 
-            color: '#666', 
-            userSelect: 'none',
-            padding: '2px 4px',
-            borderRadius: '3px',
-            backgroundColor: isEnterPressed ? '#e0e0e0' : 'transparent',
-            transition: 'background-color 0.15s ease'
-          }}>↵</span>
+          <span className={`enter-key-indicator ${isEnterPressed ? 'pressed' : ''}`}>↵</span>
           <span style={{ marginLeft: '2px' }}> {unit}</span>
         </div>
       ) : (

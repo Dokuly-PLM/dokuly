@@ -1667,3 +1667,19 @@ polygon._2pZMF { /* This is the gantt project tasks triangle (task groups) */
 .bom-editable-field:hover .bom-edit-icon {
   opacity: 1;
 }
+
+/* Enter key indicator for editable fields */
+.enter-key-indicator {
+  margin-left: 4px;
+  font-size: 12px;
+  color: #666;
+  user-select: none;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.enter-key-indicator.pressed {
+  background-color: #e0e0e0;
+}
