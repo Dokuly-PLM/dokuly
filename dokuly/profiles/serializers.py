@@ -1,16 +1,20 @@
 from rest_framework import serializers
 from profiles.models import Notification, Profile, TableView
+from django.contrib.auth.models import User
 # from .models import Employee
 
 # User Serializer
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    # Include Django User's name fields as the primary source
+    user_first_name = serializers.CharField(source='user.first_name', read_only=True)
+    user_last_name = serializers.CharField(source='user.last_name', read_only=True)
 
     class Meta:
         model = Profile
         fields = (
-            'id', 'first_name', 'last_name',
+            'id', 'first_name', 'last_name', 'user_first_name', 'user_last_name',
             'birth_date', 'personal_phone_number', 'personal_email',
             'work_email', 'bio', 'profile_image', 'address', 'zip_code',
             'position', 'position_percentage', 'contract', 'location',
@@ -29,9 +33,13 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializerSmall(serializers.ModelSerializer):
+    # Include Django User's name fields as the primary source
+    user_first_name = serializers.CharField(source='user.first_name', read_only=True)
+    user_last_name = serializers.CharField(source='user.last_name', read_only=True)
+    
     class Meta:
         model = Profile
-        fields = ('id', 'first_name', 'last_name', 'profile_image')
+        fields = ('id', 'first_name', 'last_name', 'user_first_name', 'user_last_name', 'profile_image')
 
 
 class TableViewSerializer(serializers.ModelSerializer):

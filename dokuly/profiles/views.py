@@ -490,12 +490,17 @@ def update_user_profile(request, userId):
             return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
         profile = Profile.objects.get(user__pk=userId)
+        django_user = profile.user  # Get the associated Django User
 
         if "address" in data:
             profile.address = data['address']
         if "first_name" in data:
+            # Update both Django User and Profile to keep them in sync
+            django_user.first_name = data['first_name']
             profile.first_name = data['first_name']
         if "last_name" in data:
+            # Update both Django User and Profile to keep them in sync
+            django_user.last_name = data['last_name']
             profile.last_name = data['last_name']
         if "personal_number" in data:
             profile.personal_number = data['personal_number']
@@ -528,6 +533,8 @@ def update_user_profile(request, userId):
         if "notify_user_on_became_project_owner" in data:
             profile.notify_user_on_became_project_owner = data['notify_user_on_became_project_owner']
 
+        # Save both models - Django User first, then Profile
+        django_user.save()
         profile.save()
 
         res = Profile.objects.all().exclude(user__pk=user.id)

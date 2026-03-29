@@ -4,8 +4,8 @@ import { updateUserProfile, adminResetUserPassword } from "../../admin/functions
 import SubmitButton from "../../dokuly_components/submitButton";
 
 const EditUserProfile = (props) => {
-  const [first_name, setFirstName] = useState(props.user?.first_name);
-  const [last_name, setLastName] = useState(props.user?.last_name);
+  const [first_name, setFirstName] = useState(props.user?.user_first_name ?? "");
+  const [last_name, setLastName] = useState(props.user?.user_last_name ?? "");
   const [address, setAddress] = useState(props.user?.address);
   const [work_email, setWorkEmail] = useState(props.user?.work_email);
   const [personal_phone_number, setPersonalPhoneNumber] = useState(
@@ -27,8 +27,8 @@ const EditUserProfile = (props) => {
   };
 
   const loadStates = () => {
-    setFirstName(props.user?.first_name);
-    setLastName(props.user?.last_name);
+    setFirstName(props.user?.user_first_name ?? "");
+    setLastName(props.user?.user_last_name ?? "");
     setAddress(props.user?.address);
     setWorkEmail(props.user?.work_email);
     setPersonalPhoneNumber(props.user?.personal_phone_number);
