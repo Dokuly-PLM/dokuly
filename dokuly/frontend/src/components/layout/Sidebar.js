@@ -105,7 +105,7 @@ const Sidebar = (props) => {
                 "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)",
             }}
           />
-          {innerWidth > widthWhereTextDisappears ? "Time report" : ""}
+          <span className="nav-text">Time report</span>
         </Link>
       </li>
     );
@@ -136,7 +136,7 @@ const Sidebar = (props) => {
                 "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
             }}
           />
-          {innerWidth > widthWhereTextDisappears ? "Home" : ""}
+          <span className="nav-text">Home</span>
         </Link>
       </li>
 
@@ -153,7 +153,7 @@ const Sidebar = (props) => {
               width="22px"
               alt="database"
             />
-            {innerWidth > widthWhereTextDisappears ? "Administration" : ""}
+            <span className="nav-text">Administration</span>
           </Link>
         </li>
       )}
@@ -183,7 +183,7 @@ const Sidebar = (props) => {
                     "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)",
                 }}
               />
-              {innerWidth > widthWhereTextDisappears ? "Timesheet" : ""}
+              <span className="nav-text">Timesheet</span>
             </Link>
           </li>
         )}
@@ -210,7 +210,7 @@ const Sidebar = (props) => {
                   "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
               }}
             />
-            {innerWidth > widthWhereTextDisappears ? "Customers" : ""}
+            <span className="nav-text">Customers</span>
           </Link>
         </li>
       )}
@@ -229,8 +229,8 @@ const Sidebar = (props) => {
                 filter:
                   "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
               }}
-            />{" "}
-            {innerWidth > widthWhereTextDisappears ? "Projects" : ""}
+            />
+            <span className="nav-text">Projects</span>
           </Link>
         </li>
       )}
@@ -255,7 +255,7 @@ const Sidebar = (props) => {
                     "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
                 }}
               />
-              {innerWidth > widthWhereTextDisappears ? "Requirements" : ""}
+              <span className="nav-text">Requirements</span>
             </Link>
           </li>
         )}
@@ -280,7 +280,7 @@ const Sidebar = (props) => {
                     "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
                 }}
               />
-              {innerWidth > widthWhereTextDisappears ? "ECO" : ""}
+              <span className="nav-text">ECO</span>
             </Link>
           </li>
         )}
@@ -305,7 +305,7 @@ const Sidebar = (props) => {
                     "invert(27%) sepia(23%) saturate(4376%) hue-rotate(312deg) brightness(95%) contrast(94%)",
                 }}
               />
-              {innerWidth > widthWhereTextDisappears ? "Documents" : ""}
+              <span className="nav-text">Documents</span>
             </Link>
           </li>
         )}
@@ -326,7 +326,7 @@ const Sidebar = (props) => {
                   "invert(27%) sepia(23%) saturate(4376%) hue-rotate(312deg) brightness(95%) contrast(94%)",
               }}
             />
-            {innerWidth > widthWhereTextDisappears ? "Parts" : ""}
+            <span className="nav-text">Parts</span>
           </Link>
         </li>
       )}
@@ -349,7 +349,7 @@ const Sidebar = (props) => {
                     "invert(27%) sepia(23%) saturate(4376%) hue-rotate(312deg) brightness(95%) contrast(94%)",
                 }}
               />
-              {innerWidth > widthWhereTextDisappears ? "Assemblies" : ""}
+              <span className="nav-text">Assemblies</span>
             </Link>
           </li>
         )}
@@ -370,7 +370,7 @@ const Sidebar = (props) => {
                   "invert(27%) sepia(23%) saturate(4376%) hue-rotate(312deg) brightness(95%) contrast(94%)",
               }}
             />
-            {innerWidth > widthWhereTextDisappears ? "PCBA" : ""}
+            <span className="nav-text">PCBA</span>
           </Link>
         </li>
       )}
@@ -398,7 +398,7 @@ const Sidebar = (props) => {
                     "invert(25%) sepia(48%) saturate(4078%) hue-rotate(289deg) brightness(91%) contrast(93%)",
                 }}
               />
-              {innerWidth > widthWhereTextDisappears ? "Suppliers" : ""}
+              <span className="nav-text">Suppliers</span>
             </Link>
           </li>
         )}
@@ -422,7 +422,7 @@ const Sidebar = (props) => {
                     "invert(25%) sepia(48%) saturate(4078%) hue-rotate(289deg) brightness(91%) contrast(93%)",
                 }}
               />
-              {innerWidth > widthWhereTextDisappears ? "Procurement" : ""}
+              <span className="nav-text">Procurement</span>
             </Link>
           </li>
         )}
@@ -444,7 +444,7 @@ const Sidebar = (props) => {
                     "invert(25%) sepia(48%) saturate(4078%) hue-rotate(289deg) brightness(91%) contrast(93%)",
                 }}
               />
-              {innerWidth > widthWhereTextDisappears ? "Production" : ""}
+              <span className="nav-text">Production</span>
             </Link>
           </li>
         )}
@@ -457,7 +457,6 @@ const Sidebar = (props) => {
       data-mdb-toggle="animation"
       data-mdb-animation-reset="true"
       data-mdb-animation="fade-in-left"
-      style={{ maxWidth: "166px" }}
     >
       {isAuthenticated ? (
         <div className="position-sticky pt-3 sidebar-sticky">{navLinks}</div>
