@@ -13,7 +13,6 @@ export default function PartDashboard() {
   return (
     <Fragment>
       <div className="row justify-content-center">
-        {/* <h1 style={{ marginTop: "1rem" }}>Parts</h1> */}
       </div>
       <div className="row justify-content-center">
         <PartsTable refresh={refresh} setRefresh={setRefresh} />
