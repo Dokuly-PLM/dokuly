@@ -5,6 +5,7 @@ import { editPartInformation } from "../functions/queries";
 import DokulyCard from "../../dokuly_components/dokulyCard";
 import CardTitle from "../../dokuly_components/cardTitle";
 import EditableTableCell from "../../dokuly_components/editableTableCell/editableTableCell";
+import DeleteButton from "../../dokuly_components/deleteButton";
 
 const SpecificationsTable = (props) => {
   const [newKey, setNewKey] = useState("");
@@ -196,6 +197,31 @@ const SpecificationsTable = (props) => {
     props.part.part_information
   );
 
+  const handleClearAll = () => {
+    const entryCount = Object.keys(filteredPartInformation).length;
+    
+    if (entryCount === 0) {
+      return; // No entries to clear
+    }
+
+    if (!confirm(`Are you sure you want to delete all ${entryCount} specifications? This action cannot be undone.`)) {
+      return; // Exit early if the user cancels the confirmation
+    }
+
+    // Clear all specifications with a single API call
+    const data = {
+      action: "clear_all",
+    };
+
+    editPartInformation(props.part.id, data)
+      .then(() => {
+        props.setRefresh(true);
+      })
+      .catch((error) => {
+        console.error("Error clearing all specifications:", error);
+      });
+  };
+
   return (
     <DokulyCard
         isCollapsed={false}
@@ -208,6 +234,18 @@ const SpecificationsTable = (props) => {
               The table supports pasting from web tables. Simply copy the contents from web tables and paste into the key field.`
             }
           />
+        
+        <Row className="mb-2">
+          {isEditable && Object.keys(filteredPartInformation).length > 0 && (
+            <DeleteButton
+              onDelete={handleClearAll}
+              buttonText="Clear All"
+              className="ml-4 mb-2"
+              fontSize="16px"
+              iconWidth="16px"
+            />
+          )}
+        </Row>
       <Row className="mt-1 ml-1 mr-1 align-items-center">
         <table className="table">
           <thead>

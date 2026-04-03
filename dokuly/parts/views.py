@@ -1840,6 +1840,9 @@ def edit_part_information(request, pk, **kwargs):
             if part.part_information is None:
                 part.part_information = {}
             part.part_information.update(entries)
+        elif action == "clear_all":
+            # Clear all part information
+            part.part_information = {}
         else:
             key_to_modify = request.data.get("key")
             value = request.data.get("value")
