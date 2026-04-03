@@ -134,11 +134,16 @@ const DraggableHeader = ({
           {sortedColumn === column && (
             <span style={{ marginLeft: "5px" }}>
               {sortOrder === "asc" ? (
-                <img src="../../../static/icons/arrow-up.svg" alt="Arrow Up" />
+                <img 
+                  src="../../../static/icons/arrow-up.svg" 
+                  alt="Arrow Up" 
+                  style={{ height: textSize || "16px", width: "auto" }}
+                />
               ) : (
                 <img
                   src="../../../static/icons/arrow-down.svg"
                   alt="Arrow Down"
+                  style={{ height: textSize || "16px", width: "auto" }}
                 />
               )}
             </span>
