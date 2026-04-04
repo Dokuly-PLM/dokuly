@@ -30,6 +30,11 @@ class File(models.Model):
         Project, on_delete=models.SET_NULL, blank=True, null=True
     )
 
+    # GLB (binary glTF) conversion of STEP/STP CAD files, used by the 3D viewer
+    step_glb_conversion = models.FileField(
+        storage=CustomAzureStorage, upload_to="converted/", blank=True, null=True
+    )
+
     # TODO consider moving to a more correct is_archived field.
     archived = models.IntegerField(default=0, blank=True)
     archived_date = models.DateField(null=True, blank=True)

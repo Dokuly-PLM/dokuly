@@ -6,11 +6,13 @@ import { Col, Row, Button, Modal } from "react-bootstrap";
 import { dataURLtoFile } from "../../functions/dataURLtoFile";
 import { uploadImage } from "../../../admin/functions/queries";
 import { get_files } from "../../../files/functions/queries";
+import { openStepViewer } from "../../../common/StepViewerPage";
 
 const PartModelViewer = (props) => {
   const [modelExists, setModelExists] = useState(false);
   const [modelIsLoading, setModelIsLoading] = useState(true);
   const [stepFileUrl, setStepFileUrl] = useState("");
+  const [stepFileId, setStepFileId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const stepViewerRef = useRef(null);
 
@@ -31,10 +33,8 @@ const PartModelViewer = (props) => {
               file.archived === 0,
           );
           if (stepFile) {
-            // Check if stepFile is found
-            setStepFileUrl(
-              `${stepFile.uri}`, // Corrected the property name to 'uri'
-            );
+            setStepFileUrl(`${stepFile.uri}`);
+            setStepFileId(stepFile.file_id || stepFile.id);
             setModelExists(true);
             setModelIsLoading(false);
           } else {
@@ -75,7 +75,10 @@ const PartModelViewer = (props) => {
                     overflow: "auto",
                   }}
                 >
-                  <Button variant="dokuly-bg-transparent" onClick={handleShow}>
+                  <Button
+                    variant="dokuly-bg-transparent"
+                    onClick={() => stepFileId ? openStepViewer(stepFileId) : handleShow()}
+                  >
                     <img
                       src="../../../static/icons/zoom-in.svg"
                       alt="zoom in"

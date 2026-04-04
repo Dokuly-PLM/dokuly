@@ -14,6 +14,7 @@ import TextDiffViewer from "./FileViewerModal/TextDiffViewer";
 import PdfComparisonViewer from "./FileViewerModal/PdfComparisonViewer";
 import ImageComparisonViewer from "./FileViewerModal/ImageComparisonViewer";
 import GenericComparisonViewer from "./FileViewerModal/GenericComparisonViewer";
+import { openStepViewer } from "./StepViewerPage";
 
 // Normalize entity type to plural lowercase API endpoint format
 const normalizeEntityTypeForAPI = (type) => {
@@ -268,7 +269,14 @@ export default function FileViewerModal({
   if (error) {
     content = <p>{error}</p>;
   } else if (extension === "step" || extension === "stp") {
-    // Handle STEP files with the StepViewer component
+    // STEP files open in the professional 3D viewer in a new tab
+    if (isOpen && currentFileId) {
+      // Open viewer in new tab and close the modal
+      openStepViewer(currentFileId);
+      handleClose();
+      return null;
+    }
+    // Fallback: inline viewer if no file ID available
     return (
       <DokulyModal
         show={isOpen}

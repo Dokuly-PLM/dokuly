@@ -3,6 +3,7 @@ from rest_framework import routers
 from .api import FileViewSet
 from . import views
 from . import onlyoffice_views
+from . import step_views
 
 router = routers.DefaultRouter()
 router.register("api/files", FileViewSet, "files")
@@ -56,6 +57,16 @@ urlpatterns = [
          onlyoffice_views.convert_to_pdf),
     path("api/files/onlyoffice/delete-pdf/<int:document_id>/<str:pdf_type>/",
          onlyoffice_views.delete_document_pdf),
+
+    # STEP 3D Viewer
+    path("api/files/step/convert/<int:file_id>/",
+         step_views.convert_step),
+    path("api/files/step/viewer-config/<int:file_id>/",
+         step_views.get_step_viewer_config),
+    path("api/files/step/glb/<int:file_id>/",
+         step_views.download_glb),
+    path("api/files/step/raw/<int:file_id>/",
+         step_views.download_step_raw),
 
     # DEPRECATED
     path(

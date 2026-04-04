@@ -16,8 +16,10 @@ import CardTitle from "../../dokuly_components/cardTitle";
 import axios from "axios";
 import { tokenConfig } from "../../../configs/auth";
 import { openOnlyOfficeEditor } from "../../common/OnlyOfficeEditor";
+import { openStepViewer } from "../../common/StepViewerPage";
 
 const OFFICE_EXTENSIONS = ["docx", "xlsx", "pptx", "doc", "xls", "ppt", "odt", "ods", "odp"];
+const STEP_EXTENSIONS = ["step", "stp"];
 
 export const DocumentFilesTable = (props) => {
   const [fileList, setFileList] = useState([]);
@@ -111,10 +113,17 @@ export const DocumentFilesTable = (props) => {
       return;
     }
 
-    // For Office files, open in a new tab with OnlyOffice editor
     const ext = (row.file_name || "").split(".").pop().toLowerCase();
+
+    // For Office files, open in a new tab with OnlyOffice editor
     if (OFFICE_EXTENSIONS.includes(ext) && (row.file_id || row.id)) {
       openOnlyOfficeEditor(row.file_id || row.id);
+      return;
+    }
+
+    // For STEP/STP files, open in the professional 3D viewer
+    if (STEP_EXTENSIONS.includes(ext) && (row.file_id || row.id)) {
+      openStepViewer(row.file_id || row.id);
       return;
     }
 
@@ -267,6 +276,17 @@ export const DocumentFilesTable = (props) => {
             title="Open in document editor"
           >
             Edit
+          </button>
+        )}
+        {STEP_EXTENSIONS.includes(ext) && row.type === "GENERIC" && (
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-primary"
+            style={{ fontSize: "0.8rem", fontWeight: 600, padding: "3px 14px", whiteSpace: "nowrap" }}
+            onClick={() => openStepViewer(fileId)}
+            title="Open in 3D viewer"
+          >
+            View 3D
           </button>
         )}
         {row.type === "SHARED_DOC_LINK" && (
