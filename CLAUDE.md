@@ -42,7 +42,7 @@ npm run format             # Prettier format
 
 ### Backend (via Docker)
 
-There is no local Python environment. All Django commands run inside the Docker container:
+There is no local Python environment. All Django commands run inside the Docker container. **Assume the Docker stack is already running** (see “Docker (full stack)” below). If `exec` fails because the `web` service is not up, **do not** switch to `docker compose run` workarounds—tell the developer to start the stack, then retry.
 
 ```bash
 # Mac (always use -f docker-compose-dev-mac.yml)
@@ -51,6 +51,8 @@ docker compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokul
 docker compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test
 docker compose -f docker-compose-dev-mac.yml exec web python /dokuly_image/dokuly/manage.py test parts
 ```
+
+**Django migrations**: Do not create or edit files under `*/migrations/` by hand. After model changes, always run `makemigrations` then `migrate` via Django in Docker (commands in the block above).
 
 The web container working directory is `/dokuly_image`, so manage.py is at `/dokuly_image/dokuly/manage.py`.
 

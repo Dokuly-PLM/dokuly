@@ -5,6 +5,7 @@ This module handles all interactions with Odoo v19 via XML-RPC API.
 Supports product creation/update, image upload, and BOM management.
 """
 
+import html
 import logging
 import xmlrpc.client
 import base64
@@ -142,6 +143,23 @@ def get_image_as_base64(image_obj):
         return None
 
 
+def _format_odoo_internal_description(description, revision_notes):
+    """
+    Build HTML for Odoo product.template description (fields.Html in Odoo v19).
+
+    Odoo sanitizes Html field values on write; common tags like <p>, <br>, <strong>
+    from external RPC are often stripped or normalized so the stored text collapses
+    to a single line. Wrapping escaped plain text in <pre> preserves line breaks and
+    survives typical sanitizer allowlists (lxml/html allow pre).
+    """
+    desc = (description or "").strip()
+    rev = (revision_notes or "").strip()
+    if not desc and not rev:
+        return ""
+    body = f"Description:\n{desc}\n\nRevision Notes:\n{rev}"
+    return f"<pre>{html.escape(body, quote=False)}</pre>"
+
+
 def create_or_update_odoo_product(models, uid, database, api_key, product_data, template_data=None, integration_settings=None):
     """
     Create or update a product in Odoo by internal reference (default_code).
@@ -175,54 +193,50 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data, 
         )
 
         if product_ids:
-            # Update existing product
+            # Update existing product: write template-owned fields on product.template only
+            # (not via product.product — Odoo v19 delegates template fields through inheritance).
             product_id = product_ids[0]
             logger.info(f"Found existing Odoo product with ID {product_id}, updating...")
 
-            # Update product-level fields
-            models.execute_kw(
-                database, uid, api_key,
-                'product.product', 'write',
-                [[product_id], product_data]
-            )
-
-            # Get template ID and update only name and image for existing products
-            # (Skip other template-level fields like type, sale_ok, purchase_ok, etc.)
             product_info = models.execute_kw(
                 database, uid, api_key,
                 'product.product', 'read',
                 [[product_id], ['product_tmpl_id']]
             )
 
-            if product_info and 'product_tmpl_id' in product_info[0]:
-                template_id = product_info[0]['product_tmpl_id'][0]
-                # Update only configured fields for existing products
-                update_fields = (integration_settings.odoo_update_fields_existing if integration_settings else None) or ['name', 'description', 'image']
-                update_template_data = {}
+            if not product_info or 'product_tmpl_id' not in product_info[0]:
+                raise OdooAPIError(f"Could not read product template for product.product id {product_id}")
 
-                if 'name' in update_fields and 'name' in product_data:
-                    update_template_data['name'] = product_data['name']
+            template_id = product_info[0]['product_tmpl_id'][0]
+            update_fields = (integration_settings.odoo_update_fields_existing if integration_settings else None) or ['name', 'description', 'image']
+            update_template_data = {}
 
-                if 'description' in update_fields and 'description' in product_data:
-                    update_template_data['description'] = product_data['description']
+            if 'default_code' in product_data:
+                update_template_data['default_code'] = product_data['default_code']
 
-                if 'image' in update_fields and template_data and 'image_1920' in template_data:
-                    update_template_data['image_1920'] = template_data['image_1920']
+            if 'name' in update_fields and 'name' in product_data:
+                update_template_data['name'] = product_data['name']
 
-                if template_data and 'flyt_manufacturer' in template_data:
-                    update_template_data['flyt_manufacturer'] = template_data['flyt_manufacturer']
-                if template_data and 'flyt_manufacturer_pn' in template_data:
-                    update_template_data['flyt_manufacturer_pn'] = template_data['flyt_manufacturer_pn']
+            if 'description' in update_fields and 'description' in product_data:
+                update_template_data['description'] = product_data['description']
 
-                if update_template_data:
-                    models.execute_kw(
-                        database, uid, api_key,
-                        'product.template', 'write',
-                        [[template_id], update_template_data]
-                    )
-                    logger.info(f"Updated product template {template_id} with fields: {list(update_template_data.keys())}")
-                else:
-                    logger.info(f"No template-level fields to update for existing product {product_id} (configured fields: {update_fields})")
+            if 'image' in update_fields and template_data and 'image_1920' in template_data:
+                update_template_data['image_1920'] = template_data['image_1920']
+
+            if template_data and 'flyt_manufacturer' in template_data:
+                update_template_data['flyt_manufacturer'] = template_data['flyt_manufacturer']
+            if template_data and 'flyt_manufacturer_pn' in template_data:
+                update_template_data['flyt_manufacturer_pn'] = template_data['flyt_manufacturer_pn']
+
+            if update_template_data:
+                models.execute_kw(
+                    database, uid, api_key,
+                    'product.template', 'write',
+                    [[template_id], update_template_data]
+                )
+                logger.info(f"Updated product template {template_id} with fields: {list(update_template_data.keys())}")
+            else:
+                logger.info(f"No template-level fields to update for existing product {product_id} (configured fields: {update_fields})")
 
             logger.info(f"Successfully updated Odoo product {product_id}")
             return product_id
@@ -720,11 +734,14 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
 
         logger.info(f"Pushing product {item.full_part_number} to Odoo with type: {product_type} (mapped from: {raw_product_type})")
 
-        # Prepare product data (product-level fields only)
+        # Prepare product data (values applied on product.template on create/update)
         product_data = {
             'name': item.display_name or f"{item.full_part_number}",
             'default_code': item.full_part_number,  # Internal reference
-            'description': item.description or '',
+            'description': _format_odoo_internal_description(
+                item.description,
+                getattr(item, 'revision_notes', None),
+            ),
         }
 
         # Prepare template data (template-level fields) using configuration

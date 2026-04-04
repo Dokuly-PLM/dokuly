@@ -50,11 +50,12 @@ const OdooSettings = ({
 }) => {
   // Automatic field mappings - read-only display
   const automaticMappings = [
-    { dokuly: "Full Part Number", description: "Used as Odoo Internal Reference (default_code) for matching and updates" },
-    { dokuly: "Display Name", description: "Automatically populated in the Product Name field" },
-    { dokuly: "Description", description: "Automatically populated in the Product Description field" },
+    { dokuly: "Full Part Number", description: "Variant Internal Reference (default_code) for lookup; also written on product.template so it stays in sync with the variant in Odoo v19" },
+    { dokuly: "Display Name", description: "Written to product.template name in Odoo v19" },
+    { dokuly: "Description", description: "Merged with Revision Notes into product.template description (internal/description field) in Odoo v19" },
+    { dokuly: "Revision Notes", description: "Merged with Description into the same product.template description field in Odoo v19" },
     { dokuly: "Unit (e.g., pcs, kg, m)", description: "Automatically mapped to the corresponding Odoo Unit of Measure" },
-    { dokuly: "Thumbnail Image", description: "Automatically uploaded as the product image in Odoo" },
+    { dokuly: "Thumbnail Image", description: "Written to product.template image in Odoo v19" },
     { dokuly: "Manufacturer", description: "Mapped to Odoo custom field flyt_manufacturer (Parts only)" },
     { dokuly: "Manufacturer PN", description: "Mapped to Odoo custom field flyt_manufacturer_pn (Parts only)" },
     { dokuly: "Release State", description: "Only released items can be pushed to Odoo (manual or automatic)" },
