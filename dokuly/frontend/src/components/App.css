@@ -564,32 +564,34 @@ kbd>kbd {
 
 .thumbnail-placeholder {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100px;
-  height: 100px;
-  border: 1px dashed #ccc;
+  gap: 0.375rem;
+  width: 100%;
+  height: 80px;
+  border: 1px solid #E5E5E5;
   border-radius: 4px;
   margin: 0 auto;
-  color: #999;
-  font-size: 14px;
+  color: #9CA3AF;
+  font-size: 0.8125rem;
   text-align: center;
   cursor: pointer;
   background-color: transparent;
-  transition: all 0.05s ease-in-out;
+  transition: background-color 0.15s ease;
 }
 
 .thumbnail-placeholder:hover {
-  background-color: #f5f5f5;
-  border-color: #999;
-  color: #999;
+  background-color: #F0F0F0;
+  border-color: #D1D5DB;
+  color: #6B7280;
 }
 
 .thumbnail-placeholder:active {
-  background-color: #e8e8e8;
-  border-color: #999;
-  color: #999;
-  transform: scale(0.97);
+  background-color: #E8E8E8;
+  border-color: #D1D5DB;
+  color: #6B7280;
+  transform: scale(0.98);
 }
 
 .modal {
@@ -1015,20 +1017,48 @@ input[type=number] {
 
 .title-container {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.3;
   height: auto;
-  max-height: 2.6em;
+  max-height: 3.9em;
   white-space: normal;
   padding-right: 50px;
   width: 100%;
   text-align: left;
-  cursor: copy;
+  cursor: pointer;
   font-weight: 700;
   font-size: 1.5rem;
+}
+
+.title-container--copyable {
+  position: relative;
+  border-radius: 4px;
+  padding: 0.125rem 0.375rem;
+  padding-right: 2rem;
+  margin-left: -0.375rem;
+  transition: background-color 0.15s ease;
+}
+
+.title-container--copyable:hover {
+  background-color: #F0F0F0;
+}
+
+.title-container__copy-icon {
+  position: absolute;
+  right: 0.375rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.title-container--copyable:hover .title-container__copy-icon {
+  opacity: 0.4;
 }
 
 .max-width-5rem {

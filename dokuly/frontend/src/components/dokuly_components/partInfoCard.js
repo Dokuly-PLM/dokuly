@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import moment from "moment";
-import { Row, Col } from "react-bootstrap";
 import { releaseStateFormatter } from "./formatters/releaseStateFormatter";
 import { useNavigate } from "react-router";
 import { attribute_icons } from "./attributeIcons";
@@ -16,39 +15,51 @@ import ReactCountryFlag from "react-country-flag";
 import DokulyTags from "./dokulyTags/dokulyTags";
 import useItemEcos from "../common/hooks/useItemEcos";
 import { EcoPillList } from "./ecoPill/ecoPill";
+import { copyToClipboard } from "./funcitons/copyToClipboard";
 
-const renderAdditionalFields = (additionalFields) => {
-  return Object.entries(additionalFields)
-    .filter(
-      ([key, value]) => value !== "" && value !== null && value !== undefined
-    )
-    .map(([key, value]) => (
-      <Row key={key}>
-        <Col className="col-lg-6 col-xl-6">
-          <b>{key}:</b>
-        </Col>
-        <Col>{value.toString()}</Col>
-      </Row>
-    ));
+import "./partInfoCard.css";
+
+/**
+ * A single field row: label + value.
+ * If copyValue is provided, clicking the value copies it to clipboard.
+ */
+const InfoField = ({ label, children, copyValue }) => {
+  if (!children) return null;
+  return (
+    <div className="info-card__field">
+      <span className="info-card__label">{label}</span>
+      <span
+        className={`info-card__value${copyValue ? " info-card__value--copyable" : ""}`}
+        onClick={copyValue ? () => copyToClipboard(copyValue) : undefined}
+        title={copyValue ? "Click to copy" : undefined}
+      >
+        {children}
+        {copyValue && (
+          <img
+            className="info-card__copy-icon"
+            src="../../static/icons/copy.svg"
+            alt="Copy"
+          />
+        )}
+      </span>
+    </div>
+  );
 };
 
 /**
+ * Section divider.
+ */
+const SectionDivider = () => <hr className="info-card__divider" />;
+
+/**
+ * Section label.
+ */
+const SectionLabel = ({ text }) => (
+  <div className="info-card__section-label">{text}</div>
+);
+
+/**
  * Component for displaying common part information (pcba/asm/document).
- *
- * @param {Object} props - The properties object.
- * @param {Object} props.item - The item object containing information about the part.
- * @param {string} [props.app=""] - The name of the app related to the part.
- * @param {string} [props.thumbnail_url=""] - URL for the thumbnail image of the part.
- * @param {string} [props.git_link=""] - URL to the Git repository associated with the part.
- * @param {string} [props.datasheet_url=""] - URL to the datasheet of the part.
- * @param {string} [props.description=""] - Description of the part.
- * @param {string} [props.last_updated=""] - The last updated date of the part information.
- * @param {Object} [props.additional_fields={}] - Additional fields related to the part.
- * @param {Object} [props.attributes={}] - Attributes of the part.
- * @param {Function} [props.setRefresh] - Function to trigger a refresh of the part information.
- * @param {Function} [props.updateItemField=() => {}] - Function to update a specific field of the item.
- *
- * @returns {JSX.Element} The JSX element for the part information card.
  */
 const PartInformationCard = ({
   item,
@@ -70,7 +81,6 @@ const PartInformationCard = ({
   const [project, setProject] = useState(null);
   const [protectionLevel, setProtectionLevel] = useState(null);
 
-  // Fetch ECOs linked to this item
   const { ecos: itemEcos } = useItemEcos(app, item?.id);
 
   useEffect(() => {
@@ -109,7 +119,6 @@ const PartInformationCard = ({
   }, [item?.project]);
 
   useEffect(() => {
-    // Fetch protection level for documents
     if (app === "documents" && item?.protection_level !== null && item?.protection_level !== undefined) {
       fetchProtectionLevels().then((res) => {
         if (res.status === 200) {
@@ -123,217 +132,209 @@ const PartInformationCard = ({
   }, [app, item?.protection_level]);
 
   const changeField = (key, value) => {
-    if (item?.id == null) {
-      return;
-    }
-    if (key == null) {
-      return;
-    }
-
+    if (item?.id == null) return;
+    if (key == null) return;
     updateItemField(item.id, key, value);
-    // Wait for the update to be done before refreshing
     setTimeout(() => {
       setRefresh(true);
     }, 300);
   };
 
   const handleTagsChange = (newTags) => {
-    // New array with tag ids
     changeField("tags", newTags);
   };
+
+  const hasDetails =
+    Object.values(additional_fields).some((v) => v !== "" && v != null) ||
+    item?.country_of_origin ||
+    (datasheet_url && datasheet_url !== "") ||
+    (git_link && git_link !== "") ||
+    (app === "documents" && protectionLevel);
+
+  const hasPeople = created_by || quality_assurance;
 
   return (
     <DokulyCard>
       <CardTitle titleText={"Information"} />
-      <Row style={{ paddingLeft: "15px" }}>
-        {thumbnail_url && thumbnail_url !== "" ? (
-          <div className="col-auto">
+
+      {/* Thumbnail area — hidden for apps that don't support thumbnails */}
+      {(thumbnail_url || app === "parts" || app === "pcbas" || app === "assemblies") && (
+        <div className="info-card__thumbnail-area">
+          {thumbnail_url && thumbnail_url !== "" ? (
             <DokulyImage
-              className="rounded"
-              style={{ maxWidth: "100px", width: "100%" }}
-              alt="Item"
               src={thumbnail_url}
+              alt="Item thumbnail"
             />
-          </div>
-        ) : (
-          <ThumbnailDisplay
-            item_id={item.id}
-            app={app}
-            releaseState={item.release_state}
-            setRefresh={setRefresh}
-            thumbnailId={item?.thumbnail}
-          />
+          ) : (
+            <ThumbnailDisplay
+              item_id={item.id}
+              app={app}
+              releaseState={item.release_state}
+              setRefresh={setRefresh}
+              thumbnailId={item?.thumbnail}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Identity section */}
+      <div className="info-card__section">
+        <InfoField label="State">
+          {releaseStateFormatter(item)}
+        </InfoField>
+
+        {item?.formatted_revision && (
+          <InfoField label="Revision" copyValue={item.formatted_revision}>
+            {item.formatted_revision}
+          </InfoField>
         )}
-        <Col className="col-md-6 col-lg-10 col-xl-10">
-          {project !== null && project !== undefined && project?.id > 0 && (
-            <Row
-              onClick={() => navigate(`/projects/${project?.id}`)}
-              style={{ cursor: "pointer" }}
+
+        {project && project.id > 0 && (
+          <InfoField label="Project">
+            <span
+              className="info-card__value--link"
+              onClick={() => navigate(`/projects/${project.id}`)}
             >
-              <Col className="col-lg-6 col-xl-6">
-                <b>Project:</b>
-              </Col>
-              <Col>{project?.title}</Col>
-            </Row>
-          )}
+              {project.title}
+            </span>
+          </InfoField>
+        )}
 
-          <Row>
-            <Col className="col-lg-6 col-xl-6">
-              <b>State:</b>
-            </Col>
-            <Col>{releaseStateFormatter(item)}</Col>
-          </Row>
+        {description && description !== "" && description !== "No description" && (
+          <InfoField label="Description" copyValue={description}>
+            {description}
+          </InfoField>
+        )}
+      </div>
 
-          {created_by !== null && created_by !== undefined && (
-            <Row>
-              <Col className="col-lg-6 col-xl-6">
-                <b>Created by:</b>
-              </Col>
-              <Col>{`${created_by?.first_name} ${created_by?.last_name}`}</Col>
-            </Row>
-          )}
+      {/* Details section */}
+      {hasDetails && (
+        <>
+          <SectionDivider />
+          <div className="info-card__section">
+            <SectionLabel text="Details" />
 
-          {quality_assurance !== null && quality_assurance !== undefined && (
-            <Row>
-              <Col className="col-lg-6 col-xl-6">
-                <b>Quality assurance:</b>
-              </Col>
-              <Col>{`${quality_assurance?.first_name} ${quality_assurance?.last_name}`}</Col>
-            </Row>
-          )}
+            {Object.entries(additional_fields)
+              .filter(([, value]) => value !== "" && value != null)
+              .map(([key, value]) => (
+                <InfoField key={key} label={key} copyValue={value.toString()}>
+                  {value.toString()}
+                </InfoField>
+              ))}
 
-          {description !== "" && description != null && (
-            <Row>
-              <Col className="col-lg-6 col-xl-6">
-                <b>Description:</b>
-              </Col>
-              <Col>{description}</Col>
-            </Row>
-          )}
+            {item?.country_of_origin && (
+              <InfoField label="Country of Origin">
+                <span className="d-inline-flex align-items-center gap-1">
+                  <ReactCountryFlag
+                    countryCode={item.country_of_origin}
+                    svg
+                    style={{ marginRight: "0.375rem" }}
+                  />
+                  {getName(item.country_of_origin) ?? item.country_of_origin}
+                </span>
+              </InfoField>
+            )}
 
-          {app === "documents" && protectionLevel !== null && (
-            <Row>
-              <Col className="col-lg-6 col-xl-6">
-                <b>Protection Level:</b>
-              </Col>
-              <Col>
+            {app === "documents" && protectionLevel && (
+              <InfoField label="Protection Level">
                 <span title={protectionLevel.description || ""}>
                   {protectionLevel.name}
                 </span>
-              </Col>
-            </Row>
-          )}
+              </InfoField>
+            )}
 
-          {last_updated !== "" && (
-            <Row>
-              <Col className="col-lg-6 col-xl-6">
-                <b>Last modified:</b>
-              </Col>
-              <Col>{moment(last_updated).format("HH:mm D.M.Y")}</Col>
-            </Row>
-          )}
-
-          {git_link !== "" && (
-            <Row>
-              <Col className="col-lg-6 col-xl-6" />
-              <Col>
-                <a href={git_link} target="_blank" rel="noreferrer">
-                  <img
-                    className="icon-dark"
-                    src="../../static/icons/git-merge.svg"
-                    alt="icon"
-                    width={"40px"}
-                    title="Click to open the git repository"
-                  />
-                </a>
-              </Col>
-            </Row>
-          )}
-
-          {Object.keys(additional_fields).length > 0 &&
-            renderAdditionalFields(additional_fields)}
-
-          {datasheet_url !== "" && datasheet_url !== null && (
-            <Row>
-              <Col className="col-lg-6 col-xl-6">
-                <b>Datasheet:</b>
-              </Col>
-              <Col>
+            {datasheet_url && datasheet_url !== "" && (
+              <InfoField label="Datasheet">
                 <a
-                  className="border-bottom"
+                  className="info-card__icon-link"
                   href={datasheet_url}
                   target="_blank"
                   rel="noreferrer"
                 >
                   <img
-                    className="icon-dark"
                     src="../../static/icons/pdf.svg"
-                    alt="icon"
-                    width={"40px"}
-                    title="Click to open the datasheet"
+                    alt="PDF"
                   />
+                  Open datasheet
                 </a>
-              </Col>
-            </Row>
-          )}
+              </InfoField>
+            )}
 
-          {item?.country_of_origin && (
-            <Row>
-              <Col className="col-lg-6 col-xl-6">
-                <b>Country of Origin:</b>
-              </Col>
-              <Col>
-                <span className="align-items-center">
-                  <ReactCountryFlag
-                    style={{ marginRight: "0.5rem" }}
-                    countryCode={item.country_of_origin}
-                    svg
+            {git_link && git_link !== "" && (
+              <InfoField label="Repository">
+                <a
+                  className="info-card__icon-link"
+                  href={git_link}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img
+                    src="../../static/icons/git-merge.svg"
+                    alt="Git"
                   />
-                  {getName(item.country_of_origin) ?? item.country_of_origin}
-                </span>
-              </Col>
-            </Row>
-          )}
+                  Open repository
+                </a>
+              </InfoField>
+            )}
+          </div>
+        </>
+      )}
 
-          {attributes && Object.keys(attributes).length > 0 && (
-            <Row>
-              <div className="col-3">
-                <b>Attributes:</b>
-              </div>
-              <Col>{attribute_icons(attributes)}</Col>
-            </Row>
-          )}
+      {/* People section */}
+      {hasPeople && (
+        <>
+          <SectionDivider />
+          <div className="info-card__section">
+            <SectionLabel text="People" />
 
-          {/* ECOs linked to this item */}
-          {itemEcos && itemEcos.length > 0 && (
-            <Row>
-              <Col className="col-lg-6 col-xl-6">
-                <b>ECO:</b>
-              </Col>
-              <Col>
-                <EcoPillList ecos={itemEcos} size="sm" />
-              </Col>
-            </Row>
-          )}
+            {created_by && (
+              <InfoField label="Created by">
+                {`${created_by.first_name} ${created_by.last_name}`}
+              </InfoField>
+            )}
 
-          <Row className="mt-2 align-items-top">
-            <Col className="col-lg-6 col-xl-6">
-              <b>Tags</b>
-            </Col>
-          </Row>
-          <Row className="mt-2 align-items-top">
-            <Col className="col-auto">
-              <DokulyTags
-                tags={item?.tags ?? []}
-                onChange={handleTagsChange}
-                readOnly={false}
-                project={project}
-                setRefresh={setRefresh}
-              />
-            </Col>
-          </Row>
-        </Col>
-      </Row>
+            {quality_assurance && (
+              <InfoField label="Approved by">
+                {`${quality_assurance.first_name} ${quality_assurance.last_name}`}
+              </InfoField>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Metadata section */}
+      <SectionDivider />
+      <div className="info-card__section">
+        <SectionLabel text="Metadata" />
+
+        {last_updated && last_updated !== "" && (
+          <InfoField label="Last modified">
+            {moment(last_updated).format("MMM D, YYYY [at] HH:mm")}
+          </InfoField>
+        )}
+
+        {attributes && Object.keys(attributes).length > 0 && (
+          <InfoField label="Attributes">
+            {attribute_icons(attributes)}
+          </InfoField>
+        )}
+
+        {itemEcos && itemEcos.length > 0 && (
+          <InfoField label="ECO">
+            <EcoPillList ecos={itemEcos} size="sm" />
+          </InfoField>
+        )}
+
+        <div className="info-card__tags">
+          <DokulyTags
+            tags={item?.tags ?? []}
+            onChange={handleTagsChange}
+            readOnly={false}
+            project={project}
+            setRefresh={setRefresh}
+          />
+        </div>
+      </div>
     </DokulyCard>
   );
 };

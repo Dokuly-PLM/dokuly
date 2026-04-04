@@ -1,5 +1,5 @@
 import React from "react";
-import { toast } from "react-toastify";
+import { copyToClipboard } from "./funcitons/copyToClipboard";
 
 const CopyToClipButton = ({ text, className, style }) => {
   return (
@@ -7,14 +7,7 @@ const CopyToClipButton = ({ text, className, style }) => {
       className={className}
       style={style}
       type="button"
-      onClick={() => {
-        if (navigator?.clipboard && window.isSecureContext) {
-          navigator.clipboard.writeText(text);
-          toast.info("Copied to clipboard");
-        } else {
-          toast.error("Clipboard not available, connection is not secure.");
-        }
-      }}
+      onClick={() => copyToClipboard(text)}
     >
       <div className="row">
         <img
