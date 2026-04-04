@@ -1650,7 +1650,7 @@ def fetch_file_list(request, id):
     
     file_list = []
     
-    # PDF Source (ForeignKey to File table)
+    # PDF Source (ForeignKey to File table) — the raw PDF before processing
     if doc.pdf_source:
         file_list.append({
             "row_number": "0",
@@ -1661,8 +1661,8 @@ def fetch_file_list(request, id):
             "file_id": doc.pdf_source.id,
             "is_archived": False,
         })
-    
-    # PDF Print (ForeignKey to File table)
+
+    # PDF Print (ForeignKey to File table) — the processed PDF with front page/revision table
     if doc.pdf_print:
         file_list.append({
             "row_number": str(len(file_list)),
@@ -1681,7 +1681,7 @@ def fetch_file_list(request, id):
             "title": file_obj.display_name or "File",
             "file_name": util.get_file_name(file_obj.file),
             "type": "GENERIC",
-            "uri": f"api/files/download/{file_obj.id}/",
+            "uri": f"api/files/download/file/{file_obj.id}/",
             "file_id": file_obj.id,
             "is_archived": file_obj.archived == 1,
         }

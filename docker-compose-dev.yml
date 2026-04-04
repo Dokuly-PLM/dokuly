@@ -48,6 +48,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: dokuly_onlyoffice
+    environment:
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:-dokuly_dev_secret}
+    ports:
+      - "8088:80"
+    volumes:
+      - onlyoffice_data:/var/www/onlyoffice/Data
   nginx:
     image: nginx:latest
     container_name: sdp_nginx_OSS
@@ -57,3 +66,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro # Mount the Nginx configuration file
     depends_on:
       - web
+      - onlyoffice
+
+volumes:
+  onlyoffice_data:

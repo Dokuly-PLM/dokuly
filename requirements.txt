@@ -47,7 +47,7 @@ tempora==3.0.0
 tqdm==4.66.3
 typing-extensions==3.10.0.2
 urllib3==1.26.18
-whitenoise>=6.2.0
+whitenoise==6.2.0
 zc.lockfile==2.0
 zipp==3.5.0
 google-cloud-storage
@@ -59,4 +59,5 @@ trimesh
 networkx 
 django-cryptography
 djangorestframework-api-key==3.0.0
-drf-yasg>=1.21.7
+drf-yasg==1.21.7
+PyJWT==2.8.0
