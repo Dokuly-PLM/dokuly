@@ -1,7 +1,11 @@
 body {
-  background-color: rgb(241, 241, 241);
+  background-color: #FAFAFA;
   margin: 0px;
   overflow-y: scroll; /* Force vertical scrollbar */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'tnum' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Always show scrollbar in WebKit browsers like Safari */
@@ -10,14 +14,14 @@ body::-webkit-scrollbar {
 }
 
 body::-webkit-scrollbar-track {
-  background: #f1f1f1; /* color of the tracking area */
+  background: #FAFAFA; /* color of the tracking area */
   border-radius: 10px; /* roundness of the track */
 }
 
 body::-webkit-scrollbar-thumb {
   background-color: #8e8e8e; /* color of the scroll thumb */
   border-radius: 10px; /* roundness of the scroll thumb */
-  border: 3px solid #f1f1f1; /* creates padding around scroll thumb */
+  border: 3px solid #FAFAFA; /* creates padding around scroll thumb */
 }
 
 body::-webkit-scrollbar-thumb:hover {
@@ -52,10 +56,17 @@ input[type="date"]::selection {
 
 .arrow-back {
   position: relative;
-  top: 25px;
-  left: 10px;
+  top: 0;
+  left: 0;
   z-index: 5;
   cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: background-color 0.1s ease;
+}
+
+.arrow-back:hover {
+  background-color: #F5F5F5;
 }
 
 
@@ -74,7 +85,7 @@ a:active {
 }
 
 pre {
-  font-family: sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1rem;
   font-weight: normal;
 }
@@ -107,71 +118,59 @@ kbd>kbd {
   left: 0;
   padding: 2rem .5rem .5rem .5rem;
   z-index: 1;
-  /* Behind the navbar */
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
   width: 166px;
   transition: width 0.1s ease-out;
 }
 
-.sidebar:hover {
-  width: 200px;
-}
-
 .sidebar-sticky {
   height: calc(100vh - 20px);
   overflow-y: auto;
-  /* Scrollable contents if viewport is shorter than content. */
 }
 
 .sidebar .nav-link {
   font-weight: 500;
-  transition: transform 0.1s ease-out;
-  transform-origin: left center;
+  transition: background-color 0.1s ease-out;
   position: relative;
   z-index: 1;
 }
 
 .sidebar .nav-link:hover {
-  transform: scale(1.08);
+  background-color: #F5F5F5;
+  border-radius: 4px;
 }
 
 .sidebar .nav-link .nav-text {
   transition: opacity 0.1s ease-out;
 }
 
-/* Hide text by default on narrow screens */
+/* Collapsed sidebar: icon-only, expands on hover */
 @media (max-width: 1610px) {
+  .sidebar {
+    width: 56px;
+  }
+
+  .sidebar:hover {
+    width: 200px;
+  }
+
   .sidebar .nav-link .nav-text {
     opacity: 0;
     visibility: hidden;
   }
-  
-  /* Show text on hover regardless of screen size */
+
   .sidebar:hover .nav-link .nav-text {
     opacity: 1;
     visibility: visible;
   }
 }
 
-/* Always show text on wide screens */  
+/* Always show text on wide screens */
 @media (min-width: 1611px) {
   .sidebar .nav-link .nav-text {
     opacity: 1;
     visibility: visible;
   }
-}
-
-/* Always show text on wide screens */  
-@media (min-width: 1611px) {
-  .sidebar .nav-link .nav-text {
-    opacity: 1;
-    visibility: visible;
-  }
-}
-
-.sidebar .nav-link:hover {
-  transform: scale(1.1);
-  z-index: 1000;
 }
 
 .sidebar .nav-link .feather {
@@ -264,6 +263,10 @@ kbd>kbd {
 
 .card {
   width: 100% !important;
+  background-color: #ffffff;
+  border: 1px solid #E5E5E5;
+  border-radius: 4px;
+  box-shadow: none;
 }
 
 .table-container {
@@ -327,7 +330,7 @@ kbd>kbd {
   color: #ffffff !important;
   border-color: #104610ff !important;
   box-shadow: none !important;
-  transform: scale(1.03) !important;
+  opacity: 0.9;
 }
 
 .dokuly-bg-primary:active,
@@ -336,7 +339,7 @@ kbd>kbd {
   color: #ffffff !important;
   border-color: #0e3a0eff !important;
   box-shadow: none !important;
-  transform: scale(0.97) !important;
+  transform: scale(0.98) !important;
 }
 
 /* DokulyDropdown menu styling */
@@ -407,7 +410,7 @@ kbd>kbd {
   color: #ffffff;
   border-color: #B00020;
   box-shadow: none !important;
-  transform: scale(1.03) !important;
+  opacity: 0.9;
 }
 
 .dokuly-bg-danger:active,
@@ -417,11 +420,11 @@ kbd>kbd {
   color: #ffffff !important;
   border-color: #7a0016 !important;
   box-shadow: none !important;
-  transform: scale(0.99) !important;
+  transform: scale(0.98) !important;
 }
 
 .dokuly-bg-lightwhite {
-  background-color: #f1f1f1;
+  background-color: #FAFAFA;
   color: #000000ff;
 }
 
@@ -506,19 +509,19 @@ kbd>kbd {
   width: 300px !important;
   background-color: #f7f7f7 !important;
   color: #333333 !important;
-  border-radius: 10px !important;
+  border-radius: 6px !important;
   opacity: 1 !important;
   font-size: 1rem !important;
   cursor: default;
 }
 
 .topheader-bg-color {
-  background-color: rgb(228, 248, 245);
-  border-bottom: 1px solid rgb(226, 226, 226);
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #E5E5E5;
 }
 
 .sidebar-bg-color {
-  background-color: #fbfeffff;
+  background-color: #FFFFFF;
 }
 
 .btn-bg-transparent {
@@ -547,7 +550,7 @@ kbd>kbd {
 }
 
 .btn {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .btn-bg-transparent:hover {
@@ -708,7 +711,7 @@ kbd>kbd {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: 'Open Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .pricing-plan {
@@ -762,7 +765,7 @@ kbd>kbd {
   border: 2px solid #155216;
   border-radius: 10px;
   padding: 20px;
-  font-family: 'Open Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   max-width: 400px;
   width: 30rem;
   margin: 10px auto;
@@ -954,6 +957,15 @@ input[type=number] {
   margin-right: 2.25rem;
 }
 
+@media screen and (max-width: 1610px) {
+  #sidebarWrapper {
+    max-width: 56px;
+    width: 56px;
+    position: relative;
+    margin-right: 1rem;
+  }
+}
+
 @media screen and (max-width: 1000px) {
   #sidebarWrapper {
     max-width: 56px;
@@ -961,7 +973,7 @@ input[type=number] {
     position: relative;
     display: grid;
     flex: auto;
-    margin-right: 2.25rem;
+    margin-right: 1rem;
   }
 }
 
@@ -985,8 +997,8 @@ input[type=number] {
 }
 
 .nav-item-active {
-  border-left: 3px solid #23655d;
-  color: #333;
+  border-left: 2px solid #165216;
+  color: #165216;
 }
 
 .nav-link {
@@ -998,23 +1010,25 @@ input[type=number] {
 .heading-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .title-container {
   display: -webkit-box;
-  -webkit-line-clamp: 3; /* Number of lines you want to display */
-  -webkit-box-orient: vertical;  
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: visible;
-  line-height: 1.2; /* Adjust based on your design */
-  height: 3.6em; /* Line height multiplied by number of lines */
-  white-space: normal; /* Allow wrapping */
-  /* padding-left: 50px; */
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  height: auto;
+  max-height: 2.6em;
+  white-space: normal;
   padding-right: 50px;
-  width: 100%; /* Ensures the text uses maximum available width */
-  text-align: center;
+  width: 100%;
+  text-align: left;
   cursor: copy;
+  font-weight: 700;
+  font-size: 1.5rem;
 }
 
 .max-width-5rem {
@@ -1045,7 +1059,7 @@ input[type=number] {
 		border: 2px solid #155216;
 		border-radius: 10px;
 		padding: 20px;
-		font-family: 'Open Sans', sans-serif;
+		font-family: 'Inter', sans-serif;
 		max-width: 400px;
 		width: 20rem;
 		margin: 10px auto;
@@ -1066,7 +1080,7 @@ input[type=number] {
 		border: 2px solid #155216;
 		border-radius: 10px;
 		padding: 20px;
-		font-family: 'Open Sans', sans-serif;
+		font-family: 'Inter', sans-serif;
 		max-width: 400px;
 		width: 19rem;
 		margin: 10px auto;
@@ -1079,7 +1093,7 @@ input[type=number] {
 		border: 2px solid #155216;
 		border-radius: 10px;
 		padding: 20px;
-		font-family: 'Open Sans', sans-serif;
+		font-family: 'Inter', sans-serif;
 		max-width: 400px;
 		width: 16rem;
 		margin: 10px auto;
@@ -1279,7 +1293,7 @@ div.tooltip.bs-tooltip-end {
 div.tooltip-inner {
   background-color: #ffffff !important;
   border: 1px solid rgba(0,0,0,.2) !important;
-  border-radius: 10px !important;
+  border-radius: 6px !important;
   color: #000000 !important;
   max-width: 400px !important;
   opacity: 0.9 !important;
@@ -1289,7 +1303,7 @@ div.tooltip-inner {
 div.tooltip.bs-tooltip-end .tooltip-inner {
   background-color: #ffffff !important;
   border: 1px solid rgba(0,0,0,.2) !important;
-  border-radius: 10px !important;
+  border-radius: 6px !important;
   color: #000000 !important;
   max-width: 400px !important;
   opacity: 0.9 !important;
@@ -1297,11 +1311,11 @@ div.tooltip.bs-tooltip-end .tooltip-inner {
 
 
 .rounded {
-  border-radius: 10px !important;
+  border-radius: 4px !important;
 }
 
 .table-row-hover:hover {
-  filter: brightness(95%);
+  background-color: #F9FAFB;
 }
 
 /* Table edit */
@@ -1735,4 +1749,83 @@ polygon._2pZMF { /* This is the gantt project tasks triangle (task groups) */
 
 .enter-key-indicator.pressed {
   background-color: #e0e0e0;
+}
+
+/* ============================================
+   Clinical Architect: Design Language Overrides
+   ============================================ */
+
+/* Table headers — Linear-inspired */
+.table thead th {
+  background-color: #F5F5F5;
+  border-bottom: 1px solid #E5E5E5;
+  border-top: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6B7280;
+  padding: 0.5rem 0.75rem;
+  white-space: nowrap;
+}
+
+/* Table rows — tight padding */
+.table tbody td {
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid #F0F0F0;
+  vertical-align: middle;
+}
+
+/* Tabs — segmented control with 2px active border */
+.nav-tabs {
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.nav-tabs .nav-link {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: #6B7280;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.75rem 1.25rem;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.nav-tabs .nav-link:hover {
+  border-bottom: 2px solid #D1D5DB;
+  color: #374151;
+  background-color: transparent;
+}
+
+.nav-tabs .nav-link.active {
+  border: none;
+  border-bottom: 2px solid #165216;
+  color: #165216;
+  background-color: transparent;
+  font-weight: 600;
+}
+
+/* Section label typography */
+.dokuly-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6B7280;
+  margin-bottom: 0.5rem;
+}
+
+/* Utility: tabular numerals */
+.dokuly-tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Utility: hairline divider */
+.dokuly-divider {
+  border: none;
+  border-top: 1px solid #E5E5E5;
+  margin: 1rem 0;
 }

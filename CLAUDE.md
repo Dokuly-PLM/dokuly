@@ -82,3 +82,27 @@ A `.env` file at repo root is loaded by docker-compose.
 **Multi-tenancy**: Users belong to `Organization` and `Profile` models. Data is scoped to organizations. `tenants` app handles domain-based tenant routing.
 
 **Revision control**: Parts, PCBAs, assemblies, and documents all have `revision` and `release_state` fields. A new revision creates a new DB row; `part_number` stays the same across revisions.
+
+Dokuly components shall be used when available. They are found in `dokuly/frontend/src/components/dokuly_components` and there are also common components and functions found in `dokuly/frontend/src/components/common` that should be used for most reusable code.
+
+## Design Language ("Clinical Architect")
+
+See `design.md` for the full specification. Key rules for writing frontend code:
+
+**Font**: Inter (loaded via Google Fonts). Tabular numerals enabled globally. Do not use other fonts.
+
+**Colors**: Primary `#165216`, page background `#FAFAFA`, card/header/sidebar backgrounds `#FFFFFF`, borders `#E5E5E5`. Use existing `.dokuly-bg-*` and `.dokuly-*` CSS classes for semantic colors.
+
+**Cards**: `border-radius: 4px`, `1px solid #E5E5E5` border, no box-shadow. Default via `card rounded m-3 p-3`.
+
+**Tables**: Uppercase small gray headers (`0.75rem`), tight row padding (`0.5rem 0.75rem`), subtle hover (`#F9FAFB`). Styled via CSS overrides on `.table` — no inline style needed.
+
+**Tabs**: 2px bottom-border active indicator in primary green. Use `DokulyTabs` component with `<span>` titles (not `<h6>`).
+
+**Section labels**: Use `CardTitle` component or `.dokuly-section-label` class (small, uppercase, gray, semibold).
+
+**Buttons**: `font-weight: 600`. No scale-up on hover (opacity shift instead). Subtle `scale(0.98)` on click.
+
+**Sidebar**: Collapses to 56px icon-only below 1610px, expands to 200px on hover. No scale transforms on nav items.
+
+**Dividers**: Use `.dokuly-divider` for hairline separators between content sections. 

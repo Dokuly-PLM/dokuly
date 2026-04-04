@@ -7,8 +7,8 @@ const CardTitle = ({
   style = { paddingLeft: "15px" },
 }) => {
   return (
-    <h5 style={style}>
-      <b>{titleText}</b>{" "}
+    <h6 className="dokuly-section-label" style={style}>
+      {titleText}{" "}
       {optionalHelpText && (
         <QuestionToolTip
           optionalHelpText={optionalHelpText}
@@ -17,7 +17,7 @@ const CardTitle = ({
           placement="right"
         />
       )}
-    </h5>
+    </h6>
   );
 };
 
