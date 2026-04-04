@@ -6,7 +6,6 @@ import Profile2FA from "../profiles/profileMfa";
 import { toast } from "react-toastify";
 import ForgotPassword from "./forgotPassword";
 import { AuthContext } from "../App";
-import { Col } from "react-bootstrap";
 import {
   loadingSpinner,
   loadingSpinnerCustomMarginAndColor,
@@ -213,193 +212,162 @@ function Login({ setUser }) {
     );
   }
 
-  return (
-    <div className="m-1">
-      {innerWidth > 650 ? (
-        <div className="row justify-content-center">
-          <Col />
-          <div className="col-5">
-            <div className="card card-body mt-5">
-              <h2 className="text-center">Login</h2>
-              <div className="form-group">
-                <label>Username or Email</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="username"
-                  onChange={onChange}
-                  value={username}
-                />
-              </div>
+  const loginForm = (
+    <React.Fragment>
+      <div className="form-group">
+        <label
+          style={{
+            fontSize: "0.75rem",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            color: "#6B7280",
+          }}
+        >
+          Username or Email
+        </label>
+        <input
+          type="text"
+          className="form-control"
+          name="username"
+          onChange={onChange}
+          value={username}
+        />
+      </div>
 
-              <div className="form-group">
-                <label>Password</label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    className="form-control"
-                    name="password"
-                    onChange={onChange}
-                    value={password}
-                    style={{ paddingRight: "40px" }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: "absolute",
-                      right: "10px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "0",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    <img
-                      src="../../static/icons/eye.svg"
-                      alt="toggle password visibility"
-                      width="20px"
-                      style={{
-                        opacity: showPassword ? 1 : 0.5,
-                        filter: showPassword
-                          ? "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)"
-                          : "invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(90%)",
-                      }}
-                    />
-                  </button>
-                </div>
-              </div>
-
-              {wrongUsernamePassword && (
-                <div className="form-group">
-                  <small className="form-text dokuly-danger">
-                    Wrong username, email or password!
-                  </small>
-                </div>
-              )}
-
-              <div className="form-group">
-                <button
-                  type="button"
-                  className="btn dokuly-bg-primary"
-                  style={{ color: "white" }}
-                  onClick={(e) => {
-                    submit(e);
-                  }}
-                >
-                  {loadingLogin
-                    ? loadingSpinnerCustomMarginAndColor(0, 0, 0, 0, "white")
-                    : "Login"}
-                </button>
-                <a
-                  className="customLink"
-                  style={{ marginLeft: "2rem" }}
-                  // biome-ignore lint/a11y/useValidAnchor: Want onclick with a style here.
-                  onClick={() => {
-                    setForgotPassword(true);
-                  }}
-                >
-                  Forgot Password?
-                </a>
-              </div>
-            </div>{" "}
-          </div>{" "}
-          <Col />
-        </div>
-      ) : (
-        <div className="card card-body mt-5">
-          <h2 className="text-center">Login</h2>
-          <div className="form-group">
-            <label>Username</label>
-            <input
-              type="text"
-              className="form-control"
-              name="username"
-              onChange={onChange}
-              value={username}
+      <div className="form-group">
+        <label
+          style={{
+            fontSize: "0.75rem",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            color: "#6B7280",
+          }}
+        >
+          Password
+        </label>
+        <div style={{ position: "relative" }}>
+          <input
+            type={showPassword ? "text" : "password"}
+            className="form-control"
+            name="password"
+            onChange={onChange}
+            value={password}
+            style={{ paddingRight: "40px" }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            style={{
+              position: "absolute",
+              right: "10px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0",
+              display: "flex",
+              alignItems: "center",
+            }}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            <img
+              src="../../static/icons/eye.svg"
+              alt="toggle password visibility"
+              width="20px"
+              style={{
+                opacity: showPassword ? 1 : 0.5,
+                filter: showPassword
+                  ? "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)"
+                  : "invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(90%)",
+              }}
             />
-          </div>
+          </button>
+        </div>
+      </div>
 
-          <div className="form-group">
-            <label>Password</label>
-            <div style={{ position: "relative" }}>
-              <input
-                type={showPassword ? "text" : "password"}
-                className="form-control"
-                name="password"
-                onChange={onChange}
-                value={password}
-                style={{ paddingRight: "40px" }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: "absolute",
-                  right: "10px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                <img
-                  src="../../static/icons/eye.svg"
-                  alt="toggle password visibility"
-                  width="20px"
-                  style={{
-                    opacity: showPassword ? 1 : 0.5,
-                    filter: showPassword
-                      ? "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)"
-                      : "invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(90%)",
-                  }}
-                />
-              </button>
-            </div>
-          </div>
-          {wrongUsernamePassword && (
-            <div className="form-group">
-              <small className="form-text dokuly-danger">
-                Wrong username or password!
-              </small>
-            </div>
-          )}
-          <div className="form-group">
-            <button
-              type="button"
-              className="btn dokuly-bg-primary"
-              style={{ color: "white" }}
-              onClick={(e) => {
-                submit(e);
-              }}
-            >
-              Login
-            </button>
-            <a
-              className="customLink"
-              style={{ marginLeft: "2rem" }}
-              // biome-ignore lint/a11y/useValidAnchor: Want onclick with a style here.
-              onClick={() => {
-                setForgotPassword(true);
-              }}
-            >
-              Forgot Password?
-            </a>
-          </div>
+      {wrongUsernamePassword && (
+        <div className="form-group">
+          <small className="form-text dokuly-danger">
+            Wrong username, email or password!
+          </small>
         </div>
       )}
+
+      <div className="form-group" style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <button
+          type="button"
+          className="btn dokuly-bg-primary"
+          style={{ color: "white" }}
+          onClick={(e) => {
+            submit(e);
+          }}
+        >
+          {loadingLogin
+            ? loadingSpinnerCustomMarginAndColor(0, 0, 0, 0, "white")
+            : "Sign in"}
+        </button>
+        <a
+          className="customLink"
+          style={{ fontSize: "0.8125rem", color: "#6B7280" }}
+          // biome-ignore lint/a11y/useValidAnchor: Want onclick with a style here.
+          onClick={() => {
+            setForgotPassword(true);
+          }}
+        >
+          Forgot password?
+        </a>
+      </div>
+    </React.Fragment>
+  );
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        padding: "1rem",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "400px",
+        }}
+      >
+        <div
+          className="card"
+          style={{
+            padding: "2rem",
+            border: "1px solid #E5E5E5",
+            borderRadius: "4px",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+            <img
+              src="../../static/logo.svg"
+              alt="Dokuly"
+              width="140"
+              style={{ marginBottom: "1rem" }}
+            />
+            <h2
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: 700,
+                color: "#111827",
+                margin: 0,
+              }}
+            >
+              Sign in to your account
+            </h2>
+          </div>
+          {loginForm}
+        </div>
+      </div>
     </div>
   );
 }

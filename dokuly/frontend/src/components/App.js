@@ -128,14 +128,7 @@ function App() {
   }, [location, navigate, isAuthenticated, loadingApp]);
 
   if (loadingApp) {
-    return (
-      <TopHeader
-        isAuthenticated={isAuthenticated}
-        user={user}
-        setIsAuthenticated={setIsAuthenticated}
-      />
-      // TODO create a nice loading thingy here
-    );
+    return null;
   }
 
   if (!isAuthenticated) {
@@ -163,11 +156,6 @@ function App() {
           draggable
           pauseOnHover
           theme="light"
-        />
-        <TopHeader
-          isAuthenticated={isAuthenticated}
-          user={user}
-          setIsAuthenticated={setIsAuthenticated}
         />
         <Routes>
           <Route
