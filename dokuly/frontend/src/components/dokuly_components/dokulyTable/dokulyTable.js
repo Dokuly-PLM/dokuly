@@ -1017,7 +1017,8 @@ function DokulyTableContents({
                     key={column.key}
                     style={{
                       maxWidth: column.maxWidth ? column.maxWidth : "auto",
-                      whiteSpace: "normal",
+                      minWidth: column.minWidth ? column.minWidth : "auto",
+                      whiteSpace: column.whiteSpace ? column.whiteSpace : "normal",
                       cursor: "pointer",
                     }}
                   >

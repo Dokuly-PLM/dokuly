@@ -7,8 +7,8 @@ import React from "react";
  */
 const RELEASE_STATE_STYLES = {
   Draft: {
-    background: "#FEF3C7",
-    color: "#92400E",
+    background: "#E0F0FA",
+    color: "#1A5276",
     label: "Draft",
   },
   Review: {

@@ -89,7 +89,7 @@ A `.env` file at repo root is loaded by docker-compose.
 
 Every Django view that returns or mutates data **must** enforce access control. Follow this checklist when writing or reviewing views:
 
-1. **Authentication**: Use `@permission_classes([IsAuthenticated])` (DRF) or `@login_required` on every view that serves user data. The only exception is endpoints explicitly designed for unauthenticated access (e.g. OODS callbacks, token-protected download endpoints) — these must use signed token verification instead.
+1. **Authentication**: Use `@permission_classes([IsAuthenticated])` (DRF) on every view that serves user data. The only exception is endpoints explicitly designed for unauthenticated access (e.g. OODS callbacks, token-protected download endpoints) — these must use signed token verification instead.
 
 2. **Project-scoped access**: After fetching the object(s), call `check_project_access(queryset, request.user)` from `projects.views`. This verifies the user is a member of the object's project (or the object has no project). Return `403 Forbidden` if the check fails.
    ```python
