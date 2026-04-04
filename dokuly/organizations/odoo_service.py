@@ -228,6 +228,10 @@ def create_or_update_odoo_product(models, uid, database, api_key, product_data, 
             if template_data and 'flyt_manufacturer_pn' in template_data:
                 update_template_data['flyt_manufacturer_pn'] = template_data['flyt_manufacturer_pn']
 
+            # UoM: always sync from Dokuly when push_product_to_odoo resolved one (not gated by odoo_update_fields_existing)
+            if template_data and template_data.get('uom_id') is not None:
+                update_template_data['uom_id'] = template_data['uom_id']
+
             if update_template_data:
                 models.execute_kw(
                     database, uid, api_key,

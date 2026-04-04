@@ -476,8 +476,10 @@ const OdooSettings = ({
                   disabled={!odooEnabled}
                 />
                 <small className="text-muted d-block mt-2">
-                  When a product already exists in Odoo, only the selected fields will be updated.
-                  All other fields (category, type, sale/purchase flags, tracking, etc.) will remain unchanged.
+                  When a product already exists in Odoo, only the selected fields above are updated for
+                  name, description, and image. Unit of measure is synced from Dokuly on every push when
+                  a matching Odoo UoM can be resolved (or when the default UoM is used for items without
+                  a unit). Other fields (category, type, sale/purchase flags, tracking, etc.) stay unchanged.
                 </small>
               </div>
             </div>
