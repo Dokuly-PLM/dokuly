@@ -50,11 +50,12 @@ const OdooSettings = ({
 }) => {
   // Automatic field mappings - read-only display
   const automaticMappings = [
-    { dokuly: "Full Part Number", description: "Used as Odoo Internal Reference (default_code) for matching and updates" },
-    { dokuly: "Display Name", description: "Automatically populated in the Product Name field" },
-    { dokuly: "Description", description: "Automatically populated in the Product Description field" },
+    { dokuly: "Full Part Number", description: "Variant Internal Reference (default_code) for lookup; also written on product.template so it stays in sync with the variant in Odoo v19" },
+    { dokuly: "Display Name", description: "Written to product.template name in Odoo v19" },
+    { dokuly: "Description", description: "Merged with Revision Notes into product.template description (internal/description field) in Odoo v19" },
+    { dokuly: "Revision Notes", description: "Merged with Description into the same product.template description field in Odoo v19" },
     { dokuly: "Unit (e.g., pcs, kg, m)", description: "Automatically mapped to the corresponding Odoo Unit of Measure" },
-    { dokuly: "Thumbnail Image", description: "Automatically uploaded as the product image in Odoo" },
+    { dokuly: "Thumbnail Image", description: "Written to product.template image in Odoo v19" },
     { dokuly: "Manufacturer", description: "Mapped to Odoo custom field flyt_manufacturer (Parts only)" },
     { dokuly: "Manufacturer PN", description: "Mapped to Odoo custom field flyt_manufacturer_pn (Parts only)" },
     { dokuly: "Release State", description: "Only released items can be pushed to Odoo (manual or automatic)" },
@@ -475,8 +476,10 @@ const OdooSettings = ({
                   disabled={!odooEnabled}
                 />
                 <small className="text-muted d-block mt-2">
-                  When a product already exists in Odoo, only the selected fields will be updated.
-                  All other fields (category, type, sale/purchase flags, tracking, etc.) will remain unchanged.
+                  When a product already exists in Odoo, only the selected fields above are updated for
+                  name, description, and image. Unit of measure is synced from Dokuly on every push when
+                  a matching Odoo UoM can be resolved (or when the default UoM is used for items without
+                  a unit). Other fields (category, type, sale/purchase flags, tracking, etc.) stay unchanged.
                 </small>
               </div>
             </div>
