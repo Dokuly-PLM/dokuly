@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Col, Row } from "react-bootstrap";
 import { formatCloudImageUri } from "./productionHelpers";
 import DokulyImage from "../../dokuly_components/dokulyImage";
@@ -83,7 +83,6 @@ export const refDesFormatter = (row) => {
 };
 
 export function ThumbnailFormatterComponent({ row }) {
-  const [rotate, setRotate] = useState(false);
   const thumbnailUrl = row?.thumbnail
     ? formatCloudImageUri(row?.thumbnail)
     : row?.image_url
@@ -92,35 +91,17 @@ export function ThumbnailFormatterComponent({ row }) {
 
   let containerStyle = {
     display: "flex",
-    justifyContent: "center", // Center horizontally
-    alignItems: "center", // Center vertically
+    justifyContent: "center",
+    alignItems: "center",
     width: "100px",
     height: "70px",
     overflow: "hidden",
   };
 
-  let imageStyle = rotate
-    ? {
-        maxWidth: "70px",
-        maxHeight: "100px",
-        transform: "rotate(90deg)",
-        transformOrigin: "center center",
-      }
-    : {
-        maxWidth: "100px",
-        maxHeight: "70px",
-      };
-
-  const handleImageLoad = (e) => {
-    const img = e.target;
-    // console.log(
-    //   `Image loaded: naturalWidth=${img.naturalWidth}, naturalHeight=${img.naturalHeight}`,
-    // );
-    if (img.naturalHeight > img.naturalWidth) {
-      setRotate(true);
-    } else {
-      setRotate(false);
-    }
+  let imageStyle = {
+    maxWidth: "100px",
+    maxHeight: "70px",
+    objectFit: "contain",
   };
 
   if (!thumbnailUrl) {
@@ -143,11 +124,12 @@ export function ThumbnailFormatterComponent({ row }) {
     imageStyle = {
       width: "50px",
       height: "50px",
+      objectFit: "contain",
     };
     containerStyle = {
       display: "flex",
-      justifyContent: "center", // Center horizontally
-      alignItems: "center", // Center vertically
+      justifyContent: "center",
+      alignItems: "center",
       overflow: "hidden",
     };
   }
@@ -161,7 +143,6 @@ export function ThumbnailFormatterComponent({ row }) {
           alt="Thumbnail"
           lazy={true}
           style={imageStyle}
-          onLoad={handleImageLoad}
         />
       </div>
     </ThumbnailHoverZoom>

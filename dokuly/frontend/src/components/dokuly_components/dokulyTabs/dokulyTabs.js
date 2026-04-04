@@ -53,16 +53,9 @@ const DokulyTabs = ({ tabs, basePath }) => {
                 : false
             }
             title={
-              <h6
-                style={{
-                  paddingLeft: "1.2rem",
-                  paddingRight: "1.2rem",
-                  marginBottom: "0rem",
-                  minWidth: "150px",
-                }}
-              >
+              <span style={{ marginBottom: 0 }}>
                 {tab.title}
-              </h6>
+              </span>
             }
             key={tab.eventKey}
           >

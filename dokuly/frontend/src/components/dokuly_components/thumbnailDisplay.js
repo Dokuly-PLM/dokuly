@@ -92,11 +92,12 @@ const ThumbnailDisplay = ({
         <DokulyImage
           className="rounded"
           style={{
-            maxWidth: "100px",
-            maxHeight: "100px",
-            objectFit: "contain", // Ensures the image scales to fit and maintain aspect ratio without stretching
-            display: "block", // Ensures the image is treated as a block element, which can help with alignment
-            margin: "auto", // Centers the image within its container
+            maxHeight: "200px",
+            maxWidth: "100%",
+            objectFit: "contain",
+            display: "block",
+            margin: "auto",
+            cursor: "pointer",
           }}
           src={imageUrl}
           onClick={handleModalShow}
@@ -107,7 +108,12 @@ const ThumbnailDisplay = ({
           className="thumbnail-placeholder"
           onClick={handleModalShow}
         >
-          <div>Upload thumbnail</div>
+          <img
+            src="../../static/icons/camera.svg"
+            alt=""
+            style={{ width: "24px", height: "24px", opacity: 0.4 }}
+          />
+          <div>Add thumbnail</div>
         </div>
       )}
       {/* Edit thumbnail modal */}

@@ -12,6 +12,7 @@ import ReferencedDocumentsTable from "./overviewTabs/referenced_items";
 import Heading from "../dokuly_components/Heading";
 import PartInformationCard from "../dokuly_components/partInfoCard";
 import RevisionsTable from "../dokuly_components/revisionsTable/revisionsTable";
+import RevisionTimeline from "../dokuly_components/revisionsTable/revisionTimeline";
 import { fetchProjects } from "../projects/functions/queries";
 import { fetchCustomers } from "../customers/funcitons/queries";
 import { loadingSpinner } from "../admin/functions/helperFunctions";
@@ -302,6 +303,14 @@ const DisplayDocument = (props) => {
                 setRefresh={setRefresh}
               />
             </Row>
+            <Row>
+              <RevisionTimeline
+                app={"documents"}
+                item={selectedDocument}
+                variant="embedded"
+                basePath={`/documents/${documentId}`}
+              />
+            </Row>
           </Col>
           <Col>
             {(selectedDocument.pdf_print != null || selectedDocument.pdf_source != null) && !refetchingDoc ? (
@@ -375,17 +384,18 @@ const DisplayDocument = (props) => {
       title: "Revisions",
       content: (
         <div className="container mt-3">
-          <RevisionsTable
+          <RevisionTimeline
             app={"documents"}
             item={selectedDocument}
+            variant="full"
             setRevisionListParent={setRevisionList}
           />
         </div>
       ),
     },
     {
-      eventKey: "traceability",
-      title: "Traceability",
+      eventKey: "audit-log",
+      title: "Audit Log",
       content: (
         <>
           {selectedDocument == null || selectedDocument === undefined ? (

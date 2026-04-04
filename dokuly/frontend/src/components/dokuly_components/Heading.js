@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { Row, Col, Button } from "react-bootstrap";
 import { toast } from "react-toastify";
 import SidebarIcon from "./dokulyIcons/sidebarIcon";
+import { copyToClipboard } from "./funcitons/copyToClipboard";
 
 const Heading = ({
   item_number = "",
@@ -15,12 +16,7 @@ const Heading = ({
   const titleRef = useRef(null);
 
   const handleCopyToClipboard = (text) => {
-    if (navigator?.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text);
-      toast.info("Copied to clipboard");
-    } else {
-      toast.error("Clipboard not available, connection is not secure.");
-    }
+    copyToClipboard(text);
   };
 
   const resizeFont = () => {
@@ -32,10 +28,11 @@ const Heading = ({
     titleElement.style.fontSize = `${fontSize}px`;
 
     // Adapt font size and div size based on the length of the content and viewport width
-    if (window.innerWidth > 768 && display_name.length <= 40) {
-      // When the screen is large and content is short, adjust to fit in one line
-      titleElement.style["-webkit-line-clamp"] = "1";
-      titleElement.style.height = "1.6em";
+    if (window.innerWidth > 768 && display_name.length <= 60) {
+      // When the screen is large and content is short, allow up to 2 lines
+      titleElement.style["-webkit-line-clamp"] = "2";
+      titleElement.style.height = "auto";
+      titleElement.style.maxHeight = "2.6em";
     } else {
       // Adjust for other conditions more dynamically
       titleElement.style.whiteSpace = "normal";
@@ -75,15 +72,19 @@ const Heading = ({
         </Col>
         <Col className="justify-content-center align-items-center">
           <h2
-            className="title-container mt-3"
+            className="title-container title-container--copyable mt-3"
             ref={titleRef}
             onClick={() => {
-              // item_number (full_part_number) already contains the properly formatted part number with revision
               handleCopyToClipboard(`${item_number} - ${display_name}`);
             }}
             title="Click to copy to clipboard"
           >
-{item_number} - {display_name}
+            {item_number} - {display_name}
+            <img
+              className="title-container__copy-icon"
+              src="../../../static/icons/copy.svg"
+              alt="Copy"
+            />
             {!is_latest_revision && (
               <span>
                 <img
