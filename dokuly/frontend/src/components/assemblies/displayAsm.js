@@ -16,6 +16,7 @@ import PartInformationCard from "../dokuly_components/partInfoCard";
 import AsmEditForm from "./forms/asmEditForm";
 import RevisionNotes from "../dokuly_components/revisionNotes/revisionNotes";
 import RevisionsTable from "../dokuly_components/revisionsTable/revisionsTable";
+import RevisionTimeline from "../dokuly_components/revisionsTable/revisionTimeline";
 import Errata from "../common/errata/errata";
 import TraceabilityTable from "../dokuly_components/traceabilityTable/traceabilityTable";
 import PriceCard from "../common/priceCard/priceCard";
@@ -386,6 +387,14 @@ const DisplayASM = (props) => {
                 />
               </Row>
               <Row>
+                <RevisionTimeline
+                  app={"assemblies"}
+                  item={asmDetailed}
+                  variant="embedded"
+                  basePath={`/assemblies/${currentASMID}`}
+                />
+              </Row>
+              <Row>
                 {/* <Errata
                   app={"assemblies"}
                   item={asmDetailed}
@@ -476,13 +485,13 @@ const DisplayASM = (props) => {
       title: "Revisions",
       content: (
         <div className="row m-3">
-          <RevisionsTable app={"assemblies"} item={asmDetailed} />
+          <RevisionTimeline app={"assemblies"} item={asmDetailed} variant="full" />
         </div>
       ),
     },
     {
-      eventKey: "traceability",
-      title: "Traceability",
+      eventKey: "audit-log",
+      title: "Audit Log",
       content: (
         <>
           {asmDetailed == null || asmDetailed === undefined ? (

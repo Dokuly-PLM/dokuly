@@ -3,35 +3,34 @@ import { Card } from "react-bootstrap";
 import axios from "axios";
 import { tokenConfig } from "../../../configs/auth";
 
-import DokulyTable from "../dokulyTable/dokulyTable";
 import DokulyCard from "../dokulyCard";
 import CardTitle from "../cardTitle";
 import DokulyDateFormat from "../../dokuly_components/formatters/dateFormatter";
 import TraceabilityDiffModal from "./TraceabilityDiffModal";
 
-const ACTION_ICONS = {
-  created: "file-plus.svg",
-  revision_created: "git-branch.svg",
-  bom_edited: "clipboard-list.svg",
-  bom_imported: "clipboard-list.svg",
-  bom_cleared: "trash.svg",
-  approved: "shield-check.svg",
-  released: "check.svg",
-  updated: "edit.svg",
+import "./auditLog.css";
+
+const ACTION_DOT_COLORS = {
+  created: "#165216",
+  revision_created: "#165216",
+  bom_edited: "#108E82",
+  bom_imported: "#108E82",
+  bom_cleared: "#B00020",
+  approved: "#165216",
+  released: "#165216",
+  updated: "#6B7280",
 };
 
 const ACTION_LABELS = {
   created: "Created",
-  revision_created: "Revision Created",
-  bom_edited: "BOM Edited",
+  revision_created: "Initial Revision Created",
+  bom_edited: "BOM Updated",
   bom_imported: "BOM Import",
-  bom_cleared: "Clear BOM",
+  bom_cleared: "BOM Cleared",
   approved: "Approved for Release",
-  released: "Released",
+  released: "State Change: Released",
   updated: "Updated",
 };
-
-const ICON_BASE = "../../../../static/icons/";
 
 const PAGE_SIZE = 50;
 
@@ -43,7 +42,6 @@ const designatorLabelForApp = (app) => {
   return "F/N";
 };
 
-/** Format BOM details for table: no prefix for clear; designator label before → for add/import; "refdes"/"Ref.des" → designatorLabel. */
 function formatBomDetailsForTable(details, designatorLabel, eventType) {
   if (!details) {
     return "";
@@ -60,11 +58,11 @@ function formatBomDetailsForTable(details, designatorLabel, eventType) {
   return text;
 }
 
+
 const TraceabilityTable = ({ item, app }) => {
   const [traceabilityData, setTraceabilityData] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [tableTextSize, setTableTextSize] = useState("16px");
   const [loading, setLoading] = useState(true);
   const [showDiffModal, setShowDiffModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -170,113 +168,23 @@ const TraceabilityTable = ({ item, app }) => {
     }
   }, [item, fetchTraceabilityData]);
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    fetchTraceabilityData(pageNumber);
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    fetchTraceabilityData(page);
   };
 
-  const handleRowClick = (_rowId, row) => {
-    setSelectedEvent(row);
+  const handleEntryClick = (event) => {
+    setSelectedEvent(event);
     setShowDiffModal(true);
-  };
-
-  const columns = [
-    {
-      key: "date",
-      header: "Date",
-      includeInCsv: true,
-      sort: true,
-      formatter: (row) => {
-        if (row.date) {
-          return <DokulyDateFormat date={row.date} showTime={true} />;
-        }
-        return "";
-      },
-      csvFormatter: (row) => {
-        if (row?.date) {
-          return `${row?.date}`;
-        }
-        return "";
-      },
-    },
-    {
-      key: "action",
-      header: "Action",
-      includeInCsv: true,
-      sort: true,
-      formatter: (row) => {
-        const icon = ACTION_ICONS[row.event_type] || "edit.svg";
-        const label =
-          row.action || ACTION_LABELS[row.event_type] || row.event_type;
-        return (
-          <span className="d-inline-flex align-items-center gap-1">
-            <img
-              src={`${ICON_BASE}${icon}`}
-              alt=""
-              style={{ width: "20px", height: "20px", opacity: 0.9 }}
-            />
-            <span>{label}</span>
-          </span>
-        );
-      },
-      csvFormatter: (row) => row?.action || "",
-    },
-    {
-      key: "user",
-      header: "User",
-      includeInCsv: true,
-      sort: true,
-      csvFormatter: (row) => row?.user || "",
-    },
-    {
-      key: "details",
-      header: "Details",
-      includeInCsv: true,
-      formatter: (row) => {
-        const isBom = ["bom_edited", "bom_imported", "bom_cleared"].includes(
-          row.event_type,
-        );
-        let text;
-        if (isBom) {
-          text = formatBomDetailsForTable(
-            row.details,
-            designatorLabel,
-            row.event_type,
-          );
-        } else {
-          text = row.details || "";
-        }
-        if (text && text.length > 100) {
-          return <span title={text}>{text.substring(0, 100)}...</span>;
-        }
-        return text;
-      },
-      csvFormatter: (row) => {
-        const isBom = ["bom_edited", "bom_imported", "bom_cleared"].includes(
-          row.event_type,
-        );
-        if (isBom) {
-          return formatBomDetailsForTable(
-            row.details,
-            designatorLabel,
-            row.event_type,
-          );
-        }
-        return row?.details || "";
-      },
-    },
-  ];
-
-  const defaultSort = {
-    columnNumber: 0,
-    order: "desc",
   };
 
   if (loading) {
     return (
       <DokulyCard>
         <CardTitle
-          titleText={"Traceability"}
+          titleText={"Audit Log"}
           style={{ paddingLeft: "15px", paddingTop: "15px" }}
         />
         <Card.Body>
@@ -292,28 +200,80 @@ const TraceabilityTable = ({ item, app }) => {
     <>
       <DokulyCard>
         <CardTitle
-          titleText={"Traceability"}
+          titleText={"Audit Log"}
           style={{ paddingLeft: "15px", paddingTop: "15px" }}
         />
         <Card.Body>
-          <DokulyTable
-            tableName={"TraceabilityTable"}
-            data={traceabilityData}
-            columns={columns}
-            showCsvDownload={true}
-            itemsPerPage={PAGE_SIZE}
-            showPagination={true}
-            showSearch={true}
-            defaultSort={defaultSort}
-            textSize={tableTextSize}
-            setTextSize={setTableTextSize}
-            showTableSettings={true}
-            onRowClick={handleRowClick}
-            serverSidePagination={true}
-            totalItemCount={totalCount}
-            currentPage={currentPage}
-            onPageChange={handlePageChange}
-          />
+          <div className="audit-log">
+            {traceabilityData.length === 0 && (
+              <div className="text-muted" style={{ padding: "1rem 0" }}>
+                No audit log entries yet.
+              </div>
+            )}
+            {traceabilityData.map((event, idx) => {
+              const dotColor =
+                ACTION_DOT_COLORS[event.event_type] || "#6B7280";
+              const label = event.action || event.event_type;
+              const userName = event.user;
+
+              return (
+                <div
+                  key={event.id ?? idx}
+                  className="audit-log__entry"
+                  onClick={() => handleEntryClick(event)}
+                >
+                  <span
+                    className="audit-log__dot"
+                    style={{ backgroundColor: dotColor }}
+                  />
+                  <div className="audit-log__content">
+                    <div className="audit-log__action">{label}</div>
+                    <div className="audit-log__meta">
+                      {userName && userName !== "Unknown" && (
+                        <>By {userName}</>
+                      )}
+                      {userName && userName !== "Unknown" && event.date && (
+                        <span className="audit-log__separator">{" \u2022 "}</span>
+                      )}
+                      {event.date && (
+                        <DokulyDateFormat date={event.date} />
+                      )}
+                    </div>
+                    {event.details && (
+                      <div className="audit-log__details">
+                        {event.details.length > 120
+                          ? `${event.details.substring(0, 120)}...`
+                          : event.details}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {totalPages > 1 && (
+            <div className="audit-log__pagination">
+              <button
+                type="button"
+                className="audit-log__page-btn"
+                disabled={currentPage <= 1}
+                onClick={() => handlePageChange(currentPage - 1)}
+              >
+                Previous
+              </button>
+              <span className="audit-log__page-info">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                className="audit-log__page-btn"
+                disabled={currentPage >= totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </Card.Body>
       </DokulyCard>
       <TraceabilityDiffModal

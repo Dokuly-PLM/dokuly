@@ -20,6 +20,7 @@ import Heading from "../dokuly_components/Heading";
 import PartInformationCard from "../dokuly_components/partInfoCard";
 import PcbaBom from "./tabs/pcbaBom";
 import RevisionsTable from "../dokuly_components/revisionsTable/revisionsTable";
+import RevisionTimeline from "../dokuly_components/revisionsTable/revisionTimeline";
 import PriceCard from "../common/priceCard/priceCard";
 import TraceabilityTable from "../dokuly_components/traceabilityTable/traceabilityTable";
 import NoPermission from "../dokuly_components/noPermission";
@@ -285,6 +286,14 @@ const DisplayPcba = (props) => {
                       setRefresh={setRefresh}
                     />
                   </div>
+                  <div className="row">
+                    <RevisionTimeline
+                      app={"pcbas"}
+                      item={pcba}
+                      variant="embedded"
+                      basePath={`/pcbas/${id}`}
+                    />
+                  </div>
                   <Row>
                     {/* <Errata app={"pcbas"} item={pcba} setRefresh={setRefresh} /> */}
                   </Row>
@@ -379,9 +388,10 @@ const DisplayPcba = (props) => {
       content: (
         <>
           <div className="row m-3">
-            <RevisionsTable
+            <RevisionTimeline
               app={"pcbas"}
               item={pcba}
+              variant="full"
               setRevisionListParent={setRevisionList}
             />
           </div>
@@ -389,8 +399,8 @@ const DisplayPcba = (props) => {
       ),
     },
     {
-      eventKey: "traceability",
-      title: "Traceability",
+      eventKey: "audit-log",
+      title: "Audit Log",
       content: (
         <>
           {pcba == null || pcba === undefined ? (

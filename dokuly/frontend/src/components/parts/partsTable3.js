@@ -17,6 +17,7 @@ import { getUser } from "../layout/queries";
 import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
 import { useSyncedSearchParam } from "../common/hooks/useSyncedSearchParam";
 import { starFormatter } from "../dokuly_components/formatters/starFormatter";
+import { releaseStateFormatter } from "../dokuly_components/formatters/releaseStateFormatter";
 import { starPart, unstarPart } from "./functions/queries";
 
 export default function PartsTable(props) {
@@ -299,18 +300,7 @@ export default function PartsTable(props) {
       header: "State",
       filterType: "select",
       filterValue: (row) => row.release_state || "", // Use raw value for filtering
-      formatter: (row) => {
-        if (row.release_state === "Draft") {
-          return <span className="badge badge-pill badge-warning">Draft</span>;
-        }
-        if (row.release_state === "Review") {
-          return <span className="badge badge-pill badge-warning">Review</span>;
-        }
-        if (row.release_state === "Released") {
-          return row.release_state;
-        }
-        return null;
-      },
+      formatter: (row) => releaseStateFormatter(row),
     },
     {
       key: "last_updated",

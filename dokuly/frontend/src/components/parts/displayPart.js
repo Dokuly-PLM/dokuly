@@ -16,6 +16,7 @@ import Heading from "../dokuly_components/Heading";
 import { FilesTable } from "../common/filesTable/filesTable";
 import PartInformationCard from "../dokuly_components/partInfoCard";
 import RevisionsTable from "../dokuly_components/revisionsTable/revisionsTable";
+import RevisionTimeline from "../dokuly_components/revisionsTable/revisionTimeline";
 import RevisionNotes from "../dokuly_components/revisionNotes/revisionNotes";
 import PriceCard from "../common/priceCard/priceCard";
 import TraceabilityTable from "../dokuly_components/traceabilityTable/traceabilityTable";
@@ -303,6 +304,14 @@ const DisplayPart = (props) => {
                     setRefresh={setRefresh}
                   />
                 </div>
+                <div className="row">
+                  <RevisionTimeline
+                    app={"parts"}
+                    item={part}
+                    variant="embedded"
+                    basePath={`/parts/${currentPartID}`}
+                  />
+                </div>
               </React.Fragment>
             </div>
           </div>
@@ -388,9 +397,10 @@ const DisplayPart = (props) => {
             </div>
           ) : (
             <div className="row m-3">
-              <RevisionsTable
+              <RevisionTimeline
                 app={"parts"}
                 item={part}
+                variant="full"
                 setRevisionListParent={setRevisionList}
               />
             </div>
@@ -399,8 +409,8 @@ const DisplayPart = (props) => {
       ),
     },
     {
-      eventKey: "traceability",
-      title: "Traceability",
+      eventKey: "audit-log",
+      title: "Audit Log",
       content: (
         <>
           {part == null || part === undefined ? (
