@@ -85,6 +85,8 @@ A `.env` file at repo root is loaded by docker-compose.
 
 **Revision control**: Parts, PCBAs, assemblies, and documents all have `revision` and `release_state` fields. A new revision creates a new DB row; `part_number` stays the same across revisions.
 
+**Model fields**: When adding new fields to Django models, always include a `help_text` description on the field itself (e.g. `models.CharField(max_length=100, help_text="Short explanation of the field's purpose")`). This makes the schema self-documenting and surfaces in admin, DRF browsable API, and generated docs.
+
 Dokuly components shall be used when available. They are found in `dokuly/frontend/src/components/dokuly_components` and there are also common components and functions found in `dokuly/frontend/src/components/common` that should be used for most reusable code.
 
 ## Design Language ("Clinical Architect")
