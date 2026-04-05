@@ -2,8 +2,7 @@
 
 Dokuly is an open-source Product Lifecycle Management system built for engineering and operations teams that move fast. It gives you structured control over parts, documents, assemblies, purchasing, inventory, production, and more — without the complexity and cost of legacy PLM tools.
 
-[Get started](quickstart.md){ .md-button .md-button--primary }
-[View on GitHub](https://github.com/Dokuly-PLM/dokuly){ .md-button }
+**[Get started](quickstart.md)** | **[View on GitHub](https://github.com/Dokuly-PLM/dokuly)**
 
 ---
 
@@ -66,7 +65,7 @@ Integrate with external systems using the REST API. Project-scoped API keys with
 
 Dokuly runs as a Docker stack with PostgreSQL, Django, and nginx. Set up takes minutes.
 
-[Quickstart guide](quickstart.md){ .md-button }
+**[Quickstart guide](quickstart.md)**
 
 ---
 

@@ -38,8 +38,6 @@ theme:
     code: Roboto Mono
   palette:
     scheme: default
-    primary: custom
-    accent: custom
   features:
     - navigation.sections
     - navigation.expand
