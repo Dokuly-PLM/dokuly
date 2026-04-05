@@ -2,6 +2,7 @@ import jwt
 import logging
 import re
 import requests
+import time
 import uuid
 from datetime import timedelta
 
@@ -412,13 +413,36 @@ def convert_to_pdf(request, file_id):
     storage_name = file_obj.file.name.split("/")[-1] if file_obj.file else ""
     ext = storage_name.rsplit(".", 1)[-1].lower() if "." in storage_name else ""
 
+    # Force-save the document in OODS so we convert the latest in-editor content.
+    # This triggers a callback (status 6) that saves current content to our storage.
+    internal_ds_url = settings.ONLYOFFICE_INTERNAL_DS_URL
+    doc_key = _make_document_key(file_obj)
+    forcesave_payload = {"c": "forcesave", "key": doc_key}
+    forcesave_payload["token"] = _sign_jwt(forcesave_payload)
+    try:
+        fs_resp = requests.post(
+            f"{internal_ds_url}/coauthoring/CommandService.ashx",
+            json=forcesave_payload,
+            headers={"Content-Type": "application/json"},
+            timeout=30,
+        )
+        fs_result = fs_resp.json() if fs_resp.ok else {}
+        logger.info(f"OODS forcesave for key {doc_key}: {fs_result}")
+        # error=0 means success, error=3 means no changes to save — both are fine
+        if fs_result.get("error") not in (None, 0, 3):
+            logger.warning(f"OODS forcesave returned error: {fs_result}")
+    except Exception as e:
+        logger.warning(f"OODS forcesave failed (proceeding anyway): {e}")
+
+    # Re-fetch the file object to get the latest content after forcesave
+    time.sleep(1)  # Brief delay for the forcesave callback to complete
+    file_obj.refresh_from_db()
+    doc_key = _make_document_key(file_obj)
+
     # Generate a temporary download token for OODS to fetch the file
     file_token = _generate_file_token(file_id)
     callback_base = settings.ONLYOFFICE_CALLBACK_BASE
     download_url = f"{callback_base}/api/files/onlyoffice/download/{file_id}/?token={file_token}"
-
-    # Build the document key
-    doc_key = _make_document_key(file_obj)
 
     # Call OODS Conversion API
     conversion_payload = {
