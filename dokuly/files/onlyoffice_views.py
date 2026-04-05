@@ -276,8 +276,17 @@ def editor_callback(request, file_id):
                 resp.raise_for_status()
                 logger.warning(f"OnlyOffice downloaded {len(resp.content)} bytes for file {file_id}")
 
-                storage_name = file_obj.display_name or "document"
-                saved_path = save_file_content(file_obj, storage_name, ContentFile(resp.content))
+                # Build filename with extension from the storage path or OODS filetype
+                storage_name = file_obj.file.name.split("/")[-1] if file_obj.file else ""
+                filetype = body.get("filetype", "")
+                if "." in storage_name:
+                    save_name = storage_name
+                elif filetype:
+                    base = file_obj.display_name or "document"
+                    save_name = f"{base}.{filetype}"
+                else:
+                    save_name = storage_name or (file_obj.display_name or "document")
+                saved_path = save_file_content(file_obj, save_name, ContentFile(resp.content))
                 logger.warning(f"OnlyOffice saved file {file_id} at path: {saved_path}")
             except Exception as e:
                 logger.error(f"OnlyOffice save error for file {file_id}: {e}", exc_info=True)
