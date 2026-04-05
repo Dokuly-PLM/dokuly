@@ -85,6 +85,31 @@ A `.env` file at repo root is loaded by docker-compose.
 
 **Revision control**: Parts, PCBAs, assemblies, and documents all have `revision` and `release_state` fields. A new revision creates a new DB row; `part_number` stays the same across revisions.
 
+## Access Control & Security (mandatory for all views)
+
+Every Django view that returns or mutates data **must** enforce access control. Follow this checklist when writing or reviewing views:
+
+1. **Authentication**: Use `@permission_classes([IsAuthenticated])` (DRF) on every view that serves user data. The only exception is endpoints explicitly designed for unauthenticated access (e.g. OODS callbacks, token-protected download endpoints) — these must use signed token verification instead.
+
+2. **Project-scoped access**: After fetching the object(s), call `check_project_access(queryset, request.user)` from `projects.views`. This verifies the user is a member of the object's project (or the object has no project). Return `403 Forbidden` if the check fails.
+   ```python
+   from projects.views import check_project_access
+
+   file_qs = File.objects.filter(id=file_id)
+   if not check_project_access(file_qs, user):
+       return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
+   ```
+
+3. **Token-protected unauthenticated endpoints**: When a service (OnlyOffice, 3D viewer, etc.) needs to download a file without a user session, use `TimestampSigner` to generate a short-lived signed token. The token must only be issued from an authenticated, project-access-verified endpoint (i.e. steps 1 and 2 above must pass before generating the token). The download endpoint uses `@permission_classes([AllowAny])` but **must** verify the signed token before serving any data. See `files/onlyoffice_views.py` for the pattern.
+
+4. **Release state**: Before allowing mutations on revisioned objects (Part, Assembly, Pcba, Document), check `release_state != "Released"`. Released items are immutable.
+
+5. **Admin checks**: Use `check_permissions_admin(user)` from `profiles.views` for admin-only operations.
+
+Do **not** skip or weaken these checks, even for "internal" or "utility" endpoints. Every endpoint is reachable by any authenticated user unless guarded.
+
+**Model fields**: When adding new fields to Django models, always include a `help_text` description on the field itself (e.g. `models.CharField(max_length=100, help_text="Short explanation of the field's purpose")`). This makes the schema self-documenting and surfaces in admin, DRF browsable API, and generated docs.
+
 Dokuly components shall be used when available. They are found in `dokuly/frontend/src/components/dokuly_components` and there are also common components and functions found in `dokuly/frontend/src/components/common` that should be used for most reusable code.
 
 ## Design Language ("Clinical Architect")

@@ -461,6 +461,15 @@ if local_server:
     FIELD_ENCRYPTION_KEY = os.getenv("FIELD_ENCRYPTION_KEY", "eFBmelEr4kgibnGbt4Admrd634hef54gegwefbbfZz4=")
     # For best security practices, please set the FIELD_ENCRYPTION_KEY to a random string in your .env file
 
+# OnlyOffice Document Server
+ONLYOFFICE_JWT_SECRET = os.getenv("ONLYOFFICE_JWT_SECRET", "dokuly_dev_secret")
+# DS_URL is the browser-facing URL for the OnlyOffice JS API.
+# In production (nginx proxy): /onlyoffice
+# In local dev (Vite): http://localhost:8088 (direct access, avoids CORS iframe issues)
+ONLYOFFICE_DS_URL = os.getenv("ONLYOFFICE_DS_URL", "http://localhost:8088" if local_server else "/onlyoffice")
+ONLYOFFICE_INTERNAL_DS_URL = os.getenv("ONLYOFFICE_INTERNAL_DS_URL", "http://onlyoffice")
+ONLYOFFICE_CALLBACK_BASE = os.getenv("ONLYOFFICE_CALLBACK_BASE", "http://web:8000")
+
 # Removes some non null init warnings
 SILENCED_SYSTEM_CHECKS = ["models.W042",
                           "fields.E010", "staticfiles.W004", "fields.W340"]

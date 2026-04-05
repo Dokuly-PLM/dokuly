@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
+from django.utils import timezone
 from tenants.azure_storage import CustomAzureStorage
 from projects.models import Project
 
@@ -29,9 +30,29 @@ class File(models.Model):
         Project, on_delete=models.SET_NULL, blank=True, null=True
     )
 
+    # GLB (binary glTF) conversion of STEP/STP CAD files, used by the 3D viewer
+    step_glb_conversion = models.FileField(
+        storage=CustomAzureStorage, upload_to="converted/", blank=True, null=True
+    )
+
     # TODO consider moving to a more correct is_archived field.
     archived = models.IntegerField(default=0, blank=True)
     archived_date = models.DateField(null=True, blank=True)
+
+
+class FileLock(models.Model):
+    """Tracks which user is currently editing a file via OnlyOffice."""
+    file = models.OneToOneField(File, on_delete=models.CASCADE, related_name="lock")
+    locked_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    locked_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    session_key = models.CharField(max_length=255, blank=True, default="")
+
+    def is_expired(self):
+        return timezone.now() >= self.expires_at
+
+    def __str__(self):
+        return f"Lock on File {self.file_id} by {self.locked_by} (expires {self.expires_at})"
 
 
 class Image(models.Model):

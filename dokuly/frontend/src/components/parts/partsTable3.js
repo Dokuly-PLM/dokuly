@@ -252,7 +252,7 @@ export default function PartsTable(props) {
         }
         return 0;
       },
-      maxWidth: "100px",
+      whiteSpace: "nowrap",
     },
     {
       key: "image_url",

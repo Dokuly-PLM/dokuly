@@ -325,6 +325,8 @@ const PartInformationCard = ({
           </InfoField>
         )}
 
+        {itemEcos && itemEcos.length > 0 && <SectionDivider />}
+
         <div className="info-card__tags">
           <DokulyTags
             tags={item?.tags ?? []}

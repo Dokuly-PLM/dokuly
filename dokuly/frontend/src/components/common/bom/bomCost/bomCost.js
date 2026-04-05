@@ -58,9 +58,9 @@ const BomCost = ({ refresh, app = "", id = -1 }) => {
             onMouseEnter={() => setShowMissingPriceTooltip(true)}
             onMouseLeave={() => setShowMissingPriceTooltip(false)}
           >
-            <span 
-              className="badge badge-pill badge-danger mx-4 my-4"
-              style={{ cursor: "pointer" }}
+            <span
+              className="badge badge-pill mx-4 my-4"
+              style={{ cursor: "pointer", backgroundColor: "#F5C343", color: "#5A4B1A" }}
             >
               {partsMissingPriceDetails.length} parts missing price!
             </span>

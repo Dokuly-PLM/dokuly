@@ -115,7 +115,7 @@ export default function DocumentsOverviewTable2() {
       key: "full_doc_number",
       header: "Document number",
       formatter: numberFormatter2,
-      maxWidth: "150px",
+      whiteSpace: "nowrap",
     },
     {
       key: "thumbnail",

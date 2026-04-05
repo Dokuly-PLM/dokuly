@@ -227,6 +227,7 @@ export default function PcbaTable(props) {
       key: "full_part_number",
       header: "Part number",
       formatter: numberFormatter,
+      whiteSpace: "nowrap",
     },
     {
       key: "pcb_renders",

@@ -11,26 +11,68 @@ import ColorPicker from "../dokulyForm/colorPicker";
 import EditTagsForm from "./editTagsForm";
 import SubmitButton from "../submitButton";
 
-export const TagOption = (props) => (
-  <components.Option {...props}>
-    <div
-      className="badge badge-info"
-      style={{
-        padding: "5px 10px",
-        height: "20px",
-        borderRadius: "20px",
-        minHeight: "20px",
-        margin: "5px",
-        fontSize: "12px",
-        cursor: "pointer",
-        position: "relative",
-        backgroundColor: props.data.color ?? "#155216",
-      }}
-    >
-      {props.data.label}
-    </div>
-  </components.Option>
-);
+/**
+ * Convert a hex color to an rgba string with the given alpha.
+ */
+const hexToRgba = (hex, alpha) => {
+  const r = Number.parseInt(hex.slice(1, 3), 16);
+  const g = Number.parseInt(hex.slice(3, 5), 16);
+  const b = Number.parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+/**
+ * Darken a hex color so it meets readable contrast on a light background.
+ * Multiplies each RGB channel by `factor` (0–1, lower = darker).
+ */
+const darkenHex = (hex, factor) => {
+  const r = Math.round(Number.parseInt(hex.slice(1, 3), 16) * factor);
+  const g = Math.round(Number.parseInt(hex.slice(3, 5), 16) * factor);
+  const b = Math.round(Number.parseInt(hex.slice(5, 7), 16) * factor);
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+/**
+ * Return a text color for a tag: darkened version of the tag color so it
+ * always reads well on the light-tinted background.
+ */
+const getTagTextColor = (hex) => {
+  const r = Number.parseInt(hex.slice(1, 3), 16);
+  const g = Number.parseInt(hex.slice(3, 5), 16);
+  const b = Number.parseInt(hex.slice(5, 7), 16);
+  // Perceived brightness (0-255)
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  // Light colors need heavy darkening, dark colors need less
+  if (brightness > 180) return darkenHex(hex, 0.35);
+  if (brightness > 120) return darkenHex(hex, 0.5);
+  return hex;
+};
+
+export const TagOption = (props) => {
+  const tagColor = props.data.color ?? "#155216";
+  return (
+    <components.Option {...props}>
+      <div
+        style={{
+          padding: "3px 10px",
+          minHeight: "22px",
+          borderRadius: "4px",
+          display: "inline-flex",
+          alignItems: "center",
+          margin: "4px",
+          fontSize: "0.75rem",
+          fontWeight: "500",
+          cursor: "pointer",
+          color: getTagTextColor(tagColor),
+          backgroundColor: hexToRgba(tagColor, 0.15),
+          border: `1px solid ${hexToRgba(tagColor, 0.35)}`,
+        }}
+      >
+        {props.data.label}
+      </div>
+    </components.Option>
+  );
+};
 
 export const getRandomColor = () => {
   return `#${Math.floor(Math.random() * 16777215)
@@ -141,35 +183,57 @@ export const getBestTextColor = (hexColor) => {
 };
 
 export const Tag = ({ tag, onRemove, style = { cursor: "pointer" } }) => {
-  // Determine the best text color for the given tag color
-  const textColor = getBestTextColor(tag?.color ?? "#155216");
+  const [hovered, setHovered] = useState(false);
+  const tagColor = tag?.color ?? "#155216";
+
+  const handleRemove = (e) => {
+    e.stopPropagation();
+    if (window.confirm(`Remove tag "${tag.name}"?`)) {
+      onRemove(tag);
+    }
+  };
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
     <div
-      className={"badge badge-info"}
       style={{
-        minHeight: "20px",
-        height: "20px",
-        padding: "5px 10px",
-        borderRadius: "20px",
-        display: "flex",
-        textAlign: "center",
-        justifyContent: "center",
+        minHeight: "22px",
+        padding: "3px 10px",
+        borderRadius: "4px",
+        display: "inline-flex",
         alignItems: "center",
-        margin: "5px",
-        fontSize: "12px",
-        cursor: "pointer",
-        position: "relative",
-        color: textColor,
-        backgroundColor: tag?.color ?? "#155216",
+        gap: "4px",
+        fontSize: "0.75rem",
+        fontWeight: "500",
+        cursor: "default",
+        color: getTagTextColor(tagColor),
+        backgroundColor: hexToRgba(tagColor, hovered ? 0.22 : 0.15),
+        border: `1px solid ${hexToRgba(tagColor, 0.35)}`,
+        transition: "background-color 0.15s ease",
         ...style,
       }}
-      onClick={() => {
-        onRemove(tag);
-      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {tag.name}
+      {hovered && (
+        <span
+          onClick={handleRemove}
+          style={{
+            cursor: "pointer",
+            marginLeft: "2px",
+            fontSize: "0.7rem",
+            lineHeight: 1,
+            opacity: 0.6,
+            transition: "opacity 0.15s ease",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.6"; }}
+          title={`Remove tag "${tag.name}"`}
+        >
+          ✕
+        </span>
+      )}
     </div>
   );
 };

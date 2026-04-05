@@ -2,6 +2,8 @@ from django.urls.conf import path
 from rest_framework import routers
 from .api import FileViewSet
 from . import views
+from . import onlyoffice_views
+from . import step_views
 
 router = routers.DefaultRouter()
 router.register("api/files", FileViewSet, "files")
@@ -39,6 +41,32 @@ urlpatterns = [
     path("api/files/images/", views.get_images, name='get-images'),
     path('api/files/image/<int:image_id>/<str:version>/', views.get_image, name='get_image'),
     path('images/download/<int:id>/', views.download_image, name='download_image'),
+
+    # OnlyOffice integration
+    path("api/files/onlyoffice/config/<int:file_id>/",
+         onlyoffice_views.get_editor_config),
+    path("api/files/onlyoffice/download/<int:file_id>/",
+         onlyoffice_views.download_file_for_oods),
+    path("api/files/onlyoffice/callback/<int:file_id>/",
+         onlyoffice_views.editor_callback),
+    path("api/files/onlyoffice/unlock/<int:file_id>/",
+         onlyoffice_views.unlock_file),
+    path("api/files/onlyoffice/lock-status/<int:file_id>/",
+         onlyoffice_views.get_lock_status),
+    path("api/files/onlyoffice/convert-to-pdf/<int:file_id>/",
+         onlyoffice_views.convert_to_pdf),
+    path("api/files/onlyoffice/delete-pdf/<int:document_id>/<str:pdf_type>/",
+         onlyoffice_views.delete_document_pdf),
+
+    # STEP 3D Viewer
+    path("api/files/step/convert/<int:file_id>/",
+         step_views.convert_step),
+    path("api/files/step/viewer-config/<int:file_id>/",
+         step_views.get_step_viewer_config),
+    path("api/files/step/glb/<int:file_id>/",
+         step_views.download_glb),
+    path("api/files/step/raw/<int:file_id>/",
+         step_views.download_step_raw),
 
     # DEPRECATED
     path(

@@ -28,7 +28,7 @@ import math
 import io
 from PIL import Image as PILImage
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from files.fileUtilities import delete_file_with_cleanup, delete_image_with_cleanup, get_file_name
+from files.fileUtilities import delete_file_with_cleanup, delete_image_with_cleanup, get_file_name, save_file_content
 from io import BytesIO
 
 import pcbas.viewUtilities as util
@@ -450,7 +450,7 @@ def upload_file(request, file_id):
         file_type = data["file_type"]
         file = request.FILES["file"]
 
-        file_obj.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
+        save_file_content(file_obj, file.name, file)
         serializer = FileSerializer(file_obj, many=False)
         res = {"msg": f"{file_type}Document uploaded", "file": serializer.data}
         return Response(res, status=status.HTTP_200_OK)
