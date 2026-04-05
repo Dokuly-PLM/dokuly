@@ -4,10 +4,6 @@ on: pull_request
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: [3.11]
     services:
       partsdb:
         image: postgres:15
@@ -19,13 +15,13 @@ jobs:
         ports:
           - 5432:5432
     steps:
+      - uses: actions/checkout@v4
 
-      # Setup Python
-      - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install Python Dependencies
         run: |
@@ -35,9 +31,8 @@ jobs:
 
       - name: Run Django Migrations
         env:
-          DB: ${{ matrix.db }}
           DB_HOST: 127.0.0.1
-          DB_PORT: ${{ matrix.db_port }}
+          DB_PORT: 5432
           DB_PASSWORD: AAAAmeaIE1elf213fe_fseof302fldAADokulySelfhost
           DJANGO_TESTING_SERVER: 1
           d_s_k: "asdofnasdfnasdioufasdioufasdifujnsdfaiun"
