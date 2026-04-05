@@ -128,8 +128,8 @@ export const DocumentFilesTable = (props) => {
     }
 
     // For other files, open the viewer modal
-    const viewUri = row.uri.includes("/download/")
-      ? row.uri.replace("/download/", "/view/")
+    const viewUri = row.uri.includes("/download/file/")
+      ? row.uri.replace("/download/file/", "/view/")
       : row.uri;
     setSelectedFileUri(viewUri);
     setSelectedFileName(row.file_name);
@@ -243,6 +243,7 @@ export const DocumentFilesTable = (props) => {
     const fileId = row.file_id || row.id;
     const lockData = fileId ? fileLocks[fileId] : null;
     const isOffice = isOfficeFileRow(row);
+    const ext = (row.file_name || "").split(".").pop().toLowerCase();
 
     return (
       <div className="d-flex align-items-center gap-3 justify-content-end">

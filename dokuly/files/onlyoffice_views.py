@@ -101,9 +101,11 @@ def _get_or_create_lock(file_obj, user):
 
 def _make_document_key(file_obj):
     """Generate a unique document key for OODS caching.
-    Must change whenever file content changes."""
-    timestamp = int(file_obj.last_updated.timestamp()) if file_obj.last_updated else 0
-    return f"{file_obj.id}_{timestamp}"
+    Must change whenever file content changes.
+    Uses the storage path hash so it changes on every save_file_content call."""
+    file_name = file_obj.file.name if file_obj.file else ""
+    timestamp = int(file_obj.last_updated.timestamp() * 1000) if file_obj.last_updated else 0
+    return f"{file_obj.id}_{timestamp}_{hash(file_name) & 0xFFFF:04x}"
 
 
 @api_view(("GET",))
