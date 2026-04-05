@@ -1,4 +1,5 @@
 # Git
+.git
 .github
 .gitignore
 
@@ -7,16 +8,23 @@ app/__pycache__/
 app/*/__pycache__/
 app/*/*/__pycache__/
 app/*/*/*/__pycache__/
+**/__pycache__/
 .env/
 .venv/
 venv/
 
+# Node
+node_modules/
+
 # Local PostgreSQL data
 data/
 
+# Dev/config files
 .env
 .docker-compose-dev.yml
-#.database_backup.sql
-#database_backup.sql
 gs_temp.json
 rome.json
+
+# Documentation
+docs/
+mkdocs.yml
