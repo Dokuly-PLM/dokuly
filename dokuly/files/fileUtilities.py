@@ -80,8 +80,8 @@ def delete_image_with_cleanup(image):
 def save_file_content(file_obj, filename, content):
     """Save new content to an existing File object, replacing the old file.
 
-    Deletes the previous file from storage (if any), then saves the new
-    content under a UUID-prefixed path to avoid name collisions.
+    Saves the new content first, then deletes the old file from storage
+    to prevent data loss if the save fails.
 
     Args:
         file_obj: File model instance to update.
@@ -91,12 +91,18 @@ def save_file_content(file_obj, filename, content):
     Returns:
         The storage path where the file was saved.
     """
-    if file_obj.file:
+    old_file_name = file_obj.file.name if file_obj.file else None
+
+    # Save new file first
+    file_obj.file.save(f"{uuid.uuid4().hex}/{filename}", content, save=True)
+
+    # Delete old file from storage only after new one is safely stored
+    if old_file_name:
         try:
-            file_obj.file.delete(save=False)
+            file_obj.file.storage.delete(old_file_name)
         except Exception:
             pass
-    file_obj.file.save(f"{uuid.uuid4().hex}/{filename}", content, save=True)
+
     return file_obj.file.name
 
 
