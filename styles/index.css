@@ -1,27 +1,67 @@
+/* Dokuly — Material theme overrides
+   Matches the "Clinical Architect" design language */
+
 :root {
-    --dokuly-primary-color: #22655d;
+  /* Primary palette */
+  --md-primary-fg-color: #165216;
+  --md-primary-fg-color--light: #1a6b1a;
+  --md-primary-fg-color--dark: #0e3a0e;
+
+  /* Accent */
+  --md-accent-fg-color: #108E82;
+  --md-accent-fg-color--transparent: rgba(16, 142, 130, 0.1);
+
+  /* Background */
+  --md-default-bg-color: #FAFAFA;
+  --md-default-bg-color--light: #FFFFFF;
 }
 
-.navbar{
-    background-color: var(--dokuly-primary-color) !important;
+/* Header bar */
+.md-header {
+  background-color: #165216;
 }
 
-.navbar.bg-primary {
-    background-image: none !important;
+/* Tabs (if enabled) */
+.md-tabs {
+  background-color: #165216;
 }
 
-ul.flex-column > li > ul > li > a {
-    color: var(--dokuly-primary-color) !important;
+/* Sidebar active link */
+.md-nav__link--active,
+.md-nav__link:is(:focus, :hover) {
+  color: #165216;
 }
 
-ul.flex-column > li > a {
-    color: var(--dokuly-primary-color) !important;
+/* Content area */
+.md-content {
+  max-width: 960px;
 }
 
-ul.show > li > a:hover {
-    background-color: var(--dokuly-primary-color) !important;
+/* Admonition colors — tip uses teal accent */
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: #108E82;
+}
+.md-typeset .tip > .admonition-title,
+.md-typeset .tip > summary {
+  background-color: rgba(16, 142, 130, 0.1);
+}
+.md-typeset .tip > .admonition-title::before,
+.md-typeset .tip > summary::before {
+  color: #108E82;
 }
 
-ul.show > li:nth-child(2) > a.active {
-    background-color: var(--dokuly-primary-color) !important;
+/* Code blocks */
+.md-typeset code {
+  border-radius: 4px;
+}
+
+/* Footer link color */
+.md-footer__link {
+  color: #FFFFFF;
+}
+
+/* Search highlight */
+.md-search-result .md-typeset mark {
+  background-color: rgba(16, 142, 130, 0.3);
 }
