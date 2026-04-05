@@ -1,4 +1,6 @@
 import jwt
+import logging
+import re
 import requests
 import uuid
 from datetime import timedelta
@@ -16,8 +18,14 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 from .models import File, FileLock
+from .fileUtilities import delete_file_with_cleanup
+from profiles.models import Profile
 from profiles.views import check_permissions_admin
 from projects.views import check_project_access
+from documents.models import Document
+from documents.pdfUtils import process_pdf_and_generate_thumbnail
+
+logger = logging.getLogger(__name__)
 
 
 LOCK_DURATION_HOURS = 1
@@ -123,7 +131,6 @@ def get_editor_config(request, file_id):
 
     # Check if this is a released document (read-only)
     force_read_only = False
-    from documents.models import Document
     docs = Document.objects.filter(files=file_obj)
     for doc in docs:
         if doc.release_state == "Released":
@@ -231,8 +238,6 @@ def editor_callback(request, file_id):
         7 - error has occurred while force saving the document
     """
     body = request.data
-    import logging
-    logger = logging.getLogger(__name__)
     logger.warning(f"OnlyOffice callback for file {file_id}: {body}")
 
     # Verify JWT from OODS — required since our OODS is configured with JWT_SECRET
@@ -259,7 +264,6 @@ def editor_callback(request, file_id):
         # OODS may return URLs with its external address (e.g. localhost:8088)
         # which isn't reachable from inside Docker. Rewrite to internal hostname.
         if download_url:
-            import re
             download_url = re.sub(
                 r'^https?://[^/]+',
                 settings.ONLYOFFICE_INTERNAL_DS_URL,
@@ -272,19 +276,27 @@ def editor_callback(request, file_id):
                 resp.raise_for_status()
                 logger.warning(f"OnlyOffice downloaded {len(resp.content)} bytes for file {file_id}")
 
-                # Delete old file and save new content at the same path
+                # Save new content first, then delete old to prevent data loss
                 old_name = file_obj.file.name if file_obj.file else None
                 if old_name:
-                    # Save with the exact same storage path to avoid creating duplicates
                     storage = file_obj.file.storage
-                    storage.delete(old_name)
-                    saved_name = storage.save(old_name, ContentFile(resp.content))
+                    # Save new file with a UUID path first
+                    base_name = old_name.split("/")[-1] if "/" in old_name else old_name
+                    new_name = f"{uuid.uuid4().hex}/{base_name}"
+                    saved_name = storage.save(new_name, ContentFile(resp.content))
+                    # Only delete the old file after the new one is safely stored
+                    try:
+                        storage.delete(old_name)
+                    except Exception:
+                        pass
                     file_obj.file.name = saved_name
                     file_obj.save()
                     logger.warning(f"OnlyOffice saved file {file_id} at path: {saved_name}")
                 else:
-                    # No existing file — use default save
-                    file_obj.file.save("document", ContentFile(resp.content), save=True)
+                    # No existing file — save with UUID path
+                    file_obj.file.save(
+                        f"{uuid.uuid4().hex}/document", ContentFile(resp.content), save=True
+                    )
             except Exception as e:
                 logger.error(f"OnlyOffice save error for file {file_id}: {e}", exc_info=True)
                 return Response({"error": 1, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -348,9 +360,6 @@ def get_lock_status(request, file_id):
 def delete_document_pdf(request, document_id, pdf_type):
     """Delete the pdf_source or pdf_print from a document.
     pdf_type must be 'source' or 'print'."""
-    from documents.models import Document
-    from files.fileUtilities import delete_file_with_cleanup
-
     user = request.user
     try:
         doc = Document.objects.get(id=document_id)
@@ -389,9 +398,6 @@ def delete_document_pdf(request, document_id, pdf_type):
 def convert_to_pdf(request, file_id):
     """Convert an Office file to PDF using OnlyOffice Conversion API,
     then save it as pdf_source and run the PDF print pipeline."""
-    import logging
-    logger = logging.getLogger(__name__)
-
     user = request.user
 
     try:
@@ -405,7 +411,6 @@ def convert_to_pdf(request, file_id):
         return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
 
     # Find the parent document
-    from documents.models import Document
     doc = Document.objects.filter(files=file_obj).first()
     if not doc:
         return Response("No document found for this file", status=status.HTTP_400_BAD_REQUEST)
@@ -467,7 +472,6 @@ def convert_to_pdf(request, file_id):
         )
 
     # Rewrite URL to internal Docker hostname
-    import re
     pdf_url = re.sub(r'^https?://[^/]+', internal_ds_url, pdf_url)
 
     # Download the converted PDF
@@ -481,24 +485,15 @@ def convert_to_pdf(request, file_id):
             status=status.HTTP_502_BAD_GATEWAY,
         )
 
-    # Save as pdf_source on the document
-    import uuid as uuid_mod
-    from files.fileUtilities import delete_file_with_cleanup
+    # Save new pdf_source first, then delete old to prevent data loss
+    old_pdf_source = doc.pdf_source
 
-    # Delete old pdf_source if it exists
-    if doc.pdf_source:
-        try:
-            delete_file_with_cleanup(doc.pdf_source)
-        except Exception:
-            pass
-
-    # Create new File for pdf_source
     pdf_file = File()
     pdf_file.display_name = f"{file_obj.display_name or storage_name} (PDF Source)"
     pdf_file.project = file_obj.project
     pdf_filename = storage_name.rsplit(".", 1)[0] + ".pdf" if "." in storage_name else "document.pdf"
     pdf_file.file.save(
-        f"{uuid_mod.uuid4().hex}/{pdf_filename}",
+        f"{uuid.uuid4().hex}/{pdf_filename}",
         ContentFile(pdf_resp.content),
     )
     pdf_file.save()
@@ -506,10 +501,14 @@ def convert_to_pdf(request, file_id):
     doc.pdf_source = pdf_file
     doc.save()
 
-    # Run the PDF print pipeline
-    from documents.pdfUtils import process_pdf_and_generate_thumbnail
-    from profiles.models import Profile
+    # Only delete old pdf_source after new one is safely saved
+    if old_pdf_source:
+        try:
+            delete_file_with_cleanup(old_pdf_source)
+        except Exception:
+            pass
 
+    # Run the PDF print pipeline
     org_id = -1
     try:
         profile = Profile.objects.get(user=user)
