@@ -1,6 +1,6 @@
 site_name: Dokuly Docs
 site_description: Open-source Product Lifecycle Management — documentation and feature guide
-site_url: https://dokuly-plm.github.io/dokuly/
+site_url: https://dokuly.com/
 
 nav:
   - Home: index.md
@@ -43,7 +43,6 @@ theme:
     - navigation.expand
     - navigation.top
     - navigation.indexes
-    - toc.integrate
     - content.code.copy
   favicon: img/favicon.ico
 
