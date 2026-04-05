@@ -18,7 +18,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 from .models import File, FileLock
-from .fileUtilities import delete_file_with_cleanup
+from .fileUtilities import delete_file_with_cleanup, save_file_content
 from profiles.models import Profile
 from profiles.views import check_permissions_admin
 from projects.views import check_project_access
@@ -276,20 +276,9 @@ def editor_callback(request, file_id):
                 resp.raise_for_status()
                 logger.warning(f"OnlyOffice downloaded {len(resp.content)} bytes for file {file_id}")
 
-                # Delete old file from storage, then save new with UUID path
-                # (same pattern as upload_file in views.py)
-                if file_obj.file:
-                    try:
-                        file_obj.file.delete(save=False)
-                    except Exception:
-                        pass
                 storage_name = file_obj.display_name or "document"
-                file_obj.file.save(
-                    f"{uuid.uuid4().hex}/{storage_name}",
-                    ContentFile(resp.content),
-                    save=True,
-                )
-                logger.warning(f"OnlyOffice saved file {file_id} at path: {file_obj.file.name}")
+                saved_path = save_file_content(file_obj, storage_name, ContentFile(resp.content))
+                logger.warning(f"OnlyOffice saved file {file_id} at path: {saved_path}")
             except Exception as e:
                 logger.error(f"OnlyOffice save error for file {file_id}: {e}", exc_info=True)
                 return Response({"error": 1, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

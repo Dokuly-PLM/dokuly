@@ -1,5 +1,6 @@
 from .models import File, Image
 import os
+import uuid
 
 
 def delete_file_with_cleanup(file_obj):
@@ -74,6 +75,29 @@ def delete_image_with_cleanup(image):
     except Exception as e:
         print(f"Failed to delete image with cleanup: {e}")
         raise
+
+
+def save_file_content(file_obj, filename, content):
+    """Save new content to an existing File object, replacing the old file.
+
+    Deletes the previous file from storage (if any), then saves the new
+    content under a UUID-prefixed path to avoid name collisions.
+
+    Args:
+        file_obj: File model instance to update.
+        filename: Display/storage filename (e.g. "report.docx").
+        content: A Django File, ContentFile, UploadedFile, or similar.
+
+    Returns:
+        The storage path where the file was saved.
+    """
+    if file_obj.file:
+        try:
+            file_obj.file.delete(save=False)
+        except Exception:
+            pass
+    file_obj.file.save(f"{uuid.uuid4().hex}/{filename}", content, save=True)
+    return file_obj.file.name
 
 
 def get_file_name(path):
