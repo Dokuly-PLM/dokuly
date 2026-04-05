@@ -1,76 +1,89 @@
 # From Parts to PCBAs
 
-*PCBAs* are connected to Parts via its *BOM*. PCBAs can be used in other PCBAs or in other Assemblies. To use your parts to create a PCBA start by creating a new PCBA in dokuly.
+PCBAs (Printed Circuit Board Assemblies) are connected to parts through their bill of materials. A PCBA's BOM lists every component that goes onto the board, with quantities and reference designators. PCBAs can also be used as components in other PCBAs or in assemblies.
 
-<small><b>Note!</b> Parts, PCBAs, and Assemblies share a counter for their part numbers.</small>
-
-## Create a new PCBA
-
-<p style="max-height: 35px;">
-    Click on **PCBA** in the sidebar: &nbsp; <img src="../images/nav_pcba.png" height="50"> &nbsp; or go to /pcbas in your browser.
-</p>
-
-<p style="max-height: 35px;">
-    Next click on **New PCBA** &nbsp; <img src="../images/new_pcba.png" height="50">
-</p>
-
-<p style="max-height: 75px;">
-    A modal dialog will open, enter your information about the new PCBA, then hit submit when you are done: &nbsp; <img src="../images/submit.png" height="50">
-</p>
-
-Navigate to the PCBA by clicking on it in the table, or *open it in a new tab* by using **ctrl** + click.
-
-<img src="../images/pcba_table_entry.png">
+!!! tip
+    Parts, PCBAs, and assemblies share a single part number counter, so every item in your system has a unique number.
 
 ---
 
-## **PCBA** dashboard
+## Creating a PCBA
 
-The dashboard for your PCBAs is pretty similar to the **Part** dashboard. Edit the metadata for your PCBA, update pricing data, upload files, and write errata notes. In addition, you also have access to issues, inventory, notes, reference documents and revisions, the same as the part dashboard. 
+1. Navigate to **PCBA** in the sidebar
+2. Click **New PCBA**
+3. Fill in the project, display name, and any other details
+4. Click **Submit**
 
----
-
-## Connecting parts to your PCBA
-
-When on the PCBA dashboard, click on the tab named **Bill of Materials**. Here you can manage the list of parts that make up your PCBA. 
-
-To add a new connection in your BOM:
-
-<ol>
-  <li>
-    Click &nbsp; <img src="../images/bom_add_item.png" width="100">
-  </li>
-  <li>
-    Click on the "-" in the <strong>Part Number</strong> column, this will trigger the inline part search: 
-    <br>
-    <img src="../images/bom_search.png" width="200">
-  </li>
-  <li>
-    Enter part name or number, click search, then click on the part you want to add to the BOM:
-    <br>
-    <img src="../images/part_search.png" width="200">
-  </li>
-  <li>
-    The part is now added to your BOM!
-    <br>
-    <img src="../images/bom_entry.png">
-  </li>
-</ol>
-
-The rows in the table can be updated with in-line edit to change quantity, *Ref.Des*, and more.
-To perform an inline edit:
-
-1. Click on the value you want to edit.
-    <img src="../images/inline_edit.png" height="75">
-
-2. Update the value, then hit **Tab** or **Enter** to submit your change.
-
-
-<small><b>Tip!</b> You can navigate to a BOM item quickly by using **Ctrl** + click on the table row, or clicking on the right arrow (->) icon.</small>
-    <img src="../images/quick_navigation.png" height="75">
+The new PCBA is created in Draft state. Navigate to it by clicking its row in the table.
 
 ---
 
-## Next step
+## PCBA Dashboard
 
-<a href="/pcbas_and_assemblies">Further details on BOM for PCBAs and Assemblies</a>
+The PCBA dashboard is similar to the part dashboard. You can edit metadata, update pricing, upload files, and write notes. The same tabs are available — Overview, Issues, Inventory, Notes, Reference Documents, and Revisions — plus the **Bill of Materials** tab.
+
+---
+
+## Managing the Bill of Materials
+
+Open the **Bill of Materials** tab to manage the list of parts that make up your PCBA.
+
+### Adding Items to the BOM
+
+1. Click **Add item**
+2. In the new row, click the part number cell to open the inline part search
+3. Type a part name or number and click **Search**
+4. Select the part from the results — it is added to the BOM
+
+### Editing BOM Rows
+
+BOM rows support inline editing. Click on any editable cell to modify it:
+
+- **Quantity** — how many of this part are used
+- **Ref.Des** — reference designator(s) for the component placement
+- **DNM** — mark as Do-Not-Mount if the part is not placed in this configuration
+
+Press **Tab** or **Enter** to save your change.
+
+!!! tip
+    Navigate to a BOM item quickly by **Ctrl** + clicking on the table row, or clicking the arrow icon.
+
+### Importing a BOM from CSV
+
+If you have an existing BOM in CSV format:
+
+1. Click **Import BOM**
+2. Upload your CSV file
+3. Map the CSV columns to dokuly fields (MPN, designator, quantity, DNM)
+4. Review the processed data
+5. Click **Submit** to sync and upload
+
+### Exporting the BOM
+
+Use the **CSV** table exporter in the bottom-left corner of the BOM table to export the current BOM.
+
+### Clearing the BOM
+
+To start over, click **Clear BOM** to remove all rows. This cannot be undone.
+
+---
+
+## BOM Pricing
+
+The BOM's total cost is calculated from the pricing data of its component parts. To get accurate cost estimates:
+
+1. Ensure your parts have [supplier pricing](purchasing.md) set up
+2. The PCBA Overview tab shows the total BOM cost
+3. A manual price can also be set if the BOM pricing doesn't apply
+
+---
+
+## Generating a Purchase Order from BOM
+
+You can create a purchase order directly from a PCBA's BOM. See [Purchasing](purchasing.md) for details on how this works.
+
+---
+
+## Next Steps
+
+Learn more about [BOM management for PCBAs and Assemblies](pcbas_and_assemblies.md).
