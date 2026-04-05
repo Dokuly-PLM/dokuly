@@ -276,27 +276,20 @@ def editor_callback(request, file_id):
                 resp.raise_for_status()
                 logger.warning(f"OnlyOffice downloaded {len(resp.content)} bytes for file {file_id}")
 
-                # Save new content first, then delete old to prevent data loss
-                old_name = file_obj.file.name if file_obj.file else None
-                if old_name:
-                    storage = file_obj.file.storage
-                    # Save new file with a UUID path first
-                    base_name = old_name.split("/")[-1] if "/" in old_name else old_name
-                    new_name = f"{uuid.uuid4().hex}/{base_name}"
-                    saved_name = storage.save(new_name, ContentFile(resp.content))
-                    # Only delete the old file after the new one is safely stored
+                # Delete old file from storage, then save new with UUID path
+                # (same pattern as upload_file in views.py)
+                if file_obj.file:
                     try:
-                        storage.delete(old_name)
+                        file_obj.file.delete(save=False)
                     except Exception:
                         pass
-                    file_obj.file.name = saved_name
-                    file_obj.save()
-                    logger.warning(f"OnlyOffice saved file {file_id} at path: {saved_name}")
-                else:
-                    # No existing file — save with UUID path
-                    file_obj.file.save(
-                        f"{uuid.uuid4().hex}/document", ContentFile(resp.content), save=True
-                    )
+                storage_name = file_obj.display_name or "document"
+                file_obj.file.save(
+                    f"{uuid.uuid4().hex}/{storage_name}",
+                    ContentFile(resp.content),
+                    save=True,
+                )
+                logger.warning(f"OnlyOffice saved file {file_id} at path: {file_obj.file.name}")
             except Exception as e:
                 logger.error(f"OnlyOffice save error for file {file_id}: {e}", exc_info=True)
                 return Response({"error": 1, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
