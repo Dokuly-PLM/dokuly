@@ -1,21 +1,62 @@
 # Projects and Customers
 
-In dokuly, most items are connected to a project, which in turn is connected to a customer. For getting the best experience using dokuly, make sure you have created a suitable customer and project. A default one is usually provided to get you going.
-
-## Create a new **Customer**
-
-<p style="max-height: 35px;">Click on **Customers** in the sidebar: &nbsp; <img src="../images/nav_customers.png" height="50"> &nbsp; or go to /customers in your browser.</p>
-
-<p style="max-height: 35px;">Next click on <img src="../images/new_customer.png" height="45"></p>
-
-<p style="max-height: 35px;">A modal dialog will open, enter your information about the new customer, then hit submit when you are done: &nbsp; <img src="../images/submit.png" height="50"></p>
+In dokuly, most items are connected to a project, which in turn is connected to a customer. Projects provide access control and organizational context for your parts, documents, assemblies, and other data.
 
 ---
 
-## Create a new **Project**
+## Customers
 
-<p style="max-height: 35px;">Click on **Projects** in the sidebar: &nbsp; <img src="../images/nav_projects.png" height="50"> &nbsp; or go to /projects in your browser.</p>
+Customers represent the organizations or individuals your projects are for — whether internal teams, external clients, or product lines.
 
-<p style="max-height: 35px;">Next click on **New project** &nbsp; <img src="../images/new_project.png" height="50"></p>
+### Creating a Customer
 
-<p style="max-height: 35px;">A modal dialog will open, enter your information about the new project, then hit submit when you are done: &nbsp; <img src="../images/submit.png" height="50"></p>
+1. Navigate to **Customers** in the sidebar
+2. Click **New customer**
+3. Enter the customer details (name, contact information)
+4. Click **Submit**
+
+---
+
+## Projects
+
+Projects are the primary organizational unit. They scope access control, part numbering, and reporting.
+
+### Creating a Project
+
+1. Navigate to **Projects** in the sidebar
+2. Click **New project**
+3. Fill in the project name, select a customer, and configure settings
+4. Click **Submit**
+
+### Project Features
+
+Each project provides:
+
+- **Access control** — only project members can view and edit items in the project. Members are managed in the [Administration dashboard](admin/settings.md).
+- **Time tracking** — log time against custom tasks within the project
+- **Task management** — create and assign tasks to team members
+- **Gantt chart** — visualize tasks and timelines
+- **Notifications** — configure who gets notified about changes (managed in Admin > Projects)
+
+### Connecting Items to Projects
+
+When creating parts, documents, PCBAs, assemblies, or other items, you select which project they belong to. This determines:
+
+- Who can see and edit the item (based on project membership)
+- The numbering context for documents
+- Which items appear in project-scoped views and reports
+
+---
+
+## Access Control
+
+Project-based access control is the primary security boundary in dokuly. A user who is not a member of a project cannot see or modify items belonging to that project.
+
+To manage project membership:
+
+1. Go to **Admin** in the sidebar
+2. Open the **Projects** tab
+3. Click on a project
+4. Add or remove users under **Project Users** and **Non-Project Users**
+
+See [Administration](admin/settings.md) for more details on user and project management.

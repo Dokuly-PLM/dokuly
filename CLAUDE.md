@@ -64,7 +64,10 @@ npm run dev:docker:mac       # Mac (uses docker-compose-dev-mac.yml)
 docker compose -f docker-compose-dev-mac.yml up -d   # Mac
 ```
 
-The Docker setup runs: PostgreSQL on default port, pgAdmin on :3030, Django on :8000, nginx on :80.
+The Docker setup runs: PostgreSQL on default port, pgAdmin on :3030, Django on :8000, nginx on :80, MkDocs on :8009.
+
+### Documentation (MkDocs)
+The dev Docker stack includes a `docs` service using `squidfunk/mkdocs-material`. It serves the docs site with live-reload at `http://localhost:8009`. Source files are in `docs/`, config in `mkdocs.yml`.
 
 ## Environment
 
@@ -109,6 +112,27 @@ Every Django view that returns or mutates data **must** enforce access control. 
 Do **not** skip or weaken these checks, even for "internal" or "utility" endpoints. Every endpoint is reachable by any authenticated user unless guarded.
 
 **Model fields**: When adding new fields to Django models, always include a `help_text` description on the field itself (e.g. `models.CharField(max_length=100, help_text="Short explanation of the field's purpose")`). This makes the schema self-documenting and surfaces in admin, DRF browsable API, and generated docs.
+
+## File Storage Best Practices
+
+**Use `save_file_content()`**: When saving or replacing file content on a `File` object, always use `save_file_content(file_obj, filename, content)` from `files.fileUtilities`. Do not write custom save/delete logic in views. This utility:
+- Saves the new file **before** deleting the old one (prevents data loss)
+- Uses UUID-prefixed paths (`uuid4().hex/filename`) to avoid collisions
+- Handles storage cleanup of the old file
+
+**Preserve file extensions**: Always include the file extension when saving. The `filename` argument to `save_file_content` must include the extension (e.g. `report.docx`, not `report`). Losing the extension breaks OnlyOffice editing, PDF generation, and content-type detection.
+
+**All imports at top of file**: Never use inline imports inside view functions. All `import` and `from ... import` statements belong at the top of the module.
+
+**M2M field names vary by model**: When looking up which entity owns a `File`, note that the field name differs:
+- `Part`, `Assembly`, `Document`: `files` (M2M)
+- `Pcba`: `generic_files` (M2M)
+
+## OnlyOffice Integration Notes
+
+- **Force-save before PDF conversion**: When converting to PDF while the editor is open, the latest content is only in OODS memory. Call the OODS Command Service `forcesave` endpoint first, wait for the callback to save content to storage, then convert. See `convert_to_pdf` in `files/onlyoffice_views.py`.
+- **Document keys must be unique per content version**: OODS caches aggressively by document key. The key must change on every save. Use high-precision timestamps and file path hashes — `int(timestamp)` (second precision) is not sufficient.
+- **URL patterns**: Download URLs are `api/files/download/file/<id>/`, view URLs are `api/files/view/<id>/` (no `/file/` segment). Do not construct one from the other with naive string replacement.
 
 Dokuly components shall be used when available. They are found in `dokuly/frontend/src/components/dokuly_components` and there are also common components and functions found in `dokuly/frontend/src/components/common` that should be used for most reusable code.
 

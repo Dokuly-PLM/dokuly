@@ -45,7 +45,7 @@ Some documentation can be found on [github pages](https://dokuly-plm.github.io/d
 
 ## Contribution
 
-Dokuly was originally developed as an internal tool by [Norsk Datateknikk](https://norskdatateknikk.no/) and has since been released as an open-source project.
+Dokuly was originally developed as an internal tool by [Erik Buer](https://www.linkedin.com/in/erik-buer/) and [Erik Hole](https://www.linkedin.com/in/erik-hole-b7b40196/) and has since been released as an open-source project.
 The project relies on your contributions to stay updated with the latest features.
 
 Please submit issues and feature requests. This helps us see the users' needs, and make a smooth experience.

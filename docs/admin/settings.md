@@ -21,7 +21,7 @@ Tab for changing basic settings including your organization, modules and logo.
 In the **General** tab on the administration dashboard, you can find organization settings. Here you can disable different modules by clicking the checkbox to turn them off or on for every user in your organization.  
 
 ### Organization settings
-In the information card you can see your storage usage. This is only relevant if using dokuly with *cloud hosting* provided by Norsk Datateknikk. If you are running dokuly yourself, its limited by your host system. 
+In the information card you can see your storage usage. If you are running dokuly yourself, this is limited by your host system. 
 
 Here you can also edit the organization information, including name, delivery address info, default currency and enabling two factor authentication (2FA).
 
@@ -47,9 +47,7 @@ In addition, there is *one* user with the **Owner** role, assigned to the owner 
 
 ### Add a new subscription
 
-If using cloud hosting via Norsk Datateknikk, you will have some counters at in the **Manage subscriptions** card. *Active users* is the number of users you have currently activated, versus the total number of active users you can have at any time. In addition, there is a count for active viewer users versus the total number of active viewer users you can have.
-
-If you have the maximum number of active users compared to your total allowed, activating another user will cause a user of the lowest permission possible to be automatically deactivated. To avoid this, click on *Add subscription*, and select a new plan for the user you plan on creating. This will redirect you to the public page to complete the transaction. When completed, you will be redirected back to admin, and can now freely create a new user. 
+The **Manage subscriptions** card shows counters for your active users. *Active users* is the number of users you have currently activated, versus the total number of active users you can have at any time. In addition, there is a count for active viewer users versus the total number of active viewer users you can have.
 
 ---
 

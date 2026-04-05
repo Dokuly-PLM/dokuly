@@ -1,33 +1,64 @@
 site_name: Dokuly Docs
+site_description: Open-source Product Lifecycle Management — documentation and feature guide
+site_url: https://dokuly-plm.github.io/dokuly/
 
 nav:
-  - Getting Started: 
+  - Home: index.md
+  - Getting Started:
     - Projects and Customers: projects_and_customers.md
     - Creating your first Part: first_part.md
-    - From Parts to PCBA's: parts_to_pcbas.md
-    - PCBA's and Assemblies: pcbas_and_assemblies.md
+    - From Parts to PCBAs: parts_to_pcbas.md
+    - PCBAs and Assemblies: pcbas_and_assemblies.md
     - Issues: issues.md
     - Notes and Markdown: notes_and_markdown.md
-    - Production control: production_control.md
-  - Self-hosting: quickstart.md
-  - Administration: admin/settings.md
-  - installation.md
-  - definitions.md
+  - Features:
+    - Documents: documents.md
+    - Purchasing: purchasing.md
+    - Inventory: inventory.md
+    - Production: production_control.md
+    - Requirements: requirements.md
+    - Engineering Change Orders: eco.md
+  - API:
+    - Overview: api_manual.md
+  - Administration:
+    - Dashboard: admin/settings.md
+    - API Keys: admin/api.md
+    - DigiKey Integration: admin/digikey_setup.md
+  - Self-hosting:
+    - Quickstart: quickstart.md
+    - Installation: installation.md
+  - Reference:
+    - Definitions: definitions.md
+    - Tags: tags.md
 
-# - Administration: 
-  #   - User Management: admin/user_management.md
-  #   - Roles and Permissions: admin/roles_and_permissions.md
-  #   - Settings: admin/settings.md
-  #   - API: admin/api.md
-
-color_mode: light
-user_color_mode_toggle: true
+theme:
+  name: material
+  font:
+    text: Inter
+    code: Roboto Mono
+  palette:
+    scheme: default
+    primary: custom
+    accent: custom
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - toc.integrate
+    - content.code.copy
+  favicon: img/favicon.ico
 
 extra_css:
   - styles/index.css
 
-theme:
-  name: mkdocs
-  favicon: favicon.ico
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
 
 dev_addr: 127.0.0.1:8009

@@ -1,58 +1,75 @@
 # Dokuly PLM System
 
-Dokuly is an open-source Product Lifecycle Management system.
-Built to be easy to use, and easy to maintain, for teams that move fast.
+Dokuly is an open-source Product Lifecycle Management system built for engineering and operations teams that move fast. It gives you structured control over parts, documents, assemblies, purchasing, inventory, production, and more — without the complexity and cost of legacy PLM tools.
 
-This is a tool for designing and managing products and systems of all sizes.
+[Get started](quickstart.md){ .md-button .md-button--primary }
+[View on GitHub](https://github.com/Dokuly-PLM/dokuly){ .md-button }
 
-Dokuly is free to use and simple to set up. See the [getting started guide](https://github.com/Dokuly-PLM/dokuly/blob/master/getting_started.md)
+---
 
-The community forum can be found at [dokuly.forum](https://dokuly.forum/)
+## Core Features
 
-## Features
+### Product Data Management
 
--  Product Data
-  - Part numbering
-  - BOM management
-  - Revision control
-  - Alternate parts
-  - Issues
-  - Change history with BOM comparison
-  - Release management
-  - Part-related files and documentation
-  - Vendor pricing with price breaks
-  - Inventory
-- Documents
-  - Document numbering
-  - Automatic front page generation
-  - Built-in viewer
-  - Custom document types, width document number prefixes
-  - Issues
-- Projects
-  - Project-based access control
-  - Time tracking with custom tasks
-  - Time estimation
-  - Access control
-  - Gantt
-- Purchasing
-  - Manage vendors and suppliers
-  - Add suppliers for parts
-  - Inventory forecasting
-  - PO generation
-  - Automatical PO creation from BoM, selecting the cheapest vendor at each quantity
-- Requirements
-  - Track requirements in a model-based environment
-  - Derived, hierarchical, and superseding relations
-- API
-  - Support for multiple API keys
-  - Project-based access control per API key
-  - API-key expiry date
-  - [Docs](https://dokuly.com/#/api)
+Manage your entire product structure with built-in revision control and release management.
+
+- **[Parts](first_part.md)** — Create and track parts with part numbers, manufacturers, MPN, specifications, and file attachments
+- **[PCBAs](parts_to_pcbas.md)** — Printed circuit board assemblies with BOM management and designator tracking
+- **[Assemblies](pcbas_and_assemblies.md)** — Top-level assemblies containing parts, PCBAs, and sub-assemblies
+- **BOM management** — Import/export CSV, pricing rollup, and PO generation directly from BOMs
+- **Revision control** — Every change creates a new revision. Released items are immutable
+- **Alternate parts** — Link interchangeable parts for procurement flexibility
+
+### [Documents](documents.md)
+
+Create and manage engineering documents with automatic numbering, custom prefixes, and a built-in viewer. Documents support revision control, automatic PDF front page generation, and inline editing with OnlyOffice.
+
+### [Purchasing](purchasing.md)
+
+Track suppliers and pricing, generate purchase orders from BOMs, and manage the full procurement lifecycle from draft to delivery.
+
+### [Inventory](inventory.md)
+
+Manage stock across configurable locations. Track transactions, view current quantities, and forecast needs based on upcoming production.
+
+### [Production](production_control.md)
+
+Plan and track production lots with serial number management, BOM procurement status, and assembly progress tracking.
+
+### [Requirements](requirements.md)
+
+Define and trace requirements in a structured, model-based environment. Support for hierarchical, derived, and superseding relationships with built-in verification tracking.
+
+### [Engineering Change Orders](eco.md)
+
+Formalize engineering changes with ECOs that link affected parts, assemblies, documents, and related issues under a single reviewable record.
+
+### [Projects](projects_and_customers.md)
+
+Organize work by project with access control, time tracking, task management, and Gantt charts. Connect parts, documents, and other items to projects for scoped visibility.
+
+### [API](api_manual.md)
+
+Integrate with external systems using the REST API. Project-scoped API keys with configurable expiry dates. Swagger and ReDoc documentation included.
+
+---
+
+## Integrations
+
+- **DigiKey API** — Search and import parts directly from DigiKey's catalog ([Setup guide](admin/digikey_setup.md))
+- **Nexar API** — Search and import parts from the Nexar component database
+- **OnlyOffice** — Edit Word, Excel, and PowerPoint documents directly in dokuly
+
+---
+
+## Self-hosting
+
+Dokuly runs as a Docker stack with PostgreSQL, Django, and nginx. Set up takes minutes.
+
+[Quickstart guide](quickstart.md){ .md-button }
+
+---
 
 ## Contribution
 
-Dokuly was originally developed as an internal tool by [Norsk Datateknikk](https://norskdatateknikk.no/) and has since been released as an open-source project.
-The project relies on your contributions to stay updated with the latest features.
-
-Please submit issues and feature requests. This helps us see the needs of the users, and make a smooth experience.
-Bug fixes and PRs are highly appreciated.
+Dokuly was originally developed as an internal tool by [Erik Buer](https://www.linkedin.com/in/erik-buer/) and [Erik Hole](https://www.linkedin.com/in/erik-hole-b7b40196/) and has since been released as an open-source project. Contributions, bug reports, and feature requests are welcome on [GitHub](https://github.com/Dokuly-PLM/dokuly).
