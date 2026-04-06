@@ -47,6 +47,9 @@ urlpatterns = [
     path('api/v1/assemblies/<int:assembly_id>/files/', views_files.download_files_from_assembly,
          kwargs={"model_type": "assembly"}),  # Download all files from assembly as ZIP
 
+    path('api/v1/assemblies/<int:assembly_id>/production-files/', views_files.download_assembly_production_zip_recursive_api,
+         kwargs={"model_type": "assembly"}),  # Download production files recursively as ZIP
+
     ################### BOM API ######################
     path('api/v1/assemblies/bom/<int:assembly_id>/', viewsBom.upload_assembly_bom,
          kwargs={"model_type": "assembly"}),  # BOM file upload
