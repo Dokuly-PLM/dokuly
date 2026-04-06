@@ -13,7 +13,7 @@ import { Form } from "react-bootstrap";
  * For assemblies, shows a modal to ask if BOM should be included
  * For parts, on UoM mismatch shows modal to select Odoo UoM and update part
  */
-const PushToOdooButton = ({ itemType, itemId, itemName, onSuccess }) => {
+const PushToOdooButton = ({ itemType, itemId, itemName, onSuccess, variant = "toolbar" }) => {
   const [odooEnabled, setOdooEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pushing, setPushing] = useState(false);
@@ -119,8 +119,17 @@ const PushToOdooButton = ({ itemType, itemId, itemName, onSuccess }) => {
     return null;
   }
 
-  return (
-    <>
+  const triggerButton =
+    variant === "inline" ? (
+      <span
+        className="info-card__icon-link"
+        onClick={handlePushClick}
+        style={{ cursor: pushing ? "wait" : "pointer" }}
+      >
+        <img src="../../static/icons/upload.svg" alt="Push to Odoo" />
+        {pushing ? "Pushing..." : "Push to Odoo"}
+      </span>
+    ) : (
       <button
         type="button"
         className="btn btn-bg-transparent"
@@ -138,6 +147,11 @@ const PushToOdooButton = ({ itemType, itemId, itemName, onSuccess }) => {
           </span>
         </div>
       </button>
+    );
+
+  return (
+    <>
+      {triggerButton}
 
       {/* BOM Modal for assemblies */}
       <DokulyModal

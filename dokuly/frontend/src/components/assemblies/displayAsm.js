@@ -36,7 +36,6 @@ import useLocations from "../common/hooks/useLocations";
 import InventoryTable from "../dokuly_components/dokulyInventory/inventoryTable";
 import WhereUsedTable from "../common/whereUsed/whereUsedTable";
 import InventoryStatus from "../dokuly_components/dokulyInventory/inventoryStatus";
-import PushToOdooButton from "../common/integrations/pushToOdooButton";
 
 export const getIssueColor = (issue, app) => {
   const closedInField = `closed_in_${appToModelName[app]}`;
@@ -336,12 +335,6 @@ const DisplayASM = (props) => {
             {asmDetailed.release_state !== "Released" && (
               <AsmEditForm asm={asmDetailed} setRefresh={setRefresh} />
             )}
-            <PushToOdooButton
-              itemType="assemblies"
-              itemId={asmDetailed?.id}
-              itemName={asmDetailed?.full_part_number}
-              onSuccess={() => setRefresh(true)}
-            />
           </Row>
           <Row>
             <Col>

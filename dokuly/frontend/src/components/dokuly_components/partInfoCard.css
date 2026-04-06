@@ -123,6 +123,20 @@
   opacity: 0.7;
 }
 
+/* Section header with actions aligned right */
+.info-card__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Actions area */
+.info-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 /* Tags area */
 .info-card__tags {
   padding-top: 0.25rem;

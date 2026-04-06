@@ -255,6 +255,8 @@ const DokulyTags = ({
   setRefresh = () => {},
   closeEditModeOnSubmit = false,
   hideEditButton = false,
+  variant = "toolbar",
+  actionsPosition = "bottom",
 }) => {
   const [tags, setTags] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -372,8 +374,47 @@ const DokulyTags = ({
     return tagExists;
   };
 
+  const inlineActions = !editMode && !readOnly && variant === "inline" ? (
+    <div className="info-card__actions">
+      <span
+        className="info-card__icon-link"
+        onClick={() => {
+          fetchAndCacheTagsAsync()
+            .then(() => {})
+            .finally(() => {
+              setEditMode(true);
+            });
+        }}
+        style={{ cursor: "pointer" }}
+      >
+        <img src="../../static/icons/circle-plus.svg" alt="Add tag" />
+        Add tag
+      </span>
+      {!hideEditButton && (
+        <span
+          className="info-card__icon-link"
+          onClick={() => {
+            fetchAndCacheTags();
+            setShowModal(true);
+          }}
+          style={{ cursor: "pointer" }}
+        >
+          <img src="../../static/icons/edit.svg" alt="Edit tags" />
+          Edit tags
+        </span>
+      )}
+    </div>
+  ) : null;
+
   return (
     <div>
+      {variant === "inline" && actionsPosition === "header" && (
+        <div className="info-card__section-header">
+          <div className="info-card__section-label">Tags</div>
+          {inlineActions}
+        </div>
+      )}
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
         {tags
           .sort((a, b) => a?.name - b?.name)
@@ -451,7 +492,8 @@ const DokulyTags = ({
           </Row>
         </div>
       )}
-      {!editMode && !readOnly && (
+      {actionsPosition !== "header" && inlineActions}
+      {!editMode && !readOnly && variant !== "inline" && (
         <Row>
           <Col className="col-auto">
             <AddButton
