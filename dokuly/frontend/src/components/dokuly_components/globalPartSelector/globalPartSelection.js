@@ -11,6 +11,7 @@ const GlobalPartSelection = ({
   organization,
   includeTables = ["parts", "pcbas", "assemblies"],
   latestOnly = false,
+  compact = false,
 }) => {
   const [query, setQuery] = useState(searchTerm);
   const [results, setResults] = useState([]);
@@ -91,6 +92,59 @@ const GlobalPartSelection = ({
       const minorB = b?.revision_count_minor ?? 0;
       return minorA - minorB;
     }) || [];
+
+  if (compact) {
+    return (
+      <div style={{ position: "relative" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <input
+            ref={searchInputRef}
+            className="input-edit"
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSearch(query);
+              }
+            }}
+            placeholder="Search..."
+            style={{ flex: 1, minWidth: 0 }}
+          />
+          <button
+            type="button"
+            className="btn btn-bg-transparent p-0"
+            onClick={() => handleSearch(query)}
+            disabled={!query}
+            style={{
+              cursor: !query ? "not-allowed" : "pointer",
+              opacity: !query ? 0.5 : 1,
+              flexShrink: 0,
+              lineHeight: 1,
+            }}
+          >
+            <img
+              className="icon-dark"
+              src="../../../static/icons/search.svg"
+              alt="search"
+              style={{ width: "16px", height: "16px" }}
+            />
+          </button>
+        </div>
+        {showSuggestions && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 1050 }}>
+            <PartSuggestions
+              searchTerm={query}
+              suggestions={sortedResults}
+              onSelectSuggestion={enter_part_information}
+              onHide={() => setShowSuggestions(false)}
+              organization={organization}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="search-section">

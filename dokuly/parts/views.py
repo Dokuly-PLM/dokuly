@@ -29,6 +29,8 @@ from .serializers import (
 from assemblies.models import Assembly
 from documents.models import MarkdownText, Reference_List, Document
 from documents.serializers import GlobalSearchDocumentSerializer
+from eco.models import Eco
+from eco.serializers import GlobalSearchEcoSerializer
 from projects.models import Project
 
 from organizations.views import get_subscription_type
@@ -2002,6 +2004,17 @@ def global_part_search(request):
             )
             document_serializer = GlobalSearchDocumentSerializer(document_results, many=True)
             combined_results += document_serializer.data
+
+        # Query ECOs
+        if "ecos" in include_tables:
+            eco_results = Eco.objects.filter(
+                project_filter
+                & (
+                    Q(display_name__icontains=query)
+                )
+            )
+            eco_serializer = GlobalSearchEcoSerializer(eco_results, many=True)
+            combined_results += eco_serializer.data
 
         # Limit the results to at most 50 items
         limited_results = combined_results[:50]

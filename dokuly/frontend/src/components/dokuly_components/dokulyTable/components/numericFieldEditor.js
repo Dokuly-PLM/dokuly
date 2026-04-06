@@ -81,14 +81,15 @@ const NumericFieldEditor = ({
   };
 
   const inputStyle = {
-    width: "100%",
-    paddingLeft: "5px",
-    paddingBottom: "5px",
-    paddingTop: "0px",
-    paddingRight: "5px",
-    border: `1px solid`,
+    flex: 1,
+    minWidth: 0,
+    padding: "2px 4px",
+    border: "1px solid #dae1e7",
     outline: "none",
     borderRadius: "4px",
+    fontSize: "inherit",
+    lineHeight: "inherit",
+    boxSizing: "border-box",
   };
 
   if (isEditing) {
@@ -129,10 +130,7 @@ const NumericFieldEditor = ({
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
-          paddingLeft: "5px",
-          paddingBottom: "5px",
-          paddingTop: "0px",
-          paddingRight: "5px",
+          padding: "2px 20px 2px 4px",
           borderRadius: "4px",
           // Let CSS class handle border, only override if showBorder is explicitly true
           ...(showBorder && { border: `1px solid rgba(0, 0, 0, 0.2) !important` }),

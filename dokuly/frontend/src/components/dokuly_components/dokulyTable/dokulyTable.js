@@ -171,6 +171,8 @@ function DokulyTableContents({
   });
 
   const tableRef = useRef(null);
+  const tbodyRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   const handleLoadView = (view) => {
     // Restore column selection and order
@@ -576,10 +578,60 @@ function DokulyTableContents({
   const startIndex = (effectiveCurrentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
 
-  const handleRowKeyDown = (e, row_id) => {
+  // "/" shortcut to focus search
+  useEffect(() => {
+    if (!showSearch) return;
+    const handleSlashKey = (e) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (document.activeElement?.isContentEditable) return;
+      if (e.key === "/") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleSlashKey);
+    return () => document.removeEventListener("keydown", handleSlashKey);
+  }, [showSearch]);
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const firstRow = tbodyRef.current?.querySelector("tr");
+      if (firstRow) firstRow.focus();
+    }
+    if (e.key === "Escape") {
+      searchInputRef.current?.blur();
+    }
+  };
+
+  const handleRowKeyDown = (e, row_id, row) => {
+    // Don't intercept keys when user is editing inside the row
+    const tag = e.target?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    if (e.target?.isContentEditable) return;
+
     if (e.key === "Enter") {
-      const row = tableData.find((item) => item.row_id === row_id);
-      onRowClick(tableData.indexOf(row));
+      if (onRowClick) {
+        onRowClick(row_id, row, e);
+      }
+      return;
+    }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const rows = tbodyRef.current?.querySelectorAll("tr");
+      if (!rows) return;
+      const currentIndex = Array.from(rows).indexOf(e.currentTarget);
+      const nextIndex =
+        e.key === "ArrowDown"
+          ? Math.min(currentIndex + 1, rows.length - 1)
+          : Math.max(currentIndex - 1, 0);
+      rows[nextIndex]?.focus();
+    }
+    // "/" to jump back to search
+    if (e.key === "/" && showSearch) {
+      e.preventDefault();
+      searchInputRef.current?.focus();
     }
   };
 
@@ -896,11 +948,13 @@ function DokulyTableContents({
             <Row className="mb-1">
               <Col className={showClearSearch && searchTerm ? "col-7" : "col-9"}>
                 <Form.Control
+                  ref={searchInputRef}
                   className="dokuly-form-input"
                   type="text"
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
                   style={{ fontSize: textSize }}
                 />
               </Col>
@@ -989,7 +1043,7 @@ function DokulyTableContents({
               )}
             </tr>
           </thead>
-          <tbody>
+          <tbody ref={tbodyRef}>
             {sortedAndPaginatedData.map((row) => (
               <tr
                 key={row.id}
@@ -1192,6 +1246,25 @@ function DokulyTableContents({
             </div>
           )}
         </animated.ul>
+      )}
+
+      {onRowClick && (
+        <div className="dokuly-table-shortcuts-hint">
+          {showSearch && (
+            <span>
+              <kbd>/</kbd> search
+            </span>
+          )}
+          <span>
+            <kbd>↑</kbd> <kbd>↓</kbd> navigate
+          </span>
+          <span>
+            <kbd>↵</kbd> open
+          </span>
+          <span>
+            <kbd>⌘K</kbd> jump to
+          </span>
+        </div>
       )}
     </Container>
   );

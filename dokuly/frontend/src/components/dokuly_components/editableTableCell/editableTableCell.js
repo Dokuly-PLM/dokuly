@@ -138,6 +138,7 @@ const EditableTableCell = ({
         <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
           <input
             ref={inputRef}
+            className="input-edit"
             type="text"
             value={currentValue}
             onChange={(e) => setCurrentValue(e.target.value)}
@@ -147,18 +148,9 @@ const EditableTableCell = ({
             onPaste={handlePaste}
             placeholder={placeholder}
             title="Press Enter to submit, Escape to cancel"
-            style={{ width: inputWidth }}
+            style={{ flex: 1, minWidth: 0 }}
           />
-          <span style={{ 
-            marginLeft: '4px', 
-            fontSize: '12px', 
-            color: '#666', 
-            userSelect: 'none',
-            padding: '2px 4px',
-            borderRadius: '3px',
-            backgroundColor: isEnterPressed ? '#e0e0e0' : 'transparent',
-            transition: 'background-color 0.15s ease'
-          }}>↵</span>
+          <span className={`enter-key-indicator ${isEnterPressed ? 'pressed' : ''}`}>↵</span>
         </div>
       ) : (
         <div 

@@ -147,8 +147,60 @@ const TopHeader = ({ isAuthenticated, user, setIsAuthenticated }) => {
               marginLeft: "auto",
               display: "flex",
               alignItems: "center",
+              gap: "8px",
             }}
           >
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => {
+                  document.dispatchEvent(
+                    new KeyboardEvent("keydown", {
+                      key: "k",
+                      metaKey: true,
+                      bubbles: true,
+                    })
+                  );
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: "#F5F5F5",
+                  border: "1px solid #E5E5E5",
+                  borderRadius: "6px",
+                  padding: "4px 10px",
+                  cursor: "pointer",
+                  color: "#9CA3AF",
+                  fontSize: "0.8125rem",
+                  fontFamily: "'Inter', sans-serif",
+                  transition: "border-color 0.1s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#D1D5DB")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#E5E5E5")}
+              >
+                <img
+                  src="../../static/icons/search.svg"
+                  alt=""
+                  style={{ width: "14px", height: "14px", opacity: 0.4 }}
+                />
+                <span>Search</span>
+                <kbd
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "0.625rem",
+                    fontWeight: 500,
+                    background: "#fff",
+                    border: "1px solid #E5E5E5",
+                    borderRadius: "3px",
+                    padding: "1px 4px",
+                    color: "#9CA3AF",
+                  }}
+                >
+                  ⌘K
+                </kbd>
+              </button>
+            )}
             {isAuthenticated && <Notifications className="mr-6" />}
             {isAuthenticated && authLinks}
           </div>

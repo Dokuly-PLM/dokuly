@@ -28,6 +28,7 @@ const ITEM_TYPE_ROUTES = {
   Assembly: "/assemblies",
   PCBA: "/pcbas",
   Document: "/documents",
+  ECO: "/eco",
 };
 
 const CommandPalette = () => {
@@ -123,7 +124,7 @@ const CommandPalette = () => {
       try {
         const response = await searchPartsGlobal(
           query,
-          ["parts", "pcbas", "assemblies", "documents"],
+          ["parts", "pcbas", "assemblies", "documents", "ecos"],
           true
         );
         if (response.status === 200) {
