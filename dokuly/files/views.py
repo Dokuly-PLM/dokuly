@@ -26,6 +26,7 @@ import os
 import uuid
 import math
 import io
+import zipfile
 from PIL import Image as PILImage
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from files.fileUtilities import delete_file_with_cleanup, delete_image_with_cleanup, get_file_name, save_file_content
@@ -45,6 +46,7 @@ from pcbas.models import Pcba
 from documents.models import Document
 from documents.pdfUtils import process_pdf_and_generate_thumbnail
 from purchasing.models import Supplier, PurchaseOrder
+from assembly_bom.models import Assembly_bom, Bom_item
 
 from django.contrib.auth.models import User
 from profiles.models import Profile
@@ -98,9 +100,238 @@ def get_files(request):
                 "active": file.active,
                 "archived": file.archived,
                 "download_count": file.download_count,
+                "file_category": file.file_category,
             }
             files.append(entry)
     return Response(files, status=status.HTTP_200_OK)
+
+
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def download_files_zip(request, app_str, object_id):
+    """Download files for an entity as a ZIP archive.
+
+    Optional query param ?category=production to filter by file_category.
+    Without the param, all non-archived files are included.
+    """
+    if request.user is None:
+        return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+    if app_str not in MODEL_MAPPING:
+        return Response(f"Invalid app: {app_str}", status=status.HTTP_400_BAD_REQUEST)
+
+    ModelClass = MODEL_MAPPING[app_str]
+
+    try:
+        obj = ModelClass.objects.get(id=object_id)
+    except ModelClass.DoesNotExist:
+        return Response("Object not found", status=status.HTTP_404_NOT_FOUND)
+
+    # Check project access
+    if hasattr(obj, "project") and obj.project:
+        obj_qs = ModelClass.objects.filter(id=object_id)
+        if not check_project_access(obj_qs, request.user):
+            return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
+
+    # Get the files M2M field
+    if isinstance(obj, Pcba):
+        files_qs = obj.generic_files.all()
+    elif hasattr(obj, "files"):
+        files_qs = obj.files.all()
+    else:
+        return Response("This entity does not support files", status=status.HTTP_400_BAD_REQUEST)
+
+    # Filter: exclude archived and empty, optionally filter by category
+    files_qs = files_qs.filter(archived=0, file__isnull=False).exclude(file="")
+
+    category = request.query_params.get("category", None)
+    if category:
+        files_qs = files_qs.filter(file_category=category)
+
+    label = category or "all"
+
+    if not files_qs.exists():
+        return Response(
+            f"No {label} files found",
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for file_obj in files_qs:
+            try:
+                file_obj.file.open("rb")
+                file_content = file_obj.file.read()
+                file_obj.file.close()
+
+                if file_obj.display_name:
+                    if os.path.splitext(file_obj.display_name)[1]:
+                        filename = file_obj.display_name
+                    else:
+                        _, ext = os.path.splitext(os.path.basename(file_obj.file.name))
+                        filename = file_obj.display_name + (ext if ext else "")
+                else:
+                    filename = os.path.basename(file_obj.file.name)
+
+                zip_path = filename
+                counter = 1
+                while zip_path in zip_file.namelist():
+                    name, ext = os.path.splitext(filename)
+                    zip_path = f"{name}_{counter}{ext}"
+                    counter += 1
+
+                zip_file.writestr(zip_path, file_content)
+
+                file_obj.download_count += 1
+                file_obj.save()
+            except Exception:
+                continue
+
+    zip_buffer.seek(0)
+    zip_data = zip_buffer.getvalue()
+    zip_buffer.close()
+
+    response = HttpResponse(zip_data, content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="{app_str}_{object_id}_{label}_files.zip"'
+    response["Content-Length"] = str(len(zip_data))
+    return response
+
+
+def _get_production_files(entity):
+    """Get production files for a part, pcba, or assembly."""
+    if isinstance(entity, Pcba):
+        files_qs = entity.generic_files.all()
+    elif hasattr(entity, "files"):
+        files_qs = entity.files.all()
+    else:
+        return File.objects.none()
+    return files_qs.filter(
+        file_category="production",
+        archived=0,
+        file__isnull=False,
+    ).exclude(file="")
+
+
+def _add_files_to_zip(zip_file, files_qs, folder_path):
+    """Add files from a queryset into a zip at the given folder path."""
+    for file_obj in files_qs:
+        try:
+            file_obj.file.open("rb")
+            file_content = file_obj.file.read()
+            file_obj.file.close()
+
+            if file_obj.display_name:
+                if os.path.splitext(file_obj.display_name)[1]:
+                    filename = file_obj.display_name
+                else:
+                    _, ext = os.path.splitext(os.path.basename(file_obj.file.name))
+                    filename = file_obj.display_name + (ext if ext else "")
+            else:
+                filename = os.path.basename(file_obj.file.name)
+
+            zip_path = f"{folder_path}/{filename}" if folder_path else filename
+            counter = 1
+            while zip_path in zip_file.namelist():
+                name, ext = os.path.splitext(filename)
+                base = f"{folder_path}/{name}" if folder_path else name
+                zip_path = f"{base}_{counter}{ext}"
+                counter += 1
+
+            zip_file.writestr(zip_path, file_content)
+
+            file_obj.download_count += 1
+            file_obj.save()
+        except Exception:
+            continue
+
+
+def _add_assembly_production_files_recursive(zip_file, assembly, folder_path, visited):
+    """Recursively add production files for an assembly and all its BOM children."""
+    if assembly.id in visited:
+        return
+    visited.add(assembly.id)
+
+    # Add this assembly's own production files
+    files_qs = _get_production_files(assembly)
+    _add_files_to_zip(zip_file, files_qs, folder_path)
+
+    # Get BOM for this assembly
+    bom = Assembly_bom.objects.filter(assembly_id=assembly.id).first()
+    if not bom:
+        return
+
+    bom_items = Bom_item.objects.filter(bom=bom).select_related(
+        "part", "pcba", "assembly"
+    )
+
+    for item in bom_items:
+        if not item.is_mounted:
+            continue
+
+        if item.part and item.part_id:
+            part = item.part
+            part_files = _get_production_files(part)
+            if part_files.exists():
+                name = part.full_part_number or f"PRT{part.part_number}"
+                _add_files_to_zip(zip_file, part_files, f"{folder_path}/{name}")
+
+        elif item.pcba and item.pcba_id:
+            pcba = item.pcba
+            pcba_files = _get_production_files(pcba)
+            if pcba_files.exists():
+                name = pcba.full_part_number or f"PCBA{pcba.part_number}"
+                _add_files_to_zip(zip_file, pcba_files, f"{folder_path}/{name}")
+
+        elif item.assembly and item.assembly_id:
+            sub_asm = item.assembly
+            name = sub_asm.full_part_number or f"ASM{sub_asm.part_number}"
+            _add_assembly_production_files_recursive(
+                zip_file, sub_asm, f"{folder_path}/{name}", visited
+            )
+
+
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def download_assembly_production_zip_recursive(request, assembly_id):
+    """Download all production files for an assembly and its entire BOM tree as a ZIP."""
+    if request.user is None:
+        return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        assembly = Assembly.objects.get(id=assembly_id)
+    except Assembly.DoesNotExist:
+        return Response("Assembly not found", status=status.HTTP_404_NOT_FOUND)
+
+    if hasattr(assembly, "project") and assembly.project:
+        asm_qs = Assembly.objects.filter(id=assembly_id)
+        if not check_project_access(asm_qs, request.user):
+            return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
+
+    asm_name = assembly.full_part_number or f"ASM{assembly.part_number}"
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        _add_assembly_production_files_recursive(
+            zip_file, assembly, asm_name, set()
+        )
+
+    zip_buffer.seek(0)
+    zip_data = zip_buffer.getvalue()
+    zip_buffer.close()
+
+    if len(zip_data) <= 22:  # Empty ZIP is 22 bytes
+        return Response(
+            "No production files found in assembly or its BOM",
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    response = HttpResponse(zip_data, content_type="application/zip")
+    safe_name = asm_name.replace(" ", "_")
+    response["Content-Disposition"] = f'attachment; filename="{safe_name}_production_files.zip"'
+    response["Content-Length"] = str(len(zip_data))
+    return response
 
 
 @api_view(("GET",))
@@ -206,10 +437,11 @@ def upload_and_create_new_file_row(request):
                 "Invalid file parameters, file is null",
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        file_category = data.get("file_category", "design")
         if "display_name" in data:
-            newFile = File.objects.create(display_name=data["display_name"])
+            newFile = File.objects.create(display_name=data["display_name"], file_category=file_category)
         else:
-            newFile = File.objects.create(display_name=file.name[0:49])
+            newFile = File.objects.create(display_name=file.name[0:49], file_category=file_category)
         # Ensure unique path for all files.
         newFile.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
         serializerFile = FileSerializer(newFile, many=False)
@@ -243,11 +475,13 @@ def upload_multiple_and_create_new_file_rows(request):
     try:
         data = request.data
         display_names = data.getlist('display_names', [])
+        file_categories = data.getlist('file_categories', [])
 
         created_files = []
         for i, file in enumerate(files):
             display_name = display_names[i] if i < len(display_names) else file.name[0:49]
-            new_file = File.objects.create(display_name=display_name)
+            file_category = file_categories[i] if i < len(file_categories) else "design"
+            new_file = File.objects.create(display_name=display_name, file_category=file_category)
             new_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
             created_files.append(new_file)
 

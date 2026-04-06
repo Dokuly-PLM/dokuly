@@ -23,6 +23,7 @@ const GenericFileForm = (props) => {
   const [is_uploading, setIsUploading] = useState(false);
   const [display_name, setDisplayName] = useState("");
   const [files, setFiles] = useState([]);
+  const [fileCategory, setFileCategory] = useState("design");
 
   const openModal = () => {
     $("#genericFileModal").modal("show");
@@ -104,6 +105,7 @@ const GenericFileForm = (props) => {
       const data = new FormData();
       data.append("file", files[0]);
       data.append("display_name", display_name);
+      data.append("file_category", fileCategory);
 
       closeFileModal();
       uploadFileCreateNewFileEntity(data).then((res) => {
@@ -122,6 +124,7 @@ const GenericFileForm = (props) => {
               setIsUploading(false);
               setDisplayName("");
               setFiles([]);
+              setFileCategory("design");
             })
             .finally(() => {
               if (props?.checkForGerberUpload) {
@@ -146,10 +149,11 @@ const GenericFileForm = (props) => {
       }
       for (const file of files) {
         const lastDotIndex = file.name.lastIndexOf(".");
-        const nameWithoutExtension = lastDotIndex !== -1 
+        const nameWithoutExtension = lastDotIndex !== -1
           ? file.name.substring(0, lastDotIndex)
           : file.name;
         data.append("display_names", nameWithoutExtension);
+        data.append("file_categories", fileCategory);
       }
 
       closeFileModal();
@@ -166,6 +170,7 @@ const GenericFileForm = (props) => {
               setIsUploading(false);
               setDisplayName("");
               setFiles([]);
+              setFileCategory("design");
             })
             .finally(() => {
               if (props?.checkForGerberUpload) {
@@ -188,18 +193,19 @@ const GenericFileForm = (props) => {
   return (
     <div>
       <button
-        className="btn btn-bg-transparent mt-1 ml-1"
+        className="btn btn-sm btn-bg-transparent"
         type="button"
         onClick={() => openModal()}
+        style={{ fontWeight: 600 }}
       >
-        <div className="row align-items-center">
-          <img
-            className="icon-dark"
-            src="../../static/icons/file-upload.svg"
-            alt="icon"
-          />
-          <span className="btn-text">Upload</span>
-        </div>
+        <img
+          className="icon-dark mr-1"
+          src="../../static/icons/file-upload.svg"
+          alt="icon"
+          width="14px"
+          style={{ verticalAlign: "text-bottom" }}
+        />
+        Upload
       </button>
 
       {/* <!-- Modal --> */}
@@ -246,6 +252,18 @@ const GenericFileForm = (props) => {
                       />
                     </div>
                   )}
+                  <div className="form-group">
+                    <label>Category</label>
+                    <Form.Select
+                      className="form-control"
+                      value={fileCategory}
+                      onChange={(e) => setFileCategory(e.target.value)}
+                    >
+                      <option value="design">Design</option>
+                      <option value="production">Production</option>
+                      <option value="other">Other</option>
+                    </Form.Select>
+                  </div>
                   <div className="form-group">
                     <label>Upload files</label>
                     <FileUpload

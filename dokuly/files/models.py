@@ -26,6 +26,20 @@ class File(models.Model):
 
     download_count = models.IntegerField(default=0, blank=True)
 
+    FILE_CATEGORY_CHOICES = [
+        ("design", "Design"),
+        ("production", "Production"),
+        ("other", "Other"),
+    ]
+
+    file_category = models.CharField(
+        max_length=20,
+        choices=FILE_CATEGORY_CHOICES,
+        default="design",
+        blank=True,
+        help_text="Category of the file: Design, Production, or Other",
+    )
+
     project = models.ForeignKey(
         Project, on_delete=models.SET_NULL, blank=True, null=True
     )

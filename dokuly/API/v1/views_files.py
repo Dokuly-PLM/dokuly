@@ -150,6 +150,7 @@ def upload_file_to_part(request, part_id, **kwargs):
 
     display_name = data["display_name"][:250]  # Enforce max length
     replace_files = str_to_bool(data.get("replace_files", False))
+    file_category = data.get("file_category", "design")
 
     try:
         part = Part.objects.get(pk=part_id)
@@ -176,11 +177,12 @@ def upload_file_to_part(request, part_id, **kwargs):
                 if existing_file.file:
                     existing_file.file.delete(save=False)
                 existing_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
+                existing_file.file_category = file_category
                 existing_file.save()
                 file_obj = existing_file
             else:
                 # Create new file if no existing file to replace
-                new_file = File.objects.create(display_name=display_name)
+                new_file = File.objects.create(display_name=display_name, file_category=file_category)
                 new_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
                 new_file.project = part.project
                 new_file.save()
@@ -188,7 +190,7 @@ def upload_file_to_part(request, part_id, **kwargs):
                 file_obj = new_file
         else:
             # Create new file
-            new_file = File.objects.create(display_name=display_name)
+            new_file = File.objects.create(display_name=display_name, file_category=file_category)
             new_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
             new_file.project = part.project
             new_file.save()
@@ -261,6 +263,11 @@ def download_files_from_part(request, part_id, **kwargs):
 
         # Get all files for this part
         files = part.files.filter(file__isnull=False).exclude(file='')
+
+        # Optional category filter (e.g. ?category=production)
+        category = request.query_params.get('category', None)
+        if category:
+            files = files.filter(file_category=category)
 
         if not files.exists():
             return Response(
@@ -436,6 +443,7 @@ def upload_file_to_assembly(request, assembly_id, **kwargs):
 
     display_name = data["display_name"][:250]  # Enforce max length
     replace_files = str_to_bool(data.get("replace_files", False))
+    file_category = data.get("file_category", "design")
 
     try:
         assembly = Assembly.objects.get(pk=assembly_id)
@@ -462,11 +470,12 @@ def upload_file_to_assembly(request, assembly_id, **kwargs):
                 if existing_file.file:
                     existing_file.file.delete(save=False)
                 existing_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
+                existing_file.file_category = file_category
                 existing_file.save()
                 file_obj = existing_file
             else:
                 # Create new file if no existing file to replace
-                new_file = File.objects.create(display_name=display_name)
+                new_file = File.objects.create(display_name=display_name, file_category=file_category)
                 new_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
                 new_file.project = assembly.project
                 new_file.save()
@@ -474,7 +483,7 @@ def upload_file_to_assembly(request, assembly_id, **kwargs):
                 file_obj = new_file
         else:
             # Create new file
-            new_file = File.objects.create(display_name=display_name)
+            new_file = File.objects.create(display_name=display_name, file_category=file_category)
             new_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
             new_file.project = assembly.project
             new_file.save()
@@ -547,6 +556,11 @@ def download_files_from_assembly(request, assembly_id, **kwargs):
 
         # Get all files for this assembly
         files = assembly.files.filter(file__isnull=False).exclude(file='')
+
+        # Optional category filter (e.g. ?category=production)
+        category = request.query_params.get('category', None)
+        if category:
+            files = files.filter(file_category=category)
 
         if not files.exists():
             return Response(
@@ -621,6 +635,92 @@ def download_files_from_assembly(request, assembly_id, **kwargs):
         )
 
 
+@swagger_auto_schema(
+    method='get',
+    operation_id='download_assembly_production_files_recursive',
+    operation_description="""
+    Download all production files for an assembly and its entire BOM tree as a ZIP archive.
+
+    The ZIP structure mirrors the BOM hierarchy:
+    - Root folder: assembly's own production files
+    - Sub-folders for each BOM child (parts, PCBAs, sub-assemblies) named by full_part_number
+    - Sub-assemblies are recursively expanded
+
+    Only files with file_category="production" are included.
+    """,
+    tags=['assemblies'],
+    produces=['application/zip'],
+    responses={
+        200: openapi.Response(
+            description='ZIP file with production files downloaded successfully',
+            schema=openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_BINARY),
+        ),
+        401: openapi.Response(description='Unauthorized'),
+        404: openapi.Response(description='Assembly not found or no production files'),
+    },
+    security=[{'Token': []}, {'Api-Key': []}]
+)
+@api_view(['GET'])
+@renderer_classes([BinaryFileRenderer])
+@permission_classes([IsAuthenticated | APIAndProjectAccess])
+def download_assembly_production_zip_recursive_api(request, assembly_id, **kwargs):
+    """Download all production files for an assembly and its entire BOM tree as a ZIP."""
+    from files.views import (
+        _get_production_files,
+        _add_files_to_zip,
+        _add_assembly_production_files_recursive,
+    )
+
+    try:
+        assembly = Assembly.objects.get(pk=assembly_id)
+
+        if APIAndProjectAccess.has_validated_key(request):
+            if assembly.project is not None and not APIAndProjectAccess.check_project_access(request, assembly.project.pk):
+                return Response(
+                    {"error": "Not authorized - no access to this project"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+
+        asm_name = assembly.full_part_number or f"ASM{assembly.part_number}"
+
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            _add_assembly_production_files_recursive(
+                zip_file, assembly, asm_name, set()
+            )
+
+        zip_buffer.seek(0)
+        zip_data = zip_buffer.getvalue()
+        zip_buffer.close()
+
+        if len(zip_data) <= 22:
+            return Response(
+                {"error": "No production files found in assembly or its BOM"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        safe_name = asm_name.replace(" ", "_")
+        response = Response(
+            zip_data,
+            content_type="application/zip",
+            status=status.HTTP_200_OK,
+        )
+        response["Content-Disposition"] = f'attachment; filename="{safe_name}_production_files.zip"'
+        response["Content-Length"] = str(len(zip_data))
+        return response
+
+    except Assembly.DoesNotExist:
+        return Response(
+            {"error": "Assembly not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
 # ==================== PCBAs FILE OPERATIONS ====================
 # Note: PCBA upload is handled in pcbas/viewsFiles.py (upload_file_to_pcba)
 # This file only contains the download endpoint for consistency
@@ -674,6 +774,11 @@ def download_files_from_pcba(request, pcba_id, **kwargs):
 
         # Get all files for this PCBA (generic_files)
         files = pcba.generic_files.filter(file__isnull=False).exclude(file='')
+
+        # Optional category filter (e.g. ?category=production)
+        category = request.query_params.get('category', None)
+        if category:
+            files = files.filter(file_category=category)
 
         if not files.exists():
             return Response(

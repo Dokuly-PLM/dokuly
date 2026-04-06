@@ -13,6 +13,59 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { tokenConfig } from "../../../configs/auth";
 
+const CATEGORY_DISPLAY = { design: "Design", production: "Production", other: "Other" };
+
+const InlineCategorySelect = ({ value, onSave }) => {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!isEditing) return;
+    function handleClickOutside(event) {
+      if (ref.current && !ref.current.contains(event.target)) {
+        setIsEditing(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isEditing]);
+
+  if (isEditing) {
+    return (
+      <div ref={ref} style={{ minWidth: "4rem" }}>
+        <select
+          value={value}
+          onChange={(e) => {
+            onSave(e.target.value);
+            setIsEditing(false);
+          }}
+          autoFocus
+          style={{ width: "100%" }}
+        >
+          <option value="design">Design</option>
+          <option value="production">Production</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="w-100 bom-editable-field"
+      onClick={() => setIsEditing(true)}
+      style={{ minHeight: "1.5em", display: "flex", alignItems: "center", minWidth: "4rem" }}
+    >
+      <span>{CATEGORY_DISPLAY[value] || "Design"}</span>
+      <img
+        src="../../static/icons/edit.svg"
+        alt="edit"
+        className="icon-dark bom-edit-icon"
+      />
+    </div>
+  );
+};
+
 export const downloadFileAsBlobForATags = (fileUri, fileName) => {
   if (!fileUri) {
     return;
@@ -109,6 +162,81 @@ export const FilesTable = (props, { release_state }) => {
   };
 
   //___________________________________________________________________________________________________
+  // Function to handle saving file_category
+  const handleSaveFileCategory = async (fileId, newCategory) => {
+    try {
+      const response = await axios.patch(`/api/files/${fileId}/`, {
+        file_category: newCategory
+      }, tokenConfig());
+
+      if (response.status === 200) {
+        setFileList(prevFiles =>
+          prevFiles.map(file =>
+            file.id === fileId
+              ? { ...file, file_category: newCategory }
+              : file
+          )
+        );
+        toast.success("Category updated");
+      }
+    } catch (error) {
+      console.error("Error updating file category:", error);
+      toast.error("Failed to update category");
+    }
+  };
+
+  //___________________________________________________________________________________________________
+  // Download files as ZIP — optional category filter
+  const handleDownloadZip = (category = null) => {
+    const categoryParam = category ? `?category=${category}` : "";
+    const url = `api/files/download/zip/${app}/${objectId}/${categoryParam}`;
+    const label = category || "all";
+    axios.get(url, { ...tokenConfig(), responseType: "blob" })
+      .then((res) => {
+        const blob = new Blob([res.data], { type: "application/zip" });
+        const link = document.createElement("a");
+        link.href = window.URL.createObjectURL(blob);
+        link.setAttribute("download", `${app}_${objectId}_${label}_files.zip`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(link.href);
+      })
+      .catch((error) => {
+        if (error.response?.status === 404) {
+          toast.info(`No ${label} files found`);
+        } else {
+          toast.error("Failed to download files");
+        }
+      });
+  };
+
+  // Recursive assembly production ZIP (includes BOM children)
+  const handleDownloadAssemblyProductionZip = () => {
+    const url = `api/files/download/assembly_production_zip/${objectId}/`;
+    axios.get(url, { ...tokenConfig(), responseType: "blob" })
+      .then((res) => {
+        const blob = new Blob([res.data], { type: "application/zip" });
+        const link = document.createElement("a");
+        link.href = window.URL.createObjectURL(blob);
+        link.setAttribute("download", `assembly_${objectId}_production_files.zip`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(link.href);
+      })
+      .catch((error) => {
+        if (error.response?.status === 404) {
+          toast.info("No production files found in assembly or BOM");
+        } else {
+          toast.error("Failed to download production files");
+        }
+      });
+  };
+
+  const hasProductionFiles = file_list.some(f => f.file_category === "production");
+
+  //___________________________________________________________________________________________________
 
   useEffect(() => {
     if (props.file_id_list !== null && props.file_id_list !== undefined) {
@@ -198,6 +326,23 @@ export const FilesTable = (props, { release_state }) => {
     },
 
     {
+      key: "file_category",
+      header: "Category",
+      formatter: (row) => {
+        const isEditable = props?.release_state !== "Released";
+        const displayMap = { design: "Design", production: "Production", other: "Other" };
+        if (!isEditable) {
+          return <span>{displayMap[row.file_category] || "Design"}</span>;
+        }
+        return (
+          <InlineCategorySelect
+            value={row.file_category || "design"}
+            onSave={(newValue) => handleSaveFileCategory(row.id, newValue)}
+          />
+        );
+      },
+    },
+    {
       key: "file_type",
       header: "File Type",
       formatter: (row) => {
@@ -227,13 +372,67 @@ export const FilesTable = (props, { release_state }) => {
           <Col>
             <CardTitle titleText={"Files"} />
           </Col>
-          <Col>
+          <Col className="d-flex align-items-center justify-content-end">
             {props?.release_state !== "Released" && (
               <GenericFileForm
                 app={app}
                 objectId={objectId}
                 setRefresh={setRefresh}
               />
+            )}
+            {file_list.length > 0 && (
+              <button
+                className="btn btn-sm btn-bg-transparent"
+                type="button"
+                onClick={() => handleDownloadZip()}
+                title="Download all files attached to this item as a single ZIP"
+                style={{ fontWeight: 600 }}
+              >
+                <img
+                  className="icon-dark mr-1"
+                  src="../../static/icons/file-download.svg"
+                  alt="icon"
+                  width="14px"
+                  style={{ verticalAlign: "text-bottom" }}
+                />
+                Download ZIP
+              </button>
+            )}
+            {hasProductionFiles && (
+              <button
+                className="btn btn-sm btn-bg-transparent"
+                type="button"
+                onClick={() => handleDownloadZip("production")}
+                title="Download only files categorized as Production"
+                style={{ fontWeight: 600 }}
+              >
+                <img
+                  className="icon-dark mr-1"
+                  src="../../static/icons/file-download.svg"
+                  alt="icon"
+                  width="14px"
+                  style={{ verticalAlign: "text-bottom" }}
+                />
+                Production ZIP
+              </button>
+            )}
+            {app === "Assembly" && (
+              <button
+                className="btn btn-sm btn-bg-transparent"
+                type="button"
+                onClick={handleDownloadAssemblyProductionZip}
+                title="Download production files from this assembly and all parts, PCBAs, and sub-assemblies in the BOM"
+                style={{ fontWeight: 600 }}
+              >
+                <img
+                  className="icon-dark mr-1"
+                  src="../../static/icons/file-download.svg"
+                  alt="icon"
+                  width="14px"
+                  style={{ verticalAlign: "text-bottom" }}
+                />
+                BOM Production ZIP
+              </button>
             )}
           </Col>
         </Row>
@@ -258,11 +457,20 @@ export const FilesTable = (props, { release_state }) => {
         </div>
         <div className="row">
           <div className="col">
-            <p className="text-muted">
+            <p className="text-muted mb-1">
               <small>
                 <b>Double-click</b> a row to view the file.
               </small>
             </p>
+            {(file_list.length > 0 || app === "Assembly") && (
+              <p className="text-muted mb-0">
+                <small>
+                  <b>Download ZIP</b> downloads all files.
+                  {hasProductionFiles && <> <b>Production ZIP</b> downloads only production files.</>}
+                  {app === "Assembly" && <> <b>BOM Production ZIP</b> includes production files from all parts and sub-assemblies in the BOM.</>}
+                </small>
+              </p>
+            )}
           </div>
         </div>
       </DokulyCard>
