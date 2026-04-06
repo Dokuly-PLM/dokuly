@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import { toast } from "react-toastify";
 import { updateDoc, archiveDocument } from "../functions/queries";
 import { fetchProtectionLevels } from "../../admin/functions/queries";
-import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import DokulyModal from "../../dokuly_components/dokulyModal";
-import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
+import { FormField, SectionDivider, EditFormRightPanel } from "../../dokuly_components/dokulyForm/formComponents";
 
 const DocumentEditForm = (props) => {
   const navigate = useNavigate();
@@ -49,12 +47,6 @@ const DocumentEditForm = (props) => {
       }
     });
   }, []);
-
-  const tooltip = (
-    <Tooltip id="tooltip" className="dokuly-tooltip">
-      The document can only be reviewed if it has been set to the review state.
-    </Tooltip>
-  );
 
   const launchForm = () => {
     setShowModal(true);
@@ -128,157 +120,127 @@ const DocumentEditForm = (props) => {
           show={showModal}
           onHide={() => setShowModal(false)}
           title="Edit document"
+          size="lg"
         >
-          <div className="form-group">
-            <label>Title</label>
-            <input
-              className="form-control"
-              type="text"
-              name="title"
-              onChange={(e) => {
-                if (e.target.value.length > 1000) {
-                  alert("Max length 1000");
-                  return;
-                }
-                setTitle(e.target.value);
-              }}
-              value={title}
-            />
-          </div>
+          <div className="d-flex" style={{ gap: "24px" }}>
+            {/* -- Left column: fields -- */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <FormField label="Title" required>
+                <input
+                  className="form-control"
+                  type="text"
+                  name="title"
+                  onChange={(e) => {
+                    if (e.target.value.length > 1000) {
+                      alert("Max length 1000");
+                      return;
+                    }
+                    setTitle(e.target.value);
+                  }}
+                  value={title}
+                />
+              </FormField>
 
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              className="form-control"
-              type="text"
-              name="description"
-              onChange={(e) => {
-                if (e.target.value.length > 1000) {
-                  alert("Max length 1000");
-                  return;
-                }
-                setDescription(e.target.value);
-              }}
-              value={description}
-            />
-          </div>
+              <FormField label="Description" hint={`${(description || "").length}/1000`}>
+                <textarea
+                  className="form-control"
+                  type="text"
+                  name="description"
+                  onChange={(e) => {
+                    if (e.target.value.length > 1000) {
+                      alert("Max length 1000");
+                      return;
+                    }
+                    setDescription(e.target.value);
+                  }}
+                  value={description}
+                  rows={2}
+                />
+              </FormField>
 
-          <div className="form-group">
-            <label>Protection Level</label>
-            <select
-              className="form-control"
-              name="protection_level"
-              value={selected_protection_level_id}
-              onChange={(e) => {
-                setSelectedProtectionLevelId(e.target.value);
-              }}
-            >
-              <option value="">Select protection level</option>
-              {protectionLevels.map((level) => (
-                <option key={level.id} value={level.id}>
-                  {level.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              <FormField label="Protection Level">
+                <select
+                  className="form-control"
+                  name="protection_level"
+                  value={selected_protection_level_id}
+                  onChange={(e) => {
+                    setSelectedProtectionLevelId(e.target.value);
+                  }}
+                >
+                  <option value="">Select protection level</option>
+                  {protectionLevels.map((level) => (
+                    <option key={level.id} value={level.id}>
+                      {level.name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
 
-          <div className="form-group">
-            <label>Summary</label>
-            <textarea
-              className="form-control"
-              type="text"
-              name="summary"
-              onChange={(e) => {
-                if (e.target.value.length > 2000) {
-                  alert("Max length 2000");
-                  return;
-                }
-                setSummary(e.target.value);
-              }}
-              value={summary}
-            />
-          </div>
+              <FormField label="Summary" hint={`${(summary || "").length}/2000`}>
+                <textarea
+                  className="form-control"
+                  type="text"
+                  name="summary"
+                  onChange={(e) => {
+                    if (e.target.value.length > 2000) {
+                      alert("Max length 2000");
+                      return;
+                    }
+                    setSummary(e.target.value);
+                  }}
+                  value={summary}
+                  rows={3}
+                />
+              </FormField>
 
-          <ReleaseStateTimeline
-            releaseState={release_state}
-            setReleaseState={setReleaseState}
-            is_approved_for_release={is_approved_for_release}
-            setIsApprovedForRelease={setIsApprovedForRelease}
-            quality_assurance={props?.document?.quality_assurance}
-          />
+              <SectionDivider label="PDF Options" />
 
-          <RulesStatusIndicator 
-            itemType="document"
-            itemId={props.document?.id}
-            projectId={props.document?.project}
-            onStatusChange={setRulesStatus}
-            setOverride={setRulesOverride}
-          />
-
-          <div className="form-group">
-            <div className="input-group m-3">
-              <input
-                className="form-check-input dokuly-checkbox"
-                name="front_page"
-                type="checkbox"
-                onChange={(e) => {
-                  setFrontPage(!front_page);
-                }}
-                checked={front_page}
-              />
-              <label className="form-check-label" htmlFor="front_page">
+              <label className="d-flex align-items-center mb-2" style={{ gap: "6px", fontSize: "0.8125rem", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={front_page}
+                  onChange={() => setFrontPage(!front_page)}
+                />
                 Generate PDF front page
               </label>
-            </div>
 
-            <div className="input-group m-3">
-              <input
-                className="form-check-input dokuly-checkbox"
-                name="revision_table"
-                type="checkbox"
-                onChange={(e) => {
-                  setRevisionTable(!revision_table);
-                }}
-                checked={revision_table}
-              />
-              <label className="form-check-label" htmlFor="revision_table">
+              <label className="d-flex align-items-center mb-2" style={{ gap: "6px", fontSize: "0.8125rem", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={revision_table}
+                  onChange={() => setRevisionTable(!revision_table)}
+                />
                 Add PDF revision table
               </label>
             </div>
-          </div>
 
-          <div className="form-group">
-            <button
-              onClick={() => onSubmit()}
-              className="btn dokuly-bg-primary"
-              type="button"
-              disabled={
+            {/* -- Right column: state, rules, submit, delete -- */}
+            <EditFormRightPanel
+              releaseState={release_state}
+              setReleaseState={setReleaseState}
+              isApprovedForRelease={is_approved_for_release}
+              setIsApprovedForRelease={setIsApprovedForRelease}
+              rulesItemType="document"
+              rulesItemId={props.document?.id}
+              rulesProjectId={props.document?.project}
+              onRulesStatusChange={setRulesStatus}
+              setRulesOverride={setRulesOverride}
+              submitDisabled={
                 title === "" ||
-                (release_state === "Released" && 
-                 rulesStatus && 
-                 !rulesStatus.all_rules_passed && 
-                 !rulesOverride)
+                (release_state === "Released" &&
+                  rulesStatus &&
+                  !rulesStatus.all_rules_passed &&
+                  !rulesOverride)
               }
-            >
-              Submit
-            </button>
-
-            <button
-              className={"btn btn-bg-transparent ml-2"}
-              type="button"
-              data-placement="top"
-              title={"archive_document"}
-              onClick={archiveDoc}
-            >
-              <div className="row">
-                <img
-                  className="icon-dark"
-                  src="../../static/icons/trash.svg"
-                  alt="Archive Icon"
-                />
-                <span className="btn-text">Delete</span>
-              </div>
-            </button>
+              submitDisabledTooltip={
+                title === ""
+                  ? "Title is required"
+                  : "Rules must be satisfied or overridden before releasing"
+              }
+              onSubmit={() => onSubmit()}
+              onDelete={archiveDoc}
+              deleteLabel="Delete document"
+            />
           </div>
         </DokulyModal>
       </div>

@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import SubmitButton from "../../dokuly_components/submitButton";
+import { FormField } from "../../dokuly_components/dokulyForm/formComponents";
 import { createEco } from "../functions/queries";
 import { fetchProjects } from "../../projects/functions/queries";
 import { fetchUsers } from "../../admin/functions/queries";
@@ -108,8 +109,7 @@ const NewEcoForm = ({ setRefresh }) => {
         onHide={() => setShowModal(false)}
         title="Create new ECO"
       >
-        <div className="form-group">
-          <label>Display name *</label>
+        <FormField label="Display name" required>
           <input
             className="form-control"
             type="text"
@@ -118,10 +118,12 @@ const NewEcoForm = ({ setRefresh }) => {
             onChange={(e) => setDisplayName(e.target.value)}
             value={displayName}
           />
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label>Project</label>
+        <FormField
+          label="Project"
+          hint="Optional. Attach to a project for project-specific tags."
+        >
           <select
             className="form-control"
             name="project"
@@ -138,13 +140,12 @@ const NewEcoForm = ({ setRefresh }) => {
                 </option>
               ))}
           </select>
-          <small className="form-text text-muted">
-            Optional. Attach to a project for project-specific tags.
-          </small>
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label>Responsible</label>
+        <FormField
+          label="Responsible"
+          hint="The person responsible for managing this ECO."
+        >
           <select
             className="form-control"
             name="responsible"
@@ -165,14 +166,12 @@ const NewEcoForm = ({ setRefresh }) => {
                 </option>
               ))}
           </select>
-          <small className="form-text text-muted">
-            The person responsible for managing this ECO.
-          </small>
-        </div>
+        </FormField>
 
-        <div className="form-group mt-4">
+        <div className="mt-3">
           <SubmitButton
             type="submit"
+            className="w-100"
             disabled={!displayName || displayName.trim() === ""}
             onClick={onSubmit}
             disabledTooltip="Please enter a display name"

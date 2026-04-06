@@ -261,20 +261,21 @@ const BomTable = ({
 
   const columns = getBomTableColumns(columnConfiguration);
 
-  const handleRowClick = (index) => {
-    const selectedItem = bom[index];
-    if (event.ctrlKey || event.metaKey) {
-      let url = "";
-      if (selectedItem.pcba) {
-        url = `/#/pcbas/${selectedItem.pcba}`;
-      } else if (selectedItem.assembly) {
-        url = `/#/assemblies/${selectedItem.assembly}`;
-      } else if (selectedItem.part) {
-        url = `/#/parts/${selectedItem.part}`;
-      }
-      if (url) {
-        window.open(url, "_blank");
-      }
+  const handleRowClick = (rowIndex, row, e) => {
+    if (!row) return;
+    let url = "";
+    if (row.pcba) {
+      url = `/pcbas/${row.pcba}`;
+    } else if (row.assembly) {
+      url = `/assemblies/${row.assembly}`;
+    } else if (row.part) {
+      url = `/parts/${row.part}`;
+    }
+    if (!url) return;
+    if (e?.ctrlKey || e?.metaKey) {
+      window.open(`/#${url}`, "_blank");
+    } else {
+      navigate(url);
     }
   };
 
@@ -354,7 +355,7 @@ const BomTable = ({
                   columns={columns}
                   showColumnSelector={true}
                   itemsPerPage={100000} // No pagination
-                  onRowClick={(index) => handleRowClick(index)}
+                  onRowClick={handleRowClick}
                   navigateColumn={true}
                   onNavigate={(row) => onNavigate(row)}
                   textSize={tableTextSize}

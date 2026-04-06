@@ -271,6 +271,7 @@ const PartNumberEditor = ({
               searchTerm={searchTerm}
               setSelectedItem={setSelectedItem}
               organization={organization}
+              compact
             />
           </div>
         ) : (

@@ -109,15 +109,18 @@ const DesignatorEditor = ({ row, is_locked_bom, setRefreshBom }) => {
       {is_locked_bom ? (
         <span>{referenceDesignatorFormatter(displayDesignator)}</span>
       ) : isEditing ? (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
           <input
             ref={inputRef}
+            className="input-edit"
             type="text"
             value={designator}
             onChange={(e) => setDesignator(e.target.value)}
             onBlur={handleBlur}
-            onKeyDown={handleKeyDown}            onKeyUp={handleKeyUp}            title="Press Enter to submit, Escape to cancel"
-            style={{ width: "6rem" }} // CSS style for input width
+            onKeyDown={handleKeyDown}
+            onKeyUp={handleKeyUp}
+            title="Press Enter to submit, Escape to cancel"
+            style={{ flex: 1, minWidth: 0 }}
           />
           <span className={`enter-key-indicator ${isEnterPressed ? 'pressed' : ''}`}>↵</span>
         </div>

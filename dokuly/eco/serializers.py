@@ -27,6 +27,29 @@ class EcoSerializer(serializers.ModelSerializer):
         return ""
 
 
+class GlobalSearchEcoSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for global search results."""
+    item_type = serializers.SerializerMethodField()
+    project_title = serializers.ReadOnlyField(source="project.title")
+    full_part_number = serializers.ReadOnlyField(source="display_name")
+
+    def get_item_type(self, obj):
+        return "ECO"
+
+    class Meta:
+        model = Eco
+        fields = [
+            "id",
+            "display_name",
+            "full_part_number",
+            "release_state",
+            "project",
+            "project_title",
+            "item_type",
+            "created_at",
+        ]
+
+
 class AffectedItemSerializer(serializers.ModelSerializer):
     """Basic serializer for AffectedItem."""
 

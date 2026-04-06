@@ -2,12 +2,11 @@ import React, { useState, useEffect } from "react";
 import moment from "moment";
 import { useNavigate } from "react-router";
 import { archiveAsmRevision, editAsmInfo } from "../functions/queries";
-import SubmitButton from "../../dokuly_components/submitButton";
 import { toast } from "react-toastify";
-import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
-import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 import { usePartTypes } from "../../parts/partTypes/usePartTypes";
+import DokulyModal from "../../dokuly_components/dokulyModal";
+import { FormField, EditFormRightPanel } from "../../dokuly_components/dokulyForm/formComponents";
 
 const AsmEditForm = (props) => {
   const navigate = useNavigate();
@@ -22,12 +21,13 @@ const AsmEditForm = (props) => {
   const [rulesStatus, setRulesStatus] = useState(null);
   const [rulesOverride, setRulesOverride] = useState(false);
   const [partType, setPartType] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const partTypes = usePartTypes();
 
   const editAsm = () => {
     loadStates(props?.asm);
-    $("#editAsmInfo").modal("show");
+    setShowModal(true);
   };
 
   const archiveAsm = () => {
@@ -38,7 +38,7 @@ const AsmEditForm = (props) => {
     // Push data to the database
     archiveAsmRevision(props.asm?.id).then((res) => {
       if (res.status === 202) {
-        $("#editAsmInfo").modal("hide");
+        setShowModal(false);
         navigate("/assemblies/");
       }
     });
@@ -60,12 +60,12 @@ const AsmEditForm = (props) => {
       setPartType(null);
       return;
     }
-    
+
     if (partTypes.length === 0) {
       // partTypes not loaded yet, will retry when it loads
       return;
     }
-    
+
     const partTypeId = props.asm.part_type.id || props.asm.part_type;
     const currentPartType = partTypes.find(
       (partType) => partType.id === partTypeId
@@ -109,7 +109,7 @@ const AsmEditForm = (props) => {
     editAsmInfo(props.asm?.id, data)
       .then((res) => {
         if (res.status === 202) {
-          $("#editAsmInfo").modal("hide");
+          setShowModal(false);
           props.setRefresh(true);
           clearStates();
         }
@@ -136,159 +136,104 @@ const AsmEditForm = (props) => {
           <span className="btn-text">Edit</span>
         </div>
       </button>
-      <div
-        className="modal fade"
-        id="editAsmInfo"
-        tabIndex="-1"
-        role="dialog"
-        aria-labelledby="editAsmInfoLabel"
-        aria-hidden="true"
+
+      <DokulyModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        title="Edit assembly"
+        size="lg"
       >
-        <div className="modal-dialog" role="document">
-          <div className="modal-content text-left">
-            <div className="modal-header">
-              <h5 className="modal-title" id="editAsmInfoLabel">
-                Edit assembly information
-              </h5>
+        <div className="d-flex" style={{ gap: "24px" }}>
+          {/* Left column: fields */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <FormField label="Display name" required>
+              <input
+                className="form-control"
+                type="text"
+                value={display_name}
+                onChange={(e) => {
+                  if (e.target.value.length > 150) {
+                    toast.info("Max length 150");
+                    return;
+                  }
+                  setDisplayName(e.target.value);
+                }}
+              />
+            </FormField>
 
-              <small className="form-text text-muted pl-3">
-                * Mandatory fields
-              </small>
+            <FormField label="Description" hint={`${(description || "").length}/500`}>
+              <textarea
+                className="form-control"
+                type="text"
+                value={description}
+                onChange={(e) => {
+                  if (e.target.value.length > 500) {
+                    toast.info("Max length 500");
+                    return;
+                  }
+                  setDescription(e.target.value);
+                }}
+                rows={2}
+              />
+            </FormField>
 
-              <button
-                type="button"
-                className="close"
-                onClick={() => {
-                  $("#editAsmInfo").modal("hide");
+            <ExternalPartNumberFormGroup
+              externalPartNumber={externalPartNumber}
+              setExternalPartNumber={setExternalPartNumber}
+            />
+
+            <FormField label="Part type">
+              <select
+                className="form-control"
+                name="part_type"
+                value={partType ? partType?.name : ""}
+                onChange={(e) => {
+                  const selectedPartType = partTypes.find(
+                    (partType) => partType.name === e.target.value
+                  );
+                  setPartType(selectedPartType || null);
                 }}
               >
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Display name</label>
-                <input
-                  className="form-control"
-                  type="text"
-                  name="name"
-                  onChange={(e) => {
-                    if (e.target.value.length > 150) {
-                      toast.info("Max length 150");
-                      return;
-                    }
-                    setDisplayName(e.target.value);
-                  }}
-                  value={display_name}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  className="form-control"
-                  type="text"
-                  name="name"
-                  onChange={(e) => {
-                    if (e.target.value.length > 500) {
-                      toast.info("Max length 500");
-                      return;
-                    }
-                    setDescription(e.target.value);
-                  }}
-                  value={description}
-                />
-              </div>
-
-              <ExternalPartNumberFormGroup
-                externalPartNumber={externalPartNumber}
-                setExternalPartNumber={setExternalPartNumber}
-              />
-
-              <div className="form-group">
-                <label>Part type</label>
-                <select
-                  className="form-control"
-                  name="part_type"
-                  value={partType ? partType?.name : ""}
-                  onChange={(e) => {
-                    const selectedPartType = partTypes.find(
-                      (partType) => partType.name === e.target.value
-                    );
-                    setPartType(selectedPartType || null);
-                  }}
-                >
-                  <option value="">Select part type</option>
-                  {partTypes
-                    .filter((partType) => partType.applies_to === "Assembly")
-                    .map((partType) => (
-                      <option key={partType.name} value={partType.name}>
-                        {partType.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <ReleaseStateTimeline
-                releaseState={release_state}
-                setReleaseState={setReleaseState}
-                is_approved_for_release={is_approved_for_release}
-                setIsApprovedForRelease={setIsApprovedForRelease}
-                quality_assurance={props?.asm?.quality_assurance}
-              />
-
-              <RulesStatusIndicator 
-                itemType="assembly"
-                itemId={props.asm?.id}
-                projectId={props.asm?.project}
-                onStatusChange={setRulesStatus}
-                setOverride={setRulesOverride}
-              />
-
-              <div className="mt-4">
-                <SubmitButton
-                  onClick={() => submit()}
-                  className="btn dokuly-bg-primary"
-                  disabled={
-                    display_name === "" ||
-                    (release_state === "Released" && 
-                     rulesStatus && 
-                     !rulesStatus.all_rules_passed && 
-                     !rulesOverride)
-                  }
-                  disabledTooltip={
-                    display_name === ""
-                      ? "Mandatory fields must be entered. Mandatory fields are marked with *"
-                      : "Rules must be satisfied or overridden before releasing"
-                  }
-                >
-                  Submit
-                </SubmitButton>
-
-                <button
-                  className={"btn btn-bg-transparent ml-2"}
-                  type={"submit"}
-                  //data-toggle="tooltip"
-                  data-placement="top"
-                  title={"delete_part"}
-                  onClick={() => {
-                    archiveAsm();
-                  }}
-                >
-                  <div className="row">
-                    <img
-                      className="icon-dark"
-                      src="../../static/icons/trash.svg"
-                      alt="Delete Icon"
-                    />
-                    <span className="btn-text">Delete</span>
-                  </div>
-                </button>
-              </div>
-            </div>
+                <option value="">Select part type</option>
+                {partTypes
+                  .filter((partType) => partType.applies_to === "Assembly")
+                  .map((partType) => (
+                    <option key={partType.name} value={partType.name}>
+                      {partType.name}
+                    </option>
+                  ))}
+              </select>
+            </FormField>
           </div>
+
+          <EditFormRightPanel
+            releaseState={release_state}
+            setReleaseState={setReleaseState}
+            isApprovedForRelease={is_approved_for_release}
+            setIsApprovedForRelease={setIsApprovedForRelease}
+            rulesItemType="assembly"
+            rulesItemId={props.asm?.id}
+            rulesProjectId={props.asm?.project}
+            onRulesStatusChange={setRulesStatus}
+            setRulesOverride={setRulesOverride}
+            submitDisabled={
+              display_name === "" ||
+              (release_state === "Released" &&
+                rulesStatus &&
+                !rulesStatus.all_rules_passed &&
+                !rulesOverride)
+            }
+            submitDisabledTooltip={
+              display_name === ""
+                ? "Mandatory fields must be entered. Mandatory fields are marked with *"
+                : "Rules must be satisfied or overridden before releasing"
+            }
+            onSubmit={() => submit()}
+            onDelete={() => archiveAsm()}
+            deleteLabel="Delete assembly"
+          />
         </div>
-      </div>
+      </DokulyModal>
     </div>
   );
 };

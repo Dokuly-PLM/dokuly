@@ -603,7 +603,7 @@ kbd>kbd {
 }
 
 .modal {
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 .modal-90w {
@@ -643,7 +643,7 @@ kbd>kbd {
 }
 
 .modal-body {
-  width: 100%; 
+  width: 100%;
 }
 
 .modal-fullscreen {
@@ -1356,6 +1356,48 @@ div.tooltip.bs-tooltip-end .tooltip-inner {
   background-color: #F9FAFB;
 }
 
+.table-row-hover:focus,
+tbody tr:focus-visible {
+  background-color: #F5F5F5;
+  outline: 2px solid #165216;
+  outline-offset: -2px;
+  z-index: 1;
+  position: relative;
+}
+
+.dokuly-table-shortcuts-hint {
+  display: flex;
+  gap: 14px;
+  justify-content: flex-end;
+  padding: 6px 8px;
+  font-size: 0.6875rem;
+  color: #9CA3AF;
+}
+
+.dokuly-shortcut-kbd {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.625rem;
+  font-weight: 500;
+  background: #F5F5F5;
+  border: 1px solid #E5E5E5;
+  border-radius: 3px;
+  padding: 1px 4px;
+  color: #6B7280;
+  margin-right: 2px;
+}
+
+.dokuly-table-shortcuts-hint kbd {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.625rem;
+  font-weight: 500;
+  background: #F5F5F5;
+  border: 1px solid #E5E5E5;
+  border-radius: 3px;
+  padding: 1px 4px;
+  color: #6B7280;
+  margin-right: 2px;
+}
+
 /* Table edit */
 
 .settings-button {
@@ -1614,19 +1656,18 @@ div.tooltip.bs-tooltip-end .tooltip-inner {
 /* Input field */
 
 .input-edit {
-  padding: 8px;
+  padding: 4px 6px;
   border: 1px solid #dae1e7;
-  /* Light grey border */
   border-radius: 4px;
   width: 100%;
   box-sizing: border-box;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .input-edit:focus {
   border-color: #165216;
-  /* Primary green border on focus */
   outline: none;
-  /* Removing default focus outline */
 }
 
 .input-display {
@@ -1775,18 +1816,25 @@ polygon._2pZMF { /* This is the gantt project tasks triangle (task groups) */
 
 /* Enter key indicator for editable fields */
 .enter-key-indicator {
+  flex-shrink: 0;
   margin-left: 4px;
-  font-size: 12px;
-  color: #666;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: #6B7280;
   user-select: none;
-  padding: 2px 4px;
+  padding: 1px 5px;
   border-radius: 3px;
-  background-color: transparent;
-  transition: background-color 0.15s ease;
+  background: #F5F5F5;
+  border: 1px solid #E5E5E5;
+  line-height: 16px;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
 }
 
 .enter-key-indicator.pressed {
-  background-color: #e0e0e0;
+  background-color: #165216;
+  border-color: #165216;
+  color: #fff;
 }
 
 /* ============================================

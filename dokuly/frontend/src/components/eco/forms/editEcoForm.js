@@ -5,10 +5,11 @@ import moment from "moment";
 
 import { editEco, deleteEco } from "../functions/queries";
 import { fetchProjects } from "../../projects/functions/queries";
-import SubmitButton from "../../dokuly_components/submitButton";
-import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import DokulyModal from "../../dokuly_components/dokulyModal";
-import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
+import {
+  FormField,
+  EditFormRightPanel,
+} from "../../dokuly_components/dokulyForm/formComponents";
 
 const EditEcoForm = ({ eco, setRefresh, profiles = [] }) => {
   const navigate = useNavigate();
@@ -150,94 +151,75 @@ const EditEcoForm = ({ eco, setRefresh, profiles = [] }) => {
         show={showModal}
         onHide={() => setShowModal(false)}
         title="Edit ECO"
+        size="lg"
       >
-        <div className="form-group">
-          <label>Display name</label>
-          <input
-            className="form-control"
-            type="text"
-            name="display_name"
-            onChange={(e) => {
-              if (e.target.value.length > 150) {
-                toast.info("Max length 150");
-                return;
-              }
-              setDisplayName(e.target.value);
-            }}
-            value={display_name}
-          />
-        </div>
+        <div style={{ display: "flex", gap: "24px" }}>
+          {/* Left column - form fields */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <FormField label="Display name" required>
+              <input
+                className="form-control"
+                type="text"
+                name="display_name"
+                onChange={(e) => {
+                  if (e.target.value.length > 150) {
+                    toast.info("Max length 150");
+                    return;
+                  }
+                  setDisplayName(e.target.value);
+                }}
+                value={display_name}
+              />
+            </FormField>
 
-        <div className="form-group">
-          <label>Project (optional)</label>
-          <select
-            className="form-control"
-            value={projectId}
-            onChange={(e) => setProjectId(e.target.value ? parseInt(e.target.value) : "")}
-            disabled={loadingProjects}
-          >
-            <option value="">No project</option>
-            {projects
-              .filter((project) => project.is_active !== false)
-              .map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.title}
-                </option>
-              ))}
-          </select>
-        </div>
+            <FormField label="Project" hint="Optional">
+              <select
+                className="form-control"
+                value={projectId}
+                onChange={(e) =>
+                  setProjectId(e.target.value ? parseInt(e.target.value) : "")
+                }
+                disabled={loadingProjects}
+              >
+                <option value="">No project</option>
+                {projects
+                  .filter((project) => project.is_active !== false)
+                  .map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.title}
+                    </option>
+                  ))}
+              </select>
+            </FormField>
+          </div>
 
-        <ReleaseStateTimeline
-          releaseState={release_state}
-          setReleaseState={setReleaseState}
-          is_approved_for_release={is_approved_for_release}
-          setIsApprovedForRelease={setIsApprovedForRelease}
-          quality_assurance={eco?.quality_assurance}
-        />
-
-        <RulesStatusIndicator 
-          itemType="eco"
-          itemId={eco?.id}
-          projectId={eco?.project?.id}
-          onStatusChange={setRulesStatus}
-          setOverride={setRulesOverride}
-        />
-
-        <div className="mt-4">
-          <SubmitButton
-            onClick={submit}
-            className="btn dokuly-bg-primary"
-            disabled={
+          {/* Right column - state, rules, submit, delete */}
+          <EditFormRightPanel
+            releaseState={release_state}
+            setReleaseState={setReleaseState}
+            isApprovedForRelease={is_approved_for_release}
+            setIsApprovedForRelease={setIsApprovedForRelease}
+            rulesItemType="eco"
+            rulesItemId={eco?.id}
+            rulesProjectId={eco?.project?.id}
+            onRulesStatusChange={setRulesStatus}
+            setRulesOverride={setRulesOverride}
+            submitDisabled={
               display_name === "" ||
-              (release_state === "Released" && 
-               rulesStatus && 
-               !rulesStatus.all_rules_passed && 
-               !rulesOverride)
+              (release_state === "Released" &&
+                rulesStatus &&
+                !rulesStatus.all_rules_passed &&
+                !rulesOverride)
             }
-            disabledTooltip={
+            submitDisabledTooltip={
               display_name === ""
                 ? "Display name is required"
                 : "Rules must be satisfied or overridden before releasing"
             }
-          >
-            Submit
-          </SubmitButton>
-
-          <button
-            className="btn btn-bg-transparent ml-2"
-            type="button"
-            title="Delete ECO"
-            onClick={handleDelete}
-          >
-            <div className="row">
-              <img
-                className="icon-dark"
-                src="../../static/icons/trash.svg"
-                alt="Delete Icon"
-              />
-              <span className="btn-text">Delete</span>
-            </div>
-          </button>
+            onSubmit={submit}
+            onDelete={handleDelete}
+            deleteLabel="Delete ECO"
+          />
         </div>
       </DokulyModal>
     </div>
