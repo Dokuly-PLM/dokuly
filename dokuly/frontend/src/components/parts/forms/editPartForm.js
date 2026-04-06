@@ -3,8 +3,6 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
 import { editPart, archivePart } from "../functions/queries";
 import SubmitButton from "../../dokuly_components/submitButton";
-import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
-import DeleteButton from "../../dokuly_components/deleteButton";
 import { usePartTypes } from "../partTypes/usePartTypes";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
@@ -15,10 +13,48 @@ import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 import NameSuggestion from "../../dokuly_components/nameSuggestion/nameSuggestion";
 import { fetchIntegrationSettings } from "../../admin/functions/queries";
 
+const FormField = ({ label, required, children, hint }) => (
+  <div className="mb-3">
+    <label
+      className="dokuly-section-label"
+      style={{ display: "block", marginBottom: "4px", fontSize: "0.6875rem" }}
+    >
+      {label}
+      {required && <span style={{ color: "#B00020" }}> *</span>}
+    </label>
+    {children}
+    {hint && (
+      <small className="form-text" style={{ color: "#9CA3AF", fontSize: "0.75rem" }}>
+        {hint}
+      </small>
+    )}
+  </div>
+);
+
+const SectionDivider = ({ label }) => (
+  <div
+    className="d-flex align-items-center mt-3 mb-2"
+    style={{ gap: "8px" }}
+  >
+    <span
+      style={{
+        fontSize: "0.6875rem",
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: "0.05em",
+        color: "#6B7280",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+    </span>
+    <div style={{ flex: 1, borderBottom: "1px solid #E5E5E5" }} />
+  </div>
+);
+
 const EditPartForm = (props) => {
   const navigate = useNavigate();
 
-  // Form Fields
   const [display_name, setDisplayName] = useState("");
   const [release_state, setReleaseState] = useState("");
   const [is_approved_for_release, setIsApprovedForRelease] = useState(false);
@@ -39,10 +75,7 @@ const EditPartForm = (props) => {
   const [complianceCollapsed, setComplianceCollapsed] = useState(true);
 
   const [countryOfOrigin, setCountryOfOrigin] = useState("");
-  const [
-    exportControlClassificationNumber,
-    setExportControlClassificationNumber,
-  ] = useState("");
+  const [exportControlClassificationNumber, setExportControlClassificationNumber] = useState("");
   const [harmonizedSystemCode, setHarmonizedSystemCode] = useState("");
   const [exportCollapsed, setExportCollapsed] = useState(true);
 
@@ -52,10 +85,6 @@ const EditPartForm = (props) => {
   const [hasAiCredentials, setHasAiCredentials] = useState(false);
 
   const partTypes = usePartTypes();
-
-  const toggleCompliance = () => {
-    setComplianceCollapsed(!complianceCollapsed);
-  };
 
   useEffect(() => {
     if (props.part !== null && props.part !== undefined) {
@@ -91,22 +120,15 @@ const EditPartForm = (props) => {
       if (eccn !== "" || country !== "" || hscode !== "") {
         setExportCollapsed(false);
       }
-
     }
   }, [props.part, partTypes]);
 
   useEffect(() => {
-    // part_type comes as an object from PartSerializer (PartTypeSerializer)
     if (!props.part?.part_type) {
       setPartType(null);
       return;
     }
-    
-    if (partTypes.length === 0) {
-      // partTypes not loaded yet, will retry when it loads
-      return;
-    }
-    
+    if (partTypes.length === 0) return;
     const partTypeId = props.part.part_type.id || props.part.part_type;
     const currentPartType = partTypes.find(
       (partType) => partType.id === partTypeId
@@ -115,16 +137,14 @@ const EditPartForm = (props) => {
   }, [props.part?.part_type, partTypes]);
 
   useEffect(() => {
-    fetchIntegrationSettings().then((res) => {
-      if (res.status === 200 && res.data) {
-        setHasAiCredentials(res.data.has_ai_credentials || false);
-      }
-    }).catch(() => {});
+    fetchIntegrationSettings()
+      .then((res) => {
+        if (res.status === 200 && res.data) {
+          setHasAiCredentials(res.data.has_ai_credentials || false);
+        }
+      })
+      .catch(() => {});
   }, []);
-
-  const launchForm = () => {
-    setShowModal(true);
-  };
 
   const complianceOptions = [
     {
@@ -143,8 +163,7 @@ const EditPartForm = (props) => {
       as: "check",
       key: "reach",
       showToolTip: true,
-      tooltipText:
-        "Registration, Evaluation, Authorization and Restriction of Chemicals",
+      tooltipText: "Registration, Evaluation, Authorization and Restriction of Chemicals",
     },
     {
       label: "UL compliant",
@@ -193,16 +212,14 @@ const EditPartForm = (props) => {
   ];
 
   function onSubmit() {
-    // Check if this is a placeholder part (external part with no MPN)
     const isPlaceholderPart =
       is_internal === false && (!mpn || mpn.trim() === "");
 
-    // Warn if trying to release a placeholder part
     if (isPlaceholderPart && release_state === "Released") {
       if (
         !confirm(
           "Warning: This part has no MPN.\n\n" +
-            "Are you sure you want to release this part?",
+            "Are you sure you want to release this part?"
         )
       ) {
         return;
@@ -238,7 +255,7 @@ const EditPartForm = (props) => {
         toast.success("Part updated");
       } else {
         toast.error(
-          "Error updating part. If the problem persists contact support.",
+          "Error updating part. If the problem persists contact support."
         );
       }
     });
@@ -246,7 +263,11 @@ const EditPartForm = (props) => {
   }
 
   function archiveCurrentPart() {
-    if (!confirm(`Are you sure you want to delete this part:\n${props.part?.full_part_number} - ${props.part?.display_name}?`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete this part:\n${props.part?.full_part_number} - ${props.part?.display_name}?`
+      )
+    ) {
       return;
     }
 
@@ -258,106 +279,6 @@ const EditPartForm = (props) => {
     });
   }
 
-  const internalOptions = (
-    <div>
-      <ExternalPartNumberFormGroup
-        externalPartNumber={externalPartNumber}
-        setExternalPartNumber={setExternalPartNumber}
-      />
-
-      {partType?.name === "Software" ? (
-        <div className="form-group">
-          <label>Git link</label>
-          <input
-            className="form-control"
-            type="text"
-            name="git_link"
-            onChange={(e) => {
-              setGitLink(e.target.value);
-            }}
-            value={git_link}
-          />
-        </div>
-      ) : (
-        ""
-      )}
-    </div>
-  );
-
-  const externalOptions = (
-    <div>
-      <div className="form-group">
-        <label>Manufacturer part number *</label>
-        <input
-          className="form-control"
-          type="text"
-          name="mpn"
-          onChange={(e) => {
-            setMpn(e.target.value);
-          }}
-          value={mpn}
-        />
-        {(!mpn || mpn.trim() === "") && (
-          <small className="form-text text-danger">
-            <img
-              src="../../static/icons/alert-triangle.svg"
-              alt="danger"
-              width="16"
-              height="16"
-              style={{ marginRight: "4px" }}
-            />
-            <strong>Placeholder Part:</strong> This part has no MPN and cannot
-            be released until an MPN is added.
-          </small>
-        )}
-      </div>
-
-      <div className="form-group">
-        <label>Manufacturer</label>
-        <input
-          className="form-control"
-          type="text"
-          name="manufacturer"
-          onChange={(e) => {
-            setManufacturer(e.target.value);
-          }}
-          value={manufacturer}
-        />
-      </div>
-      <div className="form-group">
-        <label>Datasheet link</label>
-        <input
-          className="form-control"
-          type="text"
-          name="datasheet"
-          onChange={(e) => {
-            setDatasheet(e.target.value);
-          }}
-          value={datasheet}
-          title="A URL to a web-hosted datasheet."
-        />
-      </div>
-      <div className="form-group">
-        <label>Image link</label>
-        <input
-          className="form-control"
-          type="text"
-          name="image_url"
-          onChange={(e) => {
-            setImageUrl(e.target.value);
-          }}
-          value={image_url}
-          title="Alternative to thumbnail. Image is loaded from the URL."
-        />
-      </div>
-
-      <ExternalPartNumberFormGroup
-        externalPartNumber={externalPartNumber}
-        setExternalPartNumber={setExternalPartNumber}
-      />
-    </div>
-  );
-
   return (
     <React.Fragment>
       {props.part?.release_state === "Released" ? (
@@ -366,7 +287,7 @@ const EditPartForm = (props) => {
         <button
           type="button"
           className="btn btn-bg-transparent"
-          onClick={() => launchForm()}
+          onClick={() => setShowModal(true)}
         >
           <div className="row">
             <img
@@ -383,156 +304,329 @@ const EditPartForm = (props) => {
         show={showModal}
         onHide={() => setShowModal(false)}
         title="Edit part"
+        size="lg"
       >
-        <div className="form-group">
-          <div className="form-group">
-            <label>Display name *</label>
-            <input
-              className="form-control"
-              type="text"
-              name="display_name"
-              onChange={(e) => {
-                setDisplayName(e.target.value);
-              }}
-              value={display_name}
+        <div className="d-flex" style={{ gap: "24px" }}>
+          {/* ── Left column: fields ── */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <FormField label="Display name" required>
+              <input
+                className="form-control"
+                type="text"
+                value={display_name}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+              <NameSuggestion
+                draftName={display_name}
+                entityType="part"
+                typeId={partType?.id}
+                onApply={setDisplayName}
+                enabled={hasAiCredentials}
+              />
+            </FormField>
+
+            <div className="d-flex" style={{ gap: "12px" }}>
+              <div style={{ flex: 1 }}>
+                <FormField label="Part type">
+                  <select
+                    className="form-control"
+                    value={partType ? partType?.name : ""}
+                    onChange={(e) => {
+                      const selectedPartType = partTypes.find(
+                        (pt) => pt.name === e.target.value
+                      );
+                      setPartType(selectedPartType || null);
+                      if (selectedPartType?.default_unit) {
+                        setUnit(selectedPartType.default_unit);
+                      }
+                    }}
+                  >
+                    <option value="">Select part type</option>
+                    {partTypes
+                      .filter((pt) => pt.applies_to === "Part")
+                      .map((pt) => (
+                        <option key={pt.name} value={pt.name}>
+                          {pt.name}
+                        </option>
+                      ))}
+                  </select>
+                </FormField>
+              </div>
+              <div style={{ flex: 0, minWidth: "100px" }}>
+                <FormField label="Unit">
+                  <input
+                    className="form-control"
+                    type="text"
+                    value={unit}
+                    onChange={(e) => {
+                      if (e.target.value.length > 20) {
+                        toast.info("Max length 20");
+                      } else {
+                        setUnit(e.target.value);
+                      }
+                    }}
+                  />
+                </FormField>
+              </div>
+            </div>
+
+            <FormField label="Description" hint={`${(description || "").length}/500`}>
+              <textarea
+                className="form-control"
+                value={description}
+                onChange={(e) => {
+                  if (e.target.value.length > 500) {
+                    toast("Max length 500");
+                    return;
+                  }
+                  setDescription(e.target.value);
+                }}
+                rows={2}
+              />
+            </FormField>
+
+            {/* ── Source ── */}
+            {is_internal !== "" && (
+              <>
+                <SectionDivider
+                  label={is_internal ? "Internal part" : "External part"}
+                />
+
+                {is_internal ? (
+                  <>
+                    <ExternalPartNumberFormGroup
+                      externalPartNumber={externalPartNumber}
+                      setExternalPartNumber={setExternalPartNumber}
+                    />
+                    {partType?.name === "Software" && (
+                      <FormField label="Git link">
+                        <input
+                          className="form-control"
+                          type="text"
+                          value={git_link}
+                          onChange={(e) => setGitLink(e.target.value)}
+                        />
+                      </FormField>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="d-flex" style={{ gap: "12px" }}>
+                      <div style={{ flex: 1 }}>
+                        <FormField label="MPN" required>
+                          <input
+                            className="form-control"
+                            type="text"
+                            value={mpn}
+                            onChange={(e) => setMpn(e.target.value)}
+                          />
+                        </FormField>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <FormField label="Manufacturer">
+                          <input
+                            className="form-control"
+                            type="text"
+                            value={manufacturer}
+                            onChange={(e) => setManufacturer(e.target.value)}
+                          />
+                        </FormField>
+                      </div>
+                    </div>
+
+                    {(!mpn || mpn.trim() === "") && (
+                      <div
+                        className="mb-3 d-flex align-items-center"
+                        style={{
+                          gap: "6px",
+                          fontSize: "0.75rem",
+                          color: "#B00020",
+                        }}
+                      >
+                        <img
+                          src="../../static/icons/alert-triangle.svg"
+                          alt="warning"
+                          width="14"
+                          height="14"
+                          className="dokuly-filter-danger"
+                        />
+                        <span>
+                          <strong>Placeholder part</strong> — add an MPN before
+                          releasing.
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="d-flex" style={{ gap: "12px" }}>
+                      <div style={{ flex: 1 }}>
+                        <FormField label="Datasheet link">
+                          <input
+                            className="form-control"
+                            type="url"
+                            value={datasheet}
+                            onChange={(e) => setDatasheet(e.target.value)}
+                            placeholder="https://..."
+                          />
+                        </FormField>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <FormField label="Image link">
+                          <input
+                            className="form-control"
+                            type="url"
+                            value={image_url}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="https://..."
+                          />
+                        </FormField>
+                      </div>
+                    </div>
+
+                    <ExternalPartNumberFormGroup
+                      externalPartNumber={externalPartNumber}
+                      setExternalPartNumber={setExternalPartNumber}
+                    />
+                  </>
+                )}
+              </>
+            )}
+
+            {/* ── Compliance & Export (collapsible) ── */}
+            <DropdownFormSection
+              formGroups={complianceOptions}
+              isCollapsed={complianceCollapsed}
+              handleToggle={() => setComplianceCollapsed(!complianceCollapsed)}
+              collapsedText="Compliance"
+              wrapperClassname="mt-2"
+              className="mt-3"
             />
-            <NameSuggestion
-              draftName={display_name}
-              entityType="part"
-              typeId={partType?.id}
-              onApply={setDisplayName}
-              enabled={hasAiCredentials}
+
+            <DropdownFormSection
+              formGroups={exportOptions}
+              isCollapsed={exportCollapsed}
+              handleToggle={() => setExportCollapsed(!exportCollapsed)}
+              collapsedText="Export"
+              wrapperClassname="mt-1"
+              className="mt-1"
             />
           </div>
 
-          <div className="form-group">
-            <label>Part type</label>
-            <select
-              className="form-control"
-              name="part_type"
-              value={partType ? partType?.name : ""}
-              onChange={(e) => {
-                const selectedPartType = partTypes.find(
-                  (partType) => partType.name === e.target.value
-                );
-                setPartType(selectedPartType || null);
-                if (selectedPartType?.default_unit) {
-                  setUnit(selectedPartType.default_unit);
+          {/* ── Right column: release & actions ── */}
+          <div
+            style={{
+              width: "200px",
+              flexShrink: 0,
+              borderLeft: "1px solid #E5E5E5",
+              paddingLeft: "24px",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <SectionDivider label="State" />
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              {["Draft", "Review", "Released"].map((state) => (
+                <button
+                  key={state}
+                  type="button"
+                  onClick={() => setReleaseState(state)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "6px 10px",
+                    borderRadius: "4px",
+                    border: release_state === state
+                      ? "1px solid #165216"
+                      : "1px solid #E5E5E5",
+                    background: release_state === state ? "#EEF2EE" : "#fff",
+                    color: release_state === state ? "#165216" : "#6B7280",
+                    fontWeight: release_state === state ? 600 : 400,
+                    fontSize: "0.8125rem",
+                    cursor: "pointer",
+                    transition: "all 0.1s ease",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: release_state === state
+                        ? "#165216"
+                        : "#D1D5DB",
+                      flexShrink: 0,
+                    }}
+                  />
+                  {state}
+                </button>
+              ))}
+            </div>
+
+            {release_state === "Review" && (
+              <label
+                className="d-flex align-items-start mt-3"
+                style={{
+                  gap: "6px",
+                  fontSize: "0.75rem",
+                  color: "#6B7280",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={is_approved_for_release}
+                  onChange={() =>
+                    setIsApprovedForRelease(!is_approved_for_release)
+                  }
+                  style={{ marginTop: "2px" }}
+                />
+                Approved for release
+              </label>
+            )}
+
+            <RulesStatusIndicator
+              itemType="part"
+              itemId={props.part?.id}
+              projectId={props.part?.project}
+              onStatusChange={setRulesStatus}
+              setOverride={setRulesOverride}
+            />
+
+            {/* Push actions to bottom */}
+            <div style={{ marginTop: "auto", paddingTop: "16px" }}>
+              <SubmitButton
+                type="submit"
+                className="w-100"
+                disabled={
+                  display_name === "" ||
+                  (release_state === "Released" &&
+                    rulesStatus &&
+                    !rulesStatus.all_rules_passed &&
+                    !rulesOverride)
                 }
-              }}
-            >
-              <option value="">Select part type</option>
-              {partTypes
-                .filter((partType) => partType.applies_to === "Part")
-                .map((partType) => (
-                  <option key={partType.name} value={partType.name}>
-                    {partType.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Part unit</label>
-            <input
-              className="form-control"
-              type="text"
-              name="unit"
-              onChange={(e) => {
-                if (e.target.value.length > 20) {
-                  toast.info("Max length 20");
-                } else {
-                  setUnit(e.target.value);
+                onClick={() => onSubmit()}
+                disabledTooltip={
+                  display_name === ""
+                    ? "Mandatory fields must be entered"
+                    : "Rules must be satisfied or overridden before releasing"
                 }
-              }}
-              value={unit}
-            />
-          </div>
+              >
+                Submit
+              </SubmitButton>
 
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              className="form-control"
-              type="text"
-              name="description"
-              onChange={(e) => {
-                if (e.target.value.length > 500) {
-                  toast("Max length 500");
-                  return;
-                }
-                setDescription(e.target.value);
-              }}
-              value={description}
-            />
-          </div>
-
-          {is_internal === ""
-            ? ""
-            : is_internal === true
-              ? internalOptions
-              : externalOptions}
-
-          <DropdownFormSection
-            formGroups={complianceOptions}
-            isCollapsed={complianceCollapsed}
-            handleToggle={toggleCompliance}
-            collapsedText="Compliance"
-            wrapperClassname="mt-2"
-            className="mt-2"
-          />
-
-          <DropdownFormSection
-            formGroups={exportOptions}
-            isCollapsed={exportCollapsed}
-            handleToggle={() => setExportCollapsed(!exportCollapsed)}
-            collapsedText="Export"
-            wrapperClassname="mt-1 mb-3"
-            className="mt-1 mb-2"
-          />
-
-          <ReleaseStateTimeline
-            releaseState={release_state}
-            setReleaseState={setReleaseState}
-            is_approved_for_release={is_approved_for_release}
-            setIsApprovedForRelease={setIsApprovedForRelease}
-            quality_assurance={props.part?.quality_assurance}
-          />
-
-          <RulesStatusIndicator
-            itemType="part"
-            itemId={props.part?.id}
-            projectId={props.part?.project}
-            onStatusChange={setRulesStatus}
-            setOverride={setRulesOverride}
-          />
-
-          <div className="form-group mt-3 d-flex align-items-center">
-            <SubmitButton
-              type="submit"
-              disabled={
-                display_name === "" ||
-                (release_state === "Released" &&
-                  rulesStatus &&
-                  !rulesStatus.all_rules_passed &&
-                  !rulesOverride)
-              }
-              onClick={() => {
-                onSubmit();
-              }}
-              disabledTooltip={
-                display_name === ""
-                  ? "Mandatory fields must be entered. Mandatory fields are marked with *"
-                  : "Rules must be satisfied or overridden before releasing"
-              }
-            >
-              Submit
-            </SubmitButton>
-
-            <DeleteButton
-              onDelete={() => {
-                archiveCurrentPart();
-              }}
-            />
+              <button
+                type="button"
+                className="btn btn-bg-transparent w-100 mt-2"
+                onClick={() => archiveCurrentPart()}
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#9CA3AF",
+                }}
+              >
+                Delete part
+              </button>
+            </div>
           </div>
         </div>
       </DokulyModal>

@@ -595,7 +595,7 @@ kbd>kbd {
 }
 
 .modal {
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 .modal-90w {
@@ -635,7 +635,7 @@ kbd>kbd {
 }
 
 .modal-body {
-  width: 100%; 
+  width: 100%;
 }
 
 .modal-fullscreen {
