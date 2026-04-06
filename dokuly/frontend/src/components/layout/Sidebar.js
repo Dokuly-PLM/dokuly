@@ -3,17 +3,11 @@ import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 
 import { getUser } from "./queries";
-import { fetchOrg, fetchTestUser } from "../admin/functions/queries";
-import { set } from "react-ga";
-
+import { fetchOrg } from "../admin/functions/queries";
 const Sidebar = (props) => {
   const [isAuthenticated, setisAuthenticated] = useState(false);
   const [isAdmin, setisAdmin] = useState(false);
-  const [innerWidth, setInnerWidth] = useState(1300);
-  const [testUser, setTestUser] = useState(false);
   const [allowedApps, setAllowedApps] = useState([]);
-
-  const widthWhereTextDisappears = 1610;
 
   const location = useLocation();
 
@@ -56,33 +50,10 @@ const Sidebar = (props) => {
       setAllowedApps(res.data.allowed_apps);
     });
 
-    fetchTestUser().then((res) => {
-      if (res !== undefined) {
-        setTestUser(res.data.test_user);
-      }
-    });
-
     location.pathname === "/login"
       ? (setisAdmin(false), setisAuthenticated(false))
       : "";
   }, [location.pathname]);
-
-  useEffect(() => {
-    // Handler to call on window resize
-    function handleResize() {
-      // Set window width/height to state
-      setInnerWidth(window.innerWidth);
-    }
-
-    // Add event listener
-    window.addEventListener("resize", handleResize);
-
-    // Call handler right away so state gets updated with initial window size
-    handleResize();
-
-    // Remove event listener on cleanup
-    return () => window.removeEventListener("resize", handleResize);
-  }, []); // Empty array ensures that effect is only run on mount
 
   const isAppAllowed = (appName) => {
     return allowedApps.includes(appName);
@@ -100,10 +71,7 @@ const Sidebar = (props) => {
           <img
             src="../../static/icons/chart-bar.svg"
             alt="chart"
-            style={{
-              filter:
-                "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)",
-            }}
+            className="dokuly-filter-secondary"
           />
           <span className="nav-text">Time report</span>
         </Link>
@@ -120,21 +88,13 @@ const Sidebar = (props) => {
             : ""
         }`}
         key={"Home"}
-        style={
-          !isAdmin
-            ? { marginTop: "0rem" }
-            : { marginTop: "0rem" }
-        }
       >
         <Link to="/" className="nav-link ">
           <img
             src="../../static/icons/home.svg"
             alt="home"
             width="22px"
-            style={{
-              filter:
-                "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
-            }}
+            className="dokuly-filter-primary"
           />
           <span className="nav-text">Home</span>
         </Link>
@@ -152,6 +112,7 @@ const Sidebar = (props) => {
               src="../../static/icons/database.svg"
               width="22px"
               alt="database"
+              className="dokuly-filter-primary"
             />
             <span className="nav-text">Administration</span>
           </Link>
@@ -169,19 +130,16 @@ const Sidebar = (props) => {
             key={"Timesheet"}
             style={
               !isAdmin
-                ? { marginTop: "2rem", borderTop: "1px solid grey" }
-                : { marginTop: "0.25rem", borderTop: "1px solid grey" }
+                ? { marginTop: "2rem", borderTop: "1px solid #E5E5E5" }
+                : { marginTop: "0.25rem", borderTop: "1px solid #E5E5E5" }
             }
           >
-            <span data-feather="home" />
+
             <Link to="/timesheet" className="nav-link ">
               <img
                 src="../../static/icons/clock.svg"
                 alt="clock"
-                style={{
-                  filter:
-                    "invert(44%) sepia(31%) saturate(936%) hue-rotate(157deg) brightness(93%) contrast(83%)",
-                }}
+                className="dokuly-filter-secondary"
               />
               <span className="nav-text">Timesheet</span>
             </Link>
@@ -198,17 +156,14 @@ const Sidebar = (props) => {
             location.pathname.startsWith("/customers") ? "nav-item-active" : ""
           }`}
           key={"Customers"}
-          style={{ borderTop: "1px solid grey" }}
+          style={{ borderTop: "1px solid #E5E5E5" }}
         >
           <span data-feather="home" />
           <Link to="/customers" className="nav-link ">
             <img
               src="../../static/icons/friends.svg"
               alt="people"
-              style={{
-                filter:
-                  "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
-              }}
+              className="dokuly-filter-primary"
             />
             <span className="nav-text">Customers</span>
           </Link>
@@ -225,10 +180,7 @@ const Sidebar = (props) => {
             <img
               src="../../static/icons/briefcase.svg"
               alt="briefcase"
-              style={{
-                filter:
-                  "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
-              }}
+              className="dokuly-filter-primary"
             />
             <span className="nav-text">Projects</span>
           </Link>
@@ -249,11 +201,8 @@ const Sidebar = (props) => {
                 src="../../static/icons/clipboard-check.svg"
                 alt="briefcase"
                 width={22}
-                style={{
-                  marginRight: "5px",
-                  filter:
-                    "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
-                }}
+                className="dokuly-filter-primary"
+                style={{ marginRight: "5px" }}
               />
               <span className="nav-text">Requirements</span>
             </Link>
@@ -274,11 +223,8 @@ const Sidebar = (props) => {
                 src="../../static/icons/clipboard-list.svg"
                 alt="eco"
                 width={22}
-                style={{
-                  marginRight: "5px",
-                  filter:
-                    "invert(50%) sepia(78%) saturate(341%) hue-rotate(135deg) brightness(93%) contrast(88%)",
-                }}
+                className="dokuly-filter-primary"
+                style={{ marginRight: "5px" }}
               />
               <span className="nav-text">ECO</span>
             </Link>
@@ -293,17 +239,14 @@ const Sidebar = (props) => {
                 : ""
             }`}
             key={"Documents"}
-            style={{ borderTop: "1px solid grey" }}
+            style={{ borderTop: "1px solid #E5E5E5" }}
           >
-            <span data-feather="home" />
+
             <Link to="/documents" className="nav-link ">
               <img
                 src="../../static/icons/file.svg"
                 alt="file"
-                style={{
-                  filter:
-                    "invert(27%) sepia(23%) saturate(4376%) hue-rotate(312deg) brightness(95%) contrast(94%)",
-                }}
+                className="dokuly-filter-info"
               />
               <span className="nav-text">Documents</span>
             </Link>
@@ -315,16 +258,13 @@ const Sidebar = (props) => {
             location.pathname.startsWith("/parts") ? "nav-item-active" : ""
           }`}
           key={"Parts"}
-          style={{ borderTop: "1px solid grey" }}
+          style={{ borderTop: "1px solid #E5E5E5" }}
         >
           <Link to="/parts" className="nav-link ">
             <img
               src="../../static/icons/puzzle.svg"
               alt="jigsaw-piece"
-              style={{
-                filter:
-                  "invert(27%) sepia(23%) saturate(4376%) hue-rotate(312deg) brightness(95%) contrast(94%)",
-              }}
+              className="dokuly-filter-info"
             />
             <span className="nav-text">Parts</span>
           </Link>
@@ -344,10 +284,7 @@ const Sidebar = (props) => {
               <img
                 src="../../static/icons/assembly.svg"
                 alt="assembly"
-                style={{
-                  filter:
-                    "invert(27%) sepia(23%) saturate(4376%) hue-rotate(312deg) brightness(95%) contrast(94%)",
-                }}
+                className="dokuly-filter-info"
               />
               <span className="nav-text">Assemblies</span>
             </Link>
@@ -365,10 +302,7 @@ const Sidebar = (props) => {
             <img
               src="../../static/icons/pcb.svg"
               alt="PCB"
-              style={{
-                filter:
-                  "invert(27%) sepia(23%) saturate(4376%) hue-rotate(312deg) brightness(95%) contrast(94%)",
-              }}
+              className="dokuly-filter-info"
             />
             <span className="nav-text">PCBA</span>
           </Link>
@@ -388,15 +322,12 @@ const Sidebar = (props) => {
             <Link
               to="/suppliers"
               className="nav-link "
-              style={{ borderTop: "1px solid grey" }}
+              style={{ borderTop: "1px solid #E5E5E5" }}
             >
               <img
                 src="../../static/icons/factory.svg"
                 alt="factory"
-                style={{
-                  filter:
-                    "invert(25%) sepia(48%) saturate(4078%) hue-rotate(289deg) brightness(91%) contrast(93%)",
-                }}
+                className="dokuly-filter-secondary"
               />
               <span className="nav-text">Suppliers</span>
             </Link>
@@ -417,10 +348,7 @@ const Sidebar = (props) => {
               <img
                 src="../../static/icons/shopping-cart.svg"
                 alt="shopping-cart"
-                style={{
-                  filter:
-                    "invert(25%) sepia(48%) saturate(4078%) hue-rotate(289deg) brightness(91%) contrast(93%)",
-                }}
+                className="dokuly-filter-secondary"
               />
               <span className="nav-text">Procurement</span>
             </Link>
@@ -439,10 +367,7 @@ const Sidebar = (props) => {
               <img
                 src="../../static/icons/box.svg"
                 alt="boxes"
-                style={{
-                  filter:
-                    "invert(25%) sepia(48%) saturate(4078%) hue-rotate(289deg) brightness(91%) contrast(93%)",
-                }}
+                className="dokuly-filter-secondary"
               />
               <span className="nav-text">Production</span>
             </Link>

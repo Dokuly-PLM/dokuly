@@ -499,6 +499,14 @@ kbd>kbd {
   filter: invert(20%) sepia(13%) saturate(6503%) hue-rotate(88deg) brightness(93%) contrast(83%);
 }
 
+.dokuly-filter-secondary {
+  filter: invert(46%) sepia(42%) saturate(581%) hue-rotate(132deg) brightness(87%) contrast(89%);
+}
+
+.dokuly-filter-info {
+  filter: invert(37%) sepia(71%) saturate(1325%) hue-rotate(318deg) brightness(86%) contrast(94%);
+}
+
 .dokuly-filter-black {
   filter: invert(0%) sepia(22%) saturate(7472%) hue-rotate(158deg) brightness(102%) contrast(101%);
 }
