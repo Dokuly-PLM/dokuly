@@ -17,6 +17,10 @@ class File(models.Model):
         storage=CustomAzureStorage, upload_to="documents/", blank=True, null=True
     )
     last_updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True, null=True, blank=True,
+        help_text="Timestamp when the file was first uploaded"
+    )
 
     # File instance metadata.
     display_name = models.CharField(max_length=250, blank=True, null=True)
