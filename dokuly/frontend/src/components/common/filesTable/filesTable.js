@@ -11,6 +11,7 @@ import CardTitle from "../../dokuly_components/cardTitle";
 import EditableTableCell from "../../dokuly_components/editableTableCell/editableTableCell";
 import { toast } from "react-toastify";
 import axios from "axios";
+import moment from "moment";
 import { tokenConfig } from "../../../configs/auth";
 
 const CATEGORY_DISPLAY = { design: "Design", production: "Production", other: "Other" };
@@ -311,16 +312,23 @@ export const FilesTable = (props, { release_state }) => {
       header: "Title",
       formatter: (row) => {
         const isEditable = props?.release_state !== "Released";
-        
+
         return (
-          <EditableTableCell
-            value={row.display_name || ""}
-            isEditable={isEditable}
-            onSave={(newValue) => handleSaveDisplayName(row.id, newValue)}
-            placeholder="Display name"
-            allowEmpty={false}
-            successMessage="Display name updated successfully"
-          />
+          <div>
+            <EditableTableCell
+              value={row.display_name || ""}
+              isEditable={isEditable}
+              onSave={(newValue) => handleSaveDisplayName(row.id, newValue)}
+              placeholder="Display name"
+              allowEmpty={false}
+              successMessage="Display name updated successfully"
+            />
+            {row.created_at && (
+              <div className="text-muted" style={{ fontSize: "0.75rem" }}>
+                {moment(row.created_at).format("MMM D, YYYY [at] HH:mm")}
+              </div>
+            )}
+          </div>
         );
       },
     },

@@ -16,6 +16,7 @@ import DokulyFormSection from "../../../dokuly_components/dokulyForm/dokulyFormS
 import DokulyCard from "../../../dokuly_components/dokulyCard";
 import CardTitle from "../../../dokuly_components/cardTitle";
 import axios from "axios";
+import moment from "moment";
 import { tokenConfig } from "../../../../configs/auth";
 
 const CATEGORY_DISPLAY = { design: "Design", production: "Production", other: "Other" };
@@ -304,16 +305,23 @@ export const PcbaFilesTable = (props) => {
       formatter: (row) => {
         const isEditable = !revisionLocked;
         const fileId = row.file_id || row.id;
-        
+
         return (
-          <EditableTableCell
-            value={row.title || row.display_name || ""}
-            isEditable={isEditable}
-            onSave={(newValue) => handleSaveDisplayName(fileId, newValue)}
-            placeholder="Display name"
-            allowEmpty={false}
-            successMessage="Display name updated successfully"
-          />
+          <div>
+            <EditableTableCell
+              value={row.title || row.display_name || ""}
+              isEditable={isEditable}
+              onSave={(newValue) => handleSaveDisplayName(fileId, newValue)}
+              placeholder="Display name"
+              allowEmpty={false}
+              successMessage="Display name updated successfully"
+            />
+            {row.created_at && (
+              <div className="text-muted" style={{ fontSize: "0.75rem" }}>
+                {moment(row.created_at).format("MMM D, YYYY [at] HH:mm")}
+              </div>
+            )}
+          </div>
         );
       },
     },
