@@ -22,6 +22,10 @@ urlpatterns = [
     path("api/files/connect_multiple/<str:app_str>/<int:object_id>/",
          views.connect_multiple_files_to_object),
     path("api/files/get/files/", views.get_files),
+    path("api/files/download/zip/<str:app_str>/<int:object_id>/",
+         views.download_files_zip),
+    path("api/files/download/assembly_production_zip/<int:assembly_id>/",
+         views.download_assembly_production_zip_recursive),
     path("api/files/delete/<int:file_id>/", views.delete_file),
     # Images
     path("api/files/images/download/<int:id>/", views.download_image),

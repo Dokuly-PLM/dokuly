@@ -358,6 +358,7 @@ def upload_file_to_pcba(request, pcba_id, **kwargs):
 
     display_name = data["display_name"]
     replace_files = data.get("replace_files", False)
+    file_category = data.get("file_category", "design")
 
     is_gerber_file = str_to_bool(data.get('gerber', False))
 
@@ -381,12 +382,13 @@ def upload_file_to_pcba(request, pcba_id, **kwargs):
                     existing_file.file.delete(save=False)
                 # Save the new file content on the same File object
                 existing_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
+                existing_file.file_category = file_category
                 existing_file.save()
                 file_obj = existing_file
             else:
                 # No existing file to replace; create a new one
                 # Max display name length is 250 characters
-                new_file = File.objects.create(display_name=display_name[:250])
+                new_file = File.objects.create(display_name=display_name[:250], file_category=file_category)
                 new_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
                 new_file.project = pcba.project
                 new_file.save()
@@ -394,7 +396,7 @@ def upload_file_to_pcba(request, pcba_id, **kwargs):
                 file_obj = new_file
         else:
             # Not replacing files; create a new File object
-            new_file = File.objects.create(display_name=display_name)
+            new_file = File.objects.create(display_name=display_name, file_category=file_category)
             new_file.file.save(f"{uuid.uuid4().hex}/{file.name}", file)
             new_file.project = pcba.project
             new_file.save()
@@ -581,6 +583,7 @@ def fetch_file_list(request, id):
                         (files_row.archived == 1),
                         view_uri
                     )
+                    entry["file_category"] = files_row.file_category
                     file_list.append(entry)
             except File.DoesNotExist:
                 continue
