@@ -11,7 +11,7 @@ from pcbas.models import Pcba
 from assembly_bom.models import Assembly_bom, Bom_item
 import csv
 from django.db import transaction
-from django.db.models import Q
+
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -124,7 +124,7 @@ def upload_assembly_bom(request, assembly_id, **kwargs):
 
             # Prepare data for bulk operations
             bom_items_to_create = []
-            full_part_numbers_with_revision = set()
+            full_part_numbers = set()
             temporary_mpns = set()
 
             for row in csv_rows:
@@ -139,12 +139,9 @@ def upload_assembly_bom(request, assembly_id, **kwargs):
                 dnp = row.get('DNP', '').strip()
                 is_mounted = not bool(dnp)  # If DNP field is empty, is_mounted is True
 
-                # Collect full_part_number_with_revision for matching
+                # Collect full_part_numbers for matching
                 if temporary_mpn:
-                    full_part_number_with_revision = temporary_mpn.strip()
-                    revision = full_part_number_with_revision[-1]  # Last letter is revision
-                    full_part_number = full_part_number_with_revision[:-1]
-                    full_part_numbers_with_revision.add((full_part_number, revision))
+                    full_part_numbers.add(temporary_mpn.strip())
                     temporary_mpns.add(temporary_mpn)
 
                 # Prepare Bom_item instance (not saved yet)
@@ -163,39 +160,15 @@ def upload_assembly_bom(request, assembly_id, **kwargs):
             # Now that data is prepared and validated, delete existing Bom_items
             Bom_item.objects.filter(bom=bom).delete()
 
-            # Bulk fetch Parts
-            parts_qs = Part.objects.filter(
-                Q(full_part_number__in=[fpn for fpn, rev in full_part_numbers_with_revision]) &
-                Q(revision__in=[rev for fpn, rev in full_part_numbers_with_revision])
-            )
+            # Bulk fetch by full_part_number (which includes revision)
+            parts_qs = Part.objects.filter(full_part_number__in=full_part_numbers)
+            part_map = {p.full_part_number: p for p in parts_qs}
 
-            # Build the part_map
-            part_map = {}
-            for part in parts_qs:
-                key = (part.full_part_number, part.revision)
-                part_map[key] = part
+            assemblies_qs = Assembly.objects.filter(full_part_number__in=full_part_numbers)
+            assembly_map = {a.full_part_number: a for a in assemblies_qs}
 
-            # Similarly for Assemblies
-            assemblies_qs = Assembly.objects.filter(
-                Q(full_part_number__in=[fpn for fpn, rev in full_part_numbers_with_revision]) &
-                Q(revision__in=[rev for fpn, rev in full_part_numbers_with_revision])
-            )
-
-            assembly_map = {}
-            for assembly_obj in assemblies_qs:
-                key = (assembly_obj.full_part_number, assembly_obj.revision)
-                assembly_map[key] = assembly_obj
-
-            # And for PCBAs
-            pcbas_qs = Pcba.objects.filter(
-                Q(full_part_number__in=[fpn for fpn, rev in full_part_numbers_with_revision]) &
-                Q(revision__in=[rev for fpn, rev in full_part_numbers_with_revision])
-            )
-
-            pcba_map = {}
-            for pcba_obj in pcbas_qs:
-                key = (pcba_obj.full_part_number, pcba_obj.revision)
-                pcba_map[key] = pcba_obj
+            pcbas_qs = Pcba.objects.filter(full_part_number__in=full_part_numbers)
+            pcba_map = {p.full_part_number: p for p in pcbas_qs}
 
             # Fetch latest revision Parts by mpn
             latest_parts_qs = Part.objects.filter(
@@ -210,15 +183,11 @@ def upload_assembly_bom(request, assembly_id, **kwargs):
             for bom_item in bom_items_to_create:
                 temporary_mpn = bom_item.temporary_mpn
                 if temporary_mpn:
-                    full_part_number_with_revision = temporary_mpn.strip()
-                    revision = full_part_number_with_revision[-1]  # Last letter is revision
-                    full_part_number = full_part_number_with_revision[:-1]
-                    key = (full_part_number, revision)
+                    key = temporary_mpn.strip()
 
                     part_match = part_map.get(key)
                     assembly_match = assembly_map.get(key) if not part_match else None
                     pcba_match = pcba_map.get(key) if not part_match and not assembly_match else None
-                    part_match_latest = None
 
                     if not part_match and not assembly_match and not pcba_match:
                         part_match_latest = latest_part_map.get(temporary_mpn)
@@ -231,7 +200,6 @@ def upload_assembly_bom(request, assembly_id, **kwargs):
                             bom_item.assembly = assembly_match
                         elif pcba_match:
                             bom_item.pcba = pcba_match
-                    # No need to save here; we'll use bulk_create
 
             # Bulk create Bom_item instances
             Bom_item.objects.bulk_create(bom_items_to_create)

@@ -603,33 +603,29 @@ def match_bom_items_with_parts(request, bomId):
             if bom_item.temporary_mpn is None:
                 continue
 
-            # Extract the full part number and revision
-            full_part_number_with_revision = bom_item.temporary_mpn
-            print("Warning: `match_bom_items_with_parts` The regex pattern may not match all revision formats.")
-
-            revision = full_part_number_with_revision[-1]  # Last letter is revision #TODO this is no longer valid for all the custom revision formats
-            full_part_number = full_part_number_with_revision[:-1]
+            # Match by full_part_number (which includes revision)
+            temporary_mpn = bom_item.temporary_mpn
 
             # Attempt to match with Part
             part_match = Part.objects.filter(
-                full_part_number=full_part_number, revision=revision
+                full_part_number=temporary_mpn
             ).first()
 
             # Attempt to match with Assembly if no Part match
             assembly_match = (
                 Assembly.objects.filter(
-                    full_part_number=full_part_number, revision=revision
+                    full_part_number=temporary_mpn
                 ).first()
                 if not part_match
                 else None
             )
 
-            # Attempt to match with Pcba if no Assembly match
+            # Attempt to match with Pcba if no Part or Assembly match
             pcba_match = (
                 Pcba.objects.filter(
-                    full_part_number=full_part_number, revision=revision
+                    full_part_number=temporary_mpn
                 ).first()
-                if not assembly_match
+                if not part_match and not assembly_match
                 else None
             )
 
