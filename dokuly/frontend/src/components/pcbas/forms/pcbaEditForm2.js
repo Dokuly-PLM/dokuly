@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { editPcba, archivePcba } from "../functions/queries";
-import SubmitButton from "../../dokuly_components/submitButton";
-import ReleaseStateTimeline from "../../dokuly_components/releaseStateTimeline/ReleaseStateTimeline";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
-import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 import { usePartTypes } from "../../parts/partTypes/usePartTypes";
+import {
+  FormField,
+  SectionDivider,
+  EditFormRightPanel,
+} from "../../dokuly_components/dokulyForm/formComponents";
 
 const PcbaForm = (props) => {
   const navigate = useNavigate();
@@ -37,12 +39,12 @@ const PcbaForm = (props) => {
       setPartType(null);
       return;
     }
-    
+
     if (partTypes.length === 0) {
       // partTypes not loaded yet, will retry when it loads
       return;
     }
-    
+
     const partTypeId = props.pcba.part_type.id || props.pcba.part_type;
     const currentPartType = partTypes.find(
       (partType) => partType.id === partTypeId
@@ -111,7 +113,7 @@ const PcbaForm = (props) => {
         />
         <label className="form-check-label" htmlFor={`attribute-${attribute}`}>
           <img
-            src={`../../..//static/icons/PCB/${icon}`}
+            src={`../../static/icons/PCB/${icon}`}
             alt={`Icon for ${attribute}`}
           />
           <span className="ml-2">
@@ -148,124 +150,100 @@ const PcbaForm = (props) => {
           show={showModal}
           onHide={() => setShowModal(false)}
           title="Edit PCBA"
+          size="lg"
         >
-          <div className="form-group">
-            <label>Display Name *</label>
-            <input
-              className="form-control"
-              type="text"
-              name="display_name"
-              onChange={(e) => {
-                if (e.target.value.length > 100) {
-                  alert("Max length 50");
-                  return;
-                }
-                setDisplayName(e.target.value);
-              }}
-              value={display_name}
-            />
-          </div>
+          <div className="d-flex" style={{ gap: "24px" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <FormField label="Display Name" required>
+                <input
+                  className="form-control"
+                  type="text"
+                  name="display_name"
+                  onChange={(e) => {
+                    if (e.target.value.length > 100) {
+                      alert("Max length 50");
+                      return;
+                    }
+                    setDisplayName(e.target.value);
+                  }}
+                  value={display_name}
+                />
+              </FormField>
 
-          <ExternalPartNumberFormGroup
-            externalPartNumber={externalPartNumber}
-            setExternalPartNumber={setExternalPartNumber}
-          />
+              <ExternalPartNumberFormGroup
+                externalPartNumber={externalPartNumber}
+                setExternalPartNumber={setExternalPartNumber}
+              />
 
-          <div className="form-group">
-            <label>Part type</label>
-            <select
-              className="form-control"
-              name="part_type"
-              value={partType ? partType?.name : ""}
-              onChange={(e) => {
-                const selectedPartType = partTypes.find(
-                  (partType) => partType.name === e.target.value
-                );
-                setPartType(selectedPartType || null);
-              }}
-            >
-              <option value="">Select part type</option>
-              {partTypes
-                .filter((partType) => partType.applies_to === "PCBA")
-                .map((partType) => (
-                  <option key={partType.name} value={partType.name}>
-                    {partType.name}
-                  </option>
-                ))}
-            </select>
-          </div>
+              <FormField label="Part type">
+                <select
+                  className="form-control"
+                  name="part_type"
+                  value={partType ? partType?.name : ""}
+                  onChange={(e) => {
+                    const selectedPartType = partTypes.find(
+                      (partType) => partType.name === e.target.value
+                    );
+                    setPartType(selectedPartType || null);
+                  }}
+                >
+                  <option value="">Select part type</option>
+                  {partTypes
+                    .filter((partType) => partType.applies_to === "PCBA")
+                    .map((partType) => (
+                      <option key={partType.name} value={partType.name}>
+                        {partType.name}
+                      </option>
+                    ))}
+                </select>
+              </FormField>
 
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              className="form-control"
-              type="text"
-              name="description"
-              onChange={(e) => {
-                if (e.target.value.length > 1000) {
-                  alert("Max length 1000");
-                  return;
-                }
-                setDescription(e.target.value);
-              }}
-              value={description}
-            />
-          </div>
+              <FormField label="Description">
+                <textarea
+                  className="form-control"
+                  type="text"
+                  name="description"
+                  onChange={(e) => {
+                    if (e.target.value.length > 1000) {
+                      alert("Max length 1000");
+                      return;
+                    }
+                    setDescription(e.target.value);
+                  }}
+                  value={description}
+                />
+              </FormField>
 
-          <div className="form-group">
-            <label>Attributes</label>
-            <div>{renderAttributeCheckboxes()}</div>
-          </div>
+              <SectionDivider label="Attributes" />
+              <div>{renderAttributeCheckboxes()}</div>
+            </div>
 
-          <ReleaseStateTimeline
-            releaseState={release_state}
-            setReleaseState={setReleaseState}
-            is_approved_for_release={is_approved_for_release}
-            setIsApprovedForRelease={setIsApprovedForRelease}
-            quality_assurance={props?.pcba?.quality_assurance}
-          />
-
-          <RulesStatusIndicator 
-            itemType="pcba"
-            itemId={props.pcba?.id}
-            projectId={props.pcba?.project}
-            onStatusChange={setRulesStatus}
-            setOverride={setRulesOverride}
-          />
-
-          <div className="form-group mt-3">
-            <SubmitButton
-              onClick={onSubmit}
-              disabled={
+            <EditFormRightPanel
+              releaseState={release_state}
+              setReleaseState={setReleaseState}
+              isApprovedForRelease={is_approved_for_release}
+              setIsApprovedForRelease={setIsApprovedForRelease}
+              rulesItemType="pcba"
+              rulesItemId={props.pcba?.id}
+              rulesProjectId={props.pcba?.project}
+              onRulesStatusChange={setRulesStatus}
+              setRulesOverride={setRulesOverride}
+              submitDisabled={
                 display_name === "" ||
-                (release_state === "Released" && 
-                 rulesStatus && 
-                 !rulesStatus.all_rules_passed && 
-                 !rulesOverride)
+                (release_state === "Released" &&
+                  rulesStatus &&
+                  !rulesStatus.all_rules_passed &&
+                  !rulesOverride)
               }
-              className="btn dokuly-bg-primary"
-              disabledTooltip={
+              submitDisabledTooltip={
                 display_name === ""
                   ? "Mandatory fields must be entered. Mandatory fields are marked with *"
                   : "Rules must be satisfied or overridden before releasing"
               }
-            >
-              Submit
-            </SubmitButton>
-            <button
-              className="btn btn-bg-transparent ml-2"
-              type="button"
-              onClick={archiveCurrentPcba}
-            >
-              <div className="row">
-                <img
-                  className="icon-dark"
-                  src="../../static/icons/trash.svg"
-                  alt="Delete Icon"
-                />
-                <span className="btn-text">Delete</span>
-              </div>
-            </button>
+              onSubmit={onSubmit}
+              onDelete={archiveCurrentPcba}
+              deleteLabel="Delete PCBA"
+            />
           </div>
         </DokulyModal>
       </div>

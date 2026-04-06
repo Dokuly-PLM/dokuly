@@ -2,55 +2,14 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
 import { editPart, archivePart } from "../functions/queries";
-import SubmitButton from "../../dokuly_components/submitButton";
 import { usePartTypes } from "../partTypes/usePartTypes";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
 import DropdownFormSection from "../../dokuly_components/dokulyForm/dropdownFormSection";
-import ReactCountryFlag from "react-country-flag";
 import { generateCountryList } from "../../dokuly_components/dokulyForm/functions/generateCountryList";
-import RulesStatusIndicator from "../../common/rules/rulesStatusIndicator";
 import NameSuggestion from "../../dokuly_components/nameSuggestion/nameSuggestion";
 import { fetchIntegrationSettings } from "../../admin/functions/queries";
-
-const FormField = ({ label, required, children, hint }) => (
-  <div className="mb-3">
-    <label
-      className="dokuly-section-label"
-      style={{ display: "block", marginBottom: "4px", fontSize: "0.6875rem" }}
-    >
-      {label}
-      {required && <span style={{ color: "#B00020" }}> *</span>}
-    </label>
-    {children}
-    {hint && (
-      <small className="form-text" style={{ color: "#9CA3AF", fontSize: "0.75rem" }}>
-        {hint}
-      </small>
-    )}
-  </div>
-);
-
-const SectionDivider = ({ label }) => (
-  <div
-    className="d-flex align-items-center mt-3 mb-2"
-    style={{ gap: "8px" }}
-  >
-    <span
-      style={{
-        fontSize: "0.6875rem",
-        fontWeight: 600,
-        textTransform: "uppercase",
-        letterSpacing: "0.05em",
-        color: "#6B7280",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {label}
-    </span>
-    <div style={{ flex: 1, borderBottom: "1px solid #E5E5E5" }} />
-  </div>
-);
+import { FormField, SectionDivider, EditFormRightPanel } from "../../dokuly_components/dokulyForm/formComponents";
 
 const EditPartForm = (props) => {
   const navigate = useNavigate();
@@ -511,123 +470,32 @@ const EditPartForm = (props) => {
             />
           </div>
 
-          {/* ── Right column: release & actions ── */}
-          <div
-            style={{
-              width: "200px",
-              flexShrink: 0,
-              borderLeft: "1px solid #E5E5E5",
-              paddingLeft: "24px",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <SectionDivider label="State" />
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              {["Draft", "Review", "Released"].map((state) => (
-                <button
-                  key={state}
-                  type="button"
-                  onClick={() => setReleaseState(state)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "6px 10px",
-                    borderRadius: "4px",
-                    border: release_state === state
-                      ? "1px solid #165216"
-                      : "1px solid #E5E5E5",
-                    background: release_state === state ? "#EEF2EE" : "#fff",
-                    color: release_state === state ? "#165216" : "#6B7280",
-                    fontWeight: release_state === state ? 600 : 400,
-                    fontSize: "0.8125rem",
-                    cursor: "pointer",
-                    transition: "all 0.1s ease",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: release_state === state
-                        ? "#165216"
-                        : "#D1D5DB",
-                      flexShrink: 0,
-                    }}
-                  />
-                  {state}
-                </button>
-              ))}
-            </div>
-
-            {release_state === "Review" && (
-              <label
-                className="d-flex align-items-start mt-3"
-                style={{
-                  gap: "6px",
-                  fontSize: "0.75rem",
-                  color: "#6B7280",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={is_approved_for_release}
-                  onChange={() =>
-                    setIsApprovedForRelease(!is_approved_for_release)
-                  }
-                  style={{ marginTop: "2px" }}
-                />
-                Approved for release
-              </label>
-            )}
-
-            <RulesStatusIndicator
-              itemType="part"
-              itemId={props.part?.id}
-              projectId={props.part?.project}
-              onStatusChange={setRulesStatus}
-              setOverride={setRulesOverride}
-            />
-
-            {/* Push actions to bottom */}
-            <div style={{ marginTop: "auto", paddingTop: "16px" }}>
-              <SubmitButton
-                type="submit"
-                className="w-100"
-                disabled={
-                  display_name === "" ||
-                  (release_state === "Released" &&
-                    rulesStatus &&
-                    !rulesStatus.all_rules_passed &&
-                    !rulesOverride)
-                }
-                onClick={() => onSubmit()}
-                disabledTooltip={
-                  display_name === ""
-                    ? "Mandatory fields must be entered"
-                    : "Rules must be satisfied or overridden before releasing"
-                }
-              >
-                Submit
-              </SubmitButton>
-
-              <button
-                type="button"
-                className="btn btn-bg-transparent w-100 mt-2"
-                onClick={() => archiveCurrentPart()}
-                style={{
-                  fontSize: "0.75rem",
-                  color: "#9CA3AF",
-                }}
-              >
-                Delete part
-              </button>
-            </div>
-          </div>
+          <EditFormRightPanel
+            releaseState={release_state}
+            setReleaseState={setReleaseState}
+            isApprovedForRelease={is_approved_for_release}
+            setIsApprovedForRelease={setIsApprovedForRelease}
+            rulesItemType="part"
+            rulesItemId={props.part?.id}
+            rulesProjectId={props.part?.project}
+            onRulesStatusChange={setRulesStatus}
+            setRulesOverride={setRulesOverride}
+            submitDisabled={
+              display_name === "" ||
+              (release_state === "Released" &&
+                rulesStatus &&
+                !rulesStatus.all_rules_passed &&
+                !rulesOverride)
+            }
+            submitDisabledTooltip={
+              display_name === ""
+                ? "Mandatory fields must be entered"
+                : "Rules must be satisfied or overridden before releasing"
+            }
+            onSubmit={() => onSubmit()}
+            onDelete={() => archiveCurrentPart()}
+            deleteLabel="Delete part"
+          />
         </div>
       </DokulyModal>
     </React.Fragment>

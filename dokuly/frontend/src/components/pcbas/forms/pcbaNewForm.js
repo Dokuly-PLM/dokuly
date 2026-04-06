@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import QuestionToolTip from "../../dokuly_components/questionToolTip";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
+import { FormField } from "../../dokuly_components/dokulyForm/formComponents";
 
 const NewPcbaForm = (props) => {
   const [display_name, setDisplayName] = useState("");
@@ -21,7 +22,7 @@ const NewPcbaForm = (props) => {
   const [externalPartNumber, setExternalPartNumber] = useState("");
   const [organization, setOrganization] = useState(null);
   const [partType, setPartType] = useState(null);
-  
+
   const partTypes = usePartTypes();
 
   useEffect(() => {
@@ -94,8 +95,7 @@ const NewPcbaForm = (props) => {
         onHide={() => setShowModal(false)}
         title="Create new PCBA"
       >
-        <div className="form-group">
-          <label>Display name *</label>
+        <FormField label="Display name" required>
           <input
             className="form-control"
             type="text"
@@ -109,15 +109,14 @@ const NewPcbaForm = (props) => {
             }}
             value={display_name}
           />
-        </div>
+        </FormField>
 
         <ExternalPartNumberFormGroup
           externalPartNumber={externalPartNumber}
           setExternalPartNumber={setExternalPartNumber}
         />
 
-        <div className="form-group">
-          <label>Description</label>
+        <FormField label="Description">
           <textarea
             className="form-control"
             type="text"
@@ -131,10 +130,9 @@ const NewPcbaForm = (props) => {
             }}
             value={description}
           />
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label htmlFor="project">Project *</label>
+        <FormField label="Project" required>
           <select
             className="form-control"
             name="project"
@@ -156,10 +154,9 @@ const NewPcbaForm = (props) => {
                     );
                   })}
           </select>
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label>Part type</label>
+        <FormField label="Part type">
           <select
             className="form-control"
             name="part_type"
@@ -180,13 +177,13 @@ const NewPcbaForm = (props) => {
                 </option>
               ))}
           </select>
-        </div>
+        </FormField>
 
-        <div className="form-group">
+        <div className="mt-3">
           <SubmitButton
+            className="btn dokuly-bg-primary w-100"
             onClick={onSubmit}
             disabled={selected_project_id === -1 || display_name === ""}
-            className="btn dokuly-bg-primary "
             disabledTooltip={
               "Mandatory fields must be entered. Mandatory fields are marked with *"
             }

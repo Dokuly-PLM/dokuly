@@ -4,10 +4,11 @@ import { get_active_customers } from "../../customers/funcitons/queries";
 import { getActiveProjectByCustomer, fetchProjects } from "../../projects/functions/queries";
 import { fetchOrg } from "../../admin/functions/queries";
 import { usePartTypes } from "../../parts/partTypes/usePartTypes";
-import { propTypes } from "react-bootstrap/esm/Image";
 import SubmitButton from "../../dokuly_components/submitButton";
 import { toast } from "react-toastify";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
+import DokulyModal from "../../dokuly_components/dokulyModal";
+import { FormField } from "../../dokuly_components/dokulyForm/formComponents";
 
 /**
  * # Button with form to create a new assembly.
@@ -25,7 +26,8 @@ const NewAssemblyForm = (props) => {
   const [externalPartNumber, setExternalPartNumber] = useState("");
   const [organization, setOrganization] = useState(null);
   const [partType, setPartType] = useState(null);
-  
+  const [showModal, setShowModal] = useState(false);
+
   const partTypes = usePartTypes();
 
   useEffect(() => {
@@ -47,7 +49,7 @@ const NewAssemblyForm = (props) => {
   }, [organization]);
 
   const launchNewAssemblyForm = () => {
-    $("#addModal").modal("show");
+    setShowModal(true);
 
     get_active_customers().then((res) => {
       setActiveCustomers(res.data);
@@ -55,7 +57,7 @@ const NewAssemblyForm = (props) => {
   };
 
   function onSubmit() {
-    $("#addModal").modal("hide");
+    setShowModal(false);
 
     const data = {
       // Fields used by the view.
@@ -97,144 +99,111 @@ const NewAssemblyForm = (props) => {
         </div>
       </button>
 
-      {/* <!-- Modal --> */}
-      <div
-        className="modal fade"
-        id="addModal"
-        tabIndex="-1"
-        role="dialog"
-        aria-hidden="true"
+      <DokulyModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        title="Create new assembly"
       >
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Create new assembly</h5>
+        <FormField label="Display name" required>
+          <input
+            className="form-control"
+            type="text"
+            name="display_name"
+            onChange={(e) => {
+              if (e.target.value.length > 100) {
+                alert("Max length 50");
+                return;
+              }
+              setDisplayName(e.target.value);
+            }}
+            value={display_name}
+          />
+        </FormField>
 
-              <small className="form-text text-muted pl-3">
-                * Mandatory fields
-              </small>
+        <FormField label="Description">
+          <textarea
+            className="form-control"
+            type="text"
+            name="description"
+            onChange={(e) => {
+              if (e.target.value.length > 1000) {
+                alert("Max length 1000");
+                return;
+              }
+              setDescription(e.target.value);
+            }}
+            value={description}
+          />
+        </FormField>
 
-              <button
-                type="button"
-                className="close"
-                data-dismiss="modal"
-                aria-label="Close"
-              >
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
+        <ExternalPartNumberFormGroup
+          externalPartNumber={externalPartNumber}
+          setExternalPartNumber={setExternalPartNumber}
+        />
 
-            {/* Form inputs below */}
-
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Display name *</label>
-                <input
-                  className="form-control"
-                  type="text"
-                  name="display_name"
-                  onChange={(e) => {
-                    if (e.target.value.length > 100) {
-                      alert("Max length 50");
-                      return;
-                    }
-                    setDisplayName(e.target.value);
-                  }}
-                  value={display_name}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  className="form-control"
-                  type="text"
-                  name="description"
-                  onChange={(e) => {
-                    if (e.target.value.length > 1000) {
-                      alert("Max length 1000");
-                      return;
-                    }
-                    setDescription(e.target.value);
-                  }}
-                  value={description}
-                />
-              </div>
-
-              <ExternalPartNumberFormGroup
-                externalPartNumber={externalPartNumber}
-                setExternalPartNumber={setExternalPartNumber}
-              />
-
-              <div className="form-group">
-                <label htmlFor="project">Project *</label>
-                <select
-                  className="form-control"
-                  name="project"
-                  type="number"
-                  //value={this.state.projecat}
-                  onChange={(e) => setSelectedProjectId(e.target.value)}
-                >
-                  <option value="">Choose project</option>
-                  {projects == null || projects === undefined
-                    ? ""
-                    : projects
-                        .sort((a, b) =>
-                          a.project_number > b.project_number ? 1 : -1
-                        )
-                        .map((project) => {
-                          return (
-                            <option key={project.id} value={project.id}>
-                              {project.title}
-                            </option>
-                          );
-                        })}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Part type</label>
-                <select
-                  className="form-control"
-                  name="part_type"
-                  value={partType ? partType?.name : ""}
-                  onChange={(e) => {
-                    const selectedPartType = partTypes.find(
-                      (pt) => pt.name === e.target.value
-                    );
-                    setPartType(selectedPartType || null);
-                  }}
-                >
-                  <option value="">Select part type</option>
-                  {partTypes
-                    .filter((pt) => pt.applies_to === "Assembly")
-                    .map((pt) => (
-                      <option key={pt.name} value={pt.name}>
-                        {pt.name}
+        <FormField label="Project" required>
+          <select
+            className="form-control"
+            name="project"
+            type="number"
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+          >
+            <option value="">Choose project</option>
+            {projects == null || projects === undefined
+              ? ""
+              : projects
+                  .sort((a, b) =>
+                    a.project_number > b.project_number ? 1 : -1
+                  )
+                  .map((project) => {
+                    return (
+                      <option key={project.id} value={project.id}>
+                        {project.title}
                       </option>
-                    ))}
-                </select>
-              </div>
+                    );
+                  })}
+          </select>
+        </FormField>
 
-              <div className="form-group">
-                <SubmitButton
-                  onClick={() => {
-                    onSubmit();
-                  }}
-                  disabled={selected_project_id === -1 || display_name === ""}
-                  type={"submit"}
-                  className="btn dokuly-bg-primary "
-                  disabledTooltip={
-                    "Mandatory fields must be entered. Mandatory fields are marked with *"
-                  }
-                >
-                  Submit
-                </SubmitButton>
-              </div>
-            </div>
-          </div>
+        <FormField label="Part type">
+          <select
+            className="form-control"
+            name="part_type"
+            value={partType ? partType?.name : ""}
+            onChange={(e) => {
+              const selectedPartType = partTypes.find(
+                (pt) => pt.name === e.target.value
+              );
+              setPartType(selectedPartType || null);
+            }}
+          >
+            <option value="">Select part type</option>
+            {partTypes
+              .filter((pt) => pt.applies_to === "Assembly")
+              .map((pt) => (
+                <option key={pt.name} value={pt.name}>
+                  {pt.name}
+                </option>
+              ))}
+          </select>
+        </FormField>
+
+        <div className="mt-3">
+          <SubmitButton
+            className="btn dokuly-bg-primary w-100"
+            onClick={() => {
+              onSubmit();
+            }}
+            disabled={selected_project_id === -1 || display_name === ""}
+            type={"submit"}
+            disabledTooltip={
+              "Mandatory fields must be entered. Mandatory fields are marked with *"
+            }
+          >
+            Submit
+          </SubmitButton>
         </div>
-      </div>
+      </DokulyModal>
     </div>
   );
 };
