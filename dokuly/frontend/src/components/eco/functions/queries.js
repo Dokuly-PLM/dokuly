@@ -158,3 +158,26 @@ export const getDownstreamImpact = (ecoId) => {
     tokenConfig()
   );
 };
+
+/**
+ * Get all non-released (open) ECOs.
+ * @returns {Promise} Array of open ECOs with basic info
+ */
+export const getOpenEcos = () => {
+  return axios.get("/api/eco/open/", tokenConfig());
+};
+
+/**
+ * Add an item to an ECO in a single step.
+ * @param {number} ecoId - The ECO ID
+ * @param {string} app - The app type ('parts', 'pcbas', 'assemblies', 'documents')
+ * @param {number} itemId - The item ID
+ * @returns {Promise} The created affected item
+ */
+export const addItemToEco = (ecoId, app, itemId) => {
+  return axios.post(
+    `/api/eco/${ecoId}/addItem/`,
+    { app, item_id: itemId },
+    tokenConfig()
+  );
+};

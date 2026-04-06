@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Count
 from datetime import datetime
 
 from .models import Eco, AffectedItem
@@ -20,6 +20,7 @@ from projects.models import Project, Tag
 from projects.issuesModel import Issues
 from projects.viewsTags import check_for_and_create_new_tags
 from assembly_bom.models import Assembly_bom, Bom_item
+from projects.views import check_project_access
 
 
 def get_eco_missing_bom_items(eco):
@@ -642,7 +643,7 @@ def delete_affected_item(request, pk):
     # Update the ECO's last_updated timestamp
     eco.save()
 
-    return Response("Affected item deleted", status=status.HTTP_204_NO_CONTENT)
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(("GET",))
@@ -1127,3 +1128,103 @@ def get_downstream_impact(request, eco_id):
             })
 
     return Response(result, status=status.HTTP_200_OK)
+
+
+@api_view(("GET",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def get_open_ecos(request):
+    """Get all non-released ECOs (Draft/Review), ordered by last updated."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    ecos = (
+        Eco.objects.exclude(release_state="Released")
+        .filter(Q(project__project_members=request.user) | Q(project__isnull=True))
+        .annotate(affected_items_count=Count("affected_items"))
+        .order_by("-last_updated")
+    )
+
+    data = []
+    for eco in ecos:
+        data.append({
+            "id": eco.id,
+            "display_name": eco.display_name,
+            "release_state": eco.release_state or "Draft",
+            "affected_items_count": eco.affected_items_count,
+            "project_name": eco.project.title if eco.project else None,
+            "last_updated": eco.last_updated,
+        })
+
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(("POST",))
+@renderer_classes((JSONRenderer,))
+@permission_classes([IsAuthenticated])
+def add_item_to_eco(request, eco_id):
+    """Add an item (part/pcba/assembly/document) to an ECO in a single step."""
+    permission, response = check_user_auth_and_app_permission(request, "assemblies")
+    if not permission:
+        return response
+
+    try:
+        eco = Eco.objects.get(pk=eco_id)
+    except Eco.DoesNotExist:
+        return Response("ECO not found", status=status.HTTP_404_NOT_FOUND)
+
+    eco_qs = Eco.objects.filter(pk=eco_id)
+    if not check_project_access(eco_qs, request.user):
+        return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
+
+    if eco.release_state == "Released":
+        return Response("Cannot modify a released ECO!", status=status.HTTP_400_BAD_REQUEST)
+
+    app = request.data.get("app")
+    item_id = request.data.get("item_id")
+
+    if not app or not item_id:
+        return Response("Both 'app' and 'item_id' are required.", status=status.HTTP_400_BAD_REQUEST)
+
+    app_to_field = {
+        "parts": ("part", Part),
+        "pcbas": ("pcba", Pcba),
+        "assemblies": ("assembly", Assembly),
+        "documents": ("document", Document),
+    }
+
+    if app not in app_to_field:
+        return Response(f"Invalid app: {app}", status=status.HTTP_400_BAD_REQUEST)
+
+    field_name, model_cls = app_to_field[app]
+
+    try:
+        item = model_cls.objects.get(pk=item_id)
+    except model_cls.DoesNotExist:
+        return Response(f"{field_name.capitalize()} not found", status=status.HTTP_404_NOT_FOUND)
+
+    # Check for duplicates
+    if AffectedItem.objects.filter(eco=eco, **{field_name: item}).exists():
+        return Response("This item is already in the selected ECO.", status=status.HTTP_409_CONFLICT)
+
+    # Create the affected item with the FK set directly
+    affected_item = AffectedItem.objects.create(eco=eco, **{field_name: item})
+
+    # Auto-attach issues (same logic as edit_affected_item)
+    app_issue_field_map = {
+        Part: "parts_issues",
+        Pcba: "pcbas_issues",
+        Assembly: "assemblies_issues",
+        Document: "documents_issues",
+    }
+    issue_field = app_issue_field_map.get(model_cls)
+    if issue_field:
+        issues = getattr(item, issue_field).all()
+        affected_item.issues.set(issues)
+
+    # Update the ECO's last_updated timestamp
+    eco.save()
+
+    serializer = AffectedItemDetailSerializer(affected_item)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)

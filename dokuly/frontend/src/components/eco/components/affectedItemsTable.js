@@ -18,6 +18,7 @@ import InlineItemSelector from "../../dokuly_components/dokulyTable/components/i
 import DokulyMarkdown from "../../dokuly_components/dokulyMarkdown/dokulyMarkdown";
 import IssuePills from "./issuePills";
 import AddButton from "../../dokuly_components/AddButton";
+import DokulyModal from "../../dokuly_components/dokulyModal";
 
 const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAffectedItemsChange = null, externalRefresh = 0 }) => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
   const [affectedItems, setAffectedItems] = useState([]);
   const [refresh, setRefresh] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   const isLocked = isReleased || readOnly;
 
@@ -162,19 +164,23 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
 
   // Handle row deletion
   const handleDeleteRow = (rowId) => {
-    if (!confirm("Are you sure you want to remove this affected item?")) {
-      return;
-    }
+    setDeleteTargetId(rowId);
+  };
 
-    deleteAffectedItem(rowId)
+  const confirmDelete = () => {
+    if (!deleteTargetId) return;
+    deleteAffectedItem(deleteTargetId)
       .then((res) => {
         if (res.status === 204) {
-          setRefresh(true);
+          fetchAffectedItems();
           toast.success("Affected item removed");
         }
       })
       .catch((err) => {
         toast.error("Failed to remove affected item");
+      })
+      .finally(() => {
+        setDeleteTargetId(null);
       });
   };
 
@@ -402,6 +408,32 @@ const AffectedItemsTable = ({ ecoId, isReleased = false, readOnly = false, onAff
             : "No affected items. Click 'Add item' to add items affected by this ECO."}
         </div>
       )}
+
+      <DokulyModal
+        show={deleteTargetId !== null}
+        onHide={() => setDeleteTargetId(null)}
+        title="Remove affected item"
+        size="sm"
+      >
+        <p>Are you sure you want to remove this affected item?</p>
+        <div className="d-flex justify-content-end" style={{ gap: "8px" }}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setDeleteTargetId(null)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-danger"
+            onClick={confirmDelete}
+            style={{ fontWeight: 600 }}
+          >
+            Remove
+          </button>
+        </div>
+      </DokulyModal>
     </DokulyCard>
   );
 };

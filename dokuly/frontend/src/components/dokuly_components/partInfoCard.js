@@ -17,6 +17,9 @@ import useItemEcos from "../common/hooks/useItemEcos";
 import { EcoPillList } from "./ecoPill/ecoPill";
 import { copyToClipboard } from "./funcitons/copyToClipboard";
 
+import AddToEcoButton from "./addToEcoButton/addToEcoButton";
+import PushToOdooButton from "../common/integrations/pushToOdooButton";
+
 import "./partInfoCard.css";
 
 /**
@@ -81,7 +84,7 @@ const PartInformationCard = ({
   const [project, setProject] = useState(null);
   const [protectionLevel, setProtectionLevel] = useState(null);
 
-  const { ecos: itemEcos } = useItemEcos(app, item?.id);
+  const { ecos: itemEcos, refetch: refetchEcos } = useItemEcos(app, item?.id);
 
   useEffect(() => {
     if (item?.created_by !== null && item?.created_by !== undefined) {
@@ -305,7 +308,30 @@ const PartInformationCard = ({
       {/* Metadata section */}
       <SectionDivider />
       <div className="info-card__section">
-        <SectionLabel text="Metadata" />
+        <div className="info-card__section-header">
+          <SectionLabel text="Metadata" />
+          <div className="info-card__actions">
+            {item?.release_state !== "Released" && (
+              <AddToEcoButton
+                app={app}
+                itemId={item?.id}
+                itemName={item?.full_part_number || item?.full_doc_number}
+                onSuccess={() => {
+                  setRefresh(true);
+                  refetchEcos();
+                }}
+                variant="inline"
+              />
+            )}
+            <PushToOdooButton
+              itemType={app}
+              itemId={item?.id}
+              itemName={item?.full_part_number || item?.full_doc_number}
+              onSuccess={() => setRefresh(true)}
+              variant="inline"
+            />
+          </div>
+        </div>
 
         {last_updated && last_updated !== "" && (
           <InfoField label="Last modified">
@@ -325,7 +351,7 @@ const PartInformationCard = ({
           </InfoField>
         )}
 
-        {itemEcos && itemEcos.length > 0 && <SectionDivider />}
+        <SectionDivider />
 
         <div className="info-card__tags">
           <DokulyTags
@@ -334,6 +360,8 @@ const PartInformationCard = ({
             readOnly={false}
             project={project}
             setRefresh={setRefresh}
+            variant="inline"
+            actionsPosition="header"
           />
         </div>
       </div>

@@ -33,4 +33,8 @@ urlpatterns = [
 
     # Downstream impact analysis
     path("api/eco/<int:eco_id>/downstreamImpact/", views.get_downstream_impact, name="get_downstream_impact"),
+
+    # Quick add item to ECO from product detail views
+    path("api/eco/open/", views.get_open_ecos, name="get_open_ecos"),
+    path("api/eco/<int:eco_id>/addItem/", views.add_item_to_eco, name="add_item_to_eco"),
 ]
