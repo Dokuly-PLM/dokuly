@@ -54,6 +54,7 @@ import DisplayIssue from "./dokuly_components/dokulyIssues/displayIssue";
 import DisplayLot from "./production/lots/displayLot";
 import EcoDashboard from "./eco/ecoDashboard";
 import DisplayEco from "./eco/displayEco";
+import CommandPalette from "./dokuly_components/commandPalette/CommandPalette";
 
 // Component to track page views
 
@@ -216,6 +217,7 @@ function App() {
         theme="light"
       />
       <Fragment>
+        <CommandPalette />
         <TopHeader
           isAuthenticated={isAuthenticated}
           user={user}
