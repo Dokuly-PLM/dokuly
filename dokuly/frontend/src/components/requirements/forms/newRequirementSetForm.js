@@ -1,65 +1,31 @@
 import React, { useState, useEffect } from "react";
 import { createRequirementSet } from "../functions/queries";
 
-import { get_active_customers } from "../../customers/funcitons/queries";
-import { getActiveProjectByCustomer, fetchProjects } from "../../projects/functions/queries";
+import { fetchProjects } from "../../projects/functions/queries";
 import SubmitButton from "../../dokuly_components/submitButton";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import { toast } from "react-toastify";
-import useProfile from "../../common/hooks/useProfile";
 
 const NewRequirementSetForm = ({ setRefresh }) => {
   const [display_name, setDisplayName] = useState("");
   const [description, setDescription] = useState("");
-  const [active_customers, setActiveCustomers] = useState(null);
-  const [selected_customer_id, setSelectedCustomerId] = useState(-1);
   const [projects, setProjects] = useState(null);
   const [selected_project_id, setSelectedProjectId] = useState(-1);
   const [showModal, setShowModal] = useState(false);
 
-  const [profile, refreshProfile] = useProfile();
-
-  // Check if customers are enabled for this organization
-  const customersEnabled = profile?.allowed_apps?.includes("customers");
-
   useEffect(() => {
-    if (customersEnabled && 
-        selected_customer_id !== null &&
-        selected_customer_id !== undefined &&
-        selected_customer_id !== -1
-    ) {
-      // Load projects filtered by customer
-      getActiveProjectByCustomer(selected_customer_id).then((res) => {
-        if (res.status === 200) {
-          setProjects(res.data);
-        }
-      });
-    } else if (!customersEnabled) {
-      // Load all projects when customers are not enabled
+    // Load all projects when modal opens
+    if (showModal) {
       fetchProjects().then((res) => {
         if (res.status === 200) {
           setProjects(res.data);
         }
       });
     }
-  }, [selected_customer_id, customersEnabled]);
+  }, [showModal]);
 
   const launchNewItemForm = () => {
     setShowModal(true);
-    
-    // Only fetch customers if customers are enabled for this organization
-    if (customersEnabled) {
-      get_active_customers().then((res) => {
-        setActiveCustomers(res.data);
-      });
-    } else {
-      // Load all projects immediately if customers are not enabled
-      fetchProjects().then((res) => {
-        if (res.status === 200) {
-          setProjects(res.data);
-        }
-      });
-    }
   };
 
   function onSubmit() {
@@ -138,31 +104,6 @@ const NewRequirementSetForm = ({ setRefresh }) => {
             value={description}
           />
         </div>
-
-        {customersEnabled && (
-          <div className="form-group">
-            <label>Customer *</label>
-            <select
-              className="form-control"
-              name="customer"
-              type="number"
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
-            >
-              <option value="">Choose customer</option>
-              {active_customers == null
-                ? ""
-                : active_customers
-                    .sort((a, b) => (a.customer_id > b.customer_id ? 1 : -1))
-                    .map((customer) => {
-                      return (
-                        <option key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </option>
-                      );
-                    })}
-            </select>
-          </div>
-        )}
 
         <div className="form-group">
           <label htmlFor="project">Project *</label>
