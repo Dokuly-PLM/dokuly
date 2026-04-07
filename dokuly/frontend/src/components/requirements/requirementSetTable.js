@@ -3,9 +3,7 @@ import { Row, Col } from "react-bootstrap";
 
 import { dateFormatter } from "../documents/functions/formatters";
 import { fetchProjects } from "../projects/functions/queries";
-import { fetchCustomers } from "../customers/funcitons/queries";
 import { getRequirementSets } from "./functions/queries";
-import { mapProjectCustomerItems } from "../pcbas/functions/helperFuncitons";
 
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../App";
@@ -20,7 +18,6 @@ export default function RequirementSetTable(props) {
   const [unProcessedRequirementSets, setUnProcessedRequirementSets] = useState([]);
 
   const [data, setFilteredItems] = useState([]);
-  const [customers, setCustomers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useSyncedSearchParam("search", 250, "requirements");
 
@@ -67,30 +64,6 @@ export default function RequirementSetTable(props) {
         });
     }
 
-    // check local storage for cached customers
-    const cachedCustomers = localStorage.getItem("customers");
-    if (cachedCustomers) {
-      try {
-        setCustomers(JSON.parse(cachedCustomers));
-      } catch (e) {
-        localStorage.removeItem("customers");
-      }
-    }
-
-    if (customers?.length === 0 || customers == null || refresh === true) {
-      fetchCustomers()
-        .then((res) => {
-          setCustomers(res.data);
-          localStorage.setItem("customers", JSON.stringify(res.data));
-        })
-        .catch((err) => {
-          if (err?.response) {
-            if (err?.response?.status === 401) {
-              setIsAuthenticated(false);
-            }
-          }
-        });
-    }
     // check local storage for cached projects
     const cachedProjects = localStorage.getItem("projects");
     if (cachedProjects) {
@@ -129,14 +102,18 @@ export default function RequirementSetTable(props) {
   }, [props.refresh]);
 
   useEffect(() => {
-    if (
-      unProcessedRequirementSets.length !== 0 &&
-      projects.length !== 0 &&
-      customers.length !== 0
-    ) {
-      setRequirementSets(mapProjectCustomerItems(unProcessedRequirementSets, projects, customers));
+    if (unProcessedRequirementSets.length !== 0 && projects.length !== 0) {
+      // Map projects to requirement sets
+      const processedSets = unProcessedRequirementSets.map((set) => {
+        const project = projects.find((p) => p.id === set.project);
+        return {
+          ...set,
+          project_name: project?.title || "No project",
+        };
+      });
+      setRequirementSets(processedSets);
     }
-  }, [unProcessedRequirementSets, customers, projects]);
+  }, [unProcessedRequirementSets, projects]);
 
   const handleRowClick = (rowIndex, row, event) => {
     // Navigate to detail without search param (search is persisted in localStorage)
@@ -187,13 +164,8 @@ export default function RequirementSetTable(props) {
       defaultShowColumn: true,
     },
     {
-      key: "customer_name",
-      header: "Customer",
-      filterType: "select",
-    },
-    {
       key: "project_name",
-      header: "Project",
+      header: "Project", 
       filterType: "select",
     },
     {
@@ -209,7 +181,7 @@ export default function RequirementSetTable(props) {
       className="container-fluid mt-2 mainContainerWidth"
       style={{ paddingBottom: "1rem" }}
     >
-      <NewRequirementSetForm setRefresh={props?.setRefresh} />
+      <NewRequirementSetForm setRefresh={setRefresh} />
       <div className="card rounded p-3">
         <Row className="p-2">
           {data.length > 0 ? (
