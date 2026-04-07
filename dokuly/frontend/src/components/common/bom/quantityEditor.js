@@ -148,15 +148,16 @@ const QuantityEditor = ({
           )}
         </>
       ) : isEditing ? (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div className="bom-inline-edit-container">
           <input
             ref={inputRef}
+            className="bom-inline-input"
             type="number"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}            onKeyUp={handleKeyUp}            title="Press Enter to submit, Escape to cancel"
-            style={{ width: "3rem" }} // CSS style for input width
+            style={{ width: "3rem" }}
           />
           <span className={`enter-key-indicator ${isEnterPressed ? 'pressed' : ''}`}>↵</span>
           <span style={{ marginLeft: '2px' }}> {unit}</span>

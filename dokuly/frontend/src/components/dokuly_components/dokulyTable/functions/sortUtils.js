@@ -30,30 +30,36 @@ const alphanumericSort = (a, b) => {
 const sortData = (data, column, order) => {
   if (!column) return data;
 
-  return data.sort((a, b) => {
+  return [...data].sort((a, b) => {
     // Always prioritize starred items (if is_starred property exists)
     const aIsStarred = a.is_starred === true;
     const bIsStarred = b.is_starred === true;
-    
-    if (aIsStarred && !bIsStarred) return -1; // a comes first
-    if (!aIsStarred && bIsStarred) return 1;  // b comes first
-    
-    // If both are starred or both are not starred, apply normal sorting
+
+    if (aIsStarred && !bIsStarred) return -1;
+    if (!aIsStarred && bIsStarred) return 1;
+
     // If column has a custom sortFunction, use it
     if (column.sortFunction && typeof column.sortFunction === 'function') {
-      return column.sortFunction(a, b, order);
+      const result = column.sortFunction(a, b, order);
+      if (result !== 0) return result;
+      // Stable tiebreaker
+      return (a.row_id ?? a.id ?? 0) - (b.row_id ?? b.id ?? 0);
     }
 
     // Otherwise use default alphanumeric sort
     const aValue = a[column.key];
     const bValue = b[column.key];
 
-    if (aValue == null || bValue == null) return 0;
-    if (aValue == undefined || bValue == undefined) return 0;
+    if (aValue == null || bValue == null) {
+      // Stable tiebreaker for equal/null values
+      return (a.row_id ?? a.id ?? 0) - (b.row_id ?? b.id ?? 0);
+    }
 
     const comparison = alphanumericSort(aValue.toString(), bValue.toString());
-
-    return order === "asc" ? comparison : -comparison;
+    const directed = order === "asc" ? comparison : -comparison;
+    if (directed !== 0) return directed;
+    // Stable tiebreaker
+    return (a.row_id ?? a.id ?? 0) - (b.row_id ?? b.id ?? 0);
   });
 };
 

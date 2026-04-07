@@ -1814,6 +1814,21 @@ polygon._2pZMF { /* This is the gantt project tasks triangle (task groups) */
   opacity: 1;
 }
 
+/* BOM inline editor — prevent row height changes when editing */
+.bom-inline-edit-container {
+  display: flex;
+  align-items: center;
+}
+
+.bom-inline-input {
+  padding: 2px 4px;
+  border: 2px solid #adb5bd;
+  border-radius: 4px;
+  font-size: inherit;
+  line-height: inherit;
+  box-sizing: border-box;
+}
+
 /* Enter key indicator for editable fields */
 .enter-key-indicator {
   flex-shrink: 0;
