@@ -13,59 +13,13 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import moment from "moment";
 import { tokenConfig } from "../../../configs/auth";
+import GenericDropdownSelector from "../../dokuly_components/dokulyTable/components/genericDropdownSelector";
 
-const CATEGORY_DISPLAY = { design: "Design", production: "Production", other: "Other" };
-
-const InlineCategorySelect = ({ value, onSave }) => {
-  const [isEditing, setIsEditing] = React.useState(false);
-  const ref = React.useRef(null);
-
-  React.useEffect(() => {
-    if (!isEditing) return;
-    function handleClickOutside(event) {
-      if (ref.current && !ref.current.contains(event.target)) {
-        setIsEditing(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isEditing]);
-
-  if (isEditing) {
-    return (
-      <div ref={ref} style={{ minWidth: "4rem" }}>
-        <select
-          value={value}
-          onChange={(e) => {
-            onSave(e.target.value);
-            setIsEditing(false);
-          }}
-          autoFocus
-          style={{ width: "100%" }}
-        >
-          <option value="design">Design</option>
-          <option value="production">Production</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="w-100 bom-editable-field"
-      onClick={() => setIsEditing(true)}
-      style={{ minHeight: "1.5em", display: "flex", alignItems: "center", minWidth: "4rem" }}
-    >
-      <span>{CATEGORY_DISPLAY[value] || "Design"}</span>
-      <img
-        src="../../static/icons/edit.svg"
-        alt="edit"
-        className="icon-dark bom-edit-icon"
-      />
-    </div>
-  );
-};
+const CATEGORY_OPTIONS = [
+  { label: "Design", value: "design" },
+  { label: "Production", value: "production" },
+  { label: "Other", value: "other" }
+];
 
 export const downloadFileAsBlobForATags = (fileUri, fileName) => {
   if (!fileUri) {
@@ -343,9 +297,12 @@ export const FilesTable = (props, { release_state }) => {
           return <span>{displayMap[row.file_category] || "Design"}</span>;
         }
         return (
-          <InlineCategorySelect
-            value={row.file_category || "design"}
-            onSave={(newValue) => handleSaveFileCategory(row.id, newValue)}
+          <GenericDropdownSelector
+            state={row.file_category || "design"}
+            setState={(newValue) => handleSaveFileCategory(row.id, newValue)}
+            dropdownValues={CATEGORY_OPTIONS}
+            placeholder="Select category"
+            textSize="14px"
           />
         );
       },
