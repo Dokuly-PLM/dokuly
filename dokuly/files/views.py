@@ -101,6 +101,7 @@ def get_files(request):
                 "archived": file.archived,
                 "download_count": file.download_count,
                 "file_category": file.file_category,
+                "created_at": file.created_at,
             }
             files.append(entry)
     return Response(files, status=status.HTTP_200_OK)

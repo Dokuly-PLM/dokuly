@@ -584,6 +584,7 @@ def fetch_file_list(request, id):
                         view_uri
                     )
                     entry["file_category"] = files_row.file_category
+                    entry["created_at"] = files_row.created_at.isoformat() if files_row.created_at else None
                     file_list.append(entry)
             except File.DoesNotExist:
                 continue
