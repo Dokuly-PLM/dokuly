@@ -3,7 +3,6 @@ import EditButton from "../../dokuly_components/editButton";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import { Form, Row } from "react-bootstrap";
 import { fetchProjects } from "../../projects/functions/queries";
-import { fetchCustomers } from "../../customers/funcitons/queries";
 import SubmitButton from "../../dokuly_components/submitButton";
 import DeleteButton from "../../dokuly_components/deleteButton";
 import {
@@ -16,12 +15,8 @@ const EditRequirementsSetForm = ({ requirementSet, setRefresh, readOnly }) => {
   const [open, setOpen] = useState(false);
   const [requirementSetName, setRequirementSetName] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [projects, setProjects] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [filteredProjects, setFilteredProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
-  const [loadingCustomers, setLoadingCustomers] = useState(true);
   const navigate = useNavigate();
 
   const onSubmit = () => {
@@ -63,29 +58,14 @@ const EditRequirementsSetForm = ({ requirementSet, setRefresh, readOnly }) => {
         setLoadingProjects(false);
       })
       .catch((error) => console.error("Failed to fetch projects:", error));
-
-    fetchCustomers()
-      .then((data) => {
-        setCustomers(data.data);
-        setLoadingCustomers(false);
-      })
-      .catch((error) => console.error("Failed to fetch customers:", error));
   }, []);
 
   useEffect(() => {
     if (requirementSet) {
       setRequirementSetName(requirementSet.display_name);
       setSelectedProject(requirementSet.project.id);
-      setSelectedCustomer(requirementSet.project?.customer);
     }
   }, [requirementSet]);
-
-  useEffect(() => {
-    const filteredProjects = selectedCustomer
-      ? projects.filter((project) => project.customer === selectedCustomer)
-      : projects;
-    setFilteredProjects(filteredProjects);
-  }, [selectedCustomer, projects]);
 
   return (
     <React.Fragment>

@@ -1,94 +1,178 @@
 import React, { useState, useEffect, useContext } from "react";
+import { Row, Col } from "react-bootstrap";
 
 import { dateFormatter } from "../documents/functions/formatters";
+import { fetchProjects } from "../projects/functions/queries";
+import { getRequirementSets } from "./functions/queries";
 
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router-dom";
+import { AuthContext } from "../App";
 import DokulyTable from "../dokuly_components/dokulyTable/dokulyTable";
-import useRequirementSets from "../common/hooks/useRequirementSets";
-import useCustomers from "../common/hooks/useCustomers";
-import useProjects from "../common/hooks/useProjects";
-import useProfile from "../common/hooks/useProfile";
+import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
 import NewRequirementSetForm from "./forms/newRequirementSetForm";
+import { useSyncedSearchParam } from "../common/hooks/useSyncedSearchParam";
 
-const RequirementSetTable = () => {
-  const [filtered_items, setFilteredItems] = useState([]);
-  const [selected_customer_id, setSelectedCustomerId] = useState("");
-  const [selected_project_id, setSelectedProjectId] = useState("");
+export default function RequirementSetTable(props) {
+  const [refresh, setRefresh] = useState(true);
+  const [requirementSets, setRequirementSets] = useState([]);
+  const [unProcessedRequirementSets, setUnProcessedRequirementSets] = useState([]);
+
+  const [data, setFilteredItems] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [searchTerm, setSearchTerm] = useSyncedSearchParam("search", 250, "requirements");
+
   const navigate = useNavigate();
-
-  const [customers, refreshCustomers] = useCustomers();
-  const [projects, refreshProjects] = useProjects();
-  const [profile, refreshProfile] = useProfile();
-  const [requirementSets, refreshRequirementSets] = useRequirementSets();
-
-  const [show_inactive_customers, setShowInactiveCustomers] = useState(false);
-  const [show_inactive_projects, setShowInactiveProjects] = useState(false);
-  const [show_items_in_inactive_projects, setShowItemsInInactiveProjects] =
-    useState(false);
+  const location = useLocation();
+  const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
 
   useEffect(() => {
-    // map projects to requirementSets
-    // biome-ignore lint/complexity/noForEach: <explanation>
-    requirementSets.forEach((requirementSet) => {
-      requirementSet.project = projects.find(
-        (project) => project.id === requirementSet.project,
-      );
-    });
+    // Apply search filter if needed (DokulyTable handles its own search now)
+    const temp_requirementSets = requirementSets;
+    setFilteredItems(temp_requirementSets);
+  }, [requirementSets]);
 
-    let filteredItems = [...requirementSets]; // Start with a copy of the sorted array
+  // biome-ignore lint/correctness/useExhaustiveDependencies: This effect should only run when refresh changes
+  useEffect(() => {
+    if (
+      unProcessedRequirementSets?.length === 0 ||
+      unProcessedRequirementSets == null ||
+      refresh === true
+    ) {
+      // check if there is data in local storage
+      const cachedRequirementSets = localStorage.getItem("requirementSets");
+      if (cachedRequirementSets) {
+        try {
+          setUnProcessedRequirementSets(JSON.parse(cachedRequirementSets));
+        } catch (e) {
+          localStorage.removeItem("requirementSets");
+        }
+      }
 
-    // Customer Filter
-    if (selected_customer_id) {
-      filteredItems = filteredItems.filter(
-        (item) =>
-          item?.project?.customer?.id === Number.parseInt(selected_customer_id),
-      );
+      getRequirementSets()
+        .then((res) => {
+          if (res.status === 200) {
+            setUnProcessedRequirementSets(res.data);
+            localStorage.setItem("requirementSets", JSON.stringify(res.data));
+          }
+        })
+        .catch((err) => {
+          if (err?.response) {
+            if (err?.response?.status === 401) {
+              setIsAuthenticated(false);
+            }
+          }
+        });
     }
 
-    // Project Filter
-    if (selected_project_id) {
-      filteredItems = filteredItems.filter(
-        (item) => item?.project?.id === Number.parseInt(selected_project_id),
-      );
+    // check local storage for cached projects
+    const cachedProjects = localStorage.getItem("projects");
+    if (cachedProjects) {
+      try {
+        setProjects(JSON.parse(cachedProjects));
+      } catch (e) {
+        localStorage.removeItem("projects");
+      }
     }
-    setFilteredItems(filteredItems);
-  }, [
-    requirementSets,
-    selected_customer_id,
-    selected_project_id,
-    show_items_in_inactive_projects,
-  ]);
 
-  function toggle(value) {
-    return !value;
-  }
+    if (projects?.length === 0 || projects == null || refresh === true) {
+      fetchProjects()
+        .then((res) => {
+          setProjects(res.data);
+          localStorage.setItem("projects", JSON.stringify(res.data));
+        })
+        .catch((err) => {
+          if (err?.response) {
+            if (err?.response?.status === 401) {
+              setIsAuthenticated(false);
+            }
+          }
+        });
+    }
 
-  const rowEvents = (rowIndex, row) => {
-    if (event.ctrlKey || event.metaKey) {
-      window.open(`/#/requirements/set/${row.id}`);
+    setRefresh(false);
+    // Updates tab title
+    document.title = "Requirements | Dokuly";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refresh]);
+
+  useEffect(() => {
+    if (props?.refresh === true) {
+      setRefresh(true);
+    }
+  }, [props.refresh]);
+
+  useEffect(() => {
+    if (unProcessedRequirementSets.length !== 0 && projects.length !== 0) {
+      // Map projects to requirement sets
+      const processedSets = unProcessedRequirementSets.map((set) => {
+        const project = projects.find((p) => p.id === set.project);
+        return {
+          ...set,
+          project_name: project?.title || "No project",
+        };
+      });
+      setRequirementSets(processedSets);
+    }
+  }, [unProcessedRequirementSets, projects]);
+
+  const handleRowClick = (rowIndex, row, event) => {
+    // Navigate to detail without search param (search is persisted in localStorage)
+    const target = `/requirements/set/${row.id}`;
+    if (event?.ctrlKey || event?.metaKey) {
+      window.open(`/#${target}`);
     } else {
-      window.location.href = `/#/requirements/set/${row.id}`;
+      navigate(target);
     }
   };
+
   const columns = [
     {
       key: "display_name",
-      header: "Display name ",
+      header: "Display Name",
+      maxWidth: "300px",
+    },
+    {
+      key: "description",
+      header: "Description",
+      maxWidth: "400px",
+      defaultShowColumn: false,
       formatter: (row) => {
-        return row.display_name ? row.display_name : "";
+        const desc = row.description || "";
+        if (desc.length > 100) {
+          return desc.substring(0, 100) + "...";
+        }
+        return desc;
       },
     },
     {
-      key: "project",
-      header: "Project",
-      formatter: (row) => {
-        return row.project ? row.project.title : "";
+      key: "tags",
+      header: "Tags",
+      maxWidth: "140px",
+      filterType: "multiselect",
+      filterValue: (row) => {
+        const tags = row?.tags ?? [];
+        return tags.length > 0 ? tags.map((tag) => tag.name) : [];
       },
+      searchValue: (row) => {
+        const tags = row?.tags ?? [];
+        return tags?.length > 0 ? tags.map((tag) => tag.name).join(" ") : "";
+      },
+      formatter: (row) => {
+        return <DokulyTags tags={row?.tags ?? []} readOnly={true} />;
+      },
+      csvFormatter: (row) => (row?.tags ? row.tags.map((tag) => tag.name).join(", ") : ""),
+      defaultShowColumn: true,
+    },
+    {
+      key: "project_name",
+      header: "Project", 
+      filterType: "select",
     },
     {
       key: "last_updated",
-      header: "Last modified",
-      formatter: dateFormatter,
+      header: "Last Modified",
+      filterType: "date",
+      formatter: (row) => dateFormatter(row),
     },
   ];
 
@@ -97,135 +181,51 @@ const RequirementSetTable = () => {
       className="container-fluid mt-2 mainContainerWidth"
       style={{ paddingBottom: "1rem" }}
     >
-      <NewRequirementSetForm setRefresh={refreshRequirementSets} />
+      <NewRequirementSetForm setRefresh={setRefresh} />
       <div className="card rounded p-3">
-        <div className="row">
-          <div className="input-group p-3">
-            <div className="input-group-prepend">
-              <label className="input-group-text">Customer:&nbsp;</label>
-            </div>
-            <select
-              className="custom-select flex-grow-1"
-              name="selected_customer_id"
-              value={selected_customer_id}
-              onChange={(e) => {
-                setSelectedCustomerId(e.target.value);
-              }}
-            >
-              <option value={""}>All</option>
-              {customers
-                .filter((customer) => {
-                  if (!profile?.allowed_apps.includes("customers")) {
-                    return "";
-                  }
-                  if (!show_inactive_customers) {
-                    if (
-                      customer?.is_active === true ||
-                      customer?.is_active === null
-                    ) {
-                      return customer;
-                    }
-                    return "";
-                  }
-                  return customer;
-                })
-                .sort((a, b) => {
-                  if (a.customer_id < b.customer_id) {
-                    return -1;
-                  }
-                  return 1;
-                })
-                .map((customer) => {
-                  return (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.customer_id} - {customer.name}
-                    </option>
-                  );
-                })}
-            </select>
-          </div>
-          <div className="form-check mb-3 ml-4">
-            <input
-              className="dokuly-checkbox"
-              name="show_inactive_customers"
-              type="checkbox"
-              onChange={() => {
-                setShowInactiveCustomers(toggle);
-              }}
-              checked={show_inactive_customers}
+        <Row className="p-2">
+          {data.length > 0 ? (
+            <DokulyTable
+              data={data}
+              tableName="requirements"
+              columns={columns}
+              showCsvDownload={true}
+              showColumnSelector={true}
+              itemsPerPage={100}
+              selectedRowIndex={null}
+              onRowClick={handleRowClick}
+              showPagination={true}
+              showSearch={true}
+              showColumnFilters={true}
+              showFilterChips={true}
+              showSavedViews={true}
+              defaultSort={{ columnNumber: 5, order: "desc" }}
+              searchTerm={searchTerm}
+              onSearchTermChange={setSearchTerm}
+              showClearSearch={true}
             />
-            <label className="form-check-label ml-1" htmlFor="flexCheckDefault">
-              Show inactive customers
-            </label>
-          </div>
-        </div>
-        <div className="row">
-          <div className="input-group p-3">
-            <div className="input-group-prepend">
-              <label className="input-group-text">Project:&nbsp;</label>
-            </div>
-            <select
-              className="custom-select flex-grow-1"
-              name="selected_project_id"
-              value={selected_project_id}
-              onChange={(e) => {
-                setSelectedProjectId(e.target.value);
-              }}
-            >
-              <option value={""}>All</option>
-              {projects
-                .filter((project) => {
-                  if (!show_inactive_projects) {
-                    if (
-                      project?.is_active === true ||
-                      project?.is_active === null
-                    ) {
-                      return project;
-                    }
-                    return "";
-                  }
-                  return project;
-                })
-                .map((project) => {
-                  return Number.parseInt(project.customer) ===
-                    Number.parseInt(selected_customer_id) ||
-                    selected_customer_id === "" ? (
-                    <option key={project.id} value={project.id}>
-                      {project.full_number} -&nbsp;
-                      {project.title}
-                    </option>
-                  ) : (
-                    ""
-                  );
-                })}
-            </select>
-          </div>
-          <div className="form-check mb-3 ml-4">
-            <input
-              className="dokuly-checkbox"
-              name="show_inactive_projects"
-              type="checkbox"
-              onChange={() => {
-                setShowInactiveProjects(toggle);
-              }}
-              checked={show_inactive_projects}
-            />
-            <label className="form-check-label ml-1" htmlFor="flexCheckDefault">
-              Show inactive projects
-            </label>
-          </div>
-        </div>
-
-        <DokulyTable
-          data={filtered_items}
-          columns={columns}
-          itemsPerPage={25}
-          onRowClick={rowEvents}
-          defaultSort={{ columnNumber: 2, order: "desc" }}
-        />
+          ) : (
+            <>
+              {refresh && (
+                <>
+                  <Col />
+                  <Col>
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="sr-only">Loading...</span>
+                    </div>
+                  </Col>
+                  <Col />
+                </>
+              )}
+              {!refresh && data?.length === 0 && (
+                <div className="m-2">
+                  <h5>No requirement sets found</h5>
+                </div>
+              )}
+            </>
+          )}
+        </Row>
       </div>
     </div>
   );
-};
-
-export default RequirementSetTable;
+}
