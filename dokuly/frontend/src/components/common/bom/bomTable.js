@@ -278,6 +278,9 @@ const BomTable = ({
     return "";
   };
 
+  // Plain clicks are intentionally ignored to prevent accidental navigation
+  // while interacting with inline-editable BOM fields (quantity, designator,
+  // part number). Use Ctrl/Cmd+click, the navigate arrow, or Enter instead.
   const handleRowClick = (rowIndex, row, e) => {
     if (!e?.ctrlKey && !e?.metaKey) return;
     const url = getRowUrl(row);

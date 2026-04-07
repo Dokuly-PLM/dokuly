@@ -290,6 +290,14 @@ function DokulyTableContents({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // If columns were empty on mount (e.g. async column definitions), set the
+  // sort column once they first become available.
+  useEffect(() => {
+    if (columns && columns.length > 0) {
+      setSortedColumn((prev) => prev ?? columns[defaultSort.columnNumber]);
+    }
+  }, [columns, defaultSort.columnNumber]);
+
   const getVisibleData = (data) => {
     if (!treeData) {
       return sortData(data, sortedColumn, sortOrder);
