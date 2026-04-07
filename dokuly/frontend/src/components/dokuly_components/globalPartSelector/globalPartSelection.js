@@ -96,7 +96,7 @@ const GlobalPartSelection = ({
   if (compact) {
     return (
       <div style={{ position: "relative" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#fff", borderRadius: "4px", padding: "2px" }}>
           <input
             ref={searchInputRef}
             className="input-edit"
@@ -132,7 +132,7 @@ const GlobalPartSelection = ({
           </button>
         </div>
         {showSuggestions && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 1050 }}>
+          <div style={{ position: "absolute", top: "100%", left: 0, minWidth: "100%", zIndex: 1050, background: "#fff", borderRadius: "4px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
             <PartSuggestions
               searchTerm={query}
               suggestions={sortedResults}

@@ -264,7 +264,7 @@ const PartNumberEditor = ({
         {is_locked_bom ? (
           <span>{displayPartNumber}</span>
         ) : isEditing ? (
-          <div ref={globalPartSelectionRef} style={{ position: "absolute", zIndex: 10, top: 0, left: 0, minWidth: "300px" }}>
+          <div ref={globalPartSelectionRef} style={{ position: "absolute", zIndex: 1000, top: "50%", left: 0, transform: "translateY(-50%)", minWidth: "300px" }}>
             <GlobalPartSelection
               searchTerm={searchTerm}
               setSelectedItem={setSelectedItem}
