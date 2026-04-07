@@ -109,10 +109,10 @@ const DesignatorEditor = ({ row, is_locked_bom, setRefreshBom }) => {
       {is_locked_bom ? (
         <span>{referenceDesignatorFormatter(displayDesignator)}</span>
       ) : isEditing ? (
-        <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+        <div className="bom-inline-edit-container">
           <input
             ref={inputRef}
-            className="input-edit"
+            className="bom-inline-input"
             type="text"
             value={designator}
             onChange={(e) => setDesignator(e.target.value)}
@@ -120,7 +120,7 @@ const DesignatorEditor = ({ row, is_locked_bom, setRefreshBom }) => {
             onKeyDown={handleKeyDown}
             onKeyUp={handleKeyUp}
             title="Press Enter to submit, Escape to cancel"
-            style={{ flex: 1, minWidth: 0 }}
+            style={{ width: `${Math.max(3, (designator?.length || 0) + 1)}ch` }}
           />
           <span className={`enter-key-indicator ${isEnterPressed ? 'pressed' : ''}`}>↵</span>
         </div>

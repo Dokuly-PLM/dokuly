@@ -9,8 +9,7 @@ import GenericDropdownSelector from "../dokulyTable/components/genericDropdownSe
 export const getBomTableColumns = ({
   setRefreshBom,
   isLockedBom,
-  expandPnCol,
-  setExpandPnCol,
+  setExpandPnCol = () => {},
   organizationCurrency,
   app,
   partInformationColumns,
@@ -26,9 +25,9 @@ export const getBomTableColumns = ({
   supplierOptions = [],
   handleSelectDropdown = () => {},
   handleRowSelect = () => {},
-  autoFocusItemId = null,
+  autoFocusItemIdRef = { current: null },
   setAutoFocusItemId = () => {},
-  allBomItems = [],
+  allBomItemsRef = { current: [] },
   onDuplicateFound = null,
 }) => {
   const columns = [
@@ -43,11 +42,10 @@ export const getBomTableColumns = ({
             row={row}
             setRefreshBom={setRefreshBom}
             is_locked_bom={isLockedBom}
-            setExpandCol={setExpandPnCol}
             organization={organization}
-            autoFocus={autoFocusItemId === row.id}
+            autoFocus={autoFocusItemIdRef.current === row.id}
             onFocusApplied={() => setAutoFocusItemId(null)}
-            allBomItems={allBomItems}
+            allBomItems={allBomItemsRef.current}
             onDuplicateFound={onDuplicateFound}
             designatorHeader={designatorHeader}
           />
@@ -87,7 +85,7 @@ export const getBomTableColumns = ({
       },
       includeInCsv: true,
       defaultShowColumn: true,
-      maxWidth: includeSelector ? "100px" : expandPnCol ? "500px" : "160px",
+      maxWidth: includeSelector ? "100px" : "160px",
     },
     {
       key: "thumbnail",
@@ -123,7 +121,7 @@ export const getBomTableColumns = ({
         return searchTerms.join(" ");
       },
       defaultShowColumn: true,
-      maxWidth: includeSelector ? "400px" : expandPnCol ? "160px" : "800px",
+      maxWidth: includeSelector ? "400px" : "800px",
     },
     {
       key: "external_part_number",
@@ -234,7 +232,7 @@ export const getBomTableColumns = ({
       },
       includeInCsv: true,
       defaultShowColumn: true,
-      maxWidth: includeSelector ? "200px" : expandPnCol ? "160px" : "800px",
+      maxWidth: includeSelector ? "200px" : "800px",
     },
     {
       key: "release_state",
@@ -248,6 +246,7 @@ export const getBomTableColumns = ({
       key: "designator",
       header: designatorHeader,
       headerTooltip: designatorHeaderTooltip,
+      minWidth: "100px",
       formatter: (row) => (
         <DesignatorEditor
           row={row}
@@ -274,7 +273,7 @@ export const getBomTableColumns = ({
       },
       includeInCsv: true,
       defaultShowColumn: true,
-      maxWidth: expandPnCol ? "200px" : "600px",
+      maxWidth: "600px",
     },
     {
       key: "quantity",
@@ -289,7 +288,7 @@ export const getBomTableColumns = ({
       csvFormatter: (row) => (row?.quantity ? `${row.quantity}` : ""),
       includeInCsv: true,
       defaultShowColumn: true,
-      maxWidth: expandPnCol ? "70px" : "200px",
+      maxWidth: "200px",
     },
     {
       key: "part_type",
