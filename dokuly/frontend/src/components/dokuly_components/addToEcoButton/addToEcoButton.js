@@ -179,7 +179,7 @@ const AddToEcoButton = ({ app, itemId, itemName, onSuccess, variant = "toolbar" 
                           whiteSpace: "nowrap",
                         }}
                       >
-                        ECO-{eco.id}
+                        ECO{eco.id}
                       </span>
                       <span style={{ fontWeight: "500" }}>
                         {eco.display_name || "Untitled"}
