@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
 import { Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
@@ -74,6 +74,14 @@ const BomTable = ({
   const [bomCopy, setBomCopy] = useState([]);
   const [autoFocusItemId, setAutoFocusItemId] = useState(null);
   const [highlightedItemId, setHighlightedItemId] = useState(null);
+
+  // Refs for values that change frequently but shouldn't invalidate the columns memo
+  const bomRef = useRef(bom);
+  bomRef.current = bom;
+  const autoFocusItemIdRef = useRef(autoFocusItemId);
+  autoFocusItemIdRef.current = autoFocusItemId;
+  const highlightedItemIdRef = useRef(highlightedItemId);
+  highlightedItemIdRef.current = highlightedItemId;
 
   const [suppliers, refreshSuppliers, loadingSuppliers, errorSuppliers] =
     useSuppliers();
@@ -213,15 +221,42 @@ const BomTable = ({
     setOpen(true);
   };
 
-  // Define the onClick handler inside the formatter function
-  const handleClick = (value) => {
+  const handleClick = useCallback((value) => {
     navigator.clipboard.writeText(value).then(
       () => {},
       (err) => {
         toast.error("Failed to copy: ", err);
       },
     );
-  };
+  }, []);
+
+  const columns = useMemo(() => {
+    const columnConfiguration = {
+      setRefreshBom: setRefreshBom,
+      isLockedBom: is_locked_bom,
+      organizationCurrency: organization?.currency,
+      app: app,
+      partInformationColumns: partInformationColumns,
+      handleClick: handleClick,
+      releaseStateFormatter: releaseStateFormatter,
+      convertPriceToOrganizationCurrency: convertPriceToOrganizationCurrency,
+      designatorHeader: designator_header,
+      designatorHeaderTooltip: designator_header_tooltip,
+      thumbnailFormatter: thumbnailFormatter,
+      currencyPairs: currencyPairs,
+      organization: organization,
+      autoFocusItemIdRef: autoFocusItemIdRef,
+      setAutoFocusItemId: setAutoFocusItemId,
+      allBomItemsRef: bomRef,
+      onDuplicateFound: handleDuplicateFound,
+    };
+    return getBomTableColumns(columnConfiguration);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    is_locked_bom, organization?.currency, app,
+    partInformationColumns, currencyPairs, designator_header,
+    designator_header_tooltip,
+  ]);
 
   if (
     loadingCurrency ||
@@ -236,61 +271,25 @@ const BomTable = ({
     return <div>Error loading currency data: {errorCurrency}</div>;
   }
 
-  const columnConfiguration = {
-    setRefreshBom: setRefreshBom,
-    isLockedBom: is_locked_bom,
-    expandPnCol: expandPnCol,
-    setExpandPnCol: setExpandPnCol,
-    organizationCurrency: organization?.currency,
-    app: app,
-    partInformationColumns: partInformationColumns,
-    handleClick: handleClick,
-    releaseStateFormatter: releaseStateFormatter,
-    convertPriceToOrganizationCurrency: convertPriceToOrganizationCurrency,
-    designatorHeader: designator_header,
-    designatorHeaderTooltip: designator_header_tooltip,
-    thumbnailFormatter: thumbnailFormatter,
-    currencyPairs: currencyPairs,
-    organization: organization,
-    autoFocusItemId: autoFocusItemId,
-    setAutoFocusItemId: setAutoFocusItemId,
-    allBomItems: bom,
-    onDuplicateFound: handleDuplicateFound,
-    highlightedItemId: highlightedItemId,
+  const getRowUrl = (row) => {
+    if (row?.pcba) return `/pcbas/${row.pcba}`;
+    if (row?.assembly) return `/assemblies/${row.assembly}`;
+    if (row?.part) return `/parts/${row.part}`;
+    return "";
   };
 
-  const columns = getBomTableColumns(columnConfiguration);
-
+  // Plain clicks are intentionally ignored to prevent accidental navigation
+  // while interacting with inline-editable BOM fields (quantity, designator,
+  // part number). Use Ctrl/Cmd+click, the navigate arrow, or Enter instead.
   const handleRowClick = (rowIndex, row, e) => {
-    if (!row) return;
-    let url = "";
-    if (row.pcba) {
-      url = `/pcbas/${row.pcba}`;
-    } else if (row.assembly) {
-      url = `/assemblies/${row.assembly}`;
-    } else if (row.part) {
-      url = `/parts/${row.part}`;
-    }
-    if (!url) return;
-    if (e?.ctrlKey || e?.metaKey) {
-      window.open(`/#${url}`, "_blank");
-    } else {
-      navigate(url);
-    }
+    if (!e?.ctrlKey && !e?.metaKey) return;
+    const url = getRowUrl(row);
+    if (url) window.open(`/#${url}`, "_blank");
   };
 
-  const onNavigate = (selectedItem) => {
-    let url = "";
-    if (selectedItem.pcba) {
-      url = `/pcbas/${selectedItem.pcba}`;
-    } else if (selectedItem.assembly) {
-      url = `/assemblies/${selectedItem.assembly}`;
-    } else if (selectedItem.part) {
-      url = `/parts/${selectedItem.part}`;
-    }
-    if (url) {
-      navigate(url);
-    }
+  const onNavigate = (row) => {
+    const url = getRowUrl(row);
+    if (url) navigate(url);
   };
 
   return (
@@ -357,7 +356,7 @@ const BomTable = ({
                   itemsPerPage={100000} // No pagination
                   onRowClick={handleRowClick}
                   navigateColumn={true}
-                  onNavigate={(row) => onNavigate(row)}
+                  onNavigate={onNavigate}
                   textSize={tableTextSize}
                   setTextSize={setTableTextSize}
                   showTableSettings={true}

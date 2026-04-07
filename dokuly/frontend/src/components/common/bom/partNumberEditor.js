@@ -33,7 +33,6 @@ const PartNumberEditor = ({
   row,
   is_locked_bom,
   setRefreshBom,
-  setExpandCol,
   organization,
   className = "w-100",
   innerClassName = "w-100",
@@ -58,7 +57,7 @@ const PartNumberEditor = ({
   useEffect(() => {
     if (autoFocus && !is_locked_bom && !isEditing) {
       setIsEditing(true);
-      setExpandCol(true);
+
       onFocusApplied();
 
       // Scroll into view
@@ -69,7 +68,7 @@ const PartNumberEditor = ({
         });
       }
     }
-  }, [autoFocus, is_locked_bom, isEditing, setExpandCol, onFocusApplied]);
+  }, [autoFocus, is_locked_bom, isEditing, onFocusApplied]);
 
   // Use part_number (raw number) to search for all revisions, not full_part_number
   const searchTerm = row.part_number
@@ -99,7 +98,7 @@ const PartNumberEditor = ({
         setPendingItem(selected_item);
         setShowDuplicateModal(true);
         setIsEditing(false);
-        setExpandCol(false);
+
         // Highlight the existing row
         onDuplicateFound(existingItem.id);
         return;
@@ -113,20 +112,20 @@ const PartNumberEditor = ({
         .then((response) => {
           toast.success("Designator updated");
           setIsEditing(false);
-          setExpandCol(false);
+  
           setRefreshBom();
         })
         .catch((error) => {
           toast.error(`Error updating designator: ${error.message}`);
         });
     }
-  }, [selected_item, row.id, setExpandCol, setRefreshBom, allBomItems, onDuplicateFound, isProcessingDuplicate, showDuplicateModal]);
+  }, [selected_item, row.id, setRefreshBom, allBomItems, onDuplicateFound, isProcessingDuplicate, showDuplicateModal]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         setIsEditing(false);
-        setExpandCol(false);
+
       }
     };
 
@@ -137,7 +136,7 @@ const PartNumberEditor = ({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [setExpandCol]);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -148,7 +147,7 @@ const PartNumberEditor = ({
         !globalPartSelectionRef.current.contains(event.target)
       ) {
         setIsEditing(false);
-        setExpandCol(false);
+
       }
     }
 
@@ -158,7 +157,7 @@ const PartNumberEditor = ({
       // Unbind the event listener on clean up
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [setExpandCol]);
+  }, []);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -221,7 +220,7 @@ const PartNumberEditor = ({
         .then((response) => {
           toast.success("Item added to BOM");
           setIsEditing(false);
-          setExpandCol(false);
+  
           setRefreshBom();
           // Reset flag after successful addition
           setIsProcessingDuplicate(false);
@@ -245,7 +244,6 @@ const PartNumberEditor = ({
     setDuplicateItem(null);
     setPendingItem(null);
     setIsEditing(false);
-    setExpandCol(false);
     setIsProcessingDuplicate(false);
     
     // Delete the temporary entry
@@ -262,11 +260,11 @@ const PartNumberEditor = ({
 
   return (
     <>
-      <div ref={editorRef} className={className} style={{ ...style }}>
+      <div ref={editorRef} className={className} style={{ position: "relative", ...style }}>
         {is_locked_bom ? (
           <span>{displayPartNumber}</span>
         ) : isEditing ? (
-          <div ref={globalPartSelectionRef}>
+          <div ref={globalPartSelectionRef} style={{ position: "absolute", zIndex: 1000, top: "50%", left: 0, transform: "translateY(-50%)", minWidth: "300px" }}>
             <GlobalPartSelection
               searchTerm={searchTerm}
               setSelectedItem={setSelectedItem}
@@ -280,7 +278,7 @@ const PartNumberEditor = ({
             className={`${innerClassName} bom-editable-field`}
             onClick={() => {
               setIsEditing(true);
-              setExpandCol(true);
+        
             }}
           >
             <span>{displayPartNumber}</span>

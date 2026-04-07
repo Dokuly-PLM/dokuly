@@ -279,11 +279,24 @@ function DokulyTableContents({
 
       setTableData(dataWithRowId);
     }
+  }, [data]);
 
+  // Initialize sort column on mount only — don't reset user's chosen sort order
+  // when columns update. Saved views handle their own sort via handleLoadView.
+  useEffect(() => {
     if (columns && columns.length > 0) {
       setSortedColumn(columns[defaultSort.columnNumber]);
     }
-  }, [data, columns, defaultSort.columnNumber]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // If columns were empty on mount (e.g. async column definitions), set the
+  // sort column once they first become available.
+  useEffect(() => {
+    if (columns && columns.length > 0) {
+      setSortedColumn((prev) => prev ?? columns[defaultSort.columnNumber]);
+    }
+  }, [columns, defaultSort.columnNumber]);
 
   const getVisibleData = (data) => {
     if (!treeData) {
@@ -612,7 +625,9 @@ function DokulyTableContents({
     if (e.target?.isContentEditable) return;
 
     if (e.key === "Enter") {
-      if (onRowClick) {
+      if (onNavigate) {
+        onNavigate(row);
+      } else if (onRowClick) {
         onRowClick(row_id, row, e);
       }
       return;
