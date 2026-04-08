@@ -149,45 +149,60 @@ const GlobalPartSelection = ({
   return (
     <div className="search-section">
       <Row>
-        <Col md={8}>
-          <Form.Group className="mb-3">
-            <Form.Control
-              ref={searchInputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="dokuly-form-input"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSearch(query);
-                }
-              }}
-              placeholder="Search all items."
-            />
-          </Form.Group>
-        </Col>
-        <Col md={2}>
-          <button
-            type="button"
-            className="btn btn-bg-transparent"
-            onClick={() => handleSearch(query)}
-            disabled={!query}
-            title={!query ? "Search all items." : "Search"}
-            style={{
-              cursor: !query ? "not-allowed" : "pointer",
-              opacity: !query ? 0.65 : 1
-            }}
-          >
-            <img
-              className="icon-dark"
-              src="../../../static/icons/search.svg"
-              alt="search"
-              style={{
-                width: "20px",
-                height: "20px"
-              }}
-            />
-          </button>
+        <Col md={12}>
+          <div className="d-flex w-100" style={{ position: "relative", minWidth: "200px" }}>
+            <div className="w-100 bom-inline-input bom-editable-field" style={{ position: "relative" }}>
+              <input
+                ref={searchInputRef}
+                className="bom-inline-input"
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearch(query);
+                  }
+                }}
+                placeholder="Search all items..."
+                style={{ 
+                  width: "100%", 
+                  paddingRight: "24px",
+                  border: "none",
+                  outline: "none",
+                  background: "transparent"
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn-bg-transparent p-0"
+                onClick={() => handleSearch(query)}
+                disabled={!query}
+                title={!query ? "Search all items." : "Search"}
+                style={{
+                  position: "absolute",
+                  right: "4px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  cursor: !query ? "not-allowed" : "pointer",
+                  opacity: !query ? 0.5 : 1,
+                  border: "none",
+                  background: "transparent",
+                  padding: "2px",
+                  zIndex: 2
+                }}
+              >
+                <img
+                  className="icon-dark"
+                  src="../../../static/icons/search.svg"
+                  alt="search"
+                  style={{
+                    width: "14px",
+                    height: "14px"
+                  }}
+                />
+              </button>
+            </div>
+          </div>
         </Col>
       </Row>
       <Row>
@@ -203,6 +218,7 @@ const GlobalPartSelection = ({
       </Row>
     </div>
   );
+  
 };
 
 export default GlobalPartSelection;
