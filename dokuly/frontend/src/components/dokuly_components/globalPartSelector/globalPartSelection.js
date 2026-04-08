@@ -150,7 +150,7 @@ const GlobalPartSelection = ({
     <div className="search-section">
       <Row>
         <Col md={8}>
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-2">
             <Form.Control
               ref={searchInputRef}
               type="text"
@@ -163,6 +163,11 @@ const GlobalPartSelection = ({
                 }
               }}
               placeholder="Search all items."
+              style={{
+                fontSize: "13px",
+                padding: "6px 12px",
+                height: "24px"
+              }}
             />
           </Form.Group>
         </Col>
@@ -175,7 +180,9 @@ const GlobalPartSelection = ({
             title={!query ? "Search all items." : "Search"}
             style={{
               cursor: !query ? "not-allowed" : "pointer",
-              opacity: !query ? 0.65 : 1
+              opacity: !query ? 0.65 : 1,
+              height: "32px",
+              padding: "4px 8px"
             }}
           >
             <img
@@ -183,8 +190,8 @@ const GlobalPartSelection = ({
               src="../../../static/icons/search.svg"
               alt="search"
               style={{
-                width: "20px",
-                height: "20px"
+                width: "16px",
+                height: "16px"
               }}
             />
           </button>
