@@ -271,7 +271,7 @@ export const DocumentFilesTable = (props) => {
         {isOffice && row.type === "GENERIC" && (
           <button
             type="button"
-            className="btn btn-sm btn-outline-primary"
+            className="btn btn-sm dokuly-btn-primary"
             style={{ fontSize: "0.8rem", fontWeight: 600, padding: "3px 14px", whiteSpace: "nowrap" }}
             onClick={() => openOnlyOfficeEditor(fileId)}
             title="Open in document editor"
@@ -282,7 +282,7 @@ export const DocumentFilesTable = (props) => {
         {STEP_EXTENSIONS.includes(ext) && row.type === "GENERIC" && (
           <button
             type="button"
-            className="btn btn-sm btn-outline-primary"
+            className="btn btn-sm dokuly-btn-primary"
             style={{ fontSize: "0.8rem", fontWeight: 600, padding: "3px 14px", whiteSpace: "nowrap" }}
             onClick={() => openStepViewer(fileId)}
             title="Open in 3D viewer"

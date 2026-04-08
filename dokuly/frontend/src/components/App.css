@@ -1264,50 +1264,80 @@ input[type=number] {
   border-color: transparent;
   color: #165216ff !important;
   cursor: pointer;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .dokuly-btn-transparent:focus {
-  border-color: #165216ff !important;
-  box-shadow: 0 0 5px #165216ff !important;
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  color: #165216ff !important;
 }
 
-.dokuly-btn-primary {
-  background-color: #165216ff;
-  border-color: #165216ff;
-  color: white;
+.dokuly-btn-transparent:hover {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: rgba(22, 82, 22, 0.1) !important;
+  color: #165216ff !important;
+}
+
+.dokuly-btn-transparent:active {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: rgba(22, 82, 22, 0.15) !important;
+  color: #165216ff !important;
+}
+
+.btn.dokuly-btn-primary {
+  background-color: transparent !important;
+  border-color: #165216ff !important;
+  color: #165216ff !important;
   cursor: pointer;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
-.dokuly-btn-primary:focus {
+.btn.dokuly-btn-primary:focus,
+.btn.dokuly-btn-primary:focus-visible {
   border-color: #165216ff !important;
-  box-shadow: 0 0 5px #165216ff !important;
+  background-color: transparent !important;
+  color: #165216ff !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
-.dokuly-btn-primary:hover {
-  background-color: #165216ff;
-  border-color: #165216ff;
-  box-shadow: 0 0 5px #165216ff;
-  color: white;
+.btn.dokuly-btn-primary:hover {
+  background-color: rgba(22, 82, 22, 0.15) !important;
+  border-color: #165216ff !important;
+  color: #165216ff !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
-.dokuly-btn-primary:active {
+.btn.dokuly-btn-primary:active,
+.btn.dokuly-btn-primary.active {
   background-color: #165216ff !important;
   border-color: #165216ff !important;
-  box-shadow: 0 0 5px #165216ff !important;
-  color: white;
+  color: white !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
-.dokuly-btn-primary:checked {
+.btn.dokuly-btn-primary:checked {
   background-color: #165216ff !important;
   border-color: #165216ff !important;
-  box-shadow: 0 0 5px #165216ff !important;
-  color: white;
+  color: white !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
-.dokuly-btn-primary:visited {
-  background-color: #165216ff;
-  border-color: #165216ff;
-  color: white;
+.btn.dokuly-btn-primary:visited {
+  background-color: transparent !important;
+  border-color: #165216ff !important;
+  color: #165216ff !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .dokuly-border-primary {
