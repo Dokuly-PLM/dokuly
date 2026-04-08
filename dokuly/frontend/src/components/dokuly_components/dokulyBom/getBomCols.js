@@ -42,6 +42,7 @@ export const getBomTableColumns = ({
             row={row}
             setRefreshBom={setRefreshBom}
             is_locked_bom={isLockedBom}
+            setExpandCol={setExpandPnCol}
             organization={organization}
             autoFocus={autoFocusItemIdRef.current === row.id}
             onFocusApplied={() => setAutoFocusItemId(null)}
