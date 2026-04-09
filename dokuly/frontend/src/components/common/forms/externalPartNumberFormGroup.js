@@ -1,5 +1,6 @@
 import QuestionToolTip from "../../dokuly_components/questionToolTip";
 import { toast } from "react-toastify";
+import { FormField } from "../../dokuly_components/dokulyForm/formComponents";
 
 const ExternalPartNumberFormGroup = ({
   externalPartNumber,
@@ -11,9 +12,14 @@ const ExternalPartNumberFormGroup = ({
     : "(Optional) Use this field to enter any external part number, for example from your ERP.";
 
   return (
-    <div className="form-group">
-      <label className="mr-2">External part number</label>
-      <QuestionToolTip optionalHelpText={defaultToolTip} placement="right" />
+    <FormField
+      label={
+        <>
+          External part number{" "}
+          <QuestionToolTip optionalHelpText={defaultToolTip} placement="right" />
+        </>
+      }
+    >
       <input
         className="form-control"
         type="text"
@@ -27,7 +33,7 @@ const ExternalPartNumberFormGroup = ({
         }}
         value={externalPartNumber}
       />
-    </div>
+    </FormField>
   );
 };
 
