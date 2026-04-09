@@ -34,8 +34,13 @@ def migrate_document_pdfs(apps, schema_editor):
             # Migrate pdf_raw to pdf_source
             if document.pdf_raw and document.pdf_raw.name and not document.pdf_source:
                 try:
+                    # Truncate display_name to fit 250 char limit
+                    suffix = " PDF Source"
+                    max_title_length = 250 - len(suffix)
+                    title = (document.title or "")[:max_title_length]
+                    display_name = f"{title}{suffix}" if title else "PDF Source"
+                    
                     # Create a File object that points to the same storage path
-                    display_name = f"{document.title} PDF Source" if document.title else "PDF Source"
                     file_obj = File(
                         display_name=display_name,
                         project=document.project,
@@ -56,8 +61,13 @@ def migrate_document_pdfs(apps, schema_editor):
             # Migrate pdf to pdf_print
             if document.pdf and document.pdf.name and not document.pdf_print:
                 try:
+                    # Truncate display_name to fit 250 char limit
+                    suffix = " PDF Print"
+                    max_title_length = 250 - len(suffix)
+                    title = (document.title or "")[:max_title_length]
+                    display_name = f"{title}{suffix}" if title else "PDF Print"
+                    
                     # Create a File object that points to the same storage path
-                    display_name = f"{document.title} PDF Print" if document.title else "PDF Print"
                     file_obj = File(
                         display_name=display_name,
                         project=document.project,
