@@ -6,6 +6,8 @@ import { fetchPrefixes, fetchProtectionLevels, fetchOrg, fetchIntegrationSetting
 import { createNewDocument } from "./functions/queries";
 import DokulyModal from "../dokuly_components/dokulyModal";
 import NameSuggestion from "../dokuly_components/nameSuggestion/nameSuggestion";
+import SubmitButton from "../dokuly_components/submitButton";
+import { FormField } from "../dokuly_components/dokulyForm/formComponents";
 
 const NewDocumentForm = (props) => {
   const [title, setTitle] = useState("");
@@ -137,8 +139,7 @@ const NewDocumentForm = (props) => {
         onHide={() => setShowModal(false)}
         title="Create new document"
       >
-        <div className="form-group">
-          <label>Title</label>
+        <FormField label="Title" required>
           <input
             className="form-control"
             type="text"
@@ -159,10 +160,9 @@ const NewDocumentForm = (props) => {
             onApply={setTitle}
             enabled={hasAiCredentials}
           />
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label>Description</label>
+        <FormField label="Description">
           <textarea
             className="form-control"
             type="text"
@@ -176,10 +176,9 @@ const NewDocumentForm = (props) => {
             }}
             value={description}
           />
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label htmlFor="project">Project *</label>
+        <FormField label="Project" required>
           <select
             className="form-control"
             name="project"
@@ -201,10 +200,9 @@ const NewDocumentForm = (props) => {
                     );
                   })}
           </select>
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label htmlFor="protection_level">Protection Level *</label>
+        <FormField label="Protection Level" required>
           <select
             className="form-control"
             name="protection_level"
@@ -228,10 +226,9 @@ const NewDocumentForm = (props) => {
               <option>No protection levels found!</option>
             )}
           </select>
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label>Document type *</label>
+        <FormField label="Document type" required>
           <select
             className="form-control"
             name="document_type"
@@ -257,31 +254,28 @@ const NewDocumentForm = (props) => {
               <option>No Document types found!</option>
             )}
           </select>
-        </div>
-        <div className="form-group">
+        </FormField>
+        <FormField label="Template">
           {templatedocuments !== null &&
           templatedocuments !== undefined &&
           templatedocuments.length !== 0 ? (
-            <div>
-              <label>Template</label>
-              <select
-                className="form-control"
-                name="document_type"
-                value={selectedTemplate}
-                onChange={(e) => {
-                  setSelectedTemplate(e.target.value);
-                }}
-              >
-                <option value="">Select a template</option>
-                {templatedocuments.map((document) => {
-                  return (
-                    <option value={document.id} key={document.id}>
-                      {document.full_doc_number} - {document.title}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
+            <select
+              className="form-control"
+              name="document_type"
+              value={selectedTemplate}
+              onChange={(e) => {
+                setSelectedTemplate(e.target.value);
+              }}
+            >
+              <option value="">Select a template</option>
+              {templatedocuments.map((document) => {
+                return (
+                  <option value={document.id} key={document.id}>
+                    {document.full_doc_number} - {document.title}
+                  </option>
+                );
+              })}
+            </select>
           ) : (
             <span>
               No templates found! To create a template, go to the admin page and
@@ -290,22 +284,21 @@ const NewDocumentForm = (props) => {
               source file will be made to the new document
             </span>
           )}
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <button
-            className="btn dokuly-bg-primary"
+        <div className="mt-3">
+          <SubmitButton
+            className="btn dokuly-bg-primary w-100"
             onClick={onSubmit}
             disabled={
               selected_prefix_id === -1 || 
               selected_project_id === -1 || 
               selected_protection_level_id === ""
-                ? true
-                : false
             }
+            disabledTooltip="Mandatory fields must be entered. Mandatory fields are marked with *"
           >
             Submit
-          </button>
+          </SubmitButton>
         </div>
       </DokulyModal>
     </div>
