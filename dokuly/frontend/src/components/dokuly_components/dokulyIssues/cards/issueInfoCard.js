@@ -250,7 +250,7 @@ const IssueInfoCard = ({
         <Row
           style={{
             border: `2px solid ${backgroundColor}`,
-            borderRadius: "15px",
+            borderRadius: "5px",
             paddingBottom: "2.5px",
             marginTop: "0.25rem",
           }}
