@@ -10,6 +10,7 @@ import { generateCountryList } from "../../dokuly_components/dokulyForm/function
 import NameSuggestion from "../../dokuly_components/nameSuggestion/nameSuggestion";
 import { fetchIntegrationSettings } from "../../admin/functions/queries";
 import { FormField, SectionDivider, EditFormRightPanel } from "../../dokuly_components/dokulyForm/formComponents";
+import QuestionToolTip from "../../dokuly_components/questionToolTip";
 
 const EditPartForm = (props) => {
   const navigate = useNavigate();
@@ -418,7 +419,17 @@ const EditPartForm = (props) => {
 
                     <div className="d-flex" style={{ gap: "12px" }}>
                       <div style={{ flex: 1 }}>
-                        <FormField label="Datasheet link">
+                        <FormField
+                          label={
+                            <>
+                              Datasheet link{" "}
+                              <QuestionToolTip 
+                                optionalHelpText="A URL to a web-hosted datasheet. The file from this URL will be automatically uploaded to the files table." 
+                                placement="right" 
+                              />
+                            </>
+                          }
+                        >
                           <input
                             className="form-control"
                             type="url"
@@ -429,7 +440,17 @@ const EditPartForm = (props) => {
                         </FormField>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <FormField label="Image link">
+                        <FormField
+                          label={
+                            <>
+                              Image link{" "}
+                              <QuestionToolTip 
+                                optionalHelpText="A URL to a web-hosted image. The image from this URL will be automatically uploaded to the files table." 
+                                placement="right" 
+                              />
+                            </>
+                          }
+                        >
                           <input
                             className="form-control"
                             type="url"

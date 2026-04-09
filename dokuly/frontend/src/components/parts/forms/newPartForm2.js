@@ -14,6 +14,7 @@ import { addNewPrice } from "../../common/priceCard/queries";
 import { fetchIntegrationSettings } from "../../admin/functions/queries";
 import NameSuggestion from "../../dokuly_components/nameSuggestion/nameSuggestion";
 import PartPeek from "../../common/partPeek";
+import QuestionToolTip from "../../dokuly_components/questionToolTip";
 
 /**
  * # Button with form to create a new part.
@@ -1111,7 +1112,17 @@ const PartNewForm = (props) => {
       ) : (
         <div style={{ height: "3rem", minHeight: "3rem", maxHeight: "5rem" }} />
       )}
-      <FormField label="Datasheet link">
+      <FormField 
+        label={
+          <>
+            Datasheet link{" "}
+            <QuestionToolTip 
+              optionalHelpText="A URL to a web-hosted datasheet. The file from this URL will be automatically uploaded to the files table." 
+              placement="right" 
+            />
+          </>
+        }
+      >
         <input
           className="form-control"
           type="text"
@@ -1120,7 +1131,6 @@ const PartNewForm = (props) => {
             setDatasheet(e.target.value);
           }}
           value={datasheet || ""}
-          title="A URL to a web-hosted datasheet."
         />
       </FormField>
       <ExternalPartNumberFormGroup
