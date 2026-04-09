@@ -274,12 +274,12 @@ export const DocumentFilesTable = (props) => {
             className="btn btn-sm dokuly-btn-primary"
             style={{ fontSize: "0.8rem", fontWeight: 600, padding: "3px 14px", whiteSpace: "nowrap" }}
             onClick={() => openOnlyOfficeEditor(fileId)}
-            title="Open in document editor"
+            title={revisionLocked ? "View a readonly version" : "Open in document editor"}
           >
-            Edit
+            {revisionLocked ? "View" : "Edit"}
           </button>
         )}
-        {STEP_EXTENSIONS.includes(ext) && row.type === "GENERIC" && (
+        {STEP_EXTENSIONS.includes(ext) && row.type === "GENERIC" && !revisionLocked && (
           <button
             type="button"
             className="btn btn-sm dokuly-btn-primary"

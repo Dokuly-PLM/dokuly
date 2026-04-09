@@ -8,11 +8,13 @@ import SubmitButton from "../../dokuly_components/submitButton";
 import { usePartTypes } from "../partTypes/usePartTypes";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
+import { FormField } from "../../dokuly_components/dokulyForm/formComponents";
 import { newPart, searchPartsByMpn, searchNexarParts, checkNexarConfig, createPricesFromNexar, searchDigikeyParts, getDigikeyProductDetails, checkDigikeyConfig } from "../functions/queries";
 import { addNewPrice } from "../../common/priceCard/queries";
 import { fetchIntegrationSettings } from "../../admin/functions/queries";
 import NameSuggestion from "../../dokuly_components/nameSuggestion/nameSuggestion";
 import PartPeek from "../../common/partPeek";
+import QuestionToolTip from "../../dokuly_components/questionToolTip";
 
 /**
  * # Button with form to create a new part.
@@ -709,8 +711,7 @@ const PartNewForm = (props) => {
 
   const internalOptions = (
     <div>
-      <div className="form-group">
-        <label>Description</label>
+      <FormField label="Description">
         <textarea
           className="form-control"
           type="text"
@@ -724,15 +725,14 @@ const PartNewForm = (props) => {
           }}
           value={description || ""}
         />
-      </div>
+      </FormField>
 
       <ExternalPartNumberFormGroup
         externalPartNumber={externalPartNumber}
         setExternalPartNumber={setExternalPartNumber}
       />
 
-      <div className="form-group">
-        <label htmlFor="project">Project *</label>
+      <FormField label="Project" required>
         <select
           className="form-control"
           name="project"
@@ -752,11 +752,10 @@ const PartNewForm = (props) => {
                   );
                 })}
         </select>
-      </div>
+      </FormField>
 
       {partType?.name === "Software" ? (
-        <div className="form-group">
-          <label>Git link</label>
+        <FormField label="Git link">
           <input
             className="form-control"
             type="text"
@@ -766,7 +765,7 @@ const PartNewForm = (props) => {
             }}
             value={git_link}
           />
-        </div>
+        </FormField>
       ) : (
         ""
       )}
@@ -776,8 +775,7 @@ const PartNewForm = (props) => {
   const externalOptions = (
     <div>
       <div style={{ position: "relative" }}>
-        <div className="form-group mb-2">
-          <label>Manufacturer Part Number</label>
+        <FormField label="Manufacturer Part Number">
           <Row>
             <Col>
               <div className={(isNexarConfigured || isDigikeyConfigured) ? "input-group" : ""}>
@@ -836,7 +834,7 @@ const PartNewForm = (props) => {
               </div>
             </Col>
           </Row>
-        </div>
+        </FormField>
 
         {mpnConflicts.length > 0 && (
           <div className="alert alert-warning" style={{ fontSize: "14px", padding: "10px", marginTop: "10px" }}>
@@ -1100,8 +1098,7 @@ const PartNewForm = (props) => {
       </div>
 
       {!showSuggestions ? (
-        <div className="form-group">
-          <label>Manufacturer</label>
+        <FormField label="Manufacturer">
           <input
             className="form-control"
             type="text"
@@ -1111,12 +1108,21 @@ const PartNewForm = (props) => {
             }}
             value={manufacturer || ""}
           />
-        </div>
+        </FormField>
       ) : (
         <div style={{ height: "3rem", minHeight: "3rem", maxHeight: "5rem" }} />
       )}
-      <div className="form-group">
-        <label>Datasheet link</label>
+      <FormField 
+        label={
+          <>
+            Datasheet link{" "}
+            <QuestionToolTip 
+              optionalHelpText="A URL to a web-hosted datasheet. The file from this URL will be automatically uploaded to the files table." 
+              placement="right" 
+            />
+          </>
+        }
+      >
         <input
           className="form-control"
           type="text"
@@ -1125,10 +1131,8 @@ const PartNewForm = (props) => {
             setDatasheet(e.target.value);
           }}
           value={datasheet || ""}
-          title="A URL to a web-hosted datasheet."
         />
-      </div>
-
+      </FormField>
       <ExternalPartNumberFormGroup
         externalPartNumber={externalPartNumber}
         setExternalPartNumber={setExternalPartNumber}
@@ -1172,8 +1176,7 @@ const PartNewForm = (props) => {
         onHide={() => setShowModal(false)}
         title="Create new part"
       >
-        <div className="form-group">
-          <label>Display name *</label>
+        <FormField label="Display name" required>
           <input
             className="form-control"
             type="text"
@@ -1190,10 +1193,9 @@ const PartNewForm = (props) => {
             onApply={setDisplayName}
             enabled={hasAiCredentials}
           />
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label>Part type *</label>
+        <FormField label="Part type" required>
           {partTypes.length === 0 || partTypes === undefined ? (
             <div style={{ border: "1px solid red", padding: "10px" }}>
               <p>No part types exist. Create a new part type.</p>
@@ -1231,7 +1233,7 @@ const PartNewForm = (props) => {
                 ))}
             </select>
           )}
-        </div>
+        </FormField>
 
         <div className="form-group">
           <div className="form-check form-switch">
@@ -1258,8 +1260,7 @@ const PartNewForm = (props) => {
           ? internalOptions
           : externalOptions}
 
-        <div className="form-group">
-          <label>Part unit</label>
+        <FormField label="Part unit">
           <input
             className="form-control"
             type="text"
@@ -1273,10 +1274,12 @@ const PartNewForm = (props) => {
             }}
             value={unit || ""}
           />
-        </div>
-        <div className="form-group">
+        </FormField>
+        
+        <div className="mt-3">
           <SubmitButton
             type="submit"
+            className="btn dokuly-bg-primary w-100"
             disabled={
               partType === null ||
               partType === undefined ||
