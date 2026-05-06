@@ -12,8 +12,10 @@ import base64
 import threading
 from io import BytesIO
 from django.core.files.storage import default_storage
+from django.db.models import Case, IntegerField, When
 from profiles.models import Profile
 from organizations.models import IntegrationSettings
+from projects.issuesModel import Issues
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +145,43 @@ def get_image_as_base64(image_obj):
         return None
 
 
-def _format_odoo_internal_description(description, revision_notes):
+def get_open_issue_lines_for_odoo_item(item, item_type):
+    """
+    Return plain-text lines for open issues linked to this item (M2M), for Odoo description.
+
+    Open means closed_at is null. Ordered by criticality (Critical, High, Low, other),
+    then title, then id. Only issues directly linked to the pushed row are included.
+    """
+    if item_type == 'parts':
+        qs = Issues.objects.filter(parts=item, closed_at__isnull=True)
+    elif item_type == 'pcbas':
+        qs = Issues.objects.filter(pcbas=item, closed_at__isnull=True)
+    elif item_type == 'assemblies':
+        qs = Issues.objects.filter(assemblies=item, closed_at__isnull=True)
+    else:
+        return []
+
+    severity_order = Case(
+        When(criticality='Critical', then=0),
+        When(criticality='High', then=1),
+        When(criticality='Low', then=2),
+        default=3,
+        output_field=IntegerField(),
+    )
+    qs = qs.order_by(severity_order, 'title', 'id')
+
+    lines = []
+    for issue in qs:
+        crit = (issue.criticality or "").strip()
+        title = (issue.title or "").strip() or "(no title)"
+        if crit:
+            lines.append(f"- [{crit}] {title}")
+        else:
+            lines.append(f"- {title}")
+    return lines
+
+
+def _format_odoo_internal_description(description, revision_notes, open_issue_lines=None):
     """
     Build HTML for Odoo product.template description (fields.Html in Odoo v19).
 
@@ -151,12 +189,26 @@ def _format_odoo_internal_description(description, revision_notes):
     from external RPC are often stripped or normalized so the stored text collapses
     to a single line. Wrapping escaped plain text in <pre> preserves line breaks and
     survives typical sanitizer allowlists (lxml/html allow pre).
+
+    Optionally appends an Open Issues section (open_issue_lines: list of preformatted lines).
     """
     desc = (description or "").strip()
     rev = (revision_notes or "").strip()
-    if not desc and not rev:
+    issue_lines = open_issue_lines or []
+    issues_block = ""
+    if issue_lines:
+        issues_block = "Open Issues:\n" + "\n".join(issue_lines)
+
+    if not desc and not rev and not issues_block:
         return ""
-    body = f"Description:\n{desc}\n\nRevision Notes:\n{rev}"
+
+    parts = [
+        f"Description:\n{desc}",
+        f"Revision Notes:\n{rev}",
+    ]
+    if issues_block:
+        parts.append(issues_block)
+    body = "\n\n".join(parts)
     return f"<pre>{html.escape(body, quote=False)}</pre>"
 
 
@@ -738,6 +790,8 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
 
         logger.info(f"Pushing product {item.full_part_number} to Odoo with type: {product_type} (mapped from: {raw_product_type})")
 
+        open_issue_lines = get_open_issue_lines_for_odoo_item(item, item_type)
+
         # Prepare product data (values applied on product.template on create/update)
         product_data = {
             'name': item.display_name or f"{item.full_part_number}",
@@ -745,6 +799,7 @@ def push_product_to_odoo(item, item_type, integration_settings, user, include_bo
             'description': _format_odoo_internal_description(
                 item.description,
                 getattr(item, 'revision_notes', None),
+                open_issue_lines,
             ),
         }
 

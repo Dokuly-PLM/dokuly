@@ -54,6 +54,11 @@ const OdooSettings = ({
     { dokuly: "Display Name", description: "Written to product.template name in Odoo v19" },
     { dokuly: "Description", description: "Merged with Revision Notes into product.template description (internal/description field) in Odoo v19" },
     { dokuly: "Revision Notes", description: "Merged with Description into the same product.template description field in Odoo v19" },
+    {
+      dokuly: "Open Issues",
+      description:
+        "Open issues linked to the item (criticality and title), appended into the same product.template description field in Odoo v19",
+    },
     { dokuly: "Unit (e.g., pcs, kg, m)", description: "Automatically mapped to the corresponding Odoo Unit of Measure" },
     { dokuly: "Thumbnail Image", description: "Written to product.template image in Odoo v19" },
     { dokuly: "Manufacturer", description: "Mapped to Odoo custom field flyt_manufacturer (Parts only)" },
