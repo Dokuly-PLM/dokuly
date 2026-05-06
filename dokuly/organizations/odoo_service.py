@@ -1062,6 +1062,10 @@ def _auto_push_on_release_sync(item_id, item_type, user_id, include_bom=False):
             logger.debug("Odoo auto-push on release is not enabled")
             return
 
+        if item_type == 'assemblies' and not integration_settings.odoo_auto_push_assemblies_on_release:
+            logger.debug("Odoo auto-push for assemblies on release is disabled")
+            return
+
         # Push to Odoo
         logger.info(f"Auto-pushing {item_type} {item.id} ({item.full_part_number}) to Odoo on release (background)")
         result = push_product_to_odoo(
@@ -1125,6 +1129,10 @@ def auto_push_on_release(item, item_type, user, include_bom=False):
 
         if not integration_settings.odoo_auto_push_on_release:
             logger.debug("Odoo auto-push on release is not enabled")
+            return None
+
+        if item_type == 'assemblies' and not integration_settings.odoo_auto_push_assemblies_on_release:
+            logger.debug("Odoo auto-push for assemblies on release is disabled")
             return None
 
         # Push to Odoo

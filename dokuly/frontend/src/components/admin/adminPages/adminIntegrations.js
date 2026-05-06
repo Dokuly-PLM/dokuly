@@ -39,6 +39,7 @@ const AdminIntegrations = ({ setRefresh }) => {
   const [odooApiKey, setOdooApiKey] = useState("");
   const [hasOdooCredentials, setHasOdooCredentials] = useState(false);
   const [odooAutoPush, setOdooAutoPush] = useState(false);
+  const [odooAutoPushAssemblies, setOdooAutoPushAssemblies] = useState(true);
   const [odooDefaultProductCategoryId, setOdooDefaultProductCategoryId] = useState(null);
   const [odooDefaultUomId, setOdooDefaultUomId] = useState(null);
   const [odooDefaultProductType, setOdooDefaultProductType] = useState("product");
@@ -208,6 +209,11 @@ const AdminIntegrations = ({ setRefresh }) => {
           setOdooApiKey(res.data.odoo_api_key || "");
           setHasOdooCredentials(res.data.has_odoo_credentials || false);
           setOdooAutoPush(res.data.odoo_auto_push_on_release || false);
+          setOdooAutoPushAssemblies(
+            res.data.odoo_auto_push_assemblies_on_release !== undefined
+              ? res.data.odoo_auto_push_assemblies_on_release
+              : true
+          );
           setOdooDefaultProductCategoryId(res.data.odoo_default_product_category_id || null);
           setOdooDefaultUomId(res.data.odoo_default_uom_id || null);
           setOdooDefaultProductType(res.data.odoo_default_product_type || "product");
@@ -311,6 +317,7 @@ const AdminIntegrations = ({ setRefresh }) => {
       odoo_username: odooUsername,
       odoo_api_key: odooApiKey,
       odoo_auto_push_on_release: odooAutoPush,
+      odoo_auto_push_assemblies_on_release: odooAutoPushAssemblies,
       odoo_default_product_category_id: odooDefaultProductCategoryId,
       odoo_default_uom_id: odooDefaultUomId,
       odoo_default_product_type: odooDefaultProductType,
@@ -647,6 +654,8 @@ const AdminIntegrations = ({ setRefresh }) => {
         hasOdooCredentials={hasOdooCredentials}
         odooAutoPush={odooAutoPush}
         setOdooAutoPush={setOdooAutoPush}
+        odooAutoPushAssemblies={odooAutoPushAssemblies}
+        setOdooAutoPushAssemblies={setOdooAutoPushAssemblies}
         odooDefaultProductCategoryId={odooDefaultProductCategoryId}
         setOdooDefaultProductCategoryId={setOdooDefaultProductCategoryId}
         odooDefaultUomId={odooDefaultUomId}
