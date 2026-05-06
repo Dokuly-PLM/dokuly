@@ -467,6 +467,10 @@ class IntegrationSettings(models.Model):
         default=False,
         help_text="Automatically push to Odoo when items are released"
     )
+    odoo_auto_push_assemblies_on_release = models.BooleanField(
+        default=True,
+        help_text="When auto-push on release is enabled, include assemblies (parts and PCBAs still push when this is off)"
+    )
     odoo_default_product_category_id = models.IntegerField(
         blank=True,
         null=True,

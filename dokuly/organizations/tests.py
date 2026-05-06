@@ -1,8 +1,15 @@
 from types import SimpleNamespace
 
 from django.test import TestCase
+from django.utils import timezone
 
-from organizations.odoo_service import _format_odoo_internal_description, create_or_update_odoo_product
+from organizations.odoo_service import (
+    _format_odoo_internal_description,
+    create_or_update_odoo_product,
+    get_open_issue_lines_for_odoo_item,
+)
+from parts.models import Part
+from projects.issuesModel import Issues
 
 
 class _MockOdooModels:
@@ -112,3 +119,67 @@ class OdooInternalDescriptionFormatTests(TestCase):
             out,
             "<pre>Description:\n&lt;b&gt;x&lt;/b&gt;\n\nRevision Notes:\n&amp;</pre>",
         )
+
+    def test_issues_only_non_empty(self):
+        out = _format_odoo_internal_description("", "", ["- [High] Fix leak"])
+        self.assertEqual(
+            out,
+            "<pre>Description:\n\n\nRevision Notes:\n\n\nOpen Issues:\n- [High] Fix leak</pre>",
+        )
+
+    def test_desc_notes_and_issues(self):
+        out = _format_odoo_internal_description("D", "R", ["- [Low] A"])
+        self.assertEqual(
+            out,
+            "<pre>Description:\nD\n\nRevision Notes:\nR\n\nOpen Issues:\n- [Low] A</pre>",
+        )
+
+    def test_empty_issue_list_omits_open_issues_section(self):
+        out = _format_odoo_internal_description("D", "R", [])
+        self.assertEqual(
+            out,
+            "<pre>Description:\nD\n\nRevision Notes:\nR</pre>",
+        )
+
+    def test_all_empty_including_issues_returns_empty(self):
+        self.assertEqual(_format_odoo_internal_description("", "", []), "")
+        self.assertEqual(_format_odoo_internal_description(None, None, None), "")
+
+
+class GetOpenIssueLinesForOdooItemTests(TestCase):
+    def test_orders_by_criticality_and_excludes_closed(self):
+        part = Part.objects.create(part_number=9001, full_part_number="PRT-9001-A")
+
+        low = Issues.objects.create(title="Low first alphabetically", criticality="Low")
+        low.parts.add(part)
+
+        critical = Issues.objects.create(title="Z critical", criticality="Critical")
+        critical.parts.add(part)
+
+        high = Issues.objects.create(title="Mid", criticality="High")
+        high.parts.add(part)
+
+        closed = Issues.objects.create(title="Closed", criticality="Critical")
+        closed.parts.add(part)
+        closed.closed_at = timezone.now()
+        closed.save(update_fields=["closed_at"])
+
+        lines = get_open_issue_lines_for_odoo_item(part, "parts")
+        self.assertEqual(
+            lines,
+            [
+                "- [Critical] Z critical",
+                "- [High] Mid",
+                "- [Low] Low first alphabetically",
+            ],
+        )
+
+    def test_no_title_uses_placeholder_and_blank_criticality(self):
+        part = Part.objects.create(part_number=9002, full_part_number="PRT-9002-A")
+        i1 = Issues.objects.create(title="", criticality="")
+        i1.parts.add(part)
+        i2 = Issues.objects.create(title="  ", criticality="High")
+        i2.parts.add(part)
+
+        lines = get_open_issue_lines_for_odoo_item(part, "parts")
+        self.assertEqual(lines, ["- [High] (no title)", "- (no title)"])

@@ -18,6 +18,8 @@ const OdooSettings = ({
   hasOdooCredentials,
   odooAutoPush,
   setOdooAutoPush,
+  odooAutoPushAssemblies,
+  setOdooAutoPushAssemblies,
   odooDefaultProductCategoryId,
   setOdooDefaultProductCategoryId,
   odooDefaultUomId,
@@ -54,6 +56,11 @@ const OdooSettings = ({
     { dokuly: "Display Name", description: "Written to product.template name in Odoo v19" },
     { dokuly: "Description", description: "Merged with Revision Notes into product.template description (internal/description field) in Odoo v19" },
     { dokuly: "Revision Notes", description: "Merged with Description into the same product.template description field in Odoo v19" },
+    {
+      dokuly: "Open Issues",
+      description:
+        "Open issues linked to the item (criticality and title), appended into the same product.template description field in Odoo v19",
+    },
     { dokuly: "Unit (e.g., pcs, kg, m)", description: "Automatically mapped to the corresponding Odoo Unit of Measure" },
     { dokuly: "Thumbnail Image", description: "Written to product.template image in Odoo v19" },
     { dokuly: "Manufacturer", description: "Mapped to Odoo custom field flyt_manufacturer (Parts only)" },
@@ -66,7 +73,7 @@ const OdooSettings = ({
       <div className="p-3">
         <h5>Integration Status</h5>
         <p className="text-muted">
-          Enable integration with Odoo v19 to automatically sync products when parts, PCBAs, and assemblies are released.
+          Enable integration with Odoo v19 to automatically sync products when parts, PCBAs, and (optionally) assemblies are released.
         </p>
         
         {loading ? (
@@ -195,8 +202,22 @@ const OdooSettings = ({
                 disabled={!odooEnabled}
               />
               <small className="text-muted d-block mt-1">
-                When enabled, parts, PCBAs, and assemblies will automatically be pushed to Odoo when released.
+                When enabled, released parts and PCBAs are pushed automatically. Assemblies can be included or excluded below.
                 You can also manually push items using the "Push to Odoo" button on each item's page.
+              </small>
+            </div>
+
+            <div className="mt-3 ms-3 ps-2 border-start">
+              <Form.Check
+                type="switch"
+                id="odoo-auto-push-assemblies-switch"
+                label="Include assemblies in automatic push on release"
+                checked={odooAutoPushAssemblies}
+                onChange={(e) => setOdooAutoPushAssemblies(e.target.checked)}
+                disabled={!odooEnabled || !odooAutoPush}
+              />
+              <small className="text-muted d-block mt-1">
+                Turn off to skip assemblies on release while still auto-pushing parts and PCBAs.
               </small>
             </div>
 

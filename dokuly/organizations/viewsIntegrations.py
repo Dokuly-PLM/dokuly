@@ -99,6 +99,7 @@ def get_integration_settings(request):
             "odoo_username": integration_settings.odoo_username or "",
             "odoo_api_key": "***" if integration_settings.odoo_api_key else "",
             "odoo_auto_push_on_release": integration_settings.odoo_auto_push_on_release,
+            "odoo_auto_push_assemblies_on_release": integration_settings.odoo_auto_push_assemblies_on_release,
             "odoo_default_product_category_id": integration_settings.odoo_default_product_category_id,
             "odoo_default_uom_id": integration_settings.odoo_default_uom_id,
             "odoo_default_product_type": integration_settings.odoo_default_product_type or "consu",
@@ -272,7 +273,12 @@ def update_integration_settings(request):
         
         if "odoo_auto_push_on_release" in data:
             integration_settings.odoo_auto_push_on_release = bool(data["odoo_auto_push_on_release"])
-        
+
+        if "odoo_auto_push_assemblies_on_release" in data:
+            integration_settings.odoo_auto_push_assemblies_on_release = bool(
+                data["odoo_auto_push_assemblies_on_release"]
+            )
+
         if "odoo_default_product_category_id" in data:
             cat_id = data.get("odoo_default_product_category_id")
             integration_settings.odoo_default_product_category_id = cat_id if cat_id else None
@@ -368,6 +374,7 @@ def update_integration_settings(request):
             "odoo_username": integration_settings.odoo_username or "",
             "odoo_api_key": "***" if integration_settings.odoo_api_key else "",
             "odoo_auto_push_on_release": integration_settings.odoo_auto_push_on_release,
+            "odoo_auto_push_assemblies_on_release": integration_settings.odoo_auto_push_assemblies_on_release,
             "odoo_default_product_category_id": integration_settings.odoo_default_product_category_id,
             "odoo_default_uom_id": integration_settings.odoo_default_uom_id,
             "odoo_default_product_type": integration_settings.odoo_default_product_type or "consu",
