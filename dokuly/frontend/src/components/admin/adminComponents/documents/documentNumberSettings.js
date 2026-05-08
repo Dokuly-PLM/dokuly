@@ -43,6 +43,7 @@ const DocumentNumberSettings = ({ org, setRefresh }) => {
           template: fullDocumentNumberTemplate,
           use_number_revisions: useNumberRevisions,
           start_major_revision_at_one: revisionStartAtOne,
+          revision_format: revisionFormat,
         });
         
         if (response.status === 200) {

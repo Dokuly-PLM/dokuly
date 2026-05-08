@@ -130,11 +130,13 @@ def build_full_part_number(
         template = org.full_part_number_template
         use_number_revisions = org.use_number_revisions
         start_at_one = org.start_major_revision_at_one
+        revision_format = org.revision_format
     except Organization.DoesNotExist:
         # Fallback to defaults
         template = "<prefix><part_number><major_revision>"
         use_number_revisions = False
         start_at_one = False
+        revision_format = "major-only"
     
     return build_full_part_number_from_template(
         template=template,
@@ -146,6 +148,7 @@ def build_full_part_number(
         start_at_one=start_at_one,
         project_number=project_number,
         created_at=created_at,
+        revision_format=revision_format,
     )
 
 
@@ -157,6 +160,7 @@ def build_formatted_revision(
     revision_count_minor: int,
     project_number: Optional[str] = None,
     created_at: Optional[object] = None,
+    revision_format: Optional[str] = None,
 ) -> str:
     """
     Build a full part number using organization settings and template.
@@ -192,11 +196,14 @@ def build_formatted_revision(
         template = org.formatted_revision_template
         use_number_revisions = org.use_number_revisions
         start_at_one = org.start_major_revision_at_one
+        # Caller may override revision_format (e.g. documents pass document_revision_format)
+        effective_revision_format = revision_format if revision_format is not None else org.revision_format
     except Organization.DoesNotExist:
         # Fallback to defaults
         template = "<major_revision>"
         use_number_revisions = False
         start_at_one = False
+        effective_revision_format = revision_format if revision_format is not None else "major-only"
     
     return build_full_part_number_from_template(
         template=template,
@@ -208,6 +215,7 @@ def build_formatted_revision(
         start_at_one=start_at_one,
         project_number=project_number,
         created_at=created_at,
+        revision_format=effective_revision_format,
     )
 
 
@@ -221,6 +229,7 @@ def build_full_part_number_from_template(
     start_at_one: bool = False,
     project_number: Optional[str] = None,
     created_at: Optional[object] = None,
+    revision_format: str = "major-only",
 ) -> str:
     """
     Build a full part number from a template and revision counts.
@@ -275,11 +284,17 @@ def build_full_part_number_from_template(
             # If created_at is not a datetime object or is invalid, use empty strings
             pass
     
+    # Build the combined <revision> value based on revision_format
+    if revision_format == "major-minor":
+        revision_combined = f"{major_formatted}-{minor_formatted}"
+    else:
+        revision_combined = major_formatted
+
     # Replace template variables
     result = template
     result = result.replace("<prefix>", prefix_str)
     result = result.replace("<part_number>", part_number_str)
-    result = result.replace("<revision>", major_formatted)
+    result = result.replace("<revision>", revision_combined)
     result = result.replace("<major_revision>", major_formatted)
     result = result.replace("<minor_revision>", minor_formatted)
     result = result.replace("<project_number>", project_number_str)
@@ -660,11 +675,13 @@ def build_full_document_number(
         # Use document-specific revision settings
         use_number_revisions = org.document_use_number_revisions
         start_at_one = org.document_start_major_revision_at_one
+        revision_format = org.document_revision_format
     except Organization.DoesNotExist:
         # Fallback to defaults
         template = "<prefix><project_number>-<document_number><revision>"
         use_number_revisions = False
         start_at_one = False
+        revision_format = "major-only"
     
     return build_full_document_number_from_template(
         template=template,
@@ -677,6 +694,7 @@ def build_full_document_number(
         project_number=project_number,
         part_number=part_number,
         created_at=created_at,
+        revision_format=revision_format,
     )
 
 
@@ -691,6 +709,7 @@ def build_full_document_number_from_template(
     project_number: Optional[str] = None,
     part_number: Optional[str] = None,
     created_at: Optional[object] = None,
+    revision_format: str = "major-only",
 ) -> str:
     """
     Build a full document number from a template and revision counts.
@@ -748,13 +767,19 @@ def build_full_document_number_from_template(
             # If created_at is not a datetime object or is invalid, use empty strings
             pass
     
+    # Build the combined <revision> value based on revision_format
+    if revision_format == "major-minor":
+        revision_combined = f"{major_formatted}-{minor_formatted}"
+    else:
+        revision_combined = major_formatted
+
     # Replace template variables
     result = template
     result = result.replace("<prefix>", prefix_str)
     result = result.replace("<document_number>", document_number_str)
     result = result.replace("<project_number>", project_number_str)
     result = result.replace("<part_number>", part_number_str)
-    result = result.replace("<revision>", major_formatted)
+    result = result.replace("<revision>", revision_combined)
     result = result.replace("<major_revision>", major_formatted)
     result = result.replace("<minor_revision>", minor_formatted)
     result = result.replace("<day>", day_str)
