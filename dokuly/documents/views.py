@@ -8,6 +8,7 @@ import tempfile
 import os
 import shutil
 
+from organizations.models import Organization as OrgModel
 from organizations.revision_utils import build_full_document_number
 from organizations.revision_utils import increment_revision_counters, build_formatted_revision
 from part_numbers.methods import get_next_part_number
@@ -231,6 +232,12 @@ def create_new_document(request, **kwargs):
 
         document.save()
 
+        try:
+            _org = OrgModel.objects.get(id=organization_id)
+            doc_revision_format = _org.document_revision_format
+        except Exception:
+            doc_revision_format = "major-only"
+
         document.formatted_revision = build_formatted_revision(
             organization_id=organization_id,
             prefix=prefix.prefix,
@@ -238,7 +245,8 @@ def create_new_document(request, **kwargs):
             revision_count_major=document.revision_count_major,
             revision_count_minor=document.revision_count_minor,
             project_number=document.project.full_project_number if document.project else None,
-            created_at=document.created_at
+            created_at=document.created_at,
+            revision_format=doc_revision_format,
         )
         
         # Use template-based document number generation
@@ -996,6 +1004,12 @@ def auto_new_revision(request, pk, **kwargs):
         prefix = Document_Prefix.objects.get(pk=old_revision.prefix_id) if old_revision.prefix_id and old_revision.prefix_id != -1 else None
         prefix_str = prefix.prefix if prefix else ""
 
+        try:
+            _org = OrgModel.objects.get(id=organization_id)
+            doc_revision_format = _org.document_revision_format
+        except Exception:
+            doc_revision_format = "major-only"
+
         new_revision.formatted_revision = build_formatted_revision(
             organization_id=organization_id,
             prefix=prefix_str,
@@ -1003,7 +1017,8 @@ def auto_new_revision(request, pk, **kwargs):
             revision_count_major=new_revision.revision_count_major,
             revision_count_minor=new_revision.revision_count_minor,
             project_number=new_revision.project.full_project_number if new_revision.project else None,
-            created_at=new_revision.created_at
+            created_at=new_revision.created_at,
+            revision_format=doc_revision_format,
         )
 
         # Use template-based document number generation

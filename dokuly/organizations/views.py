@@ -601,6 +601,7 @@ def preview_part_number_template(request):
         template = request.data.get('template', '<prefix><part_number><revision>')
         use_number_revisions = request.data.get('use_number_revisions', False)
         start_at_one = request.data.get('start_major_revision_at_one', False)
+        revision_format = request.data.get('revision_format', 'major-only')
         
         # Create sample datetime for date-based variables
         sample_date = datetime(2025, 1, 15, 10, 30, 0)  # Jan 15, 2025
@@ -621,6 +622,7 @@ def preview_part_number_template(request):
                 start_at_one=start_at_one,
                 project_number='PRJ001',
                 created_at=sample_date,
+                revision_format=revision_format,
             )
         })
         
@@ -637,6 +639,7 @@ def preview_part_number_template(request):
                 start_at_one=start_at_one,
                 project_number='PRJ042',
                 created_at=sample_date,
+                revision_format=revision_format,
             )
         })
         
@@ -653,6 +656,7 @@ def preview_part_number_template(request):
                 start_at_one=start_at_one,
                 project_number='PRJ100',
                 created_at=sample_date,
+                revision_format=revision_format,
             )
         })
         
@@ -708,6 +712,7 @@ def preview_formatted_revision_template(request):
                 revision_count_minor=0,
                 use_number_revisions=use_number_revisions,
                 start_at_one=start_at_one,
+                revision_format=revision_format,
             )
         })
         
@@ -723,6 +728,7 @@ def preview_formatted_revision_template(request):
                     revision_count_minor=1,
                     use_number_revisions=use_number_revisions,
                     start_at_one=start_at_one,
+                    revision_format=revision_format,
                 )
             })
         
@@ -737,6 +743,7 @@ def preview_formatted_revision_template(request):
                 revision_count_minor=0,
                 use_number_revisions=use_number_revisions,
                 start_at_one=start_at_one,
+                revision_format=revision_format,
             )
         })
         
@@ -777,6 +784,7 @@ def preview_document_number_template(request):
         template = request.data.get('template', '<prefix><project_number>-<document_number><revision>')
         use_number_revisions = request.data.get('use_number_revisions', False)
         start_at_one = request.data.get('start_major_revision_at_one', False)
+        revision_format = request.data.get('revision_format', 'major-only')
         
         # Create sample datetime for date-based variables
         sample_date = datetime(2025, 1, 15, 10, 30, 0)  # Jan 15, 2025
@@ -798,6 +806,7 @@ def preview_document_number_template(request):
                 project_number='1001',
                 part_number='10001',
                 created_at=sample_date,
+                revision_format=revision_format,
             )
         })
         
@@ -815,6 +824,7 @@ def preview_document_number_template(request):
                 project_number='2042',
                 part_number='20045',
                 created_at=sample_date,
+                revision_format=revision_format,
             )
         })
         
@@ -832,6 +842,7 @@ def preview_document_number_template(request):
                 project_number='3100',
                 part_number='30012',
                 created_at=sample_date,
+                revision_format=revision_format,
             )
         })
         
