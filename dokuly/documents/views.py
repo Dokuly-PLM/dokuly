@@ -1034,6 +1034,7 @@ def auto_new_revision(request, pk, **kwargs):
         except Exception:
             doc_revision_format = "major-only"
 
+        # Use template-based revision generation
         new_revision.formatted_revision = build_formatted_revision(
             organization_id=organization_id,
             prefix=prefix_str,
@@ -1057,6 +1058,47 @@ def auto_new_revision(request, pk, **kwargs):
             created_at=new_revision.created_at
         )
         new_revision.save()
+
+        # Copy document source files from the previous revision to the new revision.
+        source_files = old_revision.files.filter(archived=0)
+        for source_file in source_files:
+            if not source_file.file:
+                continue
+
+            source_name = os.path.basename(source_file.file.name)
+            _, source_extension = os.path.splitext(source_name)
+            source_extension = source_extension or ""
+
+            document_file_name = (
+                f"{new_revision.full_doc_number} - {new_revision.title}{source_extension}"
+                .replace("/", " ")
+            )
+            document_display_name = (
+                f"{new_revision.full_doc_number} - {new_revision.title}"
+                .replace("/", " ")
+            )
+
+            copied_file = File(
+                display_name=document_display_name,
+                project=new_revision.project,
+                file_category=source_file.file_category,
+            )
+            copied_file.save()
+
+            with source_file.file.open("rb") as src:
+                source_bytes = src.read()
+
+            if not source_bytes:
+                delete_file_with_cleanup(copied_file)
+                continue
+
+            save_file_content(
+                copied_file,
+                document_file_name[:220],
+                ContentFile(source_bytes, name=document_file_name[:220]),
+            )
+
+            new_revision.files.add(copied_file)
 
         notify_on_new_revision(new_revision=new_revision, app_name="documents", user=request.user)
         
