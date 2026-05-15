@@ -157,6 +157,9 @@ class PartSerializerNoAlternate(serializers.ModelSerializer):
             "price",
             "external_part_number",
             "organization",
+            "is_rohs_compliant",
+            "is_reach_compliant",
+            "country_of_origin",
         ]
 
     def get_price(self, obj):

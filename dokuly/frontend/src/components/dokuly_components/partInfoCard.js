@@ -61,6 +61,19 @@ const SectionLabel = ({ text }) => (
   <div className="info-card__section-label">{text}</div>
 );
 
+const dangerPillStyle = {
+  display: "inline-block",
+  fontSize: "0.6875rem",
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+  lineHeight: 1.5,
+  padding: "2px 10px",
+  borderRadius: "4px",
+  background: "#FEE2E2",
+  color: "#991B1B",
+};
+
 /**
  * Component for displaying common part information (pcba/asm/document).
  */
@@ -149,10 +162,14 @@ const PartInformationCard = ({
 
   const hasDetails =
     Object.values(additional_fields).some((v) => v !== "" && v != null) ||
-    item?.country_of_origin ||
     (datasheet_url && datasheet_url !== "") ||
     (git_link && git_link !== "") ||
     (app === "documents" && protectionLevel);
+
+  const hasCompliance =
+    item?.is_rohs_compliant !== undefined && item?.is_rohs_compliant !== null ||
+    item?.is_reach_compliant !== undefined && item?.is_reach_compliant !== null ||
+    Boolean(item?.country_of_origin);
 
   const hasPeople = created_by || quality_assurance;
 
@@ -225,19 +242,6 @@ const PartInformationCard = ({
                 </InfoField>
               ))}
 
-            {item?.country_of_origin && (
-              <InfoField label="Country of Origin">
-                <span className="d-inline-flex align-items-center gap-1">
-                  <ReactCountryFlag
-                    countryCode={item.country_of_origin}
-                    svg
-                    style={{ marginRight: "0.375rem" }}
-                  />
-                  {getName(item.country_of_origin) ?? item.country_of_origin}
-                </span>
-              </InfoField>
-            )}
-
             {app === "documents" && protectionLevel && (
               <InfoField label="Protection Level">
                 <span title={protectionLevel.description || ""}>
@@ -277,6 +281,51 @@ const PartInformationCard = ({
                   />
                   Open repository
                 </a>
+              </InfoField>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Compliance section */}
+      {hasCompliance && (
+        <>
+          <SectionDivider />
+          <div className="info-card__section">
+            <SectionLabel text="Compliance" />
+
+            {(item?.is_rohs_compliant !== undefined && item?.is_rohs_compliant !== null) && (
+              <InfoField label="RoHS">
+                {item.is_rohs_compliant ? (
+                  <span className="d-inline-flex align-items-center gap-1">
+                    Compliant
+                  </span>
+                ) : (
+                  <span style={dangerPillStyle}>Not Compliant</span>
+                )}
+              </InfoField>
+            )}
+
+            {(item?.is_reach_compliant !== undefined && item?.is_reach_compliant !== null) && (
+              <InfoField label="REACH">
+                {item.is_reach_compliant ? (
+                  "Unaffected"
+                ) : (
+                  <span style={dangerPillStyle}>Affected</span>
+                )}
+              </InfoField>
+            )}
+
+            {item?.country_of_origin && (
+              <InfoField label="Country of Origin">
+                <span className="d-inline-flex align-items-center gap-1">
+                  <ReactCountryFlag
+                    countryCode={item.country_of_origin}
+                    svg
+                    style={{ marginRight: "0.375rem" }}
+                  />
+                  {getName(item.country_of_origin) ?? item.country_of_origin}
+                </span>
               </InfoField>
             )}
           </div>
