@@ -1342,58 +1342,6 @@ def update_doc(request, pk, **kwargs):
             document.save()
 
             pdf_updated = False  # Track if we need to regenerate thumbnail
-            
-            # No upload in this form anymore.
-            # if "pdf_raw" in data:
-            #     file = request.FILES["pdf_raw"]
-                
-            #     # Delete old pdf_source file if it exists
-            #     if document.pdf_source:
-            #         try:
-            #             document.pdf_source.file.delete()
-            #             document.pdf_source.delete()
-            #         except Exception as e:
-            #             pass
-
-            #     # Create new File object
-            #     cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
-            #     formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
-                
-            #     new_file = File()
-            #     new_file.display_name = f"{document.title or 'Document'} PDF Source"
-            #     new_file.project = document.project
-            #     new_file.file.save(formatted_file_name, file)
-            #     new_file.save()
-                
-            #     document.pdf_source = new_file
-            #     document.save()
-            #     pdf_updated = True
-                    
-            #     # Log file upload
-            #     changes.append({"field": "pdf_raw", "old": None, "new": cleaned_file_name})
-
-            # DEPRECATED Field
-            # if "document_file" in data:
-            #     file = request.FILES["document_file"]
-            #     if not fileViews.check_file_sizes_vs_limit(
-            #         fileViews.get_organization_by_user_id(request), file.size, request
-            #     ):
-            #         return Response("Storage full!", status=status.HTTP_409_CONFLICT)
-
-            #     try:
-            #         # Delete the old document_file before saving the new one
-            #         if document.document_file:
-            #             document.document_file.delete()
-            #     except Exception as e:
-            #         pass
-
-            #     cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
-            #     formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
-            #     document.document_file.save(f"{uuid.uuid4().hex}/{formatted_file_name[:220]}", file)
-            #     pdf_updated = True
-                
-            #     # Log file upload
-            #     changes.append({"field": "document_file", "old": None, "new": cleaned_file_name})
 
             # Process PDF (adds front page, revision table, etc.)
             # and regenerate thumbnail if needed
