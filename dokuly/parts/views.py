@@ -112,6 +112,11 @@ def edit_release_state(request):
             document.release_state = data["release_state"]
             document.save()
             return Response(status=status.HTTP_200_OK)
+        elif data["app"] == "eco":
+            eco = Eco.objects.get(id=id)
+            eco.release_state = data["release_state"]
+            eco.save()
+            return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -127,7 +132,7 @@ def edit_release_state(request):
 @permission_classes([IsAuthenticated])
 def search_release_items(request):
     """Backend search for the Release Management table.
-    Searches across parts, pcbas, assemblies, and documents.
+    Searches across parts, pcbas, assemblies, documents, and ECOs.
     Supports pagination and text search on part number and display name.
     """
     permission, response = check_user_auth_and_app_permission(request, "parts")
@@ -218,6 +223,24 @@ def search_release_items(request):
             'release_state': d['release_state'] or '',
             'thumbnail': d['thumbnail'],
             'app': 'documents',
+        })
+
+    # ECOs
+    ecos_qs = Eco.objects.all()
+    if search:
+        ecos_qs = ecos_qs.filter(
+            Q(display_name__icontains=search)
+        )
+    for e in ecos_qs.values(
+        'id', 'display_name', 'release_state'
+    ):
+        results.append({
+            'id': e['id'],
+            'full_part_number': e['display_name'] or '',
+            'display_name': e['display_name'] or '',
+            'release_state': e['release_state'] or '',
+            'thumbnail': None,
+            'app': 'eco',
         })
 
     # Sort by part number
