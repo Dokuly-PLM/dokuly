@@ -480,7 +480,8 @@ def update_user_profile(request, userId):
         user = request.user
         if user == None:
             return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
-        check = check_permissions_ownership(user, userId)
+        target_user = User.objects.get(id=userId)
+        check = check_permissions_ownership(user, target_user)
         if not check:  # Check permissions
             return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
         data = request.data
@@ -542,6 +543,8 @@ def update_user_profile(request, userId):
         # Add the new profile to the list
         serializer = ProfileSerializer(res, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response("User not found", status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response(f"update_user_profile failed: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
