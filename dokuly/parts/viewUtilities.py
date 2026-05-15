@@ -239,6 +239,7 @@ def download_datasheet_and_attach(part, datasheet_url, user=None):
             new_datasheet = File(
                 display_name=f"Datasheet_{part.full_part_number}{ext}",
                 active=1,
+                file_category="other",
                 project=part.project if part.project else None
             )
             new_datasheet.save()
