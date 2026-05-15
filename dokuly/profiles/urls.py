@@ -18,6 +18,7 @@ urlpatterns = [
     path('api/profiles/sendResetPassMail/', views.send_reset_pass_mail),
     path('api/profiles/checkToken/', views.check_token),
     path('api/profiles/resetPass/<int:userId>/', views.reset_password_by_mail),
+     path('api/profiles/changeOwnPassword/', views.change_own_password),
     path('api/profiles/admin/resetPassword/<int:userId>/', views.admin_reset_user_password),
     path('api/profiles/admin/reset2FA/<int:userId>/', views.admin_reset_user_2fa),
     path('api/profiles/checkEmail/', views.check_email_unique),

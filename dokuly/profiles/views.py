@@ -825,6 +825,31 @@ def admin_reset_user_password(request, userId):
 
 @api_view(('PUT',))
 @renderer_classes((JSONRenderer, ))
+@permission_classes([IsAuthenticated])
+def change_own_password(request):
+    """Authenticated endpoint for users to change their own password."""
+    try:
+        if not request.user or not request.user.is_authenticated:
+            return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+        data = request.data
+        if not data or 'password' not in data:
+            return Response("Password is required", status=status.HTTP_400_BAD_REQUEST)
+
+        password = data['password']
+        if len(password) < 8:
+            return Response("Password must be at least 8 characters", status=status.HTTP_400_BAD_REQUEST)
+
+        request.user.set_password(password)
+        request.user.save()
+
+        return Response("Password changed successfully", status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(f"change_own_password failed: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(('PUT',))
+@renderer_classes((JSONRenderer, ))
 def admin_reset_user_2fa(request, userId):
     """
     Admin-only endpoint to reset a user's 2FA settings.

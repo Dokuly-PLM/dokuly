@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { updateUserProfile, adminResetUserPassword } from "../../admin/functions/queries";
+import { updateUserProfile, changeOwnPassword } from "../../admin/functions/queries";
 import SubmitButton from "../../dokuly_components/submitButton";
 
 const EditUserProfile = (props) => {
@@ -73,22 +73,22 @@ const EditUserProfile = (props) => {
       return;
     }
 
-    adminResetUserPassword(props.user.user, newPassword)
+    changeOwnPassword(newPassword)
       .then((res) => {
         if (res.status === 200) {
-          toast.success("Password reset successfully");
+          toast.success("Password changed successfully");
           setNewPassword("");
           setConfirmPassword("");
           setShowPasswordReset(false);
         }
       })
       .catch((err) => {
-        if (err?.response?.status === 403) {
-          toast.error("Unable to reset password");
-        } else if (err?.response?.status === 404) {
-          toast.error("User not found");
+        if (err?.response?.status === 400) {
+          toast.error(err?.response?.data || "Invalid password");
+        } else if (err?.response?.status === 401) {
+          toast.error("Unauthorized");
         } else {
-          toast.error("Failed to reset password");
+          toast.error("Failed to change password");
         }
       });
   };

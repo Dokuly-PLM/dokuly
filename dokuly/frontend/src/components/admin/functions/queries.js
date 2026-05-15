@@ -307,6 +307,16 @@ export const adminResetUserPassword = (userId, password) => {
   return dataPromise;
 };
 
+export const changeOwnPassword = (password) => {
+  const promise = axios.put(
+    "api/profiles/changeOwnPassword/",
+    { password },
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
 /**
  * Admin-only function to reset a user's 2FA without requiring email.
  * Clears the mfa_hash and sets mfa_validated to false.
