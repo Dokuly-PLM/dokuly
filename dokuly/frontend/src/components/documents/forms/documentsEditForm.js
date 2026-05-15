@@ -197,6 +197,7 @@ const DocumentEditForm = (props) => {
 
               <label className="d-flex align-items-center mb-2" style={{ gap: "6px", fontSize: "0.8125rem", cursor: "pointer" }}>
                 <input
+                  className="dokuly-checkbox"
                   type="checkbox"
                   checked={front_page}
                   onChange={() => setFrontPage(!front_page)}
@@ -206,6 +207,7 @@ const DocumentEditForm = (props) => {
 
               <label className="d-flex align-items-center mb-2" style={{ gap: "6px", fontSize: "0.8125rem", cursor: "pointer" }}>
                 <input
+                  className="dokuly-checkbox"
                   type="checkbox"
                   checked={revision_table}
                   onChange={() => setRevisionTable(!revision_table)}

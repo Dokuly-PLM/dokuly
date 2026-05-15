@@ -480,7 +480,8 @@ def update_user_profile(request, userId):
         user = request.user
         if user == None:
             return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
-        check = check_permissions_ownership(user, userId)
+        target_user = User.objects.get(id=userId)
+        check = check_permissions_ownership(user, target_user)
         if not check:  # Check permissions
             return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
         data = request.data
@@ -542,6 +543,8 @@ def update_user_profile(request, userId):
         # Add the new profile to the list
         serializer = ProfileSerializer(res, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response("User not found", status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response(f"update_user_profile failed: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -821,6 +824,31 @@ def admin_reset_user_password(request, userId):
             
     except Exception as e:
         return Response(f"admin_reset_user_password failed: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(('PUT',))
+@renderer_classes((JSONRenderer, ))
+@permission_classes([IsAuthenticated])
+def change_own_password(request):
+    """Authenticated endpoint for users to change their own password."""
+    try:
+        if not request.user or not request.user.is_authenticated:
+            return Response("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+
+        data = request.data
+        if not data or 'password' not in data:
+            return Response("Password is required", status=status.HTTP_400_BAD_REQUEST)
+
+        password = data['password']
+        if len(password) < 8:
+            return Response("Password must be at least 8 characters", status=status.HTTP_400_BAD_REQUEST)
+
+        request.user.set_password(password)
+        request.user.save()
+
+        return Response("Password changed successfully", status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(f"change_own_password failed: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(('PUT',))

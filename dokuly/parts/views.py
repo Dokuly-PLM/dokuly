@@ -112,6 +112,11 @@ def edit_release_state(request):
             document.release_state = data["release_state"]
             document.save()
             return Response(status=status.HTTP_200_OK)
+        elif data["app"] == "eco":
+            eco = Eco.objects.get(id=id)
+            eco.release_state = data["release_state"]
+            eco.save()
+            return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -127,8 +132,14 @@ def edit_release_state(request):
 @permission_classes([IsAuthenticated])
 def search_release_items(request):
     """Backend search for the Release Management table.
-    Searches across parts, pcbas, assemblies, and documents.
+    Searches across parts, pcbas, assemblies, documents, and ECOs.
     Supports pagination and text search on part number and display name.
+    
+    Query parameters:
+    - search: Search term (string)
+    - page: Page number (default 1)
+    - page_size: Items per page (default 50)
+    - only_latest_revisions: If true, only search latest revisions (default false)
     """
     permission, response = check_user_auth_and_app_permission(request, "parts")
     if not permission:
@@ -137,13 +148,15 @@ def search_release_items(request):
     search = request.GET.get("search", "").strip()
     page = int(request.GET.get("page", 1))
     page_size = int(request.GET.get("page_size", 50))
+    only_latest_revisions = request.GET.get("only_latest_revisions", "false").lower() == "true"
 
     results = []
 
     # Parts
-    parts_qs = Part.objects.filter(
-        is_latest_revision=True
-    ).exclude(is_archived=True)
+    parts_qs = Part.objects.all()
+    if only_latest_revisions:
+        parts_qs = parts_qs.filter(is_latest_revision=True)
+    parts_qs = parts_qs.exclude(is_archived=True)
     if search:
         parts_qs = parts_qs.filter(
             Q(full_part_number__icontains=search) | Q(display_name__icontains=search)
@@ -161,9 +174,10 @@ def search_release_items(request):
         })
 
     # PCBAs
-    pcbas_qs = Pcba.objects.filter(
-        is_latest_revision=True
-    ).exclude(is_archived=True)
+    pcbas_qs = Pcba.objects.all()
+    if only_latest_revisions:
+        pcbas_qs = pcbas_qs.filter(is_latest_revision=True)
+    pcbas_qs = pcbas_qs.exclude(is_archived=True)
     if search:
         pcbas_qs = pcbas_qs.filter(
             Q(full_part_number__icontains=search) | Q(display_name__icontains=search)
@@ -181,9 +195,10 @@ def search_release_items(request):
         })
 
     # Assemblies
-    asms_qs = Assembly.objects.filter(
-        is_latest_revision=True
-    ).exclude(is_archived=True)
+    asms_qs = Assembly.objects.all()
+    if only_latest_revisions:
+        asms_qs = asms_qs.filter(is_latest_revision=True)
+    asms_qs = asms_qs.exclude(is_archived=True)
     if search:
         asms_qs = asms_qs.filter(
             Q(full_part_number__icontains=search) | Q(display_name__icontains=search)
@@ -201,9 +216,10 @@ def search_release_items(request):
         })
 
     # Documents
-    docs_qs = Document.objects.filter(
-        is_latest_revision=True
-    ).exclude(is_archived=True)
+    docs_qs = Document.objects.all()
+    if only_latest_revisions:
+        docs_qs = docs_qs.filter(is_latest_revision=True)
+    docs_qs = docs_qs.exclude(is_archived=True)
     if search:
         docs_qs = docs_qs.filter(
             Q(full_doc_number__icontains=search) | Q(title__icontains=search)
@@ -218,6 +234,24 @@ def search_release_items(request):
             'release_state': d['release_state'] or '',
             'thumbnail': d['thumbnail'],
             'app': 'documents',
+        })
+
+    # ECOs
+    ecos_qs = Eco.objects.all()
+    if search:
+        ecos_qs = ecos_qs.filter(
+            Q(display_name__icontains=search)
+        )
+    for e in ecos_qs.values(
+        'id', 'display_name', 'release_state'
+    ):
+        results.append({
+            'id': e['id'],
+            'full_part_number': e['display_name'] or '',
+            'display_name': e['display_name'] or '',
+            'release_state': e['release_state'] or '',
+            'thumbnail': None,
+            'app': 'eco',
         })
 
     # Sort by part number

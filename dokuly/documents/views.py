@@ -60,7 +60,7 @@ from profiles.views import (
 
 import files.views as fileViews
 from files.models import Image, File
-from files.fileUtilities import delete_image_with_cleanup, delete_file_with_cleanup
+from files.fileUtilities import delete_image_with_cleanup, delete_file_with_cleanup, save_file_content
 from .viewUtilities import (
     assemble_full_document_number,
     assemble_full_document_number_no_prefix_db_call,
@@ -270,17 +270,38 @@ def create_new_document(request, **kwargs):
 
             try:
                 template = Document.objects.get(id=data["template_id"])
-                template_extension = template.document_file.name.split(".")[-1]
-                document_file_name = (
-                    document.full_doc_number
-                    + "_-_"
-                    + document.title
-                    + "."
-                    + template_extension
-                )
-                with template.document_file.open() as file:
-                    document.document_file.save(
-                        document_file_name, file, save=True)
+
+                # Use the new generic files relation as template source.
+                template_source_file = template.files.filter(archived=0).order_by("-created_at").first()
+                if template_source_file and template_source_file.file:
+                    source_name = os.path.basename(template_source_file.file.name)
+                    _, template_extension = os.path.splitext(source_name)
+                    template_extension = template_extension or ""
+
+                    document_file_name = (
+                        f"{document.full_doc_number} - {document.title}{template_extension}"
+                        #.replace(" ", "_") # Well allow spaces
+                        .replace("/", " ")
+                    )
+                    document_display_name = (
+                        f"{document.full_doc_number} - {document.title}"
+                        #.replace(" ", "_") # Well allow spaces
+                        .replace("/", " ")
+                    )
+
+                    with template_source_file.file.open("rb") as src_file:
+                        new_file = File(
+                            display_name=document_display_name,
+                            project=document.project,
+                        )
+                        new_file.save()
+                        save_file_content(new_file, document_file_name[:220], ContentFile(src_file.read()))
+                        document.files.add(new_file)
+                else:
+                    return Response(
+                        "Template document has no supported source file",
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             except Document.DoesNotExist:
                 return Response(
                     "Template document does not exist", status=status.HTTP_201_CREATED
@@ -684,8 +705,11 @@ def fetch_document_file(request, documentId):
     if not permission:
         return response
     data = Document.objects.get(id=documentId)
-    file = data.document_file.file.open("rb")
-    return FileResponse(file, as_attachment=True, filename="Document File")
+    file_obj = data.files.filter(archived=0).order_by("-created_at").first()
+    if not file_obj or not file_obj.file:
+        return Response({"error": "No document source file found"}, status=status.HTTP_404_NOT_FOUND)
+
+    return FileResponse(file_obj.file.open("rb"), as_attachment=True, filename="Document File")
 
 
 @api_view(("GET",))
@@ -1010,6 +1034,7 @@ def auto_new_revision(request, pk, **kwargs):
         except Exception:
             doc_revision_format = "major-only"
 
+        # Use template-based revision generation
         new_revision.formatted_revision = build_formatted_revision(
             organization_id=organization_id,
             prefix=prefix_str,
@@ -1033,6 +1058,47 @@ def auto_new_revision(request, pk, **kwargs):
             created_at=new_revision.created_at
         )
         new_revision.save()
+
+        # Copy document source files from the previous revision to the new revision.
+        source_files = old_revision.files.filter(archived=0)
+        for source_file in source_files:
+            if not source_file.file:
+                continue
+
+            source_name = os.path.basename(source_file.file.name)
+            _, source_extension = os.path.splitext(source_name)
+            source_extension = source_extension or ""
+
+            document_file_name = (
+                f"{new_revision.full_doc_number} - {new_revision.title}{source_extension}"
+                .replace("/", " ")
+            )
+            document_display_name = (
+                f"{new_revision.full_doc_number} - {new_revision.title}"
+                .replace("/", " ")
+            )
+
+            copied_file = File(
+                display_name=document_display_name,
+                project=new_revision.project,
+                file_category=source_file.file_category,
+            )
+            copied_file.save()
+
+            with source_file.file.open("rb") as src:
+                source_bytes = src.read()
+
+            if not source_bytes:
+                delete_file_with_cleanup(copied_file)
+                continue
+
+            save_file_content(
+                copied_file,
+                document_file_name[:220],
+                ContentFile(source_bytes, name=document_file_name[:220]),
+            )
+
+            new_revision.files.add(copied_file)
 
         notify_on_new_revision(new_revision=new_revision, app_name="documents", user=request.user)
         
@@ -1342,58 +1408,6 @@ def update_doc(request, pk, **kwargs):
             document.save()
 
             pdf_updated = False  # Track if we need to regenerate thumbnail
-            
-            # No upload in this form anymore.
-            # if "pdf_raw" in data:
-            #     file = request.FILES["pdf_raw"]
-                
-            #     # Delete old pdf_source file if it exists
-            #     if document.pdf_source:
-            #         try:
-            #             document.pdf_source.file.delete()
-            #             document.pdf_source.delete()
-            #         except Exception as e:
-            #             pass
-
-            #     # Create new File object
-            #     cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
-            #     formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
-                
-            #     new_file = File()
-            #     new_file.display_name = f"{document.title or 'Document'} PDF Source"
-            #     new_file.project = document.project
-            #     new_file.file.save(formatted_file_name, file)
-            #     new_file.save()
-                
-            #     document.pdf_source = new_file
-            #     document.save()
-            #     pdf_updated = True
-                    
-            #     # Log file upload
-            #     changes.append({"field": "pdf_raw", "old": None, "new": cleaned_file_name})
-
-            # DEPRECATED Field
-            # if "document_file" in data:
-            #     file = request.FILES["document_file"]
-            #     if not fileViews.check_file_sizes_vs_limit(
-            #         fileViews.get_organization_by_user_id(request), file.size, request
-            #     ):
-            #         return Response("Storage full!", status=status.HTTP_409_CONFLICT)
-
-            #     try:
-            #         # Delete the old document_file before saving the new one
-            #         if document.document_file:
-            #             document.document_file.delete()
-            #     except Exception as e:
-            #         pass
-
-            #     cleaned_file_name = file.name.replace(" ", "_").replace("/", "_")
-            #     formatted_file_name = f"{uuid.uuid4().hex}/{cleaned_file_name[:220]}"
-            #     document.document_file.save(f"{uuid.uuid4().hex}/{formatted_file_name[:220]}", file)
-            #     pdf_updated = True
-                
-            #     # Log file upload
-            #     changes.append({"field": "document_file", "old": None, "new": cleaned_file_name})
 
             # Process PDF (adds front page, revision table, etc.)
             # and regenerate thumbnail if needed
@@ -1728,7 +1742,9 @@ def download_file(request, file_identifier, id):
     file_to_serve = None
     
     if file_identifier == "document_file":
-        file_to_serve = document.document_file
+        generic_file = document.files.filter(archived=0).order_by("-created_at").first()
+        if generic_file:
+            file_to_serve = generic_file.file
     elif file_identifier == "pdf_raw":
         if document.pdf_source:
             file_to_serve = document.pdf_source.file
