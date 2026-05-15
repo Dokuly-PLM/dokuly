@@ -60,7 +60,7 @@ from profiles.views import (
 
 import files.views as fileViews
 from files.models import Image, File
-from files.fileUtilities import delete_image_with_cleanup, delete_file_with_cleanup
+from files.fileUtilities import delete_image_with_cleanup, delete_file_with_cleanup, save_file_content
 from .viewUtilities import (
     assemble_full_document_number,
     assemble_full_document_number_no_prefix_db_call,
@@ -270,17 +270,38 @@ def create_new_document(request, **kwargs):
 
             try:
                 template = Document.objects.get(id=data["template_id"])
-                template_extension = template.document_file.name.split(".")[-1]
-                document_file_name = (
-                    document.full_doc_number
-                    + "_-_"
-                    + document.title
-                    + "."
-                    + template_extension
-                )
-                with template.document_file.open() as file:
-                    document.document_file.save(
-                        document_file_name, file, save=True)
+
+                # Use the new generic files relation as template source.
+                template_source_file = template.files.filter(archived=0).order_by("-created_at").first()
+                if template_source_file and template_source_file.file:
+                    source_name = os.path.basename(template_source_file.file.name)
+                    _, template_extension = os.path.splitext(source_name)
+                    template_extension = template_extension or ""
+
+                    document_file_name = (
+                        f"{document.full_doc_number} - {document.title}{template_extension}"
+                        #.replace(" ", "_") # Well allow spaces
+                        .replace("/", " ")
+                    )
+                    document_display_name = (
+                        f"{document.full_doc_number} - {document.title}"
+                        #.replace(" ", "_") # Well allow spaces
+                        .replace("/", " ")
+                    )
+
+                    with template_source_file.file.open("rb") as src_file:
+                        new_file = File(
+                            display_name=document_display_name,
+                            project=document.project,
+                        )
+                        new_file.save()
+                        save_file_content(new_file, document_file_name[:220], ContentFile(src_file.read()))
+                        document.files.add(new_file)
+                else:
+                    return Response(
+                        "Template document has no supported source file",
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             except Document.DoesNotExist:
                 return Response(
                     "Template document does not exist", status=status.HTTP_201_CREATED
@@ -684,8 +705,11 @@ def fetch_document_file(request, documentId):
     if not permission:
         return response
     data = Document.objects.get(id=documentId)
-    file = data.document_file.file.open("rb")
-    return FileResponse(file, as_attachment=True, filename="Document File")
+    file_obj = data.files.filter(archived=0).order_by("-created_at").first()
+    if not file_obj or not file_obj.file:
+        return Response({"error": "No document source file found"}, status=status.HTTP_404_NOT_FOUND)
+
+    return FileResponse(file_obj.file.open("rb"), as_attachment=True, filename="Document File")
 
 
 @api_view(("GET",))
@@ -1676,7 +1700,9 @@ def download_file(request, file_identifier, id):
     file_to_serve = None
     
     if file_identifier == "document_file":
-        file_to_serve = document.document_file
+        generic_file = document.files.filter(archived=0).order_by("-created_at").first()
+        if generic_file:
+            file_to_serve = generic_file.file
     elif file_identifier == "pdf_raw":
         if document.pdf_source:
             file_to_serve = document.pdf_source.file
