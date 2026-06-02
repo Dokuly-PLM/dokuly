@@ -5,6 +5,7 @@ import requests
 import time
 import uuid
 from datetime import timedelta
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
@@ -100,24 +101,43 @@ def _get_or_create_lock(file_obj, user):
         return lock, True, False
 
 
+def _get_client_facing_host(request):
+    """Resolve the hostname the browser actually used to reach Dokuly.
+
+    The Host header is unreliable here: nginx rewrites it to the tenant domain
+    (e.g. test2.dokuly.localhost) for tenant routing. The Referer on the config
+    request, however, is the SPA's origin (e.g. http://10.10.0.60/), which is
+    exactly the client-facing host. Prefer that, then fall back to get_host().
+    Returns (scheme, hostname-without-port).
+    """
+    referer = request.META.get("HTTP_REFERER", "")
+    if referer:
+        parsed = urlparse(referer)
+        if parsed.hostname:
+            return parsed.scheme or "http", parsed.hostname
+
+    fallback = request.get_host().split(":")[0]
+    scheme = "https" if request.is_secure() else "http"
+    return scheme, fallback
+
+
 def get_ds_url_for_request(request):
     """Return the browser-facing OnlyOffice Document Server URL.
 
     Resolution order:
     1. ONLYOFFICE_DS_URL_OVERRIDE — hard-coded override (e.g. production reverse proxy).
     2. ONLYOFFICE_USE_PROXY_PATH=True — same origin as Dokuly, routed via /onlyoffice.
-    3. Fallback — derive from the incoming request host on port 8088 (default dev setup).
+    3. Fallback — derive from the client-facing host (Referer) on port 8088.
     """
     override = getattr(settings, "ONLYOFFICE_DS_URL_OVERRIDE", None)
     if override:
         return override
 
+    scheme, host = _get_client_facing_host(request)
+
     if getattr(settings, "ONLYOFFICE_USE_PROXY_PATH", False):
-        scheme = "https" if request.is_secure() else "http"
-        host = request.get_host().split(":")[0]
         return f"{scheme}://{host}/onlyoffice"
 
-    host = request.get_host().split(":")[0]
     return f"http://{host}:8088"
 
 
