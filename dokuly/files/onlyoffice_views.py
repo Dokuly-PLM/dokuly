@@ -100,6 +100,27 @@ def _get_or_create_lock(file_obj, user):
         return lock, True, False
 
 
+def get_ds_url_for_request(request):
+    """Return the browser-facing OnlyOffice Document Server URL.
+
+    Resolution order:
+    1. ONLYOFFICE_DS_URL_OVERRIDE — hard-coded override (e.g. production reverse proxy).
+    2. ONLYOFFICE_USE_PROXY_PATH=True — same origin as Dokuly, routed via /onlyoffice.
+    3. Fallback — derive from the incoming request host on port 8088 (default dev setup).
+    """
+    override = getattr(settings, "ONLYOFFICE_DS_URL_OVERRIDE", None)
+    if override:
+        return override
+
+    if getattr(settings, "ONLYOFFICE_USE_PROXY_PATH", False):
+        scheme = "https" if request.is_secure() else "http"
+        host = request.get_host().split(":")[0]
+        return f"{scheme}://{host}/onlyoffice"
+
+    host = request.get_host().split(":")[0]
+    return f"http://{host}:8088"
+
+
 def _make_document_key(file_obj):
     """Generate a unique document key for OODS caching.
     Must change whenever file content changes.
@@ -200,7 +221,7 @@ def get_editor_config(request, file_id):
         "config": config,
         "is_read_only": is_read_only,
         "lock_info": lock_info,
-        "ds_url": settings.ONLYOFFICE_DS_URL,
+        "ds_url": get_ds_url_for_request(request),
     }, status=status.HTTP_200_OK)
 
 
