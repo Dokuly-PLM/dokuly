@@ -8,6 +8,101 @@ from profiles.models import Profile
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
+
+
+def get_email_settings(organization=None):
+    """
+    Return SMTP settings for the given organization, preferring values stored
+    in IntegrationSettings over the env-var defaults in settings.py.
+
+    Returns a dict with keys:
+        host, port, host_user, host_password, sender, use_tls, use_ssl
+    """
+    # Env / settings.py defaults (legacy fallback)
+    result = {
+        "host": getattr(settings, "EMAIL_HOST", None),
+        "port": getattr(settings, "EMAIL_PORT", None),
+        "host_user": getattr(settings, "EMAIL_HOST_USER", None),
+        "host_password": getattr(settings, "EMAIL_HOST_PASSWORD", None),
+        "sender": getattr(settings, "EMAIL_SENDER", None),
+        "use_tls": getattr(settings, "EMAIL_USE_TLS", True),
+        "use_ssl": getattr(settings, "EMAIL_USE_SSL", False),
+    }
+
+    if organization is None:
+        return result
+
+    try:
+        from organizations.models import IntegrationSettings
+        integration_settings = IntegrationSettings.objects.filter(
+            organization=organization
+        ).first()
+        if integration_settings:
+            if integration_settings.email_host:
+                result["host"] = integration_settings.email_host
+            if integration_settings.email_port is not None:
+                result["port"] = integration_settings.email_port
+            if integration_settings.email_host_user:
+                result["host_user"] = integration_settings.email_host_user
+            if integration_settings.email_host_password:
+                result["host_password"] = integration_settings.email_host_password
+            if integration_settings.email_sender:
+                result["sender"] = integration_settings.email_sender
+            result["use_tls"] = integration_settings.email_use_tls
+            result["use_ssl"] = integration_settings.email_use_ssl
+    except Exception:
+        pass  # If anything goes wrong, fall back to env settings
+
+    return result
+
+
+def send_email_with_org_settings(organization, subject, message, recipient_list,
+                                  html_message=None, fail_silently=False):
+    """
+    Send an email using the SMTP settings configured for the given organization.
+    Falls back to env-var settings when no DB settings are present.
+    """
+    from django.core.mail import get_connection, EmailMessage, EmailMultiAlternatives
+
+    email_cfg = get_email_settings(organization)
+
+    try:
+        port = int(email_cfg["port"]) if email_cfg["port"] else 587
+    except (TypeError, ValueError):
+        port = 587
+
+    connection = get_connection(
+        backend="django.core.mail.backends.smtp.EmailBackend",
+        host=email_cfg["host"] or "",
+        port=port,
+        username=email_cfg["host_user"] or "",
+        password=email_cfg["host_password"] or "",
+        use_tls=email_cfg["use_tls"],
+        use_ssl=email_cfg["use_ssl"],
+        fail_silently=fail_silently,
+    )
+
+    from_email = email_cfg["sender"] or email_cfg["host_user"] or ""
+
+    if html_message:
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=message,
+            from_email=from_email,
+            to=recipient_list,
+            connection=connection,
+        )
+        msg.attach_alternative(html_message, "text/html")
+    else:
+        msg = EmailMessage(
+            subject=subject,
+            body=message,
+            from_email=from_email,
+            to=recipient_list,
+            connection=connection,
+        )
+
+    msg.send(fail_silently=fail_silently)
 import requests
 
 

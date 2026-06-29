@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Row, Col, Card } from "react-bootstrap";
 import DokulyCard from "../../dokuly_components/dokulyCard";
-import { fetchIntegrationSettings, updateIntegrationSettings, testDigikeyConnection, testOdooConnection, syncPartsToOdoo, testCurrencyConnection } from "../functions/queries";
+import { fetchIntegrationSettings, updateIntegrationSettings, testDigikeyConnection, testOdooConnection, syncPartsToOdoo, testCurrencyConnection, testEmailConnection } from "../functions/queries";
 import { getSuppliers, updateSupplier } from "../../suppliers/functions/queries";
 import { createSupplier } from "../../suppliers/functions/queries";
 import { toast } from "react-toastify";
@@ -10,6 +10,7 @@ import NexarSettings from "../adminComponents/integrations/nexarSettings";
 import OdooSettings from "../adminComponents/integrations/odooSettings";
 import CurrencySettings from "../adminComponents/integrations/currencySettings";
 import AiSettings from "../adminComponents/integrations/aiSettings";
+import EmailSettings from "../adminComponents/integrations/emailSettings";
 import { suggestName } from "../functions/queries";
 
 const AdminIntegrations = ({ setRefresh }) => {
@@ -78,12 +79,24 @@ const AdminIntegrations = ({ setRefresh }) => {
   const [hasAiCredentials, setHasAiCredentials] = useState(false);
   const [testingAiConnection, setTestingAiConnection] = useState(false);
 
+  // State for Email (SMTP) settings
+  const [emailHost, setEmailHost] = useState("");
+  const [emailPort, setEmailPort] = useState("");
+  const [emailHostUser, setEmailHostUser] = useState("");
+  const [emailHostPassword, setEmailHostPassword] = useState("");
+  const [emailSender, setEmailSender] = useState("");
+  const [emailUseTls, setEmailUseTls] = useState(true);
+  const [emailUseSsl, setEmailUseSsl] = useState(false);
+  const [hasEmailCredentials, setHasEmailCredentials] = useState(false);
+  const [testingEmailConnection, setTestingEmailConnection] = useState(false);
+
   const sections = [
     { id: "digikey", title: "DigiKey", icon: "search", disabled: false },
     { id: "nexar", title: "Nexar", icon: "search", disabled: false },
     { id: "odoo", title: "Odoo", icon: "cloud-upload", disabled: false },
     { id: "currency", title: "Currency", icon: "cash", disabled: false },
     { id: "ai", title: "AI", icon: "bolt", disabled: false },
+    { id: "email", title: "Email", icon: "mail", disabled: false },
   ];
 
   // Load settings and suppliers on component mount
@@ -237,6 +250,16 @@ const AdminIntegrations = ({ setRefresh }) => {
           setAiModel(res.data.ai_model || "claude-sonnet-4-20250514");
           setAiProvider(res.data.ai_provider || "anthropic");
           setHasAiCredentials(res.data.has_ai_credentials || false);
+
+          // Email (SMTP) settings
+          setEmailHost(res.data.email_host || "");
+          setEmailPort(res.data.email_port || "");
+          setEmailHostUser(res.data.email_host_user || "");
+          setEmailHostPassword(res.data.email_host_password || "");
+          setEmailSender(res.data.email_sender || "");
+          setEmailUseTls(res.data.email_use_tls !== undefined ? res.data.email_use_tls : true);
+          setEmailUseSsl(res.data.email_use_ssl !== undefined ? res.data.email_use_ssl : false);
+          setHasEmailCredentials(res.data.has_email_credentials || false);
         }
         setLoading(false);
       })
@@ -531,6 +554,72 @@ const AdminIntegrations = ({ setRefresh }) => {
       });
   };
 
+  const handleEmailSubmit = () => {
+    const data = {
+      email_host: emailHost,
+      email_port: emailPort,
+      email_host_user: emailHostUser,
+      email_host_password: emailHostPassword,
+      email_sender: emailSender,
+      email_use_tls: emailUseTls,
+      email_use_ssl: emailUseSsl,
+    };
+
+    updateIntegrationSettings(data)
+      .then((res) => {
+        if (res.status === 200) {
+          toast.success("Email settings updated successfully");
+          loadSettings();
+        }
+      })
+      .catch((err) => {
+        console.error("Error updating email settings:", err);
+        toast.error("Failed to update email settings");
+      });
+  };
+
+  const handleTestEmailConnection = () => {
+    if (!emailHost || !emailHost.trim()) {
+      toast.error("Please enter an SMTP host before testing");
+      return;
+    }
+
+    setTestingEmailConnection(true);
+
+    // Save current values first (skip password if unchanged placeholder)
+    const saveData = {
+      email_host: emailHost,
+      email_port: emailPort,
+      email_host_user: emailHostUser,
+      email_sender: emailSender,
+      email_use_tls: emailUseTls,
+      email_use_ssl: emailUseSsl,
+    };
+    if (emailHostPassword && emailHostPassword !== "***") {
+      saveData.email_host_password = emailHostPassword;
+    }
+
+    updateIntegrationSettings(saveData)
+      .then(() => testEmailConnection())
+      .then((res) => {
+        if (res.status === 200 && res.data.success) {
+          toast.success(res.data.message || "Test email sent successfully!");
+        } else {
+          toast.error(res.data.message || "Connection test failed");
+        }
+      })
+      .catch((err) => {
+        const errorMsg =
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Connection test failed";
+        toast.error(errorMsg);
+      })
+      .finally(() => {
+        setTestingEmailConnection(false);
+      });
+  };
+
   const handleTestConnection = () => {
     if (!digikeyClientId || !digikeyClientId.trim()) {
       toast.error("Please enter Client ID before testing");
@@ -719,6 +808,32 @@ const AdminIntegrations = ({ setRefresh }) => {
     );
   };
 
+  const renderEmail = () => {
+    return (
+      <EmailSettings
+        loading={loading}
+        emailHost={emailHost}
+        setEmailHost={setEmailHost}
+        emailPort={emailPort}
+        setEmailPort={setEmailPort}
+        emailHostUser={emailHostUser}
+        setEmailHostUser={setEmailHostUser}
+        emailHostPassword={emailHostPassword}
+        setEmailHostPassword={setEmailHostPassword}
+        emailSender={emailSender}
+        setEmailSender={setEmailSender}
+        emailUseTls={emailUseTls}
+        setEmailUseTls={setEmailUseTls}
+        emailUseSsl={emailUseSsl}
+        setEmailUseSsl={setEmailUseSsl}
+        hasEmailCredentials={hasEmailCredentials}
+        handleTestConnection={handleTestEmailConnection}
+        testingConnection={testingEmailConnection}
+        handleSubmit={handleEmailSubmit}
+      />
+    );
+  };
+
   const renderSectionContent = () => {
     switch (activeSection) {
       case "digikey":
@@ -731,6 +846,8 @@ const AdminIntegrations = ({ setRefresh }) => {
         return renderCurrency();
       case "ai":
         return renderAi();
+      case "email":
+        return renderEmail();
       default:
         return renderDigikey();
     }

@@ -1707,6 +1707,16 @@ export const testCurrencyConnection = () => {
   return dataPromise;
 };
 
+export const testEmailConnection = () => {
+  const promise = axios.post(
+    "api/integrations/email/test/",
+    {},
+    tokenConfig(),
+  );
+  const dataPromise = promise.then((res) => res);
+  return dataPromise;
+};
+
 export const suggestName = (data) => {
   const promise = axios.post(
     "api/integrations/ai/suggest-name/",

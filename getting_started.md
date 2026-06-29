@@ -123,6 +123,8 @@ By following these steps, your locally hosted project should become accessible t
 
 ### SMTP Email
 
+**Email configuration is being moved to admin panel**.
+
 Dokuly has support for smtp email, and some basic functions via email like resetting your user's password. To setup the smtp you will need your own smtp server setup, and then in the .env file add the following fields:
 
 ```ini
@@ -141,11 +143,7 @@ Add currency conversion through a free currency API:
 
 https://www.exchangerate-api.com/docs/pair-conversion-requests
 
-Add the following to the `.env`.
-
-```ini
-CURRENCY_API = "https://v6.exchangerate-api.com/v6/__YOUR_API_KEY__/latest/"
-```
+Credentials are added through the dokuly admin integrations panel.
 
 <a name="start_dev_on_new_computer"/>
 
@@ -153,12 +151,7 @@ CURRENCY_API = "https://v6.exchangerate-api.com/v6/__YOUR_API_KEY__/latest/"
 
 dokuly supports using Nexar API.
 
-Add the following to the `.env`.
-
-```ini
-NEXAR_CLIENT_ID=""
-NEXAR_CLIENT_SECRET=""
-```
+Credentials are added through the dokuly admin integrations panel.
 
 ## To start developing on a new computer
 
