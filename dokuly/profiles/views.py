@@ -1,10 +1,9 @@
 from organizations.serializers import SubscriptionSerializer, OrganizationManagerSerializer
 from organizations.models import Organization, Subscription
-from organizations.utils import send_email_with_org_settings
+from organizations.utils import send_email_with_org_settings, get_dokuly_base_url
 from .utilityFunctions import send_reset_password_mail_with_template
 from .serializers import ProfileSerializer
 from accounts.serializers import UserSerializer, RegisterSerializer, LoginSerializer, UserSerializerNoPersonal
-from organizations.utils import send_email_with_org_settings
 from .models import Profile
 
 
@@ -659,9 +658,7 @@ def new_user_and_profile(request):
                 "token": AuthToken.objects.create(user)[1],
                 "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
             }
-            resetLink = f"https://{organization.tenant_id}.dokuly.com/#/passwordRecovery/{token['token']}/{user.id}"
-            if local_server:
-                resetLink = f"http://{organization.tenant_id}.dokuly.localhost:8000/#/passwordRecovery/{token['token']}/{user.id}"
+            resetLink = f"{get_dokuly_base_url()}/#/passwordRecovery/{token['token']}/{user.id}"
             send_reset_password_mail_with_template(
                 organization, user, profile.first_name, data.get('work_email'), resetLink)
         except Exception as e:
@@ -679,8 +676,7 @@ def send_new_user_password_reset(organization, user, first_name, email):
             "token": AuthToken.objects.create(user)[1],
             "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
         }
-        resetLink = f"https://{organization.tenant_id}.dokuly.com/#/passwordRecovery/{token['token']}/{user.id}"
-        
+        resetLink = f"{get_dokuly_base_url()}/#/passwordRecovery/{token['token']}/{user.id}"
         send_email_with_org_settings(
             organization=organization,
             subject='Welcome to Dokuly',
@@ -717,7 +713,7 @@ def send_reset_pass_mail(request):
             "token": AuthToken.objects.create(user)[1],
             "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
         }
-        resetLink = f"http://{settings.LOCAL_FORWARD_IP}/#/passwordRecovery/{token['token']}/{user.id}"
+        resetLink = f"{get_dokuly_base_url()}/#/passwordRecovery/{token['token']}/{user.id}"
 
         try:
             org = Organization.objects.get(id=user_profile.organization_id)

@@ -13,6 +13,25 @@ from django.db.models import Sum
 from django.core.mail import get_connection, EmailMessage, EmailMultiAlternatives
 
 
+def get_dokuly_base_url():
+    """
+    Return the base URL (scheme + host) for this Dokuly instance.
+
+    Priority:
+      1. DOKULY_BASE_URL env var (full origin, e.g. "https://plm.mycompany.com")
+      2. http://<LOCAL_FORWARD_IP>  on local-server mode
+      3. Empty string as last resort (email links will be broken but won't crash)
+
+    The returned value has NO trailing slash.
+    """
+    base = getattr(settings, "DOKULY_BASE_URL", None)
+    if base:
+        return base.rstrip("/")
+    # Legacy fallback
+    local_forward_ip = getattr(settings, "LOCAL_FORWARD_IP", "localhost:8000")
+    return f"http://{local_forward_ip}"
+
+
 def get_email_settings(organization=None):
     """
     Return SMTP settings for the given organization, preferring values stored
