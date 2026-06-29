@@ -138,11 +138,7 @@ def get_integration_settings(request):
             "email_sender": integration_settings.email_sender or "",
             "email_use_tls": integration_settings.email_use_tls,
             "email_use_ssl": integration_settings.email_use_ssl,
-            "has_email_credentials": bool(
-                integration_settings.email_host and
-                integration_settings.email_host_user and
-                integration_settings.email_host_password
-            ),
+            "has_email_credentials": bool(integration_settings.email_host),
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -459,11 +455,7 @@ def update_integration_settings(request):
             "email_sender": integration_settings.email_sender or "",
             "email_use_tls": integration_settings.email_use_tls,
             "email_use_ssl": integration_settings.email_use_ssl,
-            "has_email_credentials": bool(
-                integration_settings.email_host and
-                integration_settings.email_host_user and
-                integration_settings.email_host_password
-            ),
+            "has_email_credentials": bool(integration_settings.email_host),
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -879,17 +871,7 @@ def test_email_connection(request):
 
         if not email_cfg["host"]:
             return Response(
-                {"success": False, "message": "No SMTP host configured"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not email_cfg["host_user"]:
-            return Response(
-                {"success": False, "message": "No SMTP username configured"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not email_cfg["host_password"]:
-            return Response(
-                {"success": False, "message": "No SMTP password configured"},
+                {"success": False, "message": "No SMTP host configured. Please save an SMTP host first."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -913,20 +895,25 @@ def test_email_connection(request):
                 f"This is a test email sent from Dokuly to verify your SMTP settings.\n\n"
                 f"SMTP Host: {email_cfg['host']}\n"
                 f"SMTP Port: {email_cfg['port']}\n"
-                f"From: {email_cfg['sender'] or email_cfg['host_user']}\n"
+                f"Authentication: {'yes' if email_cfg['host_user'] else 'none'}\n"
+                f"From: {email_cfg['sender'] or email_cfg['host_user'] or 'dokuly@localhost'}\n"
             ),
             recipient_list=[recipient],
             fail_silently=False,
         )
 
         return Response(
-            {"success": True, "message": f"Test email sent to {recipient}"},
+            {
+                "success": True,
+                "message": f"Test email sent successfully to {recipient}",
+                "recipient": recipient,
+            },
             status=status.HTTP_200_OK,
         )
 
     except Exception as e:
         logger.error(f"Error testing email connection: {e}")
         return Response(
-            {"success": False, "message": f"Connection failed: {str(e)}"},
+            {"success": False, "message": f"SMTP error: {str(e)}"},
             status=status.HTTP_400_BAD_REQUEST,
         )

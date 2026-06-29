@@ -89,6 +89,7 @@ const AdminIntegrations = ({ setRefresh }) => {
   const [emailUseSsl, setEmailUseSsl] = useState(false);
   const [hasEmailCredentials, setHasEmailCredentials] = useState(false);
   const [testingEmailConnection, setTestingEmailConnection] = useState(false);
+  const [emailTestResult, setEmailTestResult] = useState(null); // {success, message}
 
   const sections = [
     { id: "digikey", title: "DigiKey", icon: "search", disabled: false },
@@ -585,6 +586,7 @@ const AdminIntegrations = ({ setRefresh }) => {
     }
 
     setTestingEmailConnection(true);
+    setEmailTestResult(null);
 
     // Save current values first (skip password if unchanged placeholder)
     const saveData = {
@@ -602,18 +604,17 @@ const AdminIntegrations = ({ setRefresh }) => {
     updateIntegrationSettings(saveData)
       .then(() => testEmailConnection())
       .then((res) => {
-        if (res.status === 200 && res.data.success) {
-          toast.success(res.data.message || "Test email sent successfully!");
-        } else {
-          toast.error(res.data.message || "Connection test failed");
-        }
+        const msg = res.data?.message || "Test email sent successfully!";
+        setEmailTestResult({ success: true, message: msg });
+        toast.success(msg);
       })
       .catch((err) => {
-        const errorMsg =
+        const msg =
           err.response?.data?.message ||
           err.response?.data?.error ||
           "Connection test failed";
-        toast.error(errorMsg);
+        setEmailTestResult({ success: false, message: msg });
+        toast.error(msg);
       })
       .finally(() => {
         setTestingEmailConnection(false);
@@ -829,6 +830,7 @@ const AdminIntegrations = ({ setRefresh }) => {
         hasEmailCredentials={hasEmailCredentials}
         handleTestConnection={handleTestEmailConnection}
         testingConnection={testingEmailConnection}
+        testResult={emailTestResult}
         handleSubmit={handleEmailSubmit}
       />
     );

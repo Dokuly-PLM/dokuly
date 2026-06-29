@@ -21,13 +21,14 @@ const EmailSettings = ({
   hasEmailCredentials,
   handleTestConnection,
   testingConnection,
+  testResult,
   handleSubmit,
 }) => {
   return (
     <DokulyCard title="Email (SMTP) Configuration">
       <div className="p-3">
-        <h5>Integration Status</h5>
-        <p className="text-muted">
+        <span className="dokuly-section-label">Integration Status</span>
+        <p className="text-muted" style={{ fontSize: "0.875rem" }}>
           Configure the SMTP server used to send invitation and password-reset
           emails. Settings saved here take priority over the environment
           variables in <code>.env</code>; env variables act as a fallback when
@@ -37,27 +38,28 @@ const EmailSettings = ({
         {loading ? (
           <div className="text-center py-4">
             <div className="spinner-border" role="status">
-              <span className="sr-only">Loading...</span>
+              <span className="visually-hidden">Loading...</span>
             </div>
           </div>
         ) : (
           <>
-            {hasEmailCredentials && (
-              <div className="alert alert-success mb-3">
-                ✓ SMTP credentials are configured
+            {hasEmailCredentials ? (
+              <div className="alert alert-success mb-3" style={{ fontSize: "0.875rem" }}>
+                ✓ SMTP host is configured
               </div>
-            )}
-            {!hasEmailCredentials && (
-              <div className="alert alert-info mb-3">
-                No SMTP credentials stored in the database. Emails will use the
+            ) : (
+              <div className="alert alert-info mb-3" style={{ fontSize: "0.875rem" }}>
+                No SMTP host stored in the database. Emails will use the
                 environment variable fallback (if configured).
               </div>
             )}
 
+            <hr className="dokuly-divider" />
+
             <div className="row">
               <div className="col-md-8">
                 <div className="form-group mb-3">
-                  <label>SMTP Host</label>
+                  <label className="dokuly-section-label">SMTP Host *</label>
                   <input
                     type="text"
                     className="form-control"
@@ -69,7 +71,7 @@ const EmailSettings = ({
               </div>
               <div className="col-md-4">
                 <div className="form-group mb-3">
-                  <label>Port</label>
+                  <label className="dokuly-section-label">Port</label>
                   <input
                     type="number"
                     className="form-control"
@@ -82,7 +84,12 @@ const EmailSettings = ({
             </div>
 
             <div className="form-group mb-3">
-              <label>Username</label>
+              <label className="dokuly-section-label">
+                SMTP Username{" "}
+                <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#9CA3AF" }}>
+                  (optional)
+                </span>
+              </label>
               <input
                 type="text"
                 className="form-control"
@@ -90,24 +97,38 @@ const EmailSettings = ({
                 onChange={(e) => setEmailHostUser(e.target.value)}
                 placeholder="your-email@example.com"
               />
+              <small className="text-muted d-block mt-1">
+                The login credential for your SMTP server — typically the email address
+                of the sending account. Leave blank if your server does not require
+                authentication (e.g. an internal relay or open test server like{" "}
+                <code>smtp.freesmtpservers.com</code>).
+              </small>
             </div>
 
             <div className="form-group mb-3">
-              <label>Password / App Password *</label>
+              <label className="dokuly-section-label">
+                Password{" "}
+                <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#9CA3AF" }}>
+                  (optional)
+                </span>
+              </label>
               <input
                 type="password"
                 className="form-control"
                 value={emailHostPassword}
                 onChange={(e) => setEmailHostPassword(e.target.value)}
-                placeholder={hasEmailCredentials ? "••••••••" : "Enter SMTP password"}
+                placeholder={emailHostPassword === "***" ? "••••••••" : "Enter SMTP password"}
               />
-              {hasEmailCredentials && (
-                <small className="text-success">✓ Password configured</small>
+              {emailHostPassword === "***" && (
+                <small className="dokuly-success d-block mt-1">✓ Password is saved</small>
               )}
+              <small className="text-muted d-block mt-1">
+                Leave blank if your SMTP server does not require a password.
+              </small>
             </div>
 
             <div className="form-group mb-3">
-              <label>From Address (Sender)</label>
+              <label className="dokuly-section-label">From Address (Sender)</label>
               <input
                 type="text"
                 className="form-control"
@@ -115,83 +136,101 @@ const EmailSettings = ({
                 onChange={(e) => setEmailSender(e.target.value)}
                 placeholder="noreply@yourcompany.com"
               />
-              <small className="text-muted">
-                The address shown in the From header. Defaults to the username
-                if left blank.
+              <small className="text-muted d-block mt-1">
+                The address shown in the From header. Defaults to the username if left blank.
               </small>
             </div>
 
-            <div className="row mb-3">
+            <hr className="dokuly-divider" />
+
+            <span className="dokuly-section-label">Encryption</span>
+            <div className="row mt-2 mb-3">
               <div className="col-md-6">
-                <div className="form-check">
+                <div className="d-flex align-items-center gap-2">
                   <input
                     type="checkbox"
-                    className="form-check-input"
+                    className="dokuly-checkbox"
                     id="emailUseTls"
                     checked={emailUseTls}
                     onChange={(e) => {
                       setEmailUseTls(e.target.checked);
                       if (e.target.checked) setEmailUseSsl(false);
                     }}
+                    style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
                   />
-                  <label className="form-check-label" htmlFor="emailUseTls">
-                    Use STARTTLS (recommended, port 587)
+                  <label htmlFor="emailUseTls" style={{ marginBottom: 0, cursor: "pointer", fontSize: "0.875rem" }}>
+                    Use STARTTLS <span className="text-muted">(recommended, port 587)</span>
                   </label>
                 </div>
               </div>
               <div className="col-md-6">
-                <div className="form-check">
+                <div className="d-flex align-items-center gap-2">
                   <input
                     type="checkbox"
-                    className="form-check-input"
+                    className="dokuly-checkbox"
                     id="emailUseSsl"
                     checked={emailUseSsl}
                     onChange={(e) => {
                       setEmailUseSsl(e.target.checked);
                       if (e.target.checked) setEmailUseTls(false);
                     }}
+                    style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
                   />
-                  <label className="form-check-label" htmlFor="emailUseSsl">
-                    Use implicit SSL (port 465)
+                  <label htmlFor="emailUseSsl" style={{ marginBottom: 0, cursor: "pointer", fontSize: "0.875rem" }}>
+                    Use implicit SSL <span className="text-muted">(port 465)</span>
                   </label>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4">
-              <div className="d-flex align-items-center gap-2">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-success mr-2"
-                  onClick={handleTestConnection}
-                  disabled={loading || testingConnection || !emailHost || !emailHostUser}
-                >
-                  {testingConnection ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      />
-                      Sending test email...
-                    </>
-                  ) : (
-                    "Send Test Email"
-                  )}
-                </button>
-                <SubmitButton
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  disabledTooltip="Loading..."
-                  className="btn-sm"
-                >
-                  Save Settings
-                </SubmitButton>
+            {/* Inline test result feedback */}
+            {testResult && (
+              <div
+                className={`alert ${testResult.success ? "alert-success" : "alert-danger"} mt-3`}
+                style={{ fontSize: "0.875rem" }}
+              >
+                {testResult.success ? (
+                  <><strong>✓ Success:</strong> {testResult.message}</>
+                ) : (
+                  <><strong>✗ Failed:</strong> {testResult.message}</>
+                )}
               </div>
-              <small className="text-muted mt-2 d-block">
-                The test email will be sent to your account's work email address.
-              </small>
+            )}
+
+            <hr className="dokuly-divider" />
+
+            <div className="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-sm dokuly-btn-primary"
+                onClick={handleTestConnection}
+                disabled={loading || testingConnection || !emailHost}
+              >
+                {testingConnection ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Test Email"
+                )}
+              </button>
+              <SubmitButton
+                onClick={handleSubmit}
+                disabled={loading}
+                disabledTooltip="Loading..."
+                className="btn-sm"
+              >
+                Save Settings
+              </SubmitButton>
             </div>
+            <small className="text-muted d-block mt-2">
+              The test email will be sent to your account's work email address.
+            </small>
           </>
         )}
       </div>
