@@ -273,7 +273,10 @@ const DokulyMarkdown = ({ markdownText }) => {
               }
 
               parts.push(
-                <IssuePillById key={`issue-${issueId}-${matchStart}`} issueId={parseInt(issueId, 10)} />
+                <IssuePillById
+                  key={`issue-${issueId}-${matchStart}`}
+                  issueId={parseInt(issueId, 10)}
+                />
               );
 
               lastIndex = matchStart + fullMatch.length;
@@ -308,6 +311,69 @@ const DokulyMarkdown = ({ markdownText }) => {
 
           const processedChildren = children.map((child, i) => processChild(child, i));
           return <p>{processedChildren}</p>;
+        },
+        li: ({ node, children }) => {
+          const processChild = (child, i) => {
+            if (typeof child !== "string") return child;
+
+            // Split on issue references: #123 with whitespace boundaries
+            const issuePattern = /((?:^|\s)#(\d+)(?=\s|$))/g;
+            const parts = [];
+            let lastIndex = 0;
+            let match;
+
+            while ((match = issuePattern.exec(child)) !== null) {
+              const fullMatch = match[1];
+              const issueId = match[2];
+              const matchStart = match.index;
+
+              // Text before the match
+              if (matchStart > lastIndex) {
+                parts.push(child.slice(lastIndex, matchStart));
+              }
+
+              // Leading whitespace before #
+              const leadingSpace = fullMatch.match(/^(\s*)/)[1];
+              if (leadingSpace) {
+                parts.push(leadingSpace);
+              }
+
+              parts.push(
+                <IssuePillById key={`issue-${issueId}-${matchStart}`} issueId={parseInt(issueId, 10)} />
+              );
+
+              lastIndex = matchStart + fullMatch.length;
+            }
+
+            // Remaining text after last match
+            if (lastIndex < child.length) {
+              parts.push(child.slice(lastIndex));
+            }
+
+            // If no issue refs found, fall through to hex color processing
+            if (parts.length === 0) {
+              parts.push(child);
+            }
+
+            // Process hex colors within remaining string parts
+            return parts.map((part, j) => {
+              if (typeof part === "string" && hexColorRegex.test(part)) {
+                return part
+                  .split(/(\s+)/)
+                  .map((segment, k) =>
+                    hexColorRegex.test(segment) ? (
+                      <ColorRenderer key={`${i}-${j}-color-${k}`} value={segment} />
+                    ) : (
+                      segment
+                    )
+                  );
+              }
+              return part;
+            });
+          };
+
+          const processedChildren = children.map((child, i) => processChild(child, i));
+          return <li>{processedChildren}</li>;
         },
         a: ({ href, children }) => (
           <a href={href} className="custom-link">
