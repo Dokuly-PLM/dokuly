@@ -1,13 +1,16 @@
 from .models import Organization
+from organizations.models import IntegrationSettings
+from organizations.models import Subscription, Organization
+from .models import Subscription
+from profiles.models import Profile
+
 from django.db.models import Q
 from django.core.exceptions import ValidationError
-from .models import Subscription
 from django.conf import settings
-from organizations.models import Subscription, Organization
-from profiles.models import Profile
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
+from django.core.mail import get_connection, EmailMessage, EmailMultiAlternatives
 
 
 def get_email_settings(organization=None):
@@ -33,7 +36,6 @@ def get_email_settings(organization=None):
         return result
 
     try:
-        from organizations.models import IntegrationSettings
         integration_settings = IntegrationSettings.objects.filter(
             organization=organization
         ).first()
@@ -62,7 +64,6 @@ def send_email_with_org_settings(organization, subject, message, recipient_list,
     Send an email using the SMTP settings configured for the given organization.
     Falls back to env-var settings when no DB settings are present.
     """
-    from django.core.mail import get_connection, EmailMessage, EmailMultiAlternatives
 
     email_cfg = get_email_settings(organization)
 
