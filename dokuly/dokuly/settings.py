@@ -21,12 +21,13 @@ LOCAL_FORWARD_IP = os.getenv("LOCAL_FORWARD_IP", "localhost:8000")
 print(f"LOCAL_FORWARD_IP: {LOCAL_FORWARD_IP}")
 
 # Base URL for this Dokuly instance — used in password-reset and invitation emails.
-# Set DOKULY_BASE_URL in your .env to the full origin (scheme + host + optional port).
-# Examples:
-#   DOKULY_BASE_URL=http://192.168.1.50:8000
-#   DOKULY_BASE_URL=https://plm.mycompany.com
-# If not set, falls back to http://localhost:8000 on local servers.
-DOKULY_BASE_URL = os.getenv("DOKULY_BASE_URL", f"http://{LOCAL_FORWARD_IP}" if local_server else None)
+# Set DOKULY_BASE_URL in your .env ONLY to override auto-detection.
+# When not set, Dokuly derives the URL automatically from the incoming HTTP request
+# (scheme + host + port), which works correctly for any IP, hostname, HTTP or HTTPS.
+# Override examples:
+#   DOKULY_BASE_URL=http://192.168.1.50:8000   # force a specific LAN IP
+#   DOKULY_BASE_URL=https://plm.mycompany.com  # force a public domain
+DOKULY_BASE_URL = os.getenv("DOKULY_BASE_URL")  # None when not set → auto-detected from request
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
