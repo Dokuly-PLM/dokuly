@@ -54,6 +54,11 @@ export const downloadFileAsBlobForATags = (fileUri, fileName) => {
     });
 };
 
+const getZipDownloadName = (baseName, suffix) => {
+  const safeBaseName = baseName || "unknown";
+  return `${safeBaseName.replace(/\s+/g, "_")}_${suffix}`;
+};
+
 export const FilesTable = (props, { release_state }) => {
   // Creates empty array for the reference document table.
   const [file_list, setFileList] = useState([]);
@@ -144,14 +149,19 @@ export const FilesTable = (props, { release_state }) => {
   // Download files as ZIP — optional category filter
   const handleDownloadZip = (category = null) => {
     const categoryParam = category ? `?category=${category}` : "";
-    const url = `api/files/download/zip/${app}/${objectId}/${categoryParam}`;
     const label = category || "all";
-    axios.get(url, { ...tokenConfig(), responseType: "blob" })
+    axios.get(`api/files/download/zip/${app}/${objectId}/${categoryParam}`, {
+      ...tokenConfig(),
+      responseType: "blob",
+    })
       .then((res) => {
         const blob = new Blob([res.data], { type: "application/zip" });
         const link = document.createElement("a");
         link.href = window.URL.createObjectURL(blob);
-        link.setAttribute("download", `${app}_${objectId}_${label}_files.zip`);
+        link.setAttribute(
+          "download",
+          getZipDownloadName(props?.downloadName, `${label}_files.zip`),
+        );
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
@@ -168,13 +178,18 @@ export const FilesTable = (props, { release_state }) => {
 
   // Recursive assembly production ZIP (includes BOM children)
   const handleDownloadAssemblyProductionZip = () => {
-    const url = `api/files/download/assembly_production_zip/${objectId}/`;
-    axios.get(url, { ...tokenConfig(), responseType: "blob" })
+    axios.get(`api/files/download/assembly_production_zip/${objectId}/`, {
+      ...tokenConfig(),
+      responseType: "blob",
+    })
       .then((res) => {
         const blob = new Blob([res.data], { type: "application/zip" });
         const link = document.createElement("a");
         link.href = window.URL.createObjectURL(blob);
-        link.setAttribute("download", `assembly_${objectId}_production_files.zip`);
+        link.setAttribute(
+          "download",
+          getZipDownloadName(props?.downloadName, "production_files.zip"),
+        );
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
