@@ -122,6 +122,23 @@ const RequirementsTable = ({
       return;
     }
 
+    if (key === "external_requirement_id") {
+      const normalizedValue = value.trim().toLowerCase();
+      if (normalizedValue) {
+        const duplicateExists = requirements.some(
+          (req) =>
+            req.id !== id &&
+            (req.external_requirement_id || "").trim().toLowerCase() === normalizedValue
+        );
+        if (duplicateExists) {
+          toast.warning(
+            "External requirement ID already exists in this requirement set."
+          );
+          return;
+        }
+      }
+    }
+
     const data = { [key]: value };
     editRequirement(id, data).then(
       (result) => {
@@ -130,7 +147,16 @@ const RequirementsTable = ({
         }
       },
       (error) => {
-        toast.error(error);
+        const message = error?.response?.data || error?.message || error;
+        if (
+          error?.response?.status === 400 &&
+          typeof message === "string" &&
+          message.includes("External requirement ID already exists")
+        ) {
+          toast.warning(message);
+          return;
+        }
+        toast.error(message);
       }
     );
   };
@@ -166,6 +192,24 @@ const RequirementsTable = ({
         );
       },
       csvFormatter: (row) => (row?.id ? `${row?.id}` : ""),
+    },
+    {
+      key: "external_requirement_id",
+      header: "External ID",
+      maxWidth: "120px",
+      formatter: (row, column, searchString) => (
+        <TextFieldEditor
+          text={row?.external_requirement_id || ""}
+          setText={(newText) =>
+            changeField(row.id, "external_requirement_id", newText)
+          }
+          multiline={false}
+          searchString={searchString}
+          readOnly={readOnly || row?.state === "Rejected" || row?.state === "Approved"}
+        />
+      ),
+      csvFormatter: (row) =>
+        row?.external_requirement_id ? `${row?.external_requirement_id}` : "",
     },
     {
       key: "parent_requirement",
