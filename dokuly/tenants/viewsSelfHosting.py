@@ -238,7 +238,7 @@ def initialize_tenant_for_self_hosting(request):
                             "token": AuthToken.objects.create(user_obj)[1],
                             "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
                         }
-                        resetLink = f"{get_dokuly_base_url()}/#/passwordRecovery/{token['token']}/{user_obj.id}"
+                        resetLink = f"{get_dokuly_base_url(request)}/#/passwordRecovery/{token['token']}/{user_obj.id}"
                         send_workspace_creation_email(
                             email, domain_name, resetLink, username)
                         print("\n MAILS SENT \n")

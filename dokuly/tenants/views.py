@@ -1001,7 +1001,7 @@ def create_or_update_tenant(request):
                                 "%Y,%m,%d,%H,%M,%S"
                             ),
                         }
-                        resetLink = f"{get_dokuly_base_url()}/#/passwordRecovery/{token['token']}/{user_obj.id}"
+                        resetLink = f"{get_dokuly_base_url(request)}/#/passwordRecovery/{token['token']}/{user_obj.id}"
                         send_workspace_creation_email(
                             email, domain_name, resetLink, username
                         )

@@ -658,7 +658,7 @@ def new_user_and_profile(request):
                 "token": AuthToken.objects.create(user)[1],
                 "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
             }
-            resetLink = f"{get_dokuly_base_url()}/#/passwordRecovery/{token['token']}/{user.id}"
+            resetLink = f"{get_dokuly_base_url(request)}/#/passwordRecovery/{token['token']}/{user.id}"
             send_reset_password_mail_with_template(
                 organization, user, profile.first_name, data.get('work_email'), resetLink)
         except Exception as e:
@@ -670,13 +670,13 @@ def new_user_and_profile(request):
         return Response(f"new_user_and_profile failed: {e}", status=status.HTTP_400_BAD_REQUEST)
 
 
-def send_new_user_password_reset(organization, user, first_name, email):
+def send_new_user_password_reset(organization, user, first_name, email, request=None):
     try:
         token = {
             "token": AuthToken.objects.create(user)[1],
             "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
         }
-        resetLink = f"{get_dokuly_base_url()}/#/passwordRecovery/{token['token']}/{user.id}"
+        resetLink = f"{get_dokuly_base_url(request)}/#/passwordRecovery/{token['token']}/{user.id}"
         send_email_with_org_settings(
             organization=organization,
             subject='Welcome to Dokuly',
@@ -713,7 +713,7 @@ def send_reset_pass_mail(request):
             "token": AuthToken.objects.create(user)[1],
             "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
         }
-        resetLink = f"{get_dokuly_base_url()}/#/passwordRecovery/{token['token']}/{user.id}"
+        resetLink = f"{get_dokuly_base_url(request)}/#/passwordRecovery/{token['token']}/{user.id}"
 
         try:
             org = Organization.objects.get(id=user_profile.organization_id)
