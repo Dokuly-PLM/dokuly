@@ -103,10 +103,6 @@ const MissingPricesList = ({ parts, textSize = "12px", show, style = {} }) => {
                         objectFit: "contain",
                         display: "block",
                       }}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "";
-                      }}
                     />
                   ) : (
                     <div
