@@ -127,6 +127,19 @@ def edit_requirement(request, id):
             requirement.obligation_level = data["obligation_level"]
         if "rationale" in data:
             requirement.rationale = data["rationale"]
+        if "external_requirement_id" in data:
+            external_requirement_id = (data["external_requirement_id"] or "").strip()
+            if external_requirement_id:
+                duplicate_exists = Requirement.objects.filter(
+                    requirement_set=requirement.requirement_set,
+                    external_requirement_id__iexact=external_requirement_id,
+                ).exclude(id=requirement.id).exists()
+                if duplicate_exists:
+                    return Response(
+                        "External requirement ID already exists in this requirement set.",
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            requirement.external_requirement_id = external_requirement_id
         if "parent_requirement" in data:
             requirement.parent_requirement_id = data["parent_requirement"]
             requirement.derived_from.clear()  # Cant be both derived from and have a parent

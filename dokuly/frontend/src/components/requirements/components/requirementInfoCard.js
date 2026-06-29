@@ -23,6 +23,7 @@ import {
 import DeleteButton from "../../dokuly_components/deleteButton";
 import NavigateButton from "../../dokuly_components/dokulyTable/components/navigateButton";
 import GenericMultiSelector from "../../dokuly_components/genericMultiSelector";
+import TextFieldEditor from "../../dokuly_components/dokulyTable/components/textFieldEditor";
 
 const renderAdditionalFields = (additionalFields, keyColumnMaxWidth) => {
   return Object.entries(additionalFields)
@@ -167,6 +168,29 @@ const RequirementInfoCard = ({
   };
   const handleRequirementStateChange = (newState) => {
     changeField("state", newState);
+  };
+
+  const hasExternalRequirementIdConflict = (newValue) => {
+    const normalizedValue = (newValue || "").trim().toLowerCase();
+    if (!normalizedValue) {
+      return false;
+    }
+
+    return requirements.some(
+      (req) =>
+        req.id !== item?.id &&
+        (req.external_requirement_id || "").trim().toLowerCase() === normalizedValue
+    );
+  };
+
+  const handleExternalRequirementIdChange = (newValue) => {
+    if (hasExternalRequirementIdConflict(newValue)) {
+      toast.warning(
+        "External requirement ID already exists in this requirement set."
+      );
+      return;
+    }
+    changeField("external_requirement_id", newValue);
   };
 
   const changeField = (key, value) => {
@@ -382,6 +406,28 @@ const RequirementInfoCard = ({
                 ((item?.derived_from.length === 0 && item?.state === "Approved") || (item?.derived_from.length === 0 && item?.state === "Rejected"))
               }
               textSize="16px"
+            />
+          </Col>
+        </Row>
+
+        <Row className="align-items-center">
+          <Col
+            className="col-lg-6 col-xl-6"
+            style={{ maxWidth: keyColumnMaxWidth, paddingTop: rowPadding }}
+          >
+            <b>External ID:</b>
+          </Col>
+          <Col>
+            <TextFieldEditor
+              text={item?.external_requirement_id || ""}
+              setText={handleExternalRequirementIdChange}
+              multiline={false}
+              isMarkdown={false}
+              maxWidth="100%"
+              readOnly={readOnly ||
+                ((item?.derived_from.length === 0 && item?.state === "Approved") ||
+                  (item?.derived_from.length === 0 && item?.state === "Rejected"))
+              }
             />
           </Col>
         </Row>

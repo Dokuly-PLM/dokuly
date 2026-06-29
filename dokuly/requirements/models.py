@@ -57,6 +57,14 @@ class Requirement(models.Model):
     # This field is for documentation of: Why is this requirement needed? Why is it derived etc.
     rationale = models.TextField(default="", blank=True, null=True)
 
+    external_requirement_id = models.CharField(
+        max_length=255,
+        default="",
+        blank=True,
+        null=True,
+        help_text="External requirement identifier from customer or third-party specification systems.",
+    )
+
     # This field has never been used.
     reference_list = models.ForeignKey(
         Reference_List, on_delete=models.SET_NULL, null=True
