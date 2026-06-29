@@ -129,6 +129,16 @@ def get_integration_settings(request):
             "ai_model": integration_settings.ai_model or "claude-sonnet-4-20250514",
             "ai_provider": integration_settings.ai_provider or "anthropic",
             "has_ai_credentials": bool(integration_settings.ai_api_key),
+
+            # Email (SMTP) settings
+            "email_host": integration_settings.email_host or "",
+            "email_port": integration_settings.email_port or "",
+            "email_host_user": integration_settings.email_host_user or "",
+            "email_host_password": "***" if integration_settings.email_host_password else "",
+            "email_sender": integration_settings.email_sender or "",
+            "email_use_tls": integration_settings.email_use_tls,
+            "email_use_ssl": integration_settings.email_use_ssl,
+            "has_email_credentials": bool(integration_settings.email_host),
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -343,7 +353,39 @@ def update_integration_settings(request):
                 integration_settings.currency_api_key = api_key.strip()
             elif not api_key or api_key == "***":
                 pass
-        
+
+        # Update Email (SMTP) settings
+        if "email_host" in data:
+            integration_settings.email_host = (data["email_host"] or "").strip() or None
+
+        if "email_port" in data:
+            port_val = data["email_port"]
+            if port_val == "" or port_val is None:
+                integration_settings.email_port = None
+            else:
+                try:
+                    integration_settings.email_port = int(port_val)
+                except (ValueError, TypeError):
+                    pass
+
+        if "email_host_user" in data:
+            integration_settings.email_host_user = (data["email_host_user"] or "").strip() or None
+
+        if "email_host_password" in data:
+            password = data["email_host_password"]
+            if password and password != "***" and password.strip():
+                integration_settings.email_host_password = password.strip()
+            # If "***" or empty, keep existing value
+
+        if "email_sender" in data:
+            integration_settings.email_sender = (data["email_sender"] or "").strip() or None
+
+        if "email_use_tls" in data:
+            integration_settings.email_use_tls = bool(data["email_use_tls"])
+
+        if "email_use_ssl" in data:
+            integration_settings.email_use_ssl = bool(data["email_use_ssl"])
+
         integration_settings.save()
         
         # Return updated settings
@@ -404,6 +446,16 @@ def update_integration_settings(request):
             "ai_model": integration_settings.ai_model or "claude-sonnet-4-20250514",
             "ai_provider": integration_settings.ai_provider or "anthropic",
             "has_ai_credentials": bool(integration_settings.ai_api_key),
+
+            # Email (SMTP) settings
+            "email_host": integration_settings.email_host or "",
+            "email_port": integration_settings.email_port or "",
+            "email_host_user": integration_settings.email_host_user or "",
+            "email_host_password": "***" if integration_settings.email_host_password else "",
+            "email_sender": integration_settings.email_sender or "",
+            "email_use_tls": integration_settings.email_use_tls,
+            "email_use_ssl": integration_settings.email_use_ssl,
+            "has_email_credentials": bool(integration_settings.email_host),
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -787,4 +839,81 @@ def test_currency_connection(request):
         return Response(
             {"error": "Failed to test currency connection", "details": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@renderer_classes([JSONRenderer])
+def test_email_connection(request):
+    """
+    Test the SMTP email configuration by sending a test email to the
+    requesting user's work email address.
+    """
+    try:
+        if not request.user or not request.user.is_authenticated:
+            return Response("Not Authorized", status=status.HTTP_401_UNAUTHORIZED)
+
+        organization = get_user_organization(request.user)
+        if not organization:
+            return Response(
+                {"error": "User organization not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        integration_settings, _ = IntegrationSettings.objects.get_or_create(
+            organization=organization
+        )
+
+        from organizations.utils import get_email_settings, send_email_with_org_settings
+        from profiles.models import Profile
+
+        email_cfg = get_email_settings(organization)
+
+        if not email_cfg["host"]:
+            return Response(
+                {"success": False, "message": "No SMTP host configured. Please save an SMTP host first."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Determine recipient: use requesting user's work email if available
+        try:
+            profile = Profile.objects.get(user=request.user)
+            recipient = profile.work_email or request.user.email
+        except Profile.DoesNotExist:
+            recipient = request.user.email
+
+        if not recipient:
+            return Response(
+                {"success": False, "message": "No recipient email address found for your account"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        send_email_with_org_settings(
+            organization=organization,
+            subject="Dokuly — Email connection test",
+            message=(
+                f"This is a test email sent from Dokuly to verify your SMTP settings.\n\n"
+                f"SMTP Host: {email_cfg['host']}\n"
+                f"SMTP Port: {email_cfg['port']}\n"
+                f"Authentication: {'yes' if email_cfg['host_user'] else 'none'}\n"
+                f"From: {email_cfg['sender'] or email_cfg['host_user'] or 'dokuly@localhost'}\n"
+            ),
+            recipient_list=[recipient],
+            fail_silently=False,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": f"Test email sent successfully to {recipient}",
+                "recipient": recipient,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except Exception as e:
+        logger.error(f"Error testing email connection: {e}")
+        return Response(
+            {"success": False, "message": f"SMTP error: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST,
         )

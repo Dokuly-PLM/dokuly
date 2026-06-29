@@ -1,15 +1,24 @@
-from django.db.models import Prefetch
 from organizations.serializers import SubscriptionSerializer, OrganizationManagerSerializer
 from organizations.models import Organization, Subscription
+from organizations.utils import send_email_with_org_settings
+from .utilityFunctions import send_reset_password_mail_with_template
+from .serializers import ProfileSerializer
+from accounts.serializers import UserSerializer, RegisterSerializer, LoginSerializer, UserSerializerNoPersonal
+
+
 # from tenants.models import Tenant
 # from django_tenants.utils import schema_context, tenant_context, get_tenant_model, remove_www
 import pyotp
 import os
 import string
 import random
+import json
+from datetime import datetime
+from .models import Profile
+
+from django.db.models import Prefetch
 from django.contrib.auth.decorators import login_required
 from knox.models import AuthToken
-from datetime import datetime
 from rest_framework.authentication import BasicAuthentication
 from django.contrib.auth.decorators import permission_required
 from knox.auth import TokenAuthentication
@@ -17,7 +26,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, permissions
 from django.core.mail import send_mail
 from django.conf import settings
-from accounts.serializers import UserSerializer, RegisterSerializer, LoginSerializer, UserSerializerNoPersonal
 from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
@@ -26,13 +34,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, renderer_classes, permission_classes
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
-from .models import Profile
-from .serializers import ProfileSerializer
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from .utilityFunctions import send_reset_password_mail_with_template
 from django.db.models import Count, F, Sum
-import json
+
 
 # Permissions helpers
 # TODO change 'User' with 'Developer'
@@ -674,12 +679,11 @@ def send_new_user_password_reset(organization, user, first_name, email):
             "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
         }
         resetLink = f"https://{organization.tenant_id}.dokuly.com/#/passwordRecovery/{token['token']}/{user.id}"
-        send_mail(
+        from organizations.utils import send_email_with_org_settings
+        send_email_with_org_settings(
+            organization=organization,
             subject='Welcome to Dokuly',
             message=f'Hello {first_name}\n\n You have been added to the {organization.name} workspace. Please click the link below to set your password.\nClick here to reset you password: {resetLink}\n\n\nBest Regards,\nDokuly Team',
-            from_email=settings.EMAIL_SENDER,
-            auth_user=settings.EMAIL_HOST_USER,
-            auth_password=settings.EMAIL_HOST_PASSWORD,
             recipient_list=[email],
             fail_silently=False,
         )
@@ -713,12 +717,15 @@ def send_reset_pass_mail(request):
             "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
         }
         resetLink = f"http://{settings.LOCAL_FORWARD_IP}/#/passwordRecovery/{token['token']}/{user.id}"
-        send_mail(
+
+        try:
+            org = Organization.objects.get(id=user_profile.organization_id)
+        except Exception:
+            org = None
+        send_email_with_org_settings(
+            organization=org,
             subject='Password Recovery',
             message=f'Hello {user.username}\n\nSomeone has requested to reset the password connected to this email account.\nIF THIS WAS NOT YOU IGNORE THIS EMAIL\nClick here to reset you password: {resetLink}\n\n\nBest Regards,\nDokuly Team',
-            from_email=settings.EMAIL_SENDER,
-            auth_user=settings.EMAIL_HOST_USER,
-            auth_password=settings.EMAIL_HOST_PASSWORD,
             recipient_list=[recipient],
             fail_silently=False,
         )

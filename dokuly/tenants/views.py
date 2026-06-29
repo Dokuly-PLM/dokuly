@@ -520,18 +520,6 @@ def remove_failed_subscription(request):
             return Response("Errant subscription canceled", status=status.HTTP_200_OK)
         raise Exception("Error canceling subscription, paddle query error.")
     except Exception as e:
-        try:
-            send_mail(
-                subject="Error in tenant creation, inner try catch",
-                message=f"Error: {str(e)}",
-                from_email=settings.EMAIL_SENDER,
-                auth_user=settings.EMAIL_HOST_USER,
-                auth_password=settings.EMAIL_HOST_PASSWORD,
-                recipient_list=["dokuly@norskdatateknikk.no"],
-                fail_silently=False,
-            )
-        except Exception as e:
-            pass
         return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -1013,38 +1001,17 @@ def create_or_update_tenant(request):
                                 "%Y,%m,%d,%H,%M,%S"
                             ),
                         }
-                        resetLink = f"https://{domain_name}.dokuly.com/#/passwordRecovery/{token['token']}/{user_obj.id}"
+                        resetLink = f"https://{domain_name}.dokuly.com/#/passwordRecovery/{token['token']}/{user_obj.id}" #TODO no longer hosted here.
                         if local_server:
                             resetLink = f"http://{domain_name}.dokuly.localhost:8000/#/passwordRecovery/{token['token']}/{user_obj.id}"
                         send_workspace_creation_email(
                             email, domain_name, resetLink, username
-                        )
-                        send_mail(
-                            subject="New Workspace Created",
-                            message=f"We got a new workspace!: \
-                            \nWorkspace name: {domain_name} \
-                            \nName of the user: {first_name} - {last_name} \
-                            \nEmail of the user: {email}",
-                            from_email=settings.EMAIL_SENDER,
-                            auth_user=settings.EMAIL_HOST_USER,
-                            auth_password=settings.EMAIL_HOST_PASSWORD,
-                            recipient_list=["dokuly@norskdatateknikk.no"],
-                            fail_silently=False,
                         )
                         print("\n MAILS SENT \n")
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
             except Exception as e:
                 error = str(e)
                 errors = True
-                send_mail(
-                    subject="Error in tenant creation, inner try catch",
-                    message=f"Error: {str(e)}",
-                    from_email=settings.EMAIL_SENDER,
-                    auth_user=settings.EMAIL_HOST_USER,
-                    auth_password=settings.EMAIL_HOST_PASSWORD,
-                    recipient_list=["dokuly@norskdatateknikk.no"],
-                    fail_silently=False,
-                )
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(
@@ -1054,15 +1021,6 @@ def create_or_update_tenant(request):
     except Exception as e:
         print(str(e))
         errors = True
-        send_mail(
-            subject="Error in loading variables for tenant creation, outer try catch",
-            message=f"Error: {str(e)}",
-            from_email=settings.EMAIL_SENDER,
-            auth_user=settings.EMAIL_HOST_USER,
-            auth_password=settings.EMAIL_HOST_PASSWORD,
-            recipient_list=["dokuly@norskdatateknikk.no"],
-            fail_silently=False,
-        )
         return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
     finally:
         if not errors:
@@ -1256,22 +1214,8 @@ def create_checkout_free_beta(request):
             status=status.HTTP_200_OK,
         )
     except Exception as e:
-        mailError = ""
-        try:
-            send_mail(
-                subject="Error in signup",
-                message=f"Error: {str(e)}",
-                from_email=settings.EMAIL_SENDER,
-                auth_user=settings.EMAIL_HOST_USER,
-                auth_password=settings.EMAIL_HOST_PASSWORD,
-                recipient_list=["dokuly@norskdatateknikk.no"],
-                fail_silently=False,
-            )
-        except Exception as innerException:
-            print(str(innerException))
-            mailError = str(innerException)
         return Response(
-            {"outer_ex": str(e), "inner_ex": mailError},
+            {"outer_ex": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
         )
 

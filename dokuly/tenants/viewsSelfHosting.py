@@ -242,32 +242,11 @@ def initialize_tenant_for_self_hosting(request):
                             resetLink = f"http://{domain_name}.dokuly.localhost:8000/#/passwordRecovery/{token['token']}/{user_obj.id}"
                         send_workspace_creation_email(
                             email, domain_name, resetLink, username)
-                        send_mail(
-                            subject='New Workspace Created',
-                            message=f'We got a new workspace!: \
-                            \nWorkspace name: {domain_name} \
-                            \nName of the user: {first_name} - {last_name} \
-                            \nEmail of the user: {email}',
-                            from_email=settings.EMAIL_SENDER,
-                            auth_user=settings.EMAIL_HOST_USER,
-                            auth_password=settings.EMAIL_HOST_PASSWORD,
-                            recipient_list=["dokuly@norskdatateknikk.no"],
-                            fail_silently=False,
-                        )
                         print("\n MAILS SENT \n")
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
             except Exception as e:
                 error = str(e)
                 errors = True
-                send_mail(
-                    subject='Error in tenant creation, inner try catch',
-                    message=f'Error: {str(e)}',
-                    from_email=settings.EMAIL_SENDER,
-                    auth_user=settings.EMAIL_HOST_USER,
-                    auth_password=settings.EMAIL_HOST_PASSWORD,
-                    recipient_list=["dokuly@norskdatateknikk.no"],
-                    fail_silently=False,
-                )
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response("No email entered in the request, try again", status=status.HTTP_400_BAD_REQUEST)

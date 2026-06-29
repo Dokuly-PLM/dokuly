@@ -54,6 +54,7 @@ urlpatterns = [
     path("api/integrations/odoo/sync-parts/", viewsIntegrations.sync_parts_to_odoo),
     path("api/integrations/odoo/test/", viewsIntegrations.test_odoo_connection),
     path("api/integrations/currency/test/", viewsIntegrations.test_currency_connection),
+    path("api/integrations/email/test/", viewsIntegrations.test_email_connection),
 
     # AI integration
     path("api/integrations/ai/suggest-name/", viewsAI.suggest_name),

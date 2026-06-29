@@ -571,6 +571,45 @@ class IntegrationSettings(models.Model):
         help_text="API key for ExchangeRate-API (v6.exchangerate-api.com)"
     )
 
+    # Email (SMTP) settings
+    email_host = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="SMTP server hostname (e.g. smtp.gmail.com)"
+    )
+    email_port = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text="SMTP server port (e.g. 587 for TLS, 465 for SSL)"
+    )
+    email_host_user = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="SMTP login username / email address"
+    )
+    email_host_password = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="SMTP login password or app-specific password"
+    )
+    email_sender = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="From-address used when sending emails (e.g. noreply@yourcompany.com)"
+    )
+    email_use_tls = models.BooleanField(
+        default=True,
+        help_text="Use STARTTLS when connecting to the SMTP server"
+    )
+    email_use_ssl = models.BooleanField(
+        default=False,
+        help_text="Use implicit SSL/TLS when connecting to the SMTP server (mutually exclusive with TLS)"
+    )
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

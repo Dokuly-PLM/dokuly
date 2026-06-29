@@ -59,7 +59,6 @@ def create_notification(user: User, message: str, uri: str, app: str, is_project
 
 def send_reset_password_mail_with_template(organization, user, first_name, email, reset_link):
     subject = 'Invitation to Workspace'
-    from_email = settings.EMAIL_SENDER
     recipient_list = [email]
     username = user.username
 
@@ -77,13 +76,14 @@ def send_reset_password_mail_with_template(organization, user, first_name, email
     Best Regards,
     Dokuly Team"""
 
-    send_mail(
+    from organizations.utils import send_email_with_org_settings
+    send_email_with_org_settings(
+        organization=organization,
         subject=subject,
         message=text_content,
-        from_email=from_email,
         recipient_list=recipient_list,
+        html_message=html_content,
         fail_silently=False,
-        html_message=html_content  # This is the key part
     )
 
 
