@@ -62,7 +62,7 @@ import phpserialize
 from .utils import send_email_confirmation, send_workspace_creation_email
 from documents.models import Document_Prefix
 from django.http import QueryDict
-from organizations.utils import cancel_paddle_subscription
+from organizations.utils import cancel_paddle_subscription, get_dokuly_base_url
 
 try:
     from Crypto.Hash import SHA1
@@ -1001,9 +1001,7 @@ def create_or_update_tenant(request):
                                 "%Y,%m,%d,%H,%M,%S"
                             ),
                         }
-                        resetLink = f"https://{domain_name}.dokuly.com/#/passwordRecovery/{token['token']}/{user_obj.id}" #TODO no longer hosted here.
-                        if local_server:
-                            resetLink = f"http://{domain_name}.dokuly.localhost:8000/#/passwordRecovery/{token['token']}/{user_obj.id}"
+                        resetLink = f"{get_dokuly_base_url(request)}/#/passwordRecovery/{token['token']}/{user_obj.id}"
                         send_workspace_creation_email(
                             email, domain_name, resetLink, username
                         )

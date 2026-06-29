@@ -51,6 +51,7 @@ import base64
 from django.db.models import Exists, OuterRef
 from django.contrib.postgres.fields import JSONField
 from organizations.views import validate_token
+from organizations.utils import get_dokuly_base_url
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum, F
 from Crypto.PublicKey import RSA
@@ -237,9 +238,7 @@ def initialize_tenant_for_self_hosting(request):
                             "token": AuthToken.objects.create(user_obj)[1],
                             "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
                         }
-                        resetLink = f"https://{domain_name}.dokuly.com/#/passwordRecovery/{token['token']}/{user_obj.id}"
-                        if local_server:
-                            resetLink = f"http://{domain_name}.dokuly.localhost:8000/#/passwordRecovery/{token['token']}/{user_obj.id}"
+                        resetLink = f"{get_dokuly_base_url(request)}/#/passwordRecovery/{token['token']}/{user_obj.id}"
                         send_workspace_creation_email(
                             email, domain_name, resetLink, username)
                         print("\n MAILS SENT \n")

@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from .models import Notification, Profile
 from django.template.loader import render_to_string
-from django.core.mail import send_mail
 from django.conf import settings
 from typing import Type, Union
 from parts.models import Part

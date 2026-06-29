@@ -26,6 +26,7 @@ from organizations.odoo_service import (
     OdooAPIError,
 )
 from .models import Organization, IntegrationSettings
+from .utils import get_email_settings, send_email_with_org_settings
 
 logger = logging.getLogger(__name__)
 
@@ -864,7 +865,6 @@ def test_email_connection(request):
             organization=organization
         )
 
-        from organizations.utils import get_email_settings, send_email_with_org_settings
         from profiles.models import Profile
 
         email_cfg = get_email_settings(organization)
