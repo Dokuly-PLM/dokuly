@@ -4,6 +4,8 @@ from organizations.utils import send_email_with_org_settings
 from .utilityFunctions import send_reset_password_mail_with_template
 from .serializers import ProfileSerializer
 from accounts.serializers import UserSerializer, RegisterSerializer, LoginSerializer, UserSerializerNoPersonal
+from organizations.utils import send_email_with_org_settings
+from .models import Profile
 
 
 # from tenants.models import Tenant
@@ -14,7 +16,6 @@ import string
 import random
 import json
 from datetime import datetime
-from .models import Profile
 
 from django.db.models import Prefetch
 from django.contrib.auth.decorators import login_required
@@ -679,7 +680,7 @@ def send_new_user_password_reset(organization, user, first_name, email):
             "token_created:": datetime.now().strftime("%Y,%m,%d,%H,%M,%S")
         }
         resetLink = f"https://{organization.tenant_id}.dokuly.com/#/passwordRecovery/{token['token']}/{user.id}"
-        from organizations.utils import send_email_with_org_settings
+        
         send_email_with_org_settings(
             organization=organization,
             subject='Welcome to Dokuly',
