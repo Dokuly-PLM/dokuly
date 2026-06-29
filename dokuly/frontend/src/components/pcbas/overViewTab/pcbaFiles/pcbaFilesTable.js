@@ -142,14 +142,19 @@ export const PcbaFilesTable = (props) => {
 
   const handleDownloadZip = (category = null) => {
     const categoryParam = category ? `?category=${category}` : "";
-    const url = `api/files/download/zip/pcbas/${props.pcba_id}/${categoryParam}`;
     const label = category || "all";
-    axios.get(url, { ...tokenConfig(), responseType: "blob" })
+    axios.get(`api/files/download/zip/pcbas/${props.pcba_id}/${categoryParam}`, {
+      ...tokenConfig(),
+      responseType: "blob",
+    })
       .then((res) => {
         const blob = new Blob([res.data], { type: "application/zip" });
         const link = document.createElement("a");
         link.href = window.URL.createObjectURL(blob);
-        link.setAttribute("download", `pcbas_${props.pcba_id}_${label}_files.zip`);
+        link.setAttribute(
+          "download",
+          `${(props.pcba?.full_part_number || "unknown").replace(/\s+/g, "_")}_${label}_files.zip`,
+        );
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);

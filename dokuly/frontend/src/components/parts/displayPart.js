@@ -283,6 +283,7 @@ const DisplayPart = (props) => {
                   file_id_list={part?.files}
                   app="Part"
                   objectId={part?.id}
+                  downloadName={part?.full_part_number || "unknown"}
                   setRefresh={setRefresh}
                   release_state={part?.release_state}
                 />

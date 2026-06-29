@@ -366,6 +366,7 @@ const DisplayASM = (props) => {
                   file_id_list={asmDetailed?.files}
                   app="Assembly"
                   objectId={asmDetailed?.id}
+                  downloadName={asmDetailed?.full_part_number || "unknown"}
                   setRefresh={setRefresh}
                   release_state={asmDetailed?.release_state}
                 />

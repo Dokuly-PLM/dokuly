@@ -65,6 +65,26 @@ MODEL_MAPPING = {
     "PurchaseOrder": PurchaseOrder
 }
 
+
+def _get_zip_download_name(obj, app_str, object_id):
+    if isinstance(obj, Pcba):
+        return obj.full_part_number or "unknown"
+    if isinstance(obj, Assembly):
+        return obj.full_part_number or "unknown"
+    if isinstance(obj, Part):
+        return obj.full_part_number or "unknown"
+    if isinstance(obj, Document):
+        return obj.full_doc_number or obj.title or f"DOC zip {object_id}"
+    if isinstance(obj, PurchaseOrder):
+        return f"PO{obj.purchase_order_number or object_id}"
+
+    for attr in ("full_part_number", "full_doc_number", "display_name", "name"):
+        value = getattr(obj, attr, None)
+        if value:
+            return value
+
+    return f"{app_str}_{object_id}"
+
 # ----------------- Files --------------------
 
 
@@ -151,6 +171,7 @@ def download_files_zip(request, app_str, object_id):
         files_qs = files_qs.filter(file_category=category)
 
     label = category or "all"
+    download_name = _get_zip_download_name(obj, app_str, object_id)
 
     if not files_qs.exists():
         return Response(
@@ -194,7 +215,7 @@ def download_files_zip(request, app_str, object_id):
     zip_buffer.close()
 
     response = HttpResponse(zip_data, content_type="application/zip")
-    response["Content-Disposition"] = f'attachment; filename="{app_str}_{object_id}_{label}_files.zip"'
+    response["Content-Disposition"] = f'attachment; filename="{download_name.replace(" ", "_")}_{label}_files.zip"'
     response["Content-Length"] = str(len(zip_data))
     return response
 
