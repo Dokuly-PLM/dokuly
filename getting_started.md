@@ -42,6 +42,11 @@ Make sure docker and other dependencies are installed. Then follow these steps:
 
 Then set a value within the string quotes.
 
+```.env
+# The base url, used for pasword resetting
+DOKULY_BASE_URL = "https://plm.mycompany.com"
+```
+
 ### Build the project. This can be done using
 
 ```bash
@@ -123,19 +128,9 @@ By following these steps, your locally hosted project should become accessible t
 
 ### SMTP Email
 
-**Email configuration is being moved to admin panel**.
+Dokuly has support for smtp email, and some basic functions via email like resetting your user's password. To setup the SMTP you will need your own smtp server.
 
-Dokuly has support for smtp email, and some basic functions via email like resetting your user's password. To setup the smtp you will need your own smtp server setup, and then in the .env file add the following fields:
-
-```ini
-EMAIL_HOST = "your_smtp_provider_address"
-EMAIL_PORT = your_port
-EMAIL_HOST_USER = "your_smtp_username"
-EMAIL_HOST_PASSWORD = "your_smtp_password"
-EMAIL_SENDER = 'your_smtp_sender_address'
-```
-
-Replace the values with your own information from your smtp provider.
+Email configuration is configured in the dokuly admin panel.
 
 ### Currency Exchange Rate API
 
