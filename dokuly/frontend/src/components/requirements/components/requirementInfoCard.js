@@ -496,23 +496,6 @@ const RequirementInfoCard = ({
           </Col>
         </Row>
 
-        <Row className="mt-2 align-items-top">
-          <Col className="col-lg-6 col-xl-6">
-            <b>Tags</b>
-          </Col>
-        </Row>
-        <Row className="mt-2 align-items-top">
-          <Col className="col-auto">
-            <DokulyTags
-              tags={item?.tags ?? []}
-              onChange={handleTagsChange}
-              readOnly={readOnly}
-              project={project}
-              setRefresh={setRefresh}
-            />
-          </Col>
-        </Row>
-
         {created_by !== null && created_by !== undefined && (
           <Row className="align-items-center">
             <Col
@@ -583,6 +566,23 @@ const RequirementInfoCard = ({
             )}
           </Row>
         )}
+
+        <Row className="mt-2 align-items-top">
+          <Col className="col-lg-6 col-xl-6">
+            <b>Tags</b>
+          </Col>
+        </Row>
+        <Row className="mt-2 align-items-top">
+          <Col className="col-auto">
+            <DokulyTags
+              tags={item?.tags ?? []}
+              onChange={handleTagsChange}
+              readOnly={readOnly}
+              project={project}
+              setRefresh={setRefresh}
+            />
+          </Col>
+        </Row>
       </Container>
     </DokulyCard>
   );

@@ -3,6 +3,17 @@ from projects.serializers import ProjectSerializer, TagSerializer
 from requirements.models import RequirementSet, Requirement
 
 
+class RequirementDocumentReferenceSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    page_number = serializers.IntegerField(allow_null=True)
+    document_id = serializers.IntegerField(source="document.id")
+    full_doc_number = serializers.CharField(source="document.full_doc_number", allow_null=True)
+    formatted_revision = serializers.CharField(
+        source="document.formatted_revision", allow_null=True
+    )
+    title = serializers.CharField(source="document.title")
+
+
 class RequirementSetSerializer(serializers.ModelSerializer):
     class Meta:
         model = RequirementSet
@@ -11,6 +22,11 @@ class RequirementSetSerializer(serializers.ModelSerializer):
 
 class RequirementSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
+    statement_references = serializers.SerializerMethodField()
+
+    def get_statement_references(self, obj):
+        refs = obj.statement_references.select_related("document").all()
+        return RequirementDocumentReferenceSerializer(refs, many=True).data
 
     class Meta:
         model = Requirement

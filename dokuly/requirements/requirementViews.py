@@ -12,6 +12,7 @@ from projects.viewsTags import check_for_and_create_new_tags
 from .models import Requirement, RequirementSet
 from .serializers import RequirementSerializer
 from profiles.views import check_permissions_standard
+from documents.models import Document, Document_Reference
 
 from django.contrib.auth.models import User
 from profiles.views import check_permissions_standard, check_user_auth_and_app_permission
@@ -200,7 +201,9 @@ def get_requirement(request, id: int):
         return response
 
     try:
-        requirement = Requirement.objects.get(id=id)
+        requirement = Requirement.objects.prefetch_related(
+            "statement_references__document"
+        ).get(id=id)
 
         project = requirement.requirement_set.project
         # Check if the project of the requirement set includes the user or if the project is null
@@ -265,7 +268,9 @@ def get_requirements_by_set(request, set_id):
         requirement_set.project.project_members.filter(id=user.id).exists()
         or requirement_set.project.isnull
     ):
-        requirements = Requirement.objects.filter(requirement_set_id=set_id).prefetch_related("tags")
+        requirements = Requirement.objects.filter(requirement_set_id=set_id).prefetch_related(
+            "tags", "statement_references__document"
+        )
         serializer = RequirementSerializer(requirements, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -299,3 +304,91 @@ def get_requirements_by_parent(request, parent_id):
             f"get_requirements_by_parent failed: {e}",
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@api_view(["PUT"])
+@renderer_classes([JSONRenderer])
+@login_required(login_url="/login")
+def update_requirement_document_references(request, requirement_id):
+    """Replace a requirement's statement references."""
+    user = request.user
+    permission, response = check_user_auth_and_app_permission(request, "requirements")
+    if not permission:
+        return response
+
+    requirement = get_object_or_404(Requirement, id=requirement_id)
+    project = requirement.requirement_set.project
+    if project and not project.project_members.filter(id=user.id).exists():
+        return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
+
+    references_payload = request.data.get("references", [])
+    if not isinstance(references_payload, list):
+        return Response("references must be a list", status=status.HTTP_400_BAD_REQUEST)
+
+    document_ids = []
+    normalized_references = []
+    for entry in references_payload:
+        if not isinstance(entry, dict):
+            return Response("Each reference must be an object", status=status.HTTP_400_BAD_REQUEST)
+        document_id = entry.get("document_id")
+        if document_id is None:
+            return Response("document_id is required for each reference", status=status.HTTP_400_BAD_REQUEST)
+        page_number = entry.get("page_number")
+        if page_number in ("", None):
+            page_number = None
+        else:
+            try:
+                page_number = int(page_number)
+            except (TypeError, ValueError):
+                return Response("page_number must be an integer or empty", status=status.HTTP_400_BAD_REQUEST)
+
+        document_ids.append(document_id)
+        normalized_references.append({
+            "document_id": document_id,
+            "page_number": page_number,
+        })
+
+    documents = list(Document.objects.filter(id__in=document_ids, is_archived=False))
+    found_ids = {doc.id for doc in documents}
+    missing_ids = [doc_id for doc_id in document_ids if doc_id not in found_ids]
+    if missing_ids:
+        return Response(
+            f"Documents not found: {missing_ids}",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Validate each selected document by the same project access rule as document views.
+    invalid_docs = [
+        doc.id
+        for doc in documents
+        if not (
+            doc.project is None
+            or doc.project.project_members.filter(id=user.id).exists()
+        )
+    ]
+    if invalid_docs:
+        return Response(
+            f"Unauthorized documents: {invalid_docs}",
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    references = []
+    document_lookup = {doc.id: doc for doc in documents}
+    for entry in normalized_references:
+        doc = document_lookup[entry["document_id"]]
+        reference = Document_Reference.objects.filter(
+            document=doc,
+            page_number=entry["page_number"],
+        ).first()
+        if reference is None:
+            reference = Document_Reference.objects.create(
+                document=doc,
+                page_number=entry["page_number"],
+            )
+        references.append(reference)
+
+    requirement.statement_references.set(references)
+
+    refreshed = Requirement.objects.prefetch_related("statement_references__document").get(id=requirement_id)
+    serializer = RequirementSerializer(refreshed, many=False)
+    return Response(serializer.data, status=status.HTTP_200_OK)

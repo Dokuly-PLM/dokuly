@@ -1963,6 +1963,19 @@ def global_part_search(request):
         # Get which tables to search (default: parts, pcbas, assemblies - NOT documents for BOM compatibility)
         include_tables = data.get("include_tables", ["parts", "pcbas", "assemblies"])
 
+        # Default to parts permission, but allow requirements-only users for document-only search requests.
+        permission, response = check_user_auth_and_app_permission(request, "parts")
+        if not permission:
+            include_table_set = set(include_tables)
+            if include_table_set and include_table_set.issubset({"documents"}):
+                requirements_permission, requirements_response = check_user_auth_and_app_permission(
+                    request, "requirements"
+                )
+                if not requirements_permission:
+                    return requirements_response
+            else:
+                return response
+
         # Filter to only show latest revisions (for ECO, etc.)
         latest_only = data.get("latest_only", False)
 

@@ -61,6 +61,10 @@ urlpatterns = [
         "api/requirements/get/requirementsByParent/<int:parent_id>/",
         requirementViews.get_requirements_by_parent,
     ),
+    path(
+        "api/requirements/put/referenceDocuments/<int:requirement_id>/",
+        requirementViews.update_requirement_document_references,
+    ),
 ]
 
 urlpatterns += router.urls

@@ -15,7 +15,10 @@ import EditableMarkdown from "../dokuly_components/dokulyMarkdown/editableMarkdo
 import RequirementsTable from "./requirementsTable";
 import CardTitle from "../dokuly_components/cardTitle";
 import RequirementInfoCard from "./components/requirementInfoCard";
+import RequirementDocumentReferenceSelector from "./components/requirementDocumentReferenceSelector";
 import Heading from "../dokuly_components/Heading";
+import { formatPDFViewerURL } from "../common/functions";
+import { getFile } from "../common/filesTable/functions/queries";
 
 import useProfile from "../common/hooks/useProfile";
 import { checkProfileIsAllowedToEdit } from "../common/functions";
@@ -50,6 +53,8 @@ const DisplayRequirement = (props) => {
   const [requirements, setRequirements] = useState([]); // All requirements in set
   const [subRequirements, setSubRequirements] = useState([]);
   const [project, setProject] = useState(null);
+  const [selectedReference, setSelectedReference] = useState(null);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState(null);
 
   function refetch() {
     getRequirement(id).then((res) => {
@@ -156,6 +161,59 @@ const DisplayRequirement = (props) => {
     }
   }, [requirement]);
 
+  useEffect(() => {
+    const references = requirement?.statement_references || [];
+
+    if (references.length === 0) {
+      setSelectedReference(null);
+      return;
+    }
+
+    if (!selectedReference?.document_id) {
+      setSelectedReference(references[0]);
+      return;
+    }
+
+    const updatedSelected = references.find(
+      (reference) => reference.document_id === selectedReference.document_id
+    );
+
+    if (updatedSelected) {
+      setSelectedReference(updatedSelected);
+    } else {
+      setSelectedReference(references[0]);
+    }
+  }, [requirement?.statement_references]);
+
+  useEffect(() => {
+    let currentBlobUrl = null;
+
+    if (!selectedReference?.document_id) {
+      setPreviewPdfUrl(null);
+      return () => {};
+    }
+
+    const pdfUrl = formatPDFViewerURL(selectedReference.document_id, "pdf");
+    getFile(pdfUrl)
+      .then((blob) => {
+        currentBlobUrl = URL.createObjectURL(blob);
+        setPreviewPdfUrl(currentBlobUrl);
+      })
+      .catch(() => {
+        setPreviewPdfUrl(null);
+      });
+
+    return () => {
+      if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
+      }
+    };
+  }, [selectedReference?.document_id]);
+
+  const hasStatementReferences = (requirement?.statement_references || []).length > 0;
+  const selectedPage = Number.parseInt(selectedReference?.page_number, 10);
+  const pageNumber = Number.isNaN(selectedPage) || selectedPage < 1 ? 1 : selectedPage;
+
   return (
     <div
       className="container-fluid mt-2 mainContainerWidth"
@@ -175,7 +233,7 @@ const DisplayRequirement = (props) => {
       />
 
       <Row>
-        <Col>
+        <Col lg={hasStatementReferences ? 6 : 12}>
           <RequirementInfoCard
             item={requirement}
             number_of_subrequirements={subRequirements.length}
@@ -221,6 +279,19 @@ const DisplayRequirement = (props) => {
               showEmptyBorder={true}
               readOnly={readOnly || requirement?.state === "Approved" || requirement?.state === "Rejected" }
             />
+            <div className="mt-3">
+              <CardTitle
+                titleText={"References"}
+                optionalHelpText={"Attach documents referenced by the requirement statement. Page numbers can be set per document."}
+              />
+              <RequirementDocumentReferenceSelector
+                requirement={requirement}
+                readOnly={readOnly || requirement?.state === "Approved" || requirement?.state === "Rejected"}
+                setRefresh={setRefresh}
+                selectedDocumentId={selectedReference?.document_id}
+                onSelectReference={setSelectedReference}
+              />
+            </div>
           </DokulyCard>
 
           <DokulyCard
@@ -357,6 +428,36 @@ const DisplayRequirement = (props) => {
             </Row>
           </DokulyCard>
         </Col>
+        {hasStatementReferences && (
+          <Col lg={6}>
+            <DokulyCard>
+              <CardTitle
+                titleText={"Reference Preview"}
+                optionalHelpText={"Preview of the selected referenced document PDF."}
+              />
+              <div style={{ marginBottom: "8px" }}>
+                <small className="text-muted">
+                  {selectedReference?.full_doc_number || "Document"}
+                  {selectedReference?.title ? ` - ${selectedReference.title}` : ""}
+                </small>
+              </div>
+              {previewPdfUrl ? (
+                <iframe
+                  id="requirement-reference-preview"
+                  src={`${previewPdfUrl}#page=${pageNumber}&zoom=page-fit`}
+                  width="100%"
+                  height="1200px"
+                  title="Requirement reference PDF preview"
+                  style={{ border: "1px solid #e5e5e5", borderRadius: "4px" }}
+                />
+              ) : (
+                <small className="text-muted">
+                  No PDF preview available for the selected document.
+                </small>
+              )}
+            </DokulyCard>
+          </Col>
+        )}
       </Row>
     </div>
   );

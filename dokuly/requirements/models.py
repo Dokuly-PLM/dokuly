@@ -65,11 +65,6 @@ class Requirement(models.Model):
         help_text="External requirement identifier from customer or third-party specification systems.",
     )
 
-    # This field has never been used.
-    reference_list = models.ForeignKey(
-        Reference_List, on_delete=models.SET_NULL, null=True
-    )
-
     # "Shall", "Should"
     obligation_level = models.CharField(
         max_length=25, default="", blank=True, null=True
@@ -82,6 +77,12 @@ class Requirement(models.Model):
 
     # The actual requirement
     statement = models.TextField(default="", blank=True, null=True)
+
+    statement_references = models.ManyToManyField(
+        "documents.Document_Reference",
+        blank=True,
+        related_name="requirements",
+    )
 
     # SEBoK: Inspection, Analysis, Analogy or Similarity, Demonstration, Test, Sampling
     verification_class = models.CharField(
