@@ -1740,6 +1740,7 @@ def download_file(request, file_identifier, id):
 
     # Map file identifiers to file objects
     file_to_serve = None
+    recognized_identifier = True
     
     if file_identifier == "document_file":
         generic_file = document.files.filter(archived=0).order_by("-created_at").first()
@@ -1754,6 +1755,8 @@ def download_file(request, file_identifier, id):
             file_to_serve = document.pdf_print.file
         elif document.pdf_source:
             file_to_serve = document.pdf_source.file
+    else:
+        recognized_identifier = False
     
     if file_to_serve:
         # Check if the file actually exists
@@ -1763,8 +1766,10 @@ def download_file(request, file_identifier, id):
             return FileResponse(file_to_serve.open('rb'), status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": f"Failed to open file: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    else:
+    elif not recognized_identifier:
         return Response({"error": "Can't recognize file identifier"}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({"error": "Requested file is not available for this document"}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(("POST",))

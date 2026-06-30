@@ -129,3 +129,32 @@ export const getRequirementsByParent = (id) => {
   const dataPromise = promise.then((res) => res);
   return dataPromise;
 };
+
+export const searchRequirementReferenceDocuments = (requirementId, query = "") => {
+  const promise = axios.put(
+    "api/global_part_search/",
+    {
+      query,
+      include_tables: ["documents"],
+      latest_only: false,
+    },
+    tokenConfig(),
+  );
+  return promise.then((res) => res);
+};
+
+export const updateRequirementDocumentReferences = (
+  requirementId,
+  references,
+  referenceType = "statement",
+) => {
+  const promise = axios.put(
+    `api/requirements/put/referenceDocuments/${requirementId}/`,
+    {
+      references,
+      reference_type: referenceType,
+    },
+    tokenConfig(),
+  );
+  return promise.then((res) => res);
+};

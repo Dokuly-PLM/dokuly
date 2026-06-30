@@ -26,10 +26,24 @@ const DokulySelect = ({
       boxShadow: "none",
       "&:hover": { borderColor: "#aaa" },
     }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected
+        ? "#165216"
+        : state.isFocused
+          ? "rgba(22, 82, 22, 0.12)"
+          : base.backgroundColor,
+      color: state.isSelected ? "#ffffff" : "#212529",
+    }),
     menuPortal: (base) => ({
       ...base,
       zIndex: 9999, // Ensure the menu portal has a high z-index
     }),
+  };
+
+  const mergedStyles = {
+    ...customStyles,
+    ...styles,
   };
 
   return (
@@ -41,7 +55,7 @@ const DokulySelect = ({
       placeholder={placeholder}
       isClearable={isClearable}
       components={components}
-      styles={customStyles}
+      styles={mergedStyles}
       menuPortalTarget={document.body}
       menuPosition="fixed"
       noOptionsMessage={noOptionsMessage}

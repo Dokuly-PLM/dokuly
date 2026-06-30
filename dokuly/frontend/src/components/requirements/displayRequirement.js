@@ -15,7 +15,10 @@ import EditableMarkdown from "../dokuly_components/dokulyMarkdown/editableMarkdo
 import RequirementsTable from "./requirementsTable";
 import CardTitle from "../dokuly_components/cardTitle";
 import RequirementInfoCard from "./components/requirementInfoCard";
+import RequirementDocumentReferenceSelector from "./components/requirementDocumentReferenceSelector";
 import Heading from "../dokuly_components/Heading";
+import { formatPDFViewerURL } from "../common/functions";
+import { getFile } from "../common/filesTable/functions/queries";
 
 import useProfile from "../common/hooks/useProfile";
 import { checkProfileIsAllowedToEdit } from "../common/functions";
@@ -50,6 +53,8 @@ const DisplayRequirement = (props) => {
   const [requirements, setRequirements] = useState([]); // All requirements in set
   const [subRequirements, setSubRequirements] = useState([]);
   const [project, setProject] = useState(null);
+  const [selectedReference, setSelectedReference] = useState(null);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState(null);
 
   function refetch() {
     getRequirement(id).then((res) => {
@@ -156,6 +161,71 @@ const DisplayRequirement = (props) => {
     }
   }, [requirement]);
 
+  useEffect(() => {
+    const statementReferences = requirement?.statement_references || [];
+    const verificationReferences = requirement?.verification_references || [];
+    const allReferences = [...verificationReferences, ...statementReferences];
+
+    const defaultReference =
+      verificationReferences.find((reference) => Boolean(reference?.pdf_print_id)) ||
+      verificationReferences[0] ||
+      statementReferences[0] ||
+      null;
+
+    if (allReferences.length === 0) {
+      setSelectedReference(null);
+      return;
+    }
+
+    if (!selectedReference?.document_id) {
+      setSelectedReference(defaultReference);
+      return;
+    }
+
+    const updatedSelected = allReferences.find(
+      (reference) => reference.document_id === selectedReference.document_id
+    );
+
+    if (updatedSelected) {
+      setSelectedReference(updatedSelected);
+    } else {
+      setSelectedReference(defaultReference);
+    }
+  }, [requirement?.statement_references, requirement?.verification_references]);
+
+  useEffect(() => {
+    let currentBlobUrl = null;
+
+    if (!selectedReference?.document_id) {
+      setPreviewPdfUrl(null);
+      return () => {};
+    }
+
+    const pdfUrl = formatPDFViewerURL(selectedReference.document_id, "pdf");
+    getFile(pdfUrl)
+      .then((blob) => {
+        currentBlobUrl = URL.createObjectURL(blob);
+        setPreviewPdfUrl(currentBlobUrl);
+      })
+      .catch(() => {
+        setPreviewPdfUrl(null);
+      });
+
+    return () => {
+      if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
+      }
+    };
+  }, [selectedReference?.document_id]);
+
+  const hasStatementReferences = (requirement?.statement_references || []).length > 0;
+  const hasVerificationReferences = (requirement?.verification_references || []).length > 0;
+  const hasAnyReferences = hasStatementReferences || hasVerificationReferences;
+  const selectedPage = Number.parseInt(selectedReference?.page_number, 10);
+  const pageNumber = Number.isNaN(selectedPage) || selectedPage < 1 ? 1 : selectedPage;
+  const isRequirementLocked = requirement?.state === "Approved" || requirement?.state === "Rejected";
+  const hasStatementText = Boolean((requirement?.statement || "").trim());
+
   return (
     <div
       className="container-fluid mt-2 mainContainerWidth"
@@ -175,7 +245,7 @@ const DisplayRequirement = (props) => {
       />
 
       <Row>
-        <Col>
+        <Col lg={hasAnyReferences ? 6 : 12}>
           <RequirementInfoCard
             item={requirement}
             number_of_subrequirements={subRequirements.length}
@@ -215,12 +285,31 @@ const DisplayRequirement = (props) => {
               titleText={"Statement"}
               optionalHelpText={"A sentence stating the requirement."}
             />
-            <EditableMarkdown
-              initialMarkdown={requirement?.statement || ""}
-              onSubmit={handleStatementSubmit}
-              showEmptyBorder={true}
-              readOnly={readOnly || requirement?.state === "Approved" || requirement?.state === "Rejected" }
-            />
+            {isRequirementLocked && !hasStatementText ? (
+              <small className="text-muted">No statement added.</small>
+            ) : (
+              <EditableMarkdown
+                initialMarkdown={requirement?.statement || ""}
+                onSubmit={handleStatementSubmit}
+                showEmptyBorder={true}
+                readOnly={readOnly || isRequirementLocked}
+              />
+            )}
+            <div className="mt-3">
+              <CardTitle
+                titleText={"References"}
+                optionalHelpText={"Attach documents referenced by the requirement statement. Page numbers can be set per document."}
+              />
+              <RequirementDocumentReferenceSelector
+                requirement={requirement}
+                readOnly={readOnly || isRequirementLocked}
+                setRefresh={setRefresh}
+                selectedDocumentId={selectedReference?.document_id}
+                onSelectReference={setSelectedReference}
+                referenceField="statement_references"
+                referenceType="statement"
+              />
+            </div>
           </DokulyCard>
 
           <DokulyCard
@@ -253,18 +342,22 @@ const DisplayRequirement = (props) => {
           <DokulyCard
             isCollapsed={
               requirement?.verification_method === "" &&
-              requirement?.verification_results === ""
+              requirement?.verification_results === "" &&
+              !hasVerificationReferences
             }
             expandText={"Verify compliance"}
             isHidden={
               (requirement?.verification_method === "" &&
                 requirement?.verification_results === "" &&
+                !hasVerificationReferences &&
                 readOnly) ||
               (requirement?.verification_method === "" &&
                 requirement?.verification_results === "" &&
+                !hasVerificationReferences &&
                 subRequirements?.length > 0) ||
               (requirement?.verification_method === "" &&
                   requirement?.verification_results === "" &&
+                  !hasVerificationReferences &&
                   requirement?.superseded_by)   
             }
             hiddenText={verificationHiddenText}
@@ -309,6 +402,22 @@ const DisplayRequirement = (props) => {
               showEmptyBorder={true}
               readOnly={readOnly}
             />
+
+            <div className="mt-3">
+              <CardTitle
+                titleText={"Verification References"}
+                optionalHelpText={"Attach one document reference used as verification evidence."}
+              />
+              <RequirementDocumentReferenceSelector
+                requirement={requirement}
+                readOnly={readOnly || isRequirementLocked}
+                setRefresh={setRefresh}
+                selectedDocumentId={selectedReference?.document_id}
+                onSelectReference={setSelectedReference}
+                referenceField="verification_references"
+                referenceType="verification"
+              />
+            </div>
 
             <Row className="mt-3 justify-content-center align-items-center">
               <Col className="col-auto">
@@ -357,6 +466,36 @@ const DisplayRequirement = (props) => {
             </Row>
           </DokulyCard>
         </Col>
+        {hasAnyReferences && (
+          <Col lg={6}>
+            <DokulyCard>
+              <CardTitle
+                titleText={"Reference Preview"}
+                optionalHelpText={"Preview of the selected referenced document PDF."}
+              />
+              <div style={{ marginBottom: "8px" }}>
+                <small className="text-muted">
+                  {selectedReference?.full_doc_number || "Document"}
+                  {selectedReference?.title ? ` - ${selectedReference.title}` : ""}
+                </small>
+              </div>
+              {previewPdfUrl ? (
+                <iframe
+                  id="requirement-reference-preview"
+                  src={`${previewPdfUrl}#page=${pageNumber}&zoom=page-fit`}
+                  width="100%"
+                  height="1200px"
+                  title="Requirement reference PDF preview"
+                  style={{ border: "1px solid #e5e5e5", borderRadius: "4px" }}
+                />
+              ) : (
+                <small className="text-muted">
+                  No PDF preview available for the selected document.
+                </small>
+              )}
+            </DokulyCard>
+          </Col>
+        )}
       </Row>
     </div>
   );

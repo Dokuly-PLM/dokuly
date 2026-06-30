@@ -496,23 +496,6 @@ const RequirementInfoCard = ({
           </Col>
         </Row>
 
-        <Row className="mt-2 align-items-top">
-          <Col className="col-lg-6 col-xl-6">
-            <b>Tags</b>
-          </Col>
-        </Row>
-        <Row className="mt-2 align-items-top">
-          <Col className="col-auto">
-            <DokulyTags
-              tags={item?.tags ?? []}
-              onChange={handleTagsChange}
-              readOnly={readOnly}
-              project={project}
-              setRefresh={setRefresh}
-            />
-          </Col>
-        </Row>
-
         {created_by !== null && created_by !== undefined && (
           <Row className="align-items-center">
             <Col
@@ -543,7 +526,7 @@ const RequirementInfoCard = ({
             </Row>
           )}
 
-        {number_of_subrequirements !== -1 && (
+        {/*number_of_subrequirements !== -1 && (
           <Row className="align-items-center">
             <Col
               className="col-lg-6 col-xl-6"
@@ -553,7 +536,7 @@ const RequirementInfoCard = ({
             </Col>
             <Col style={{ textAlign: "left" }}>{number_of_subrequirements}</Col>
           </Row>
-        )}
+        )*/}
 
         {last_updated !== "" && (
           <Row className="align-items-center">
@@ -572,7 +555,24 @@ const RequirementInfoCard = ({
         {Object.keys(additional_fields).length > 0 &&
           renderAdditionalFields(additional_fields, keyColumnMaxWidth)}
 
-        {!readOnly && (
+        <Row className="mt-2 align-items-top">
+          <Col className="col-lg-6 col-xl-6">
+            <b>Tags</b>
+          </Col>
+        </Row>
+        <Row className="mt-2 align-items-top">
+          <Col className="col-auto">
+            <DokulyTags
+              tags={item?.tags ?? []}
+              onChange={handleTagsChange}
+              readOnly={readOnly}
+              project={project}
+              setRefresh={setRefresh}
+            />
+          </Col>
+        </Row>
+
+         {!readOnly && (
           <Row className="align-items-center">
             {(item?.state === "Draft") && (
               <DeleteButton

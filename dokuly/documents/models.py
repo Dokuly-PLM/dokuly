@@ -243,3 +243,22 @@ class Reference_List(models.Model):
         null=True,
         blank=True,
     )
+
+
+
+class Document_Reference(models.Model):
+    """List of documents.
+    Used to reference a document from a requirement.
+    In some cases, the reference is to a specific page in the document.
+    """
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name="document_references",
+        help_text="Document referenced to.",
+    )
+    page_number = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text="Optional page number in the referenced document.",
+    )
