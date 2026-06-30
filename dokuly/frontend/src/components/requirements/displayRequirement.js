@@ -19,6 +19,7 @@ import RequirementDocumentReferenceSelector from "./components/requirementDocume
 import Heading from "../dokuly_components/Heading";
 import { formatPDFViewerURL } from "../common/functions";
 import { getFile } from "../common/filesTable/functions/queries";
+import { DEFAULT_REQUIREMENT_SET_SETTINGS } from "./modelConstants";
 
 import useProfile from "../common/hooks/useProfile";
 import { checkProfileIsAllowedToEdit } from "../common/functions";
@@ -225,6 +226,22 @@ const DisplayRequirement = (props) => {
   const pageNumber = Number.isNaN(selectedPage) || selectedPage < 1 ? 1 : selectedPage;
   const isRequirementLocked = requirement?.state === "Approved" || requirement?.state === "Rejected";
   const hasStatementText = Boolean((requirement?.statement || "").trim());
+  const requirementSetSettings = {
+    ...DEFAULT_REQUIREMENT_SET_SETTINGS,
+    hierarchical_requirements_is_enabled:
+      requirementSet?.hierarchical_requirements_is_enabled ?? true,
+    derived_from_enabled: requirementSet?.derived_from_enabled ?? true,
+    superseded_by_enabled: requirementSet?.superseded_by_enabled ?? true,
+    external_requirement_id_is_enabled:
+      requirementSet?.external_requirement_id_is_enabled ?? true,
+    requirement_type_is_enabled: requirementSet?.requirement_type_is_enabled ?? true,
+    verification_class_is_enabled: requirementSet?.verification_class_is_enabled ?? true,
+    created_by_is_visible: requirementSet?.created_by_is_visible ?? true,
+    verification_method_markdown_is_enabled:
+      requirementSet?.verification_method_markdown_is_enabled ?? true,
+    verification_results_markdown_is_enabled:
+      requirementSet?.verification_results_markdown_is_enabled ?? true,
+  };
 
   return (
     <div
@@ -253,6 +270,7 @@ const DisplayRequirement = (props) => {
             refresh={refresh}
             readOnly={readOnly}
             project={project}
+            requirementSetSettings={requirementSetSettings}
           />
 
           <RequirementDependencyGraph
@@ -312,32 +330,37 @@ const DisplayRequirement = (props) => {
             </div>
           </DokulyCard>
 
-          <DokulyCard
-            isCollapsed={subRequirements.length === 0}
-            expandText={"Add subrequirement"}
-            isHidden={(subRequirements.length === 0 && readOnly) ||
-              (subRequirements.length === 0 && requirement?.superseded_by)
-            }
-            hiddenText={requirement?.superseded_by? "Requirement superseded by another requirement" : "Requirement has no subrequirements"}
-          >
-            <CardTitle
-              titleText={"Subrequirements"}
-              optionalHelpText={
-                "Requirement decomposition involves breaking down a requirement into two or more subrequirements. These subrequirements provide explicit or more detailed coverage of the original requirement. Together, they fully encompass the scope of the parent requirement, effectively making it obsolete."
-              }
-            />
-            <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
-              <RequirementsTable
-                requirements={subRequirements}
-                parent_requirement_id={id}
-                set_id={requirement?.requirement_set}
-                setRefresh={setRefresh}
-                refresh={refresh}
-                readOnly={readOnly}
-                profile={profile}
-              />
-            </div>
-          </DokulyCard>
+          {requirementSetSettings.hierarchical_requirements_is_enabled && (
+              <DokulyCard
+                isCollapsed={subRequirements.length === 0}
+                expandText={"Add subrequirement"}
+                isHidden={
+                  (subRequirements.length === 0 && readOnly) ||
+                  (subRequirements.length === 0 && requirement?.superseded_by)
+                }
+                hiddenText={requirement?.superseded_by? "Requirement superseded by another requirement" : "Requirement has no subrequirements"}
+              >
+                <CardTitle
+                  titleText={"Subrequirements"}
+                  optionalHelpText={
+                    "Requirement decomposition involves breaking down a requirement into two or more subrequirements. These subrequirements provide explicit or more detailed coverage of the original requirement. Together, they fully encompass the scope of the parent requirement, effectively making it obsolete."
+                  }
+                />
+                <div style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                  <RequirementsTable
+                    requirements={subRequirements}
+                    parent_requirement_id={id}
+                    set_id={requirement?.requirement_set}
+                    setRefresh={setRefresh}
+                    refresh={refresh}
+                    readOnly={readOnly}
+                    profile={profile}
+                  />
+                </div>
+              </DokulyCard>
+            )
+          }
+          
 
           <DokulyCard
             isCollapsed={
@@ -356,57 +379,67 @@ const DisplayRequirement = (props) => {
                 !hasVerificationReferences &&
                 subRequirements?.length > 0) ||
               (requirement?.verification_method === "" &&
-                  requirement?.verification_results === "" &&
-                  !hasVerificationReferences &&
-                  requirement?.superseded_by)   
+                requirement?.verification_results === "" &&
+                !hasVerificationReferences &&
+                requirement?.superseded_by)
             }
             hiddenText={verificationHiddenText}
           >
-            <CardTitle
-              titleText={"Verification"}
-              optionalHelpText={
-                "Document how the requirement will be verified. This can include test cases, test plans, or other verification methods. After verification, the results can be documented here."
-              }
-            />
-            <Row className="d-flex align-items-center">
-              <Col className="col-2">
-                <h6
-                  style={{
-                    marginLeft: "15px",
-                    marginTop: "10px",
-                    marginBot: "5px",
-                    whiteSpace: "nowrap",
+            
+            {requirementSetSettings.verification_method_markdown_is_enabled && (
+              <>
+                <CardTitle
+                  titleText={"Verification"}
+                  optionalHelpText={
+                    "Document how the requirement will be verified. This can include test cases, test plans, or other verification methods. After verification, the results can be documented here."
+                  }
+                />
+                <Row className="d-flex align-items-center">
+                  <Col className="col-2">
+                    <h6
+                      style={{
+                        marginLeft: "15px",
+                        marginTop: "10px",
+                        marginBot: "5px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <b>Method of {requirement?.verification_class}</b>
+                    </h6>
+                  </Col>
+                </Row>
+                <EditableMarkdown
+                  initialMarkdown={requirement?.verification_method || ""}
+                  onSubmit={(text) => {
+                    updateTextField(text, "verification_method");
                   }}
-                >
-                  <b>Method of {requirement?.verification_class}</b>
+                  showEmptyBorder={true}
+                  readOnly={readOnly}
+                />
+              </>
+            )}
+
+            {requirementSetSettings.verification_results_markdown_is_enabled && (
+              <>
+                <h6 style={{ marginLeft: "15px", marginTop: "10px" }}>
+                  <b>Results</b>
                 </h6>
-              </Col>
-            </Row>
-            <EditableMarkdown
-              initialMarkdown={requirement?.verification_method || ""}
-              onSubmit={(text) => {
-                updateTextField(text, "verification_method");
-              }}
-              showEmptyBorder={true}
-              readOnly={readOnly}
-            />
+                <EditableMarkdown
+                  initialMarkdown={requirement?.verification_results || ""}
+                  onSubmit={(text) => {
+                    updateTextField(text, "verification_results");
+                  }}
+                  showEmptyBorder={true}
+                  readOnly={readOnly}
+                />
+              </>
+            )}
 
-            <h6 style={{ marginLeft: "15px", marginTop: "10px" }}>
-              <b>Results</b>
-            </h6>
-            <EditableMarkdown
-              initialMarkdown={requirement?.verification_results || ""}
-              onSubmit={(text) => {
-                updateTextField(text, "verification_results");
-              }}
-              showEmptyBorder={true}
-              readOnly={readOnly}
-            />
-
+  
             <div className="mt-3">
               <CardTitle
                 titleText={"Verification References"}
-                optionalHelpText={"Attach one document reference used as verification evidence."}
+                optionalHelpText={"Attach documents or reports as verification evidence."}
               />
               <RequirementDocumentReferenceSelector
                 requirement={requirement}
@@ -418,6 +451,7 @@ const DisplayRequirement = (props) => {
                 referenceType="verification"
               />
             </div>
+          
 
             <Row className="mt-3 justify-content-center align-items-center">
               <Col className="col-auto">
@@ -430,7 +464,7 @@ const DisplayRequirement = (props) => {
                   <Form.Group className="align-items-center">
                     <Form.Check
                       type="checkbox"
-                      id="is_verified" // Ensure the id is unique
+                      id="is_verified"
                       label={
                         requirement?.is_verified ? "Verified:" : "Verified"
                       }
@@ -458,10 +492,7 @@ const DisplayRequirement = (props) => {
                 </div>
               </Col>
               <Col className="col-4">
-                {/* Verified by: */}
-                {requirement?.is_verified && (
-                  <UserProfileCard profile={profile} />
-                )}
+                {requirement?.is_verified && <UserProfileCard profile={profile} />}
               </Col>
             </Row>
           </DokulyCard>

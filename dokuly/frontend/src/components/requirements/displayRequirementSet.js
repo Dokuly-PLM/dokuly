@@ -164,7 +164,6 @@ const DisplayRequirementSet = (props) => {
         setRefresh={setRefresh}
         readOnly={readOnly}
       />
-
       <Row>
         <RequirementsSetInfoCard requirementSet={requirementSet} />
       </Row>

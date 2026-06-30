@@ -24,6 +24,7 @@ import DeleteButton from "../../dokuly_components/deleteButton";
 import NavigateButton from "../../dokuly_components/dokulyTable/components/navigateButton";
 import GenericMultiSelector from "../../dokuly_components/genericMultiSelector";
 import TextFieldEditor from "../../dokuly_components/dokulyTable/components/textFieldEditor";
+import { DEFAULT_REQUIREMENT_SET_SETTINGS } from "../modelConstants";
 
 const renderAdditionalFields = (additionalFields, keyColumnMaxWidth) => {
   return Object.entries(additionalFields)
@@ -54,6 +55,7 @@ const RequirementInfoCard = ({
   rowPadding = "10px",
   readOnly = false,
   project = { id: -1 },
+  requirementSetSettings = DEFAULT_REQUIREMENT_SET_SETTINGS,
 }) => {
   const navigate = useNavigate();
 
@@ -63,6 +65,10 @@ const RequirementInfoCard = ({
   const [parentRequirement, setParentRequirement] = useState(null);
   const [superseedingRequirement, setSuperseedingRequirement] = useState(null);
   const [isTopLevelRequirement, setIsTopLevelRequiremnt] = useState(false);
+  const settings = {
+    ...DEFAULT_REQUIREMENT_SET_SETTINGS,
+    ...(requirementSetSettings || {}),
+  };
 
   useEffect(() => {
     setIsTopLevelRequiremnt(item?.parent_requirement === null);
@@ -279,7 +285,7 @@ const RequirementInfoCard = ({
       <CardTitle titleText={"Information"} />
 
       <Container fluid>
-        {(!item?.derived_from || item?.derived_from.length === 0) && (
+        {settings.hierarchical_requirements_is_enabled && (!item?.derived_from || item?.derived_from.length === 0) && (
           <Row className="align-items-center">
             <Col
               className="col-lg-6 col-xl-6"
@@ -320,7 +326,8 @@ const RequirementInfoCard = ({
           </Row>
         )}
 
-        {!item?.parentRequirement &&
+        {settings.derived_from_enabled &&
+          !item?.parentRequirement &&
           !(
             (item?.derived_from.length === 0 && item?.state === "Approved") ||
             (item?.derived_from.length === 0 && item?.state === "Rejected")
@@ -348,7 +355,7 @@ const RequirementInfoCard = ({
           )}
 
         {/* Cant be superseded with subrequirements. Cant be superseded if it is verified.*/}
-        {((item?.superseded_by !== null) || 
+        {settings.superseded_by_enabled && ((item?.superseded_by !== null) || 
           (number_of_subrequirements !== -1 && !item?.is_verified && item?.state !== "Approved" && item?.state !== "Rejected")) && (
           <Row className="align-items-center">
             <Col
@@ -386,30 +393,7 @@ const RequirementInfoCard = ({
           </Row>
         )}
 
-        <Row className="align-items-center">
-          <Col
-            className="col-lg-6 col-xl-6"
-            style={{ maxWidth: keyColumnMaxWidth, paddingTop: rowPadding }}
-          >
-            <b>Obligation level:</b>
-          </Col>
-          <Col>
-            <GenericDropdownSelector
-              state={item?.obligation_level || ""}
-              setState={(newObligationLevel) =>
-                changeField("obligation_level", newObligationLevel)
-              }
-              dropdownValues={OBLIGATION_LEVEL_OPTIONS}
-              placeholder="Select Obligation Level"
-              borderIfPlaceholder={true}
-              readOnly={readOnly || 
-                ((item?.derived_from.length === 0 && item?.state === "Approved") || (item?.derived_from.length === 0 && item?.state === "Rejected"))
-              }
-              textSize="16px"
-            />
-          </Col>
-        </Row>
-
+        {settings.external_requirement_id_is_enabled && (
         <Row className="align-items-center">
           <Col
             className="col-lg-6 col-xl-6"
@@ -431,7 +415,9 @@ const RequirementInfoCard = ({
             />
           </Col>
         </Row>
+        )}
 
+        {settings.requirement_type_is_enabled && (
         <Row className="align-items-center">
           <Col
             className="col-lg-6 col-xl-6"
@@ -453,7 +439,9 @@ const RequirementInfoCard = ({
             />
           </Col>
         </Row>
+        )}
 
+        {settings.verification_class_is_enabled && (
         <Row className="align-items-center">
           <Col
             className="col-lg-6 col-xl-6"
@@ -475,6 +463,7 @@ const RequirementInfoCard = ({
             />
           </Col>
         </Row>
+        )}
 
         <Row className="align-items-center">
           <Col
@@ -496,7 +485,7 @@ const RequirementInfoCard = ({
           </Col>
         </Row>
 
-        {created_by !== null && created_by !== undefined && (
+        {settings.created_by_is_visible && created_by !== null && created_by !== undefined && (
           <Row className="align-items-center">
             <Col
               className="col-lg-6 col-xl-6"

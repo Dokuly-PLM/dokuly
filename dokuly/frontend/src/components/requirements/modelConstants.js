@@ -41,9 +41,22 @@ export const REQRUIREMENT_STATES = [
 
 export const OBLIGATION_LEVELS = ["Shall", "Should"];
 
+export const DEFAULT_REQUIREMENT_SET_SETTINGS = {
+  hierarchical_requirements_is_enabled: true,
+  derived_from_enabled: true,
+  superseded_by_enabled: true,
+  external_requirement_id_is_enabled: true,
+  requirement_type_is_enabled: true,
+  verification_class_is_enabled: true,
+  created_by_is_visible: true,
+  verification_method_markdown_is_enabled: true,
+  verification_results_markdown_is_enabled: true,
+};
+
 // Export as grouped constants if needed elsewhere
 export default {
   REQUIREMENT_TYPES,
   VERIFICATION_CLASSES,
   REQRUIREMENT_STATES,
+  DEFAULT_REQUIREMENT_SET_SETTINGS,
 };
