@@ -34,8 +34,73 @@ import "prismjs/components/prism-markdown";
 import DokulyMarkdownTable from "./components/markdownTable";
 import { ColorRenderer, hexColorRegex } from "./components/colorRenderer";
 import { IssuePillById } from "../issuePill/issuePill";
+import { RequirementPillById } from "../requirementPill/requirementPill";
 
-const issueRefRegex = /(?:^|\s)#(\d+)(?=\s|$)/;
+const processReferenceChild = (child, i) => {
+  if (typeof child !== "string") return child;
+
+  const referencePattern = /((?:^|\s)(#(\d+)|REQ(\d+))(?=\s|$))/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = referencePattern.exec(child)) !== null) {
+    const fullMatch = match[1];
+    const issueId = match[3];
+    const requirementId = match[4];
+    const matchStart = match.index;
+
+    if (matchStart > lastIndex) {
+      parts.push(child.slice(lastIndex, matchStart));
+    }
+
+    const leadingSpace = fullMatch.match(/^(\s*)/)[1];
+    if (leadingSpace) {
+      parts.push(leadingSpace);
+    }
+
+    if (issueId) {
+      parts.push(
+        <IssuePillById
+          key={`issue-${issueId}-${matchStart}`}
+          issueId={parseInt(issueId, 10)}
+        />
+      );
+    } else if (requirementId) {
+      parts.push(
+        <RequirementPillById
+          key={`requirement-${requirementId}-${matchStart}`}
+          requirementId={parseInt(requirementId, 10)}
+        />
+      );
+    }
+
+    lastIndex = matchStart + fullMatch.length;
+  }
+
+  if (lastIndex < child.length) {
+    parts.push(child.slice(lastIndex));
+  }
+
+  if (parts.length === 0) {
+    parts.push(child);
+  }
+
+  return parts.map((part, j) => {
+    if (typeof part === "string" && hexColorRegex.test(part)) {
+      return part
+        .split(/(\s+)/)
+        .map((segment, k) =>
+          hexColorRegex.test(segment) ? (
+            <ColorRenderer key={`${i}-${j}-color-${k}`} value={segment} />
+          ) : (
+            segment
+          )
+        );
+    }
+    return part;
+  });
+};
 
 const blockquoteStyles = {
   WARNING: {
@@ -247,132 +312,15 @@ const DokulyMarkdown = ({ markdownText }) => {
     <ReactMarkdown
       components={{
         p: ({ node, children }) => {
-          const processChild = (child, i) => {
-            if (typeof child !== "string") return child;
-
-            // Split on issue references: #123 with whitespace boundaries
-            const issuePattern = /((?:^|\s)#(\d+)(?=\s|$))/g;
-            const parts = [];
-            let lastIndex = 0;
-            let match;
-
-            while ((match = issuePattern.exec(child)) !== null) {
-              const fullMatch = match[1];
-              const issueId = match[2];
-              const matchStart = match.index;
-
-              // Text before the match
-              if (matchStart > lastIndex) {
-                parts.push(child.slice(lastIndex, matchStart));
-              }
-
-              // Leading whitespace before #
-              const leadingSpace = fullMatch.match(/^(\s*)/)[1];
-              if (leadingSpace) {
-                parts.push(leadingSpace);
-              }
-
-              parts.push(
-                <IssuePillById
-                  key={`issue-${issueId}-${matchStart}`}
-                  issueId={parseInt(issueId, 10)}
-                />
-              );
-
-              lastIndex = matchStart + fullMatch.length;
-            }
-
-            // Remaining text after last match
-            if (lastIndex < child.length) {
-              parts.push(child.slice(lastIndex));
-            }
-
-            // If no issue refs found, fall through to hex color processing
-            if (parts.length === 0) {
-              parts.push(child);
-            }
-
-            // Process hex colors within remaining string parts
-            return parts.map((part, j) => {
-              if (typeof part === "string" && hexColorRegex.test(part)) {
-                return part
-                  .split(/(\s+)/)
-                  .map((segment, k) =>
-                    hexColorRegex.test(segment) ? (
-                      <ColorRenderer key={`${i}-${j}-color-${k}`} value={segment} />
-                    ) : (
-                      segment
-                    )
-                  );
-              }
-              return part;
-            });
-          };
-
-          const processedChildren = children.map((child, i) => processChild(child, i));
+          const processedChildren = React.Children.toArray(children).map((child, i) =>
+            processReferenceChild(child, i)
+          );
           return <p>{processedChildren}</p>;
         },
         li: ({ node, children }) => {
-          const processChild = (child, i) => {
-            if (typeof child !== "string") return child;
-
-            // Split on issue references: #123 with whitespace boundaries
-            const issuePattern = /((?:^|\s)#(\d+)(?=\s|$))/g;
-            const parts = [];
-            let lastIndex = 0;
-            let match;
-
-            while ((match = issuePattern.exec(child)) !== null) {
-              const fullMatch = match[1];
-              const issueId = match[2];
-              const matchStart = match.index;
-
-              // Text before the match
-              if (matchStart > lastIndex) {
-                parts.push(child.slice(lastIndex, matchStart));
-              }
-
-              // Leading whitespace before #
-              const leadingSpace = fullMatch.match(/^(\s*)/)[1];
-              if (leadingSpace) {
-                parts.push(leadingSpace);
-              }
-
-              parts.push(
-                <IssuePillById key={`issue-${issueId}-${matchStart}`} issueId={parseInt(issueId, 10)} />
-              );
-
-              lastIndex = matchStart + fullMatch.length;
-            }
-
-            // Remaining text after last match
-            if (lastIndex < child.length) {
-              parts.push(child.slice(lastIndex));
-            }
-
-            // If no issue refs found, fall through to hex color processing
-            if (parts.length === 0) {
-              parts.push(child);
-            }
-
-            // Process hex colors within remaining string parts
-            return parts.map((part, j) => {
-              if (typeof part === "string" && hexColorRegex.test(part)) {
-                return part
-                  .split(/(\s+)/)
-                  .map((segment, k) =>
-                    hexColorRegex.test(segment) ? (
-                      <ColorRenderer key={`${i}-${j}-color-${k}`} value={segment} />
-                    ) : (
-                      segment
-                    )
-                  );
-              }
-              return part;
-            });
-          };
-
-          const processedChildren = children.map((child, i) => processChild(child, i));
+          const processedChildren = React.Children.toArray(children).map((child, i) =>
+            processReferenceChild(child, i)
+          );
           return <li>{processedChildren}</li>;
         },
         a: ({ href, children }) => (
