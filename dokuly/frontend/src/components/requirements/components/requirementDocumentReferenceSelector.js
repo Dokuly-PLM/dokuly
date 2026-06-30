@@ -4,6 +4,7 @@ import { Row, Col, Table } from "react-bootstrap";
 
 import DokulySelect from "../../dokuly_components/dokulySelect";
 import { ThumbnailFormatter } from "../../dokuly_components/dokulyTable/functions/formatters";
+import NumericFieldEditor from "../../dokuly_components/dokulyTable/components/numericFieldEditor";
 import {
   searchRequirementReferenceDocuments,
   updateRequirementDocumentReferences,
@@ -130,6 +131,8 @@ const RequirementDocumentReferenceSelector = ({
       },
     ];
     setSelectedReferences(nextReferences);
+    setSearchInput("");
+    setOptions([]);
     onSelectReference(nextReferences[nextReferences.length - 1]);
     persistReferences(nextReferences);
   };
@@ -142,43 +145,18 @@ const RequirementDocumentReferenceSelector = ({
     persistReferences(nextReferences);
   };
 
-  const handlePageNumberChange = (documentId, value) => {
-    const nextReferences = selectedReferences.map((reference) =>
-      reference.document_id === documentId
-        ? {
-            ...reference,
-            page_number: value,
-          }
-        : reference
-    );
-    setSelectedReferences(nextReferences);
-    if (selectedDocumentId === documentId) {
-      const updatedReference = nextReferences.find(
-        (reference) => reference.document_id === documentId
-      );
-      if (updatedReference) {
-        onSelectReference(updatedReference);
-      }
-    }
-  };
-
-  const handlePageNumberBlur = (documentId) => {
+  const handlePageNumberSave = (documentId, value) => {
+    const normalizedPageNumber = Number.isFinite(value) && value >= 1 ? value : null;
     const nextReferences = selectedReferences.map((reference) => {
       if (reference.document_id !== documentId) {
         return reference;
       }
-
-      const pageValue = reference.page_number;
-      if (pageValue === "" || pageValue === null || pageValue === undefined) {
-        return { ...reference, page_number: null };
-      }
-
-      const parsed = Number.parseInt(pageValue, 10);
       return {
         ...reference,
-        page_number: Number.isNaN(parsed) ? null : parsed,
+        page_number: normalizedPageNumber,
       };
     });
+
     setSelectedReferences(nextReferences);
     if (selectedDocumentId === documentId) {
       const updatedReference = nextReferences.find(
@@ -201,23 +179,23 @@ const RequirementDocumentReferenceSelector = ({
           onInputChange={(inputValue, actionMeta) => {
             if (actionMeta?.action === "input-change") {
               setSearchInput(inputValue);
-              fetchOptions(inputValue);
+              setOptions([]);
             }
           }}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
-              fetchOptions(searchInput);
+              const query = searchInput.trim();
+              if (query.length === 0) {
+                setOptions([]);
+                return;
+              }
+              fetchOptions(query);
             }
           }}
-          onFocus={() => {
-            if (options.length === 0) {
-              fetchOptions("");
-            }
-          }}
-          placeholder="Search documents to add"
+          placeholder="Type to search, then press Enter"
           isDisabled={readOnly}
           isClearable
-          noOptionsMessage={() => "Type to search documents"}
+          noOptionsMessage={() => "Type and press Enter to search documents"}
         />
       )}
 
@@ -237,7 +215,6 @@ const RequirementDocumentReferenceSelector = ({
                 <tr>
                   <th style={{ width: "96px" }} />
                   <th>Document Number</th>
-                  <th>Revision</th>
                   <th>Title</th>
                   <th style={{ width: "120px" }}>Page</th>
                   {!readOnly && <th style={{ width: "120px" }} />}
@@ -270,22 +247,12 @@ const RequirementDocumentReferenceSelector = ({
                     <td style={{ whiteSpace: "nowrap" }}>
                       {reference.full_doc_number || "Unnamed"}
                     </td>
-                    <td>{reference.formatted_revision || "-"}</td>
                     <td>{reference.title || "Untitled"}</td>
-                    <td>
-                      <input
-                        className="form-control form-control-sm"
-                        type="number"
-                        min="1"
-                        value={reference.page_number ?? ""}
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        onChange={(e) =>
-                          handlePageNumberChange(reference.document_id, e.target.value)
-                        }
-                        onBlur={() => handlePageNumberBlur(reference.document_id)}
+                    <td onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                      <NumericFieldEditor
+                        number={reference.page_number ?? ""}
+                        setNumber={(value) => handlePageNumberSave(reference.document_id, value)}
                         disabled={readOnly}
-                        placeholder="Optional"
                       />
                     </td>
                     {!readOnly && (
