@@ -44,7 +44,7 @@ export const OBLIGATION_LEVELS = ["Shall", "Should"];
 export const DEFAULT_REQUIREMENT_SET_SETTINGS = {
   hierarchical_requirements_is_enabled: true,
   derived_from_enabled: true,
-  superseded_by_enabled: true,
+  superseded_by_is_enabled: true,
   external_requirement_id_is_enabled: true,
   requirement_type_is_enabled: true,
   verification_class_is_enabled: true,

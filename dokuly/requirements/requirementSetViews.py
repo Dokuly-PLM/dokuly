@@ -25,7 +25,7 @@ from projects.models import Project
 REQUIREMENT_SET_SETTING_FIELDS = (
     "hierarchical_requirements_is_enabled",
     "derived_from_enabled",
-    "superseded_by_enabled",
+    "superseded_by_is_enabled",
     "external_requirement_id_is_enabled",
     "requirement_type_is_enabled",
     "verification_class_is_enabled",

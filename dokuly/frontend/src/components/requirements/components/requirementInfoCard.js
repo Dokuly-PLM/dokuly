@@ -355,7 +355,7 @@ const RequirementInfoCard = ({
           )}
 
         {/* Cant be superseded with subrequirements. Cant be superseded if it is verified.*/}
-        {settings.superseded_by_enabled && ((item?.superseded_by !== null) || 
+        {settings.superseded_by_is_enabled && ((item?.superseded_by !== null) || 
           (number_of_subrequirements !== -1 && !item?.is_verified && item?.state !== "Approved" && item?.state !== "Rejected")) && (
           <Row className="align-items-center">
             <Col

@@ -28,7 +28,7 @@ const EditRequirementsSetForm = ({ requirementSet, setRefresh, readOnly }) => {
       hierarchical_requirements_is_enabled:
         requirementSet?.hierarchical_requirements_is_enabled,
       derived_from_enabled: requirementSet?.derived_from_enabled,
-      superseded_by_enabled: requirementSet?.superseded_by_enabled,
+      superseded_by_is_enabled: requirementSet?.superseded_by_is_enabled,
       external_requirement_id_is_enabled:
         requirementSet?.external_requirement_id_is_enabled,
       requirement_type_is_enabled: requirementSet?.requirement_type_is_enabled,
@@ -42,7 +42,7 @@ const EditRequirementsSetForm = ({ requirementSet, setRefresh, readOnly }) => {
     [
       requirementSet?.hierarchical_requirements_is_enabled,
       requirementSet?.derived_from_enabled,
-      requirementSet?.superseded_by_enabled,
+      requirementSet?.superseded_by_is_enabled,
       requirementSet?.external_requirement_id_is_enabled,
       requirementSet?.requirement_type_is_enabled,
       requirementSet?.verification_class_is_enabled,
@@ -151,7 +151,7 @@ const EditRequirementsSetForm = ({ requirementSet, setRefresh, readOnly }) => {
             "hierarchical_requirements_is_enabled"
           )}
           {renderCheck("Derived from", "derived_from_enabled")}
-          {renderCheck("Superseded by", "superseded_by_enabled")}
+          {renderCheck("Superseded by", "superseded_by_is_enabled")}
         </div>
 
         <div className="mt-4">

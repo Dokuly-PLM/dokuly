@@ -222,6 +222,7 @@ const DisplayRequirement = (props) => {
   const hasStatementReferences = (requirement?.statement_references || []).length > 0;
   const hasVerificationReferences = (requirement?.verification_references || []).length > 0;
   const hasAnyReferences = hasStatementReferences || hasVerificationReferences;
+
   const selectedPage = Number.parseInt(selectedReference?.page_number, 10);
   const pageNumber = Number.isNaN(selectedPage) || selectedPage < 1 ? 1 : selectedPage;
   const isRequirementLocked = requirement?.state === "Approved" || requirement?.state === "Rejected";
@@ -231,7 +232,7 @@ const DisplayRequirement = (props) => {
     hierarchical_requirements_is_enabled:
       requirementSet?.hierarchical_requirements_is_enabled ?? true,
     derived_from_enabled: requirementSet?.derived_from_enabled ?? true,
-    superseded_by_enabled: requirementSet?.superseded_by_enabled ?? true,
+    superseded_by_is_enabled: requirementSet?.superseded_by_is_enabled ?? true,
     external_requirement_id_is_enabled:
       requirementSet?.external_requirement_id_is_enabled ?? true,
     requirement_type_is_enabled: requirementSet?.requirement_type_is_enabled ?? true,
@@ -242,6 +243,10 @@ const DisplayRequirement = (props) => {
     verification_results_markdown_is_enabled:
       requirementSet?.verification_results_markdown_is_enabled ?? true,
   };
+  const showDependenciesCard =
+    requirementSetSettings.hierarchical_requirements_is_enabled ||
+    requirementSetSettings.derived_from_enabled ||
+    requirementSetSettings.superseded_by_is_enabled;
 
   return (
     <div
@@ -273,10 +278,12 @@ const DisplayRequirement = (props) => {
             requirementSetSettings={requirementSetSettings}
           />
 
-          <RequirementDependencyGraph
-            requirement={requirement}
-            requirement_set={requirements}
-          />
+          {showDependenciesCard && (
+            <RequirementDependencyGraph
+              requirement={requirement}
+              requirement_set={requirements}
+            />
+          )}
 
           <DokulyCard
             isCollapsed={requirement?.rationale === ""}
