@@ -28,6 +28,8 @@ const RequirementDocumentReferenceSelector = ({
   setRefresh = () => {},
   selectedDocumentId = null,
   onSelectReference = () => {},
+  referenceField = "statement_references",
+  referenceType = "statement",
 }) => {
   const isStateLocked = ["Approved", "Rejected"].includes(requirement?.state);
   const [options, setOptions] = useState([]);
@@ -36,10 +38,11 @@ const RequirementDocumentReferenceSelector = ({
 
   const mappedSelectedReferences = useMemo(
     () =>
-      (requirement?.statement_references || []).map((ref) =>
+      (requirement?.[referenceField] || []).map((ref) =>
         ({
           id: ref.id,
           document_id: ref.document_id,
+          pdf_print_id: ref.pdf_print_id,
           full_doc_number: ref.full_doc_number,
           thumbnail: ref.thumbnail,
           formatted_revision: ref.formatted_revision,
@@ -47,7 +50,7 @@ const RequirementDocumentReferenceSelector = ({
           page_number: ref.page_number,
         })
       ),
-    [requirement?.statement_references]
+    [requirement, referenceField]
   );
 
   useEffect(() => {
@@ -92,7 +95,8 @@ const RequirementDocumentReferenceSelector = ({
       references.map((reference) => ({
         document_id: reference.document_id,
         page_number: reference.page_number,
-      }))
+      })),
+      referenceType,
     )
       .then((res) => {
         if (res.status === 200) {
@@ -111,18 +115,15 @@ const RequirementDocumentReferenceSelector = ({
       return;
     }
 
-    const alreadyAdded = selectedReferences.some(
-      (reference) => reference.document_id === selectedOption.value
-    );
-    if (alreadyAdded) {
+    if (selectedReferences[0]?.document_id === selectedOption.value) {
       return;
     }
 
     const nextReferences = [
-      ...selectedReferences,
       {
         id: `new-${selectedOption.value}`,
         document_id: selectedOption.value,
+        pdf_print_id: selectedOption.document.pdf_print_id,
         full_doc_number: selectedOption.document.full_doc_number,
         thumbnail: selectedOption.document.thumbnail,
         formatted_revision: selectedOption.document.formatted_revision,

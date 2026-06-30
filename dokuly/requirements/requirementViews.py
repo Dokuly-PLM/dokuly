@@ -202,7 +202,8 @@ def get_requirement(request, id: int):
 
     try:
         requirement = Requirement.objects.prefetch_related(
-            "statement_references__document"
+            "statement_references__document",
+            "verification_references__document",
         ).get(id=id)
 
         project = requirement.requirement_set.project
@@ -269,7 +270,7 @@ def get_requirements_by_set(request, set_id):
         or requirement_set.project.isnull
     ):
         requirements = Requirement.objects.filter(requirement_set_id=set_id).prefetch_related(
-            "tags", "statement_references__document"
+            "tags", "statement_references__document", "verification_references__document"
         )
         serializer = RequirementSerializer(requirements, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -310,7 +311,7 @@ def get_requirements_by_parent(request, parent_id):
 @renderer_classes([JSONRenderer])
 @login_required(login_url="/login")
 def update_requirement_document_references(request, requirement_id):
-    """Replace a requirement's statement references."""
+    """Replace a requirement's statement or verification references."""
     user = request.user
     permission, response = check_user_auth_and_app_permission(request, "requirements")
     if not permission:
@@ -322,8 +323,21 @@ def update_requirement_document_references(request, requirement_id):
         return Response("Unauthorized", status=status.HTTP_403_FORBIDDEN)
 
     references_payload = request.data.get("references", [])
+    reference_type = (request.data.get("reference_type") or "statement").strip().lower()
     if not isinstance(references_payload, list):
         return Response("references must be a list", status=status.HTTP_400_BAD_REQUEST)
+
+    if reference_type not in ["statement", "verification"]:
+        return Response(
+            "reference_type must be either 'statement' or 'verification'",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if len(references_payload) > 1:
+        return Response(
+            "Only one reference is allowed per reference type.",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     document_ids = []
     normalized_references = []
@@ -387,8 +401,14 @@ def update_requirement_document_references(request, requirement_id):
             )
         references.append(reference)
 
-    requirement.statement_references.set(references)
+    if reference_type == "verification":
+        requirement.verification_references.set(references)
+    else:
+        requirement.statement_references.set(references)
 
-    refreshed = Requirement.objects.prefetch_related("statement_references__document").get(id=requirement_id)
+    refreshed = Requirement.objects.prefetch_related(
+        "statement_references__document",
+        "verification_references__document",
+    ).get(id=requirement_id)
     serializer = RequirementSerializer(refreshed, many=False)
     return Response(serializer.data, status=status.HTTP_200_OK)

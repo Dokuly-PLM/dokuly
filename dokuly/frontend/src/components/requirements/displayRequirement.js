@@ -162,28 +162,36 @@ const DisplayRequirement = (props) => {
   }, [requirement]);
 
   useEffect(() => {
-    const references = requirement?.statement_references || [];
+    const statementReferences = requirement?.statement_references || [];
+    const verificationReferences = requirement?.verification_references || [];
+    const allReferences = [...verificationReferences, ...statementReferences];
 
-    if (references.length === 0) {
+    const defaultReference =
+      verificationReferences.find((reference) => Boolean(reference?.pdf_print_id)) ||
+      verificationReferences[0] ||
+      statementReferences[0] ||
+      null;
+
+    if (allReferences.length === 0) {
       setSelectedReference(null);
       return;
     }
 
     if (!selectedReference?.document_id) {
-      setSelectedReference(references[0]);
+      setSelectedReference(defaultReference);
       return;
     }
 
-    const updatedSelected = references.find(
+    const updatedSelected = allReferences.find(
       (reference) => reference.document_id === selectedReference.document_id
     );
 
     if (updatedSelected) {
       setSelectedReference(updatedSelected);
     } else {
-      setSelectedReference(references[0]);
+      setSelectedReference(defaultReference);
     }
-  }, [requirement?.statement_references]);
+  }, [requirement?.statement_references, requirement?.verification_references]);
 
   useEffect(() => {
     let currentBlobUrl = null;
@@ -211,6 +219,8 @@ const DisplayRequirement = (props) => {
   }, [selectedReference?.document_id]);
 
   const hasStatementReferences = (requirement?.statement_references || []).length > 0;
+  const hasVerificationReferences = (requirement?.verification_references || []).length > 0;
+  const hasAnyReferences = hasStatementReferences || hasVerificationReferences;
   const selectedPage = Number.parseInt(selectedReference?.page_number, 10);
   const pageNumber = Number.isNaN(selectedPage) || selectedPage < 1 ? 1 : selectedPage;
   const isRequirementLocked = requirement?.state === "Approved" || requirement?.state === "Rejected";
@@ -235,7 +245,7 @@ const DisplayRequirement = (props) => {
       />
 
       <Row>
-        <Col lg={hasStatementReferences ? 6 : 12}>
+        <Col lg={hasAnyReferences ? 6 : 12}>
           <RequirementInfoCard
             item={requirement}
             number_of_subrequirements={subRequirements.length}
@@ -296,6 +306,8 @@ const DisplayRequirement = (props) => {
                 setRefresh={setRefresh}
                 selectedDocumentId={selectedReference?.document_id}
                 onSelectReference={setSelectedReference}
+                referenceField="statement_references"
+                referenceType="statement"
               />
             </div>
           </DokulyCard>
@@ -330,18 +342,22 @@ const DisplayRequirement = (props) => {
           <DokulyCard
             isCollapsed={
               requirement?.verification_method === "" &&
-              requirement?.verification_results === ""
+              requirement?.verification_results === "" &&
+              !hasVerificationReferences
             }
             expandText={"Verify compliance"}
             isHidden={
               (requirement?.verification_method === "" &&
                 requirement?.verification_results === "" &&
+                !hasVerificationReferences &&
                 readOnly) ||
               (requirement?.verification_method === "" &&
                 requirement?.verification_results === "" &&
+                !hasVerificationReferences &&
                 subRequirements?.length > 0) ||
               (requirement?.verification_method === "" &&
                   requirement?.verification_results === "" &&
+                  !hasVerificationReferences &&
                   requirement?.superseded_by)   
             }
             hiddenText={verificationHiddenText}
@@ -386,6 +402,22 @@ const DisplayRequirement = (props) => {
               showEmptyBorder={true}
               readOnly={readOnly}
             />
+
+            <div className="mt-3">
+              <CardTitle
+                titleText={"Verification References"}
+                optionalHelpText={"Attach one document reference used as verification evidence."}
+              />
+              <RequirementDocumentReferenceSelector
+                requirement={requirement}
+                readOnly={readOnly || isRequirementLocked}
+                setRefresh={setRefresh}
+                selectedDocumentId={selectedReference?.document_id}
+                onSelectReference={setSelectedReference}
+                referenceField="verification_references"
+                referenceType="verification"
+              />
+            </div>
 
             <Row className="mt-3 justify-content-center align-items-center">
               <Col className="col-auto">
@@ -434,7 +466,7 @@ const DisplayRequirement = (props) => {
             </Row>
           </DokulyCard>
         </Col>
-        {hasStatementReferences && (
+        {hasAnyReferences && (
           <Col lg={6}>
             <DokulyCard>
               <CardTitle

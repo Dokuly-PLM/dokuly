@@ -143,10 +143,17 @@ export const searchRequirementReferenceDocuments = (requirementId, query = "") =
   return promise.then((res) => res);
 };
 
-export const updateRequirementDocumentReferences = (requirementId, references) => {
+export const updateRequirementDocumentReferences = (
+  requirementId,
+  references,
+  referenceType = "statement",
+) => {
   const promise = axios.put(
     `api/requirements/put/referenceDocuments/${requirementId}/`,
-    { references },
+    {
+      references,
+      reference_type: referenceType,
+    },
     tokenConfig(),
   );
   return promise.then((res) => res);
