@@ -213,6 +213,8 @@ const DisplayRequirement = (props) => {
   const hasStatementReferences = (requirement?.statement_references || []).length > 0;
   const selectedPage = Number.parseInt(selectedReference?.page_number, 10);
   const pageNumber = Number.isNaN(selectedPage) || selectedPage < 1 ? 1 : selectedPage;
+  const isRequirementLocked = requirement?.state === "Approved" || requirement?.state === "Rejected";
+  const hasStatementText = Boolean((requirement?.statement || "").trim());
 
   return (
     <div
@@ -273,12 +275,16 @@ const DisplayRequirement = (props) => {
               titleText={"Statement"}
               optionalHelpText={"A sentence stating the requirement."}
             />
-            <EditableMarkdown
-              initialMarkdown={requirement?.statement || ""}
-              onSubmit={handleStatementSubmit}
-              showEmptyBorder={true}
-              readOnly={readOnly || requirement?.state === "Approved" || requirement?.state === "Rejected" }
-            />
+            {isRequirementLocked && !hasStatementText ? (
+              <small className="text-muted">No statement added.</small>
+            ) : (
+              <EditableMarkdown
+                initialMarkdown={requirement?.statement || ""}
+                onSubmit={handleStatementSubmit}
+                showEmptyBorder={true}
+                readOnly={readOnly || isRequirementLocked}
+              />
+            )}
             <div className="mt-3">
               <CardTitle
                 titleText={"References"}
@@ -286,7 +292,7 @@ const DisplayRequirement = (props) => {
               />
               <RequirementDocumentReferenceSelector
                 requirement={requirement}
-                readOnly={readOnly || requirement?.state === "Approved" || requirement?.state === "Rejected"}
+                readOnly={readOnly || isRequirementLocked}
                 setRefresh={setRefresh}
                 selectedDocumentId={selectedReference?.document_id}
                 onSelectReference={setSelectedReference}

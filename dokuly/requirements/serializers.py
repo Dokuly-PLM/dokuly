@@ -8,6 +8,7 @@ class RequirementDocumentReferenceSerializer(serializers.Serializer):
     page_number = serializers.IntegerField(allow_null=True)
     document_id = serializers.IntegerField(source="document.id")
     full_doc_number = serializers.CharField(source="document.full_doc_number", allow_null=True)
+    thumbnail = serializers.IntegerField(source="document.thumbnail_id", allow_null=True)
     formatted_revision = serializers.CharField(
         source="document.formatted_revision", allow_null=True
     )

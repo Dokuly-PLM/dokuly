@@ -526,7 +526,7 @@ const RequirementInfoCard = ({
             </Row>
           )}
 
-        {number_of_subrequirements !== -1 && (
+        {/*number_of_subrequirements !== -1 && (
           <Row className="align-items-center">
             <Col
               className="col-lg-6 col-xl-6"
@@ -536,7 +536,7 @@ const RequirementInfoCard = ({
             </Col>
             <Col style={{ textAlign: "left" }}>{number_of_subrequirements}</Col>
           </Row>
-        )}
+        )*/}
 
         {last_updated !== "" && (
           <Row className="align-items-center">
@@ -555,18 +555,6 @@ const RequirementInfoCard = ({
         {Object.keys(additional_fields).length > 0 &&
           renderAdditionalFields(additional_fields, keyColumnMaxWidth)}
 
-        {!readOnly && (
-          <Row className="align-items-center">
-            {(item?.state === "Draft") && (
-              <DeleteButton
-                onDelete={handleDelete}
-                textSize={"10px"}
-                iconWidth={"20px"}
-              />
-            )}
-          </Row>
-        )}
-
         <Row className="mt-2 align-items-top">
           <Col className="col-lg-6 col-xl-6">
             <b>Tags</b>
@@ -583,6 +571,18 @@ const RequirementInfoCard = ({
             />
           </Col>
         </Row>
+
+         {!readOnly && (
+          <Row className="align-items-center">
+            {(item?.state === "Draft") && (
+              <DeleteButton
+                onDelete={handleDelete}
+                textSize={"10px"}
+                iconWidth={"20px"}
+              />
+            )}
+          </Row>
+        )}
       </Container>
     </DokulyCard>
   );
