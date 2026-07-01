@@ -81,11 +81,12 @@ export function shortenTokens(tokens) {
  * Levels:
  *   0 – full
  *   1 – shorten (keep numeric + first)
- *   2 – last segment only, prefixed with "…/"
- *   3 – truncate last segment itself to fit
+ *   2 – best single segment only (prefer numeric segment), prefixed with "…/"
+ *   3 – truncate that segment itself to fit
  */
 export function shortenTokensToFit(tokens, maxChars) {
   const charCount = (toks) => toks.reduce((sum, t) => sum + t.length, 0);
+  const hasDigit = (s) => /\d/.test(s);
 
   // Level 0: full
   if (charCount(tokens) <= maxChars) return tokens;
@@ -94,18 +95,27 @@ export function shortenTokensToFit(tokens, maxChars) {
   const level1 = shortenTokens(tokens);
   if (charCount(level1) <= maxChars) return level1;
 
-  // Level 2: last segment only, prefixed with …<sep>
+  // Level 2: single segment only, prefixed with "…<sep>"
+  // Pick the most numeric segment; fall back to the last one.
   const segments = tokens.filter((_, i) => i % 2 === 0);
   const separators = tokens.filter((_, i) => i % 2 === 1);
-  const lastSeg = segments[segments.length - 1];
-  const lastSep = separators[separators.length - 1] ?? "/";
-  const level2 = ["…", lastSep, lastSeg];
+  const numericIdx = (() => {
+    // Find the rightmost segment that contains a digit
+    for (let i = segments.length - 1; i >= 0; i--) {
+      if (hasDigit(segments[i])) return i;
+    }
+    return segments.length - 1; // fallback to last
+  })();
+  const keySeg = segments[numericIdx];
+  // Use the separator just before the chosen segment (or "/" if it's the first)
+  const keySep = numericIdx > 0 ? separators[numericIdx - 1] : (separators[0] ?? "/");
+  const level2 = ["…", keySep, keySeg];
   if (charCount(level2) <= maxChars) return level2;
 
-  // Level 3: truncate the last segment itself
-  const budget = maxChars - 2 - lastSep.length; // 2 for "…" prefix token
-  const truncated = budget > 1 ? lastSeg.slice(0, budget) + "…" : "…";
-  return ["…", lastSep, truncated];
+  // Level 3: truncate the chosen segment itself
+  const budget = maxChars - 2 - keySep.length;
+  const truncated = budget > 1 ? keySeg.slice(0, budget) + "…" : "…";
+  return ["…", keySep, truncated];
 }
 
 /** 
