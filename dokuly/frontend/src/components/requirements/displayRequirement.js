@@ -450,7 +450,7 @@ const DisplayRequirement = (props) => {
               />
               <RequirementDocumentReferenceSelector
                 requirement={requirement}
-                readOnly={readOnly || isRequirementLocked}
+                readOnly={readOnly || requirement?.state === "Rejected"}
                 setRefresh={setRefresh}
                 selectedDocumentId={selectedReference?.document_id}
                 onSelectReference={setSelectedReference}
