@@ -18,6 +18,44 @@ class RequirementSet(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     tags = models.ManyToManyField(Tag, blank=True, symmetrical=False, related_name="requirement_sets_tags")
 
+    # Settings/tailoring
+    hierarchical_requirements_is_enabled = models.BooleanField( # Show/hide all hierarchical contents and field
+        default=True,
+        help_text="Show the parent requirement field.",
+    )
+    derived_from_is_enabled = models.BooleanField(
+        default=True,
+        help_text="Show the derived from field.",
+    )
+    superseded_by_is_enabled = models.BooleanField(
+        default=True,
+        help_text="Show the superseded by field.",
+    )
+    external_requirement_id_is_enabled = models.BooleanField(
+        default=True,
+        help_text="Show the external ID field.",
+    )
+    requirement_type_is_enabled = models.BooleanField(
+        default=True,
+        help_text="Show the requirement type field.",
+    )
+    verification_class_is_enabled = models.BooleanField(
+        default=True,
+        help_text="Show the verification class field.",
+    )
+    created_by_is_visible = models.BooleanField(
+        default=True,
+        help_text="Show the created by field.",
+    )
+    verification_method_markdown_is_enabled = models.BooleanField(
+        default=True,
+        help_text="Show the verification method field.",
+    )
+    verification_results_markdown_is_enabled = models.BooleanField(
+        default=True,
+        help_text="Show the verification results field.",
+    )
+
 
 class Requirement(models.Model):
     # requirement_set is configured for every requirement.

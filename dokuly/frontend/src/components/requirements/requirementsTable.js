@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Col, Form, Row } from "react-bootstrap";
+import React, { useState, useRef, useEffect } from "react";
+import { Col, Form, Row, OverlayTrigger, Popover } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
@@ -19,6 +19,8 @@ import {
 import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
 import AddButton from "../dokuly_components/AddButton";
 import CheckBox from "../dokuly_components/checkBox";
+import { DEFAULT_REQUIREMENT_SET_SETTINGS } from "./modelConstants";
+import { renderExternalId } from "./functions/externalIdUtils";
 
 const RequirementsTable = ({
   requirements = [],
@@ -28,6 +30,7 @@ const RequirementsTable = ({
   setRefresh,
   refresh,
   profile,
+  requirementSetSettings = DEFAULT_REQUIREMENT_SET_SETTINGS,
 }) => {
   const [tableTextSize, setTableTextSize] = useState("14px");
 
@@ -43,8 +46,6 @@ const RequirementsTable = ({
     value: state?.state,
     label: state?.state,
   }));
-
-  const navigate = useNavigate();
 
   function hide_verification_cells(requirement) {
     return (requirement?.superseded_by !== null || 
@@ -132,9 +133,8 @@ const RequirementsTable = ({
         );
         if (duplicateExists) {
           toast.warning(
-            "External requirement ID already exists in this requirement set."
+            "Warning: This external requirement ID already exists in this requirement set."
           );
-          return;
         }
       }
     }
@@ -196,18 +196,78 @@ const RequirementsTable = ({
     {
       key: "external_requirement_id",
       header: "External ID",
-      maxWidth: "120px",
-      formatter: (row, column, searchString) => (
-        <TextFieldEditor
-          text={row?.external_requirement_id || ""}
-          setText={(newText) =>
-            changeField(row.id, "external_requirement_id", newText)
+      maxWidth: "140px",
+      formatter: (row) => {
+        const fullId = row?.external_requirement_id || "";
+        const isLocked = readOnly || row?.state === "Rejected" || row?.state === "Approved";
+
+        // Inline component so we can use hooks for edit toggling
+        const ColoredExternalIdCell = () => {
+          const [editing, setEditing] = useState(false);
+          const [value, setValue] = useState(fullId);
+          const inputRef = useRef(null);
+
+          useEffect(() => { setValue(fullId); }, []);
+          useEffect(() => {
+            if (editing && inputRef.current) {
+              inputRef.current.focus();
+              const len = inputRef.current.value.length;
+              inputRef.current.setSelectionRange(len, len);
+            }
+          }, [editing]);
+
+          const commit = () => {
+            changeField(row.id, "external_requirement_id", value);
+            setEditing(false);
+          };
+
+          if (editing) {
+            return (
+              <input
+                ref={inputRef}
+                className="input-edit"
+                type="text"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commit();
+                  if (e.key === "Escape") { setValue(fullId); setEditing(false); }
+                }}
+                style={{ maxWidth: "130px" }}
+              />
+            );
           }
-          multiline={false}
-          searchString={searchString}
-          readOnly={readOnly || row?.state === "Rejected" || row?.state === "Approved"}
-        />
-      ),
+
+          return (
+            <OverlayTrigger
+              trigger={["hover", "focus"]}
+              placement="top"
+              overlay={
+                fullId ? (
+                  <Popover id={`ext-id-popover-${row.id}`}>
+                    <Popover.Body style={{ padding: "6px 10px" }}>
+                      <span style={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>
+                        {renderExternalId(fullId)}
+                      </span>
+                    </Popover.Body>
+                  </Popover>
+                ) : <></>
+              }
+              delay={{ show: 200, hide: 100 }}
+            >
+              <span
+                style={{ whiteSpace: "nowrap", fontFamily: "monospace", cursor: isLocked ? "default" : "pointer" }}
+                onClick={() => !isLocked && setEditing(true)}
+              >
+                {fullId ? renderExternalId(fullId) : <span style={{ color: "#D1D5DB" }}>—</span>}
+              </span>
+            </OverlayTrigger>
+          );
+        };
+
+        return <ColoredExternalIdCell />;
+      },
       csvFormatter: (row) =>
         row?.external_requirement_id ? `${row?.external_requirement_id}` : "",
     },
@@ -397,6 +457,10 @@ const RequirementsTable = ({
         return hide_verification_cells(row) ? null : (
             <Col className="d-flex align-items-center justify-content-center">
             <Form.Group>
+              <span
+                title="Open the requirement to add verification documentation and sign off verification."
+                style={{ display: "inline-block" }}
+              >
               <Form.Check
                 type="checkbox"
                 id={row?.id}
@@ -420,6 +484,7 @@ const RequirementsTable = ({
                   );
                 }}
               />
+              </span>
             </Form.Group>
           </Col>
         )
@@ -478,6 +543,28 @@ const RequirementsTable = ({
     },
   ];
 
+  const allColumns = [
+    { key: "id", col: columns.find((c) => c.key === "id") },
+    { key: "external_requirement_id", col: columns.find((c) => c.key === "external_requirement_id"), setting: "external_requirement_id_is_enabled" },
+    { key: "parent_requirement", col: columns.find((c) => c.key === "parent_requirement"), setting: "hierarchical_requirements_is_enabled" },
+    { key: "derived_from", col: columns.find((c) => c.key === "derived_from"), setting: "derived_from_enabled" },
+    { key: "type", col: columns.find((c) => c.key === "type"), setting: "requirement_type_is_enabled" },
+    { key: "obligation_level", col: columns.find((c) => c.key === "obligation_level") },
+    { key: "state", col: columns.find((c) => c.key === "state") },
+    { key: "tags", col: columns.find((c) => c.key === "tags") },
+    { key: "rationale", col: columns.find((c) => c.key === "rationale") },
+    { key: "statement", col: columns.find((c) => c.key === "statement") },
+    { key: "verification_class", col: columns.find((c) => c.key === "verification_class"), setting: "verification_class_is_enabled" },
+    { key: "is_verified", col: columns.find((c) => c.key === "is_verified") },
+    { key: "verification_method", col: columns.find((c) => c.key === "verification_method"), setting: "verification_method_markdown_is_enabled" },
+    { key: "verification_results", col: columns.find((c) => c.key === "verification_results"), setting: "verification_results_markdown_is_enabled" },
+  ];
+
+  const visibleColumns = allColumns
+    .filter(({ setting }) => !setting || requirementSetSettings[setting] !== false)
+    .map(({ col }) => col)
+    .filter(Boolean);
+
   return (
     <React.Fragment>
       {!readOnly && (
@@ -501,7 +588,7 @@ const RequirementsTable = ({
             key={`RequirementsTable-${readOnly}`} // Force rerender to ensure readOnly state is updated
             tableName="RequirementsTable"
             data={filteredRequirements}
-            columns={columns}
+            columns={visibleColumns}
             itemsPerPage={50}
             onRowClick={rowEvents}
             defaultSort={{ columnNumber: 0, order: "asc" }}

@@ -22,6 +22,31 @@ from profiles.views import check_permissions_ownership, check_permissions_standa
 from projects.models import Project
 
 
+REQUIREMENT_SET_SETTING_FIELDS = (
+    "hierarchical_requirements_is_enabled",
+    "derived_from_enabled",
+    "superseded_by_is_enabled",
+    "external_requirement_id_is_enabled",
+    "requirement_type_is_enabled",
+    "verification_class_is_enabled",
+    "created_by_is_visible",
+    "verification_method_markdown_is_enabled",
+    "verification_results_markdown_is_enabled",
+)
+
+
+def apply_requirement_set_settings(requirement_set, data):
+    settings_payload = data.get("settings") if isinstance(data, dict) else None
+    if isinstance(settings_payload, dict):
+        for field_name in REQUIREMENT_SET_SETTING_FIELDS:
+            if field_name in settings_payload:
+                setattr(requirement_set, field_name, bool(settings_payload[field_name]))
+
+    for field_name in REQUIREMENT_SET_SETTING_FIELDS:
+        if field_name in data:
+            setattr(requirement_set, field_name, bool(data[field_name]))
+
+
 @api_view(("POST",))
 @renderer_classes((JSONRenderer,))
 @login_required(login_url="/login")
@@ -41,6 +66,7 @@ def create_requirement_set(request):
             requirementSet.display_name = data["display_name"]
         if "description" in data:
             requirementSet.description = data["description"]
+        apply_requirement_set_settings(requirementSet, data)
         if "project" in data:
             try:
                 project = Project.objects.filter(id=data["project"]).filter(project_members=user)
@@ -84,6 +110,7 @@ def edit_requirement_set(request, id):
             requirementSet.display_name = data["display_name"]
         if "description" in data:
             requirementSet.description = data["description"]
+        apply_requirement_set_settings(requirementSet, data)
         if "project" in data:
             try:
                 project = Project.objects.filter(id=data["project"]).filter(project_members=user)

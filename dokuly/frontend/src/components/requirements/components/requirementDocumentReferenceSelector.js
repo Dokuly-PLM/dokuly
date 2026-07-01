@@ -31,7 +31,6 @@ const RequirementDocumentReferenceSelector = ({
   referenceField = "statement_references",
   referenceType = "statement",
 }) => {
-  const isStateLocked = ["Approved", "Rejected"].includes(requirement?.state);
   const [options, setOptions] = useState([]);
   const [selectedReferences, setSelectedReferences] = useState([]);
   const [searchInput, setSearchInput] = useState("");
@@ -172,7 +171,7 @@ const RequirementDocumentReferenceSelector = ({
 
   return (
     <div>
-      {!isStateLocked && (
+      {!readOnly && (
         <DokulySelect
           value={null}
           options={options}
@@ -202,7 +201,7 @@ const RequirementDocumentReferenceSelector = ({
 
       <div style={{ marginTop: "12px" }}>
         {selectedReferences.length === 0 ? (
-          <small className="text-muted">No statement references added.</small>
+          <small className="text-muted">No references added.</small>
         ) : (
           <div
             style={{

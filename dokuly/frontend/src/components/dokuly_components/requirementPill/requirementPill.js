@@ -2,15 +2,21 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { OverlayTrigger, Popover } from "react-bootstrap";
 import { getRequirement } from "../../requirements/functions/queries";
+import { renderExternalId } from "../../requirements/functions/externalIdUtils";
 
 const RequirementPeek = ({ requirement }) => {
   if (!requirement) return null;
 
   return (
     <div style={{ minWidth: "250px", maxWidth: "350px" }}>
-      <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
+      <div style={{ fontWeight: "bold", marginBottom: requirement.external_requirement_id ? "4px" : "8px" }}>
         Requirement {requirement.id}
       </div>
+      {requirement.external_requirement_id && (
+        <div style={{ fontSize: "0.8rem", marginBottom: "8px", fontFamily: "monospace" }}>
+          {renderExternalId(requirement.external_requirement_id)}
+        </div>
+      )}
       <div
         style={{
           fontSize: "0.9rem",
