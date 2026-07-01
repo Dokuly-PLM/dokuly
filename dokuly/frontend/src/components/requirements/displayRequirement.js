@@ -226,6 +226,7 @@ const DisplayRequirement = (props) => {
   const selectedPage = Number.parseInt(selectedReference?.page_number, 10);
   const pageNumber = Number.isNaN(selectedPage) || selectedPage < 1 ? 1 : selectedPage;
   const isRequirementLocked = requirement?.state === "Approved" || requirement?.state === "Rejected";
+  const isVerified = Boolean(requirement?.is_verified);
   const hasStatementText = Boolean((requirement?.statement || "").trim());
   const requirementSetSettings = {
     ...DEFAULT_REQUIREMENT_SET_SETTINGS,
@@ -301,7 +302,8 @@ const DisplayRequirement = (props) => {
               initialMarkdown={requirement?.rationale || ""}
               onSubmit={handleRationaleSubmit}
               showEmptyBorder={true}
-              readOnly={readOnly || requirement?.state === "Approved" || requirement?.state === "Rejected" }
+              showDownload={false}
+              readOnly={readOnly || isRequirementLocked || isVerified}
             />
           </DokulyCard>
 
@@ -317,7 +319,8 @@ const DisplayRequirement = (props) => {
                 initialMarkdown={requirement?.statement || ""}
                 onSubmit={handleStatementSubmit}
                 showEmptyBorder={true}
-                readOnly={readOnly || isRequirementLocked}
+                showDownload={false}
+                readOnly={readOnly || isRequirementLocked || isVerified}
               />
             )}
             <div className="mt-3">
@@ -327,7 +330,7 @@ const DisplayRequirement = (props) => {
               />
               <RequirementDocumentReferenceSelector
                 requirement={requirement}
-                readOnly={readOnly || isRequirementLocked}
+                readOnly={readOnly || isRequirementLocked || isVerified}
                 setRefresh={setRefresh}
                 selectedDocumentId={selectedReference?.document_id}
                 onSelectReference={setSelectedReference}
@@ -372,6 +375,7 @@ const DisplayRequirement = (props) => {
 
           <DokulyCard
             isCollapsed={
+              !isVerified &&
               requirement?.verification_method === "" &&
               requirement?.verification_results === "" &&
               !hasVerificationReferences
@@ -422,6 +426,7 @@ const DisplayRequirement = (props) => {
                     updateTextField(text, "verification_method");
                   }}
                   showEmptyBorder={true}
+                  showDownload={false}
                   readOnly={readOnly}
                 />
               </>
@@ -438,6 +443,7 @@ const DisplayRequirement = (props) => {
                     updateTextField(text, "verification_results");
                   }}
                   showEmptyBorder={true}
+                  showDownload={false}
                   readOnly={readOnly}
                 />
               </>
@@ -451,7 +457,7 @@ const DisplayRequirement = (props) => {
               />
               <RequirementDocumentReferenceSelector
                 requirement={requirement}
-                readOnly={readOnly || requirement?.state === "Rejected"}
+                readOnly={readOnly || isVerified}
                 setRefresh={setRefresh}
                 selectedDocumentId={selectedReference?.document_id}
                 onSelectReference={setSelectedReference}
