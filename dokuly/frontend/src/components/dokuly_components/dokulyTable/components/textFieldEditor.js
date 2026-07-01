@@ -11,6 +11,7 @@ const TextFieldEditor = ({
   readOnly = false,
   renderAsSpan = false,
   isMarkdown = true,
+  renderDisplayValue = null, // optional: (value) => ReactNode, used instead of default display
 }) => {
   const [value, setValue] = useState(text);
   const [isEditing, setIsEditing] = useState(false);
@@ -98,19 +99,19 @@ const TextFieldEditor = ({
     if (renderAsSpan) {
       return (
         <span
-          onClick={() => !readOnly && setIsEditing(true)} // Prevent entering edit mode if readOnly is true
+          onClick={() => !readOnly && setIsEditing(true)}
           style={displayStyle}
         >
-          {value ? value : "--"}
+          {renderDisplayValue ? (renderDisplayValue(value) ?? "--") : (value ? value : "--")}
         </span>
       );
     }
     return (
       <div
-        onClick={() => !readOnly && setIsEditing(true)} // Prevent entering edit mode if readOnly is true
+        onClick={() => !readOnly && setIsEditing(true)}
         style={displayStyle}
       >
-        {value ? value : "--"}
+        {renderDisplayValue ? (renderDisplayValue(value) ?? "--") : (value ? value : "--")}
       </div>
     );
   }
