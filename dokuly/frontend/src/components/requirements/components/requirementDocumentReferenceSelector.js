@@ -272,7 +272,7 @@ const RequirementDocumentReferenceSelector = ({
               fetchOptions(query);
             }
           }}
-          placeholder="Search documents (auto-searches after 3 characters)"
+          placeholder="Search documents"
           isDisabled={readOnly}
           isClearable
           noOptionsMessage={() => searchInput.trim().length >= 3 ? "No documents found" : "Type at least 3 characters to search"}
