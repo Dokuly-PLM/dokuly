@@ -8,9 +8,14 @@ const RequirementPeek = ({ requirement }) => {
 
   return (
     <div style={{ minWidth: "250px", maxWidth: "350px" }}>
-      <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
+      <div style={{ fontWeight: "bold", marginBottom: requirement.external_requirement_id ? "4px" : "8px" }}>
         Requirement {requirement.id}
       </div>
+      {requirement.external_requirement_id && (
+        <div style={{ fontSize: "0.8rem", color: "#555", marginBottom: "8px" }}>
+          {requirement.external_requirement_id}
+        </div>
+      )}
       <div
         style={{
           fontSize: "0.9rem",
