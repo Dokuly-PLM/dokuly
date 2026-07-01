@@ -14,7 +14,7 @@ const RequirementPeek = ({ requirement }) => {
       </div>
       {requirement.external_requirement_id && (
         <div style={{ fontSize: "0.8rem", marginBottom: "8px", fontFamily: "monospace" }}>
-          {renderExternalId(requirement.external_requirement_id)}
+          {renderExternalId(requirement.external_requirement_id, { shorten: true })}
         </div>
       )}
       <div

@@ -201,13 +201,27 @@ const RequirementsTable = ({
         const fullId = row?.external_requirement_id || "";
         const isLocked = readOnly || row?.state === "Rejected" || row?.state === "Approved";
 
-        // Inline component so we can use hooks for edit toggling
+        // Inline component so we can use hooks for edit toggling + width measurement
         const ColoredExternalIdCell = () => {
           const [editing, setEditing] = useState(false);
           const [value, setValue] = useState(fullId);
+          const [maxChars, setMaxChars] = useState(null);
           const inputRef = useRef(null);
+          const containerRef = useRef(null);
+
+          // ~7px per monospace char at default font size
+          const CHAR_WIDTH_PX = 7;
 
           useEffect(() => { setValue(fullId); }, []);
+          useEffect(() => {
+            if (!containerRef.current) return;
+            const observer = new ResizeObserver(([entry]) => {
+              const width = entry.contentRect.width;
+              setMaxChars(Math.max(3, Math.floor(width / CHAR_WIDTH_PX)));
+            });
+            observer.observe(containerRef.current);
+            return () => observer.disconnect();
+          }, []);
           useEffect(() => {
             if (editing && inputRef.current) {
               inputRef.current.focus();
@@ -257,10 +271,13 @@ const RequirementsTable = ({
               delay={{ show: 200, hide: 100 }}
             >
               <span
-                style={{ whiteSpace: "nowrap", fontFamily: "monospace", cursor: isLocked ? "default" : "pointer" }}
+                ref={containerRef}
+                style={{ whiteSpace: "nowrap", fontFamily: "monospace", cursor: isLocked ? "default" : "pointer", display: "block", overflow: "hidden" }}
                 onClick={() => !isLocked && setEditing(true)}
               >
-                {fullId ? renderExternalId(fullId) : <span style={{ color: "#D1D5DB" }}>—</span>}
+                {fullId
+                  ? renderExternalId(fullId, { maxChars: maxChars ?? 9999 })
+                  : <span style={{ color: "#D1D5DB" }}>—</span>}
               </span>
             </OverlayTrigger>
           );

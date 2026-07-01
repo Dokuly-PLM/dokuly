@@ -117,7 +117,7 @@ const EditPartForm = (props) => {
       tooltipText: "Restriction of Hazardous Substances Directive",
     },
     {
-      label: "REACH affected",
+      label: "REACH unaffected",
       value: isReachCompliant,
       onChange: setIsReachCompliant,
       as: "check",
