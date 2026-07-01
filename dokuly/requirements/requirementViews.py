@@ -323,12 +323,6 @@ def update_requirement_document_references(request, requirement_id):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if len(references_payload) > 1:
-        return Response(
-            "Only one reference is allowed per reference type.",
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
     document_ids = []
     normalized_references = []
     for entry in references_payload:

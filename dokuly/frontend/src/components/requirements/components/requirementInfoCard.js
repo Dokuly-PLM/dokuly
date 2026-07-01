@@ -25,6 +25,7 @@ import NavigateButton from "../../dokuly_components/dokulyTable/components/navig
 import GenericMultiSelector from "../../dokuly_components/genericMultiSelector";
 import TextFieldEditor from "../../dokuly_components/dokulyTable/components/textFieldEditor";
 import { DEFAULT_REQUIREMENT_SET_SETTINGS } from "../modelConstants";
+import { renderExternalId } from "../functions/externalIdUtils";
 
 const renderAdditionalFields = (additionalFields, keyColumnMaxWidth) => {
   return Object.entries(additionalFields)
@@ -411,6 +412,13 @@ const RequirementInfoCard = ({
               readOnly={readOnly ||
                 ((item?.derived_from.length === 0 && item?.state === "Approved") ||
                   (item?.derived_from.length === 0 && item?.state === "Rejected"))
+              }
+              renderDisplayValue={(val) =>
+                val ? (
+                  <span style={{ fontFamily: "monospace" }}>
+                    {renderExternalId(val)}
+                  </span>
+                ) : null
               }
             />
           </Col>

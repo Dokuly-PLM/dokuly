@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, memo, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 import { Row, Col, Table } from "react-bootstrap";
 
@@ -22,6 +22,79 @@ const toOption = (document) => ({
   document,
 });
 
+const ReferenceTable = memo(({ selectedReferences, selectedDocumentId, readOnly, onSelectReference, onRemove, onPageSave }) => {
+  if (selectedReferences.length === 0) {
+    return <small className="text-muted">No references added.</small>;
+  }
+  return (
+    <div style={{ border: "1px solid #e5e5e5", borderRadius: "4px", overflow: "hidden" }}>
+      <Table className="mb-0" hover responsive>
+        <thead>
+          <tr>
+            <th style={{ width: "96px" }} />
+            <th>Document Number</th>
+            <th>Title</th>
+            <th style={{ width: "120px" }}>Page</th>
+            {!readOnly && <th style={{ width: "120px" }} />}
+          </tr>
+        </thead>
+        <tbody>
+          {selectedReferences.map((reference) => (
+            <tr
+              key={`${reference.document_id}-${reference.id}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => onSelectReference(reference)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelectReference(reference);
+                }
+              }}
+              style={{
+                cursor: "pointer",
+                boxShadow:
+                  selectedDocumentId === reference.document_id
+                    ? "inset 0 0 0 2px #165216"
+                    : "none",
+              }}
+            >
+              <td>
+                <ThumbnailFormatter thumbnail={reference.thumbnail} />
+              </td>
+              <td style={{ whiteSpace: "nowrap" }}>
+                {reference.full_doc_number || "Unnamed"}
+              </td>
+              <td>{reference.title || "Untitled"}</td>
+              <td onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                <NumericFieldEditor
+                  number={reference.page_number ?? ""}
+                  setNumber={(value) => onPageSave(reference.document_id, value)}
+                  disabled={readOnly}
+                />
+              </td>
+              {!readOnly && (
+                <td>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove(reference.document_id);
+                    }}
+                  >
+                    Remove
+                  </button>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </div>
+  );
+});
+
 const RequirementDocumentReferenceSelector = ({
   requirement,
   readOnly = false,
@@ -34,6 +107,7 @@ const RequirementDocumentReferenceSelector = ({
   const [options, setOptions] = useState([]);
   const [selectedReferences, setSelectedReferences] = useState([]);
   const [searchInput, setSearchInput] = useState("");
+  const debounceRef = useRef(null);
 
   const mappedSelectedReferences = useMemo(
     () =>
@@ -53,7 +127,13 @@ const RequirementDocumentReferenceSelector = ({
   );
 
   useEffect(() => {
-    setSelectedReferences(mappedSelectedReferences);
+    const prevIds = new Set(selectedReferences.map((r) => r.document_id));
+    const newIds = new Set(mappedSelectedReferences.map((r) => r.document_id));
+    const changed =
+      prevIds.size !== newIds.size || [...newIds].some((id) => !prevIds.has(id));
+    if (changed) {
+      setSelectedReferences(mappedSelectedReferences);
+    }
   }, [mappedSelectedReferences]);
 
   const fetchOptions = (query = "") => {
@@ -139,37 +219,28 @@ const RequirementDocumentReferenceSelector = ({
     persistReferences(nextReferences);
   };
 
-  const handleRemoveDocument = (documentId) => {
-    const nextReferences = selectedReferences.filter(
-      (reference) => reference.document_id !== documentId
-    );
-    setSelectedReferences(nextReferences);
-    persistReferences(nextReferences);
-  };
-
-  const handlePageNumberSave = (documentId, value) => {
-    const normalizedPageNumber = Number.isFinite(value) && value >= 1 ? value : null;
-    const nextReferences = selectedReferences.map((reference) => {
-      if (reference.document_id !== documentId) {
-        return reference;
-      }
-      return {
-        ...reference,
-        page_number: normalizedPageNumber,
-      };
+  const handleRemoveDocument = useCallback((documentId) => {
+    setSelectedReferences((prev) => {
+      const next = prev.filter((r) => r.document_id !== documentId);
+      persistReferences(next);
+      return next;
     });
+  }, [persistReferences]);
 
-    setSelectedReferences(nextReferences);
-    if (selectedDocumentId === documentId) {
-      const updatedReference = nextReferences.find(
-        (reference) => reference.document_id === documentId
+  const handlePageNumberSave = useCallback((documentId, value) => {
+    const normalizedPageNumber = Number.isFinite(value) && value >= 1 ? value : null;
+    setSelectedReferences((prev) => {
+      const next = prev.map((r) =>
+        r.document_id !== documentId ? r : { ...r, page_number: normalizedPageNumber }
       );
-      if (updatedReference) {
-        onSelectReference(updatedReference);
+      if (selectedDocumentId === documentId) {
+        const updated = next.find((r) => r.document_id === documentId);
+        if (updated) onSelectReference(updated);
       }
-    }
-    persistReferences(nextReferences);
-  };
+      persistReferences(next);
+      return next;
+    });
+  }, [persistReferences, selectedDocumentId, onSelectReference]);
 
   return (
     <div>
@@ -182,6 +253,13 @@ const RequirementDocumentReferenceSelector = ({
             if (actionMeta?.action === "input-change") {
               setSearchInput(inputValue);
               setOptions([]);
+              // Auto-search after 3+ characters with debounce
+              if (debounceRef.current) clearTimeout(debounceRef.current);
+              if (inputValue.trim().length >= 3) {
+                debounceRef.current = setTimeout(() => {
+                  fetchOptions(inputValue.trim());
+                }, 350);
+              }
             }
           }}
           onKeyDown={(event) => {
@@ -194,89 +272,22 @@ const RequirementDocumentReferenceSelector = ({
               fetchOptions(query);
             }
           }}
-          placeholder="Type to search, then press Enter"
+          placeholder="Search documents"
           isDisabled={readOnly}
           isClearable
-          noOptionsMessage={() => "Type and press Enter to search documents"}
+          noOptionsMessage={() => searchInput.trim().length >= 3 ? "No documents found" : "Type at least 3 characters to search"}
         />
       )}
 
       <div style={{ marginTop: "12px" }}>
-        {selectedReferences.length === 0 ? (
-          <small className="text-muted">No references added.</small>
-        ) : (
-          <div
-            style={{
-              border: "1px solid #e5e5e5",
-              borderRadius: "4px",
-              overflow: "hidden",
-            }}
-          >
-            <Table className="mb-0" hover responsive>
-              <thead>
-                <tr>
-                  <th style={{ width: "96px" }} />
-                  <th>Document Number</th>
-                  <th>Title</th>
-                  <th style={{ width: "120px" }}>Page</th>
-                  {!readOnly && <th style={{ width: "120px" }} />}
-                </tr>
-              </thead>
-              <tbody>
-                {selectedReferences.map((reference) => (
-                  <tr
-                    key={`${reference.document_id}-${reference.id}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onSelectReference(reference)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        onSelectReference(reference);
-                      }
-                    }}
-                    style={{
-                      cursor: "pointer",
-                      boxShadow:
-                        selectedDocumentId === reference.document_id
-                          ? "inset 0 0 0 2px #165216"
-                          : "none",
-                    }}
-                  >
-                    <td>
-                      <ThumbnailFormatter thumbnail={reference.thumbnail} />
-                    </td>
-                    <td style={{ whiteSpace: "nowrap" }}>
-                      {reference.full_doc_number || "Unnamed"}
-                    </td>
-                    <td>{reference.title || "Untitled"}</td>
-                    <td onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                      <NumericFieldEditor
-                        number={reference.page_number ?? ""}
-                        setNumber={(value) => handlePageNumberSave(reference.document_id, value)}
-                        disabled={readOnly}
-                      />
-                    </td>
-                    {!readOnly && (
-                      <td>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveDocument(reference.document_id);
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        )}
+        <ReferenceTable
+          selectedReferences={selectedReferences}
+          selectedDocumentId={selectedDocumentId}
+          readOnly={readOnly}
+          onSelectReference={onSelectReference}
+          onRemove={handleRemoveDocument}
+          onPageSave={handlePageNumberSave}
+        />
       </div>
     </div>
   );
