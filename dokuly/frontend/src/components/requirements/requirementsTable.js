@@ -132,9 +132,8 @@ const RequirementsTable = ({
         );
         if (duplicateExists) {
           toast.warning(
-            "External requirement ID already exists in this requirement set."
+            "Warning: This external requirement ID already exists in this requirement set."
           );
-          return;
         }
       }
     }
