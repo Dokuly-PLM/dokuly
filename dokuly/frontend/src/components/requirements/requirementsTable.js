@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Col, Form, Row } from "react-bootstrap";
+import { Col, Form, Row, OverlayTrigger, Popover } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
@@ -20,6 +20,7 @@ import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
 import AddButton from "../dokuly_components/AddButton";
 import CheckBox from "../dokuly_components/checkBox";
 import { DEFAULT_REQUIREMENT_SET_SETTINGS } from "./modelConstants";
+import { renderExternalId } from "./functions/externalIdUtils";
 
 const RequirementsTable = ({
   requirements = [],
@@ -45,38 +46,6 @@ const RequirementsTable = ({
     value: state?.state,
     label: state?.state,
   }));
-
-  // Segment colors by depth — muted for shared prefixes, vibrant for unique suffixes.
-  // Mirrors the Dokuly palette: gray → teal → magenta → primary green
-  const SEGMENT_COLORS = ["#9CA3AF", "#108e82", "#da4678", "#165216"];
-  const SEPARATOR_COLOR = "#D1D5DB";
-
-  // Split id into alternating [segment, separator, segment, separator, ...] tokens
-  function tokenizeExternalId(id) {
-    // Matches separators: optional spaces around / or -
-    return id.split(/([ \t]*[\/\-][ \t]*)/);
-    // Odd indices = separators, even indices = segments
-  }
-
-  function renderExternalId(fullId) {
-    if (!fullId) return null;
-    const tokens = tokenizeExternalId(fullId);
-    let segmentIndex = 0;
-    return tokens.map((token, i) => {
-      if (i % 2 === 1) {
-        // separator
-        return (
-          <span key={i} style={{ color: SEPARATOR_COLOR }}>{token}</span>
-        );
-      }
-      const depth = segmentIndex;
-      segmentIndex++;
-      const color = SEGMENT_COLORS[Math.min(depth, SEGMENT_COLORS.length - 1)];
-      return (
-        <span key={i} style={{ color }}>{token}</span>
-      );
-    });
-  }
 
   function hide_verification_cells(requirement) {
     return (requirement?.superseded_by !== null || 
@@ -271,13 +240,29 @@ const RequirementsTable = ({
           }
 
           return (
-            <span
-              title={fullId || undefined}
-              style={{ whiteSpace: "nowrap", fontFamily: "monospace", cursor: isLocked ? "default" : "pointer" }}
-              onClick={() => !isLocked && setEditing(true)}
+            <OverlayTrigger
+              trigger={["hover", "focus"]}
+              placement="top"
+              overlay={
+                fullId ? (
+                  <Popover id={`ext-id-popover-${row.id}`}>
+                    <Popover.Body style={{ padding: "6px 10px" }}>
+                      <span style={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>
+                        {renderExternalId(fullId)}
+                      </span>
+                    </Popover.Body>
+                  </Popover>
+                ) : <></>
+              }
+              delay={{ show: 200, hide: 100 }}
             >
-              {fullId ? renderExternalId(fullId) : <span style={{ color: "#D1D5DB" }}>—</span>}
-            </span>
+              <span
+                style={{ whiteSpace: "nowrap", fontFamily: "monospace", cursor: isLocked ? "default" : "pointer" }}
+                onClick={() => !isLocked && setEditing(true)}
+              >
+                {fullId ? renderExternalId(fullId) : <span style={{ color: "#D1D5DB" }}>—</span>}
+              </span>
+            </OverlayTrigger>
           );
         };
 

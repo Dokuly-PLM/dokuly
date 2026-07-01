@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { OverlayTrigger, Popover } from "react-bootstrap";
 import { getRequirement } from "../../requirements/functions/queries";
+import { renderExternalId } from "../../requirements/functions/externalIdUtils";
 
 const RequirementPeek = ({ requirement }) => {
   if (!requirement) return null;
@@ -12,8 +13,8 @@ const RequirementPeek = ({ requirement }) => {
         Requirement {requirement.id}
       </div>
       {requirement.external_requirement_id && (
-        <div style={{ fontSize: "0.8rem", color: "#555", marginBottom: "8px" }}>
-          {requirement.external_requirement_id}
+        <div style={{ fontSize: "0.8rem", marginBottom: "8px", fontFamily: "monospace" }}>
+          {renderExternalId(requirement.external_requirement_id)}
         </div>
       )}
       <div
