@@ -114,11 +114,13 @@ const RequirementDocumentReferenceSelector = ({
       return;
     }
 
-    if (selectedReferences[0]?.document_id === selectedOption.value) {
+    // Skip if already in the list
+    if (selectedReferences.some((r) => r.document_id === selectedOption.value)) {
       return;
     }
 
     const nextReferences = [
+      ...selectedReferences,
       {
         id: `new-${selectedOption.value}`,
         document_id: selectedOption.value,
