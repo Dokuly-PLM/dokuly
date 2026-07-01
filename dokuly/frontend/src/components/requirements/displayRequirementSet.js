@@ -19,6 +19,7 @@ import { checkProfileIsAllowedToEdit } from "../common/functions";
 import { AuthContext } from "../App";
 import EditRequirementsSetForm from "./forms/editRequirementsSetForm";
 import RequirementsSetInfoCard from "./components/requirementsInfoCard";
+import { DEFAULT_REQUIREMENT_SET_SETTINGS } from "./modelConstants";
 
 const DisplayRequirementSet = (props) => {
   const location = useLocation();
@@ -219,6 +220,18 @@ const DisplayRequirementSet = (props) => {
             setRefresh={setRefresh}
             refresh={refresh}
             readOnly={readOnly}
+            requirementSetSettings={{
+              ...DEFAULT_REQUIREMENT_SET_SETTINGS,
+              hierarchical_requirements_is_enabled: requirementSet?.hierarchical_requirements_is_enabled ?? true,
+              derived_from_enabled: requirementSet?.derived_from_enabled ?? true,
+              superseded_by_is_enabled: requirementSet?.superseded_by_is_enabled ?? true,
+              external_requirement_id_is_enabled: requirementSet?.external_requirement_id_is_enabled ?? true,
+              requirement_type_is_enabled: requirementSet?.requirement_type_is_enabled ?? true,
+              verification_class_is_enabled: requirementSet?.verification_class_is_enabled ?? true,
+              created_by_is_visible: requirementSet?.created_by_is_visible ?? true,
+              verification_method_markdown_is_enabled: requirementSet?.verification_method_markdown_is_enabled ?? true,
+              verification_results_markdown_is_enabled: requirementSet?.verification_results_markdown_is_enabled ?? true,
+            }}
           />
         </div>
       </DokulyCard>

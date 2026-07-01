@@ -362,6 +362,7 @@ const DisplayRequirement = (props) => {
                     refresh={refresh}
                     readOnly={readOnly}
                     profile={profile}
+                    requirementSetSettings={requirementSetSettings}
                   />
                 </div>
               </DokulyCard>

@@ -19,6 +19,7 @@ import {
 import DokulyTags from "../dokuly_components/dokulyTags/dokulyTags";
 import AddButton from "../dokuly_components/AddButton";
 import CheckBox from "../dokuly_components/checkBox";
+import { DEFAULT_REQUIREMENT_SET_SETTINGS } from "./modelConstants";
 
 const RequirementsTable = ({
   requirements = [],
@@ -28,6 +29,7 @@ const RequirementsTable = ({
   setRefresh,
   refresh,
   profile,
+  requirementSetSettings = DEFAULT_REQUIREMENT_SET_SETTINGS,
 }) => {
   const [tableTextSize, setTableTextSize] = useState("14px");
 
@@ -396,6 +398,10 @@ const RequirementsTable = ({
         return hide_verification_cells(row) ? null : (
             <Col className="d-flex align-items-center justify-content-center">
             <Form.Group>
+              <span
+                title="Open the requirement to add verification documentation and sign off verification."
+                style={{ display: "inline-block" }}
+              >
               <Form.Check
                 type="checkbox"
                 id={row?.id}
@@ -419,6 +425,7 @@ const RequirementsTable = ({
                   );
                 }}
               />
+              </span>
             </Form.Group>
           </Col>
         )
@@ -477,6 +484,28 @@ const RequirementsTable = ({
     },
   ];
 
+  const allColumns = [
+    { key: "id", col: columns.find((c) => c.key === "id") },
+    { key: "external_requirement_id", col: columns.find((c) => c.key === "external_requirement_id"), setting: "external_requirement_id_is_enabled" },
+    { key: "parent_requirement", col: columns.find((c) => c.key === "parent_requirement"), setting: "hierarchical_requirements_is_enabled" },
+    { key: "derived_from", col: columns.find((c) => c.key === "derived_from"), setting: "derived_from_enabled" },
+    { key: "type", col: columns.find((c) => c.key === "type"), setting: "requirement_type_is_enabled" },
+    { key: "obligation_level", col: columns.find((c) => c.key === "obligation_level") },
+    { key: "state", col: columns.find((c) => c.key === "state") },
+    { key: "tags", col: columns.find((c) => c.key === "tags") },
+    { key: "rationale", col: columns.find((c) => c.key === "rationale") },
+    { key: "statement", col: columns.find((c) => c.key === "statement") },
+    { key: "verification_class", col: columns.find((c) => c.key === "verification_class"), setting: "verification_class_is_enabled" },
+    { key: "is_verified", col: columns.find((c) => c.key === "is_verified") },
+    { key: "verification_method", col: columns.find((c) => c.key === "verification_method"), setting: "verification_method_markdown_is_enabled" },
+    { key: "verification_results", col: columns.find((c) => c.key === "verification_results"), setting: "verification_results_markdown_is_enabled" },
+  ];
+
+  const visibleColumns = allColumns
+    .filter(({ setting }) => !setting || requirementSetSettings[setting] !== false)
+    .map(({ col }) => col)
+    .filter(Boolean);
+
   return (
     <React.Fragment>
       {!readOnly && (
@@ -500,7 +529,7 @@ const RequirementsTable = ({
             key={`RequirementsTable-${readOnly}`} // Force rerender to ensure readOnly state is updated
             tableName="RequirementsTable"
             data={filteredRequirements}
-            columns={columns}
+            columns={visibleColumns}
             itemsPerPage={50}
             onRowClick={rowEvents}
             defaultSort={{ columnNumber: 0, order: "asc" }}

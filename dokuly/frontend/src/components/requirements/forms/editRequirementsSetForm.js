@@ -150,8 +150,8 @@ const EditRequirementsSetForm = ({ requirementSet, setRefresh, readOnly }) => {
             "Parent requirement (hierarchical)",
             "hierarchical_requirements_is_enabled"
           )}
-          {renderCheck("Derived from", "derived_from_enabled")}
-          {renderCheck("Superseded by", "superseded_by_is_enabled")}
+          {renderCheck("Derived from relation", "derived_from_enabled")}
+          {renderCheck("Superseded by relation", "superseded_by_is_enabled")}
         </div>
 
         <div className="mt-4">
