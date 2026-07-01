@@ -32,6 +32,7 @@ const RequirementsTable = ({
   profile,
   requirementSetSettings = DEFAULT_REQUIREMENT_SET_SETTINGS,
 }) => {
+  const navigate = useNavigate();
   const [tableTextSize, setTableTextSize] = useState("14px");
 
   const TYPE_OPTIONS = REQUIREMENT_TYPES.map((type) => ({
@@ -259,9 +260,9 @@ const RequirementsTable = ({
               placement="top"
               overlay={
                 fullId ? (
-                  <Popover id={`ext-id-popover-${row.id}`}>
+                  <Popover id={`ext-id-popover-${row.id}`} style={{ maxWidth: "none" }}>
                     <Popover.Body style={{ padding: "6px 10px" }}>
-                      <span style={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>
+                      <span style={{ fontFamily: "monospace", whiteSpace: "nowrap", display: "block" }}>
                         {renderExternalId(fullId)}
                       </span>
                     </Popover.Body>
