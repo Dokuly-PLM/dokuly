@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Col, Form, Row } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
@@ -46,7 +46,37 @@ const RequirementsTable = ({
     label: state?.state,
   }));
 
-  const navigate = useNavigate();
+  // Segment colors by depth — muted for shared prefixes, vibrant for unique suffixes.
+  // Mirrors the Dokuly palette: gray → teal → magenta → primary green
+  const SEGMENT_COLORS = ["#9CA3AF", "#108e82", "#da4678", "#165216"];
+  const SEPARATOR_COLOR = "#D1D5DB";
+
+  // Split id into alternating [segment, separator, segment, separator, ...] tokens
+  function tokenizeExternalId(id) {
+    // Matches separators: optional spaces around / or -
+    return id.split(/([ \t]*[\/\-][ \t]*)/);
+    // Odd indices = separators, even indices = segments
+  }
+
+  function renderExternalId(fullId) {
+    if (!fullId) return null;
+    const tokens = tokenizeExternalId(fullId);
+    let segmentIndex = 0;
+    return tokens.map((token, i) => {
+      if (i % 2 === 1) {
+        // separator
+        return (
+          <span key={i} style={{ color: SEPARATOR_COLOR }}>{token}</span>
+        );
+      }
+      const depth = segmentIndex;
+      segmentIndex++;
+      const color = SEGMENT_COLORS[Math.min(depth, SEGMENT_COLORS.length - 1)];
+      return (
+        <span key={i} style={{ color }}>{token}</span>
+      );
+    });
+  }
 
   function hide_verification_cells(requirement) {
     return (requirement?.superseded_by !== null || 
@@ -197,18 +227,62 @@ const RequirementsTable = ({
     {
       key: "external_requirement_id",
       header: "External ID",
-      maxWidth: "120px",
-      formatter: (row, column, searchString) => (
-        <TextFieldEditor
-          text={row?.external_requirement_id || ""}
-          setText={(newText) =>
-            changeField(row.id, "external_requirement_id", newText)
+      maxWidth: "140px",
+      formatter: (row) => {
+        const fullId = row?.external_requirement_id || "";
+        const isLocked = readOnly || row?.state === "Rejected" || row?.state === "Approved";
+
+        // Inline component so we can use hooks for edit toggling
+        const ColoredExternalIdCell = () => {
+          const [editing, setEditing] = useState(false);
+          const [value, setValue] = useState(fullId);
+          const inputRef = useRef(null);
+
+          useEffect(() => { setValue(fullId); }, []);
+          useEffect(() => {
+            if (editing && inputRef.current) {
+              inputRef.current.focus();
+              const len = inputRef.current.value.length;
+              inputRef.current.setSelectionRange(len, len);
+            }
+          }, [editing]);
+
+          const commit = () => {
+            changeField(row.id, "external_requirement_id", value);
+            setEditing(false);
+          };
+
+          if (editing) {
+            return (
+              <input
+                ref={inputRef}
+                className="input-edit"
+                type="text"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commit();
+                  if (e.key === "Escape") { setValue(fullId); setEditing(false); }
+                }}
+                style={{ maxWidth: "130px" }}
+              />
+            );
           }
-          multiline={false}
-          searchString={searchString}
-          readOnly={readOnly || row?.state === "Rejected" || row?.state === "Approved"}
-        />
-      ),
+
+          return (
+            <span
+              title={fullId || undefined}
+              style={{ whiteSpace: "nowrap", fontFamily: "monospace", cursor: isLocked ? "default" : "pointer" }}
+              onClick={() => !isLocked && setEditing(true)}
+            >
+              {fullId ? renderExternalId(fullId) : <span style={{ color: "#D1D5DB" }}>—</span>}
+            </span>
+          );
+        };
+
+        return <ColoredExternalIdCell />;
+      },
       csvFormatter: (row) =>
         row?.external_requirement_id ? `${row?.external_requirement_id}` : "",
     },
