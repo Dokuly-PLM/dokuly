@@ -125,14 +125,14 @@ const DocumentEditForm = (props) => {
           <div className="d-flex" style={{ gap: "24px" }}>
             {/* -- Left column: fields -- */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <FormField label="Title" required>
+              <FormField label="Title" required hint={`${(title || "").length}/1000`}>
                 <input
                   className="form-control"
                   type="text"
                   name="title"
                   onChange={(e) => {
                     if (e.target.value.length > 1000) {
-                      alert("Max length 1000");
+                      toast.info("Max length 1000");
                       return;
                     }
                     setTitle(e.target.value);

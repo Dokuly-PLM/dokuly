@@ -23,27 +23,16 @@ const Heading = ({
     const titleElement = titleRef.current;
     if (!titleElement) return;
 
+    // Scale font size down slightly for very long names, but always allow full wrapping
     const maxFontSize = 32;
-    let fontSize = maxFontSize; // Start with maxFontSize
-    titleElement.style.fontSize = `${fontSize}px`;
-
-    // Adapt font size and div size based on the length of the content and viewport width
-    if (window.innerWidth > 768 && display_name.length <= 60) {
-      // When the screen is large and content is short, allow up to 2 lines
-      titleElement.style["-webkit-line-clamp"] = "2";
-      titleElement.style.height = "auto";
-      titleElement.style.maxHeight = "2.6em";
-    } else {
-      // Adjust for other conditions more dynamically
-      titleElement.style.whiteSpace = "normal";
-      while (
-        titleElement.scrollHeight > titleElement.clientHeight &&
-        fontSize > 12
-      ) {
-        fontSize--;
-        titleElement.style.fontSize = `${fontSize}px`;
-      }
+    const minFontSize = 14;
+    let fontSize = maxFontSize;
+    if (display_name.length > 100) {
+      fontSize = minFontSize + 4;
+    } else if (display_name.length > 60) {
+      fontSize = 20;
     }
+    titleElement.style.fontSize = `${fontSize}px`;
   };
 
   useEffect(() => {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 
 import { get_active_customers } from "../customers/funcitons/queries";
 import { getActiveProjectByCustomer, fetchProjects } from "../projects/functions/queries";
@@ -139,14 +140,14 @@ const NewDocumentForm = (props) => {
         onHide={() => setShowModal(false)}
         title="Create new document"
       >
-        <FormField label="Title" required>
+        <FormField label="Title" required hint={`${(title || "").length}/1000`}>
           <input
             className="form-control"
             type="text"
             name="title"
             onChange={(e) => {
               if (e.target.value.length > 1000) {
-                alert("Max length 1000");
+                toast.info("Max length 1000");
                 return;
               }
               setTitle(e.target.value);
