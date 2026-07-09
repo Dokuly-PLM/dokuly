@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "react-toastify";
 import { editPcba, archivePcba } from "../functions/queries";
 import DokulyModal from "../../dokuly_components/dokulyModal";
 import ExternalPartNumberFormGroup from "../../common/forms/externalPartNumberFormGroup";
@@ -154,14 +155,14 @@ const PcbaForm = (props) => {
         >
           <div className="d-flex" style={{ gap: "24px" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <FormField label="Display Name" required>
+              <FormField label="Display Name" required hint={`${(display_name || "").length}/150`}>
                 <input
                   className="form-control"
                   type="text"
                   name="display_name"
                   onChange={(e) => {
-                    if (e.target.value.length > 100) {
-                      alert("Max length 50");
+                    if (e.target.value.length > 150) {
+                      toast.info("Max length 150");
                       return;
                     }
                     setDisplayName(e.target.value);

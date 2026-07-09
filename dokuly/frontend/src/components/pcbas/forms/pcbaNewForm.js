@@ -95,14 +95,14 @@ const NewPcbaForm = (props) => {
         onHide={() => setShowModal(false)}
         title="Create new PCBA"
       >
-        <FormField label="Display name" required>
+        <FormField label="Display name" required hint={`${(display_name || "").length}/150`}>
           <input
             className="form-control"
             type="text"
             name="display_name"
             onChange={(e) => {
-              if (e.target.value.length > 100) {
-                alert("Max length 50");
+              if (e.target.value.length > 150) {
+                toast.info("Max length 150");
                 return;
               }
               setDisplayName(e.target.value);
