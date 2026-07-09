@@ -1024,15 +1024,11 @@ input[type=number] {
 }
 
 .title-container {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
   line-height: 1.3;
   height: auto;
-  max-height: 3.9em;
-  white-space: normal;
   padding-right: 50px;
   width: 100%;
   text-align: left;
