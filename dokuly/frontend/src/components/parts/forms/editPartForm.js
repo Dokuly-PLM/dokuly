@@ -269,12 +269,18 @@ const EditPartForm = (props) => {
         <div className="d-flex" style={{ gap: "24px" }}>
           {/* ── Left column: fields ── */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <FormField label="Display name" required>
+            <FormField label="Display name" required hint={`${(display_name || "").length}/150`}>
               <input
                 className="form-control"
                 type="text"
                 value={display_name}
-                onChange={(e) => setDisplayName(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length > 150) {
+                    toast.info("Max length 150");
+                    return;
+                  }
+                  setDisplayName(e.target.value);
+                }}
               />
               <NameSuggestion
                 draftName={display_name}
